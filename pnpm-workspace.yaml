@@ -1,0 +1,8 @@
+packages:
+  - "api"
+  - "packages/*"
+  - "mobile"
+  - "web"
+  # Exclude standalone-version to avoid duplicate @magnus/web
+  # - "standalone-version/*"
+

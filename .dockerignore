@@ -1,0 +1,40 @@
+# Ignore everything except what we explicitly need
+*
+
+# Include necessary files
+!package.json
+!pnpm-lock.yaml
+!packages/api/package.json
+!packages/api/dist/**
+
+# Ignore git and IDE files
+.git
+.github
+.vscode
+.idea
+.DS_Store
+
+# Ignore documentation
+*.md
+docs/
+DEPLOYMENT.md
+README.md
+
+# Ignore test files
+**/__tests__
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+tests/
+
+# Ignore other workspaces
+web/
+mobile/
+standalone-version/
+
+# Ignore build artifacts we don't need
+node_modules/
+dist-test/
+*.log
+*.map

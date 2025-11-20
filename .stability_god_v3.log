@@ -1,0 +1,173 @@
+[2025-11-19 23:12:27] 📍 Running Stability God-Script v3 at: /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 Killing zombie processes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 23:12:27] 🧹 Killed all zombie JavaScript/expo/metrobundler processes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 Workspace Validation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 23:12:27] ✅ pnpm-workspace.yaml OK
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 Deep Clean — Auto-Heal
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 23:12:27] 🧹 Removing node_modules everywhere...
+[2025-11-19 23:12:33] 🧹 Removing lockfiles...
+[2025-11-19 23:12:33] 🧹 Cleaning pnpm store...
+[2025-11-19 23:12:37] 🧹 Turbo clean...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 Dependency Reinstall
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 23:12:38] ▶ pnpm install
+Scope: all 9 workspace projects
+Progress: resolved 0, reused 0, downloaded 1, added 0
+mobile                                   |  WARN  deprecated eslint@8.57.1
+packages/sniper-engine                   |  WARN  deprecated crypto@1.0.1
+Progress: resolved 52, reused 0, downloaded 52, added 0
+ WARN  Tarball download average speed 20 KiB/s (size 26 KiB) is below 50 KiB/s: https://registry.npmjs.org/expo-device/-/expo-device-7.0.3.tgz (GET)
+Progress: resolved 59, reused 0, downloaded 59, added 0
+Progress: resolved 60, reused 0, downloaded 60, added 0
+Progress: resolved 61, reused 0, downloaded 61, added 0
+Progress: resolved 61, reused 0, downloaded 62, added 0
+Progress: resolved 111, reused 0, downloaded 95, added 0
+Progress: resolved 190, reused 0, downloaded 174, added 0
+Progress: resolved 252, reused 0, downloaded 236, added 0
+Progress: resolved 389, reused 0, downloaded 373, added 0
+Progress: resolved 473, reused 0, downloaded 451, added 0
+Progress: resolved 516, reused 0, downloaded 455, added 0
+Progress: resolved 554, reused 0, downloaded 490, added 0
+Progress: resolved 638, reused 0, downloaded 575, added 0
+Progress: resolved 786, reused 0, downloaded 723, added 0
+Progress: resolved 929, reused 0, downloaded 866, added 0
+Progress: resolved 1086, reused 0, downloaded 1018, added 0
+Progress: resolved 1280, reused 0, downloaded 1212, added 0
+Progress: resolved 1290, reused 0, downloaded 1221, added 0
+Progress: resolved 1300, reused 0, downloaded 1227, added 0
+Progress: resolved 1324, reused 0, downloaded 1257, added 0
+Progress: resolved 1365, reused 0, downloaded 1294, added 0
+ WARN  11 deprecated subdependencies found: @babel/plugin-proposal-class-properties@7.18.6, @babel/plugin-proposal-nullish-coalescing-operator@7.18.6, @babel/plugin-proposal-optional-chaining@7.21.0, @humanwhocodes/config-array@0.13.0, @humanwhocodes/object-schema@2.0.3, @xmldom/xmldom@0.7.13, glob@7.2.3, inflight@1.0.6, rimraf@2.6.3, rimraf@3.0.2, sudo-prompt@9.2.1
+Progress: resolved 1384, reused 0, downloaded 1317, added 0
+Packages: +1312
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1384, reused 0, downloaded 1317, added 597
+Progress: resolved 1384, reused 0, downloaded 1317, added 1113
+Progress: resolved 1384, reused 0, downloaded 1317, added 1311
+Progress: resolved 1384, reused 0, downloaded 1317, added 1312, done
+packages/sdk prepare$ tsc -p tsconfig.json
+packages/sdk prepare: Done
+
+dependencies:
++ bullmq 5.63.2
+
+devDependencies:
++ turbo 2.6.1
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild, msgpackr-extract, unrs-resolver.           │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Done in 28.6s using pnpm v10.20.0
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 SDK Rebuild
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> @magnus/sdk@1.0.0 build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/packages/sdk
+> tsc -p tsconfig.json
+
+[2025-11-19 23:13:07] ⚡ SDK build OK
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 API Rebuild
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> @magnus-flipper/api@1.0.0 build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/packages/api
+> esbuild src/server.ts src/vercel-handler.ts --bundle --platform=node --outdir=dist --format=cjs --sourcemap
+
+
+  dist/server.js              3.2mb ⚠️
+  dist/vercel-handler.js      3.2mb ⚠️
+  dist/server.js.map          5.0mb
+  dist/vercel-handler.js.map  4.9mb
+
+⚡ Done in 177ms
+[2025-11-19 23:13:08] ⚡ API build OK
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 Workers + Crawlers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 Web Build
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 23:13:08] 🔧 Patching Next.js generateBuildId bug...
+[2025-11-19 23:13:08] 🔧 Patching Next.js to disable standalone output...
+
+> @magnus/web@ build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/web
+> next build
+
+  ▲ Next.js 14.2.20
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/5) ...
+   Generating static pages (1/5) 
+   Generating static pages (2/5) 
+   Generating static pages (3/5) 
+ ✓ Generating static pages (5/5)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    1.59 kB         110 kB
+├ ○ /_not-found                          875 B            88 kB
+└ ○ /sniper/create                       4.75 kB        91.9 kB
++ First Load JS shared by all            87.1 kB
+  ├ chunks/480-ef46412480d9927e.js       31.6 kB
+  ├ chunks/524fc366-d8e0532f67ff13ca.js  53.7 kB
+  └ other shared chunks (total)          1.85 kB
+
+
+○  (Static)  prerendered as static content
+
+[2025-11-19 23:13:14] ⚡ Web build OK
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 Mobile Expo Doctor
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+env: load .env.production
+env: export EXPO_PUBLIC_API_URL EXPO_PUBLIC_SOCKET_URL EXPO_PUBLIC_ASSET_CDN EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY EXPO_PUBLIC_ENV EXPO_PUBLIC_APP_NAME EXPO_PUBLIC_VERSION EXPO_PUBLIC_REGION
+Running 17 checks on your project...
+15/17 checks passed. 2 checks failed. Possible issues detected:
+Use the --verbose flag to see more details about passed checks.
+
+✖ Check for app config fields that may not be synced in a non-CNG project
+This project contains native project folders but also has native configuration properties in app.json, indicating it is configured to use Prebuild. When the android/ios folders are present, EAS Build will not sync the following properties: scheme, orientation, icon, userInterfaceStyle, splash, ios, android, plugins. 
+
+
+✖ Check that packages match versions required by installed Expo SDK
+The following packages should be updated for best compatibility with the installed expo version:
+  @react-navigation/native@^6.1.9 - expected version: ^7.0.14
+Your project may not work correctly until you install the expected versions of the packages.
+Found outdated dependencies
+Advice:
+Use 'npx expo install --check' to review and upgrade your dependencies.
+To ignore specific packages, add them to "expo.install.exclude" in package.json. Learn more: https://expo.fyi/dependency-validation
+
+2 checks failed, indicating possible issues with the project.
+[2025-11-19 23:13:30] ⚡ Mobile environment OK (CNG and version warnings are non-blocking)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔵 Git Status & Save
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 23:13:41] 🚀 All clean. Changes pushed.

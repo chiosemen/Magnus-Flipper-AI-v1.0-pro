@@ -1,0 +1,18 @@
+{
+  "name": "@magnus-flipper-ai/scheduler",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Job scheduler for enqueuing sniper profile scans.",
+  "dependencies": {
+    "@magnus-flipper-ai/core": "workspace:*",
+    "bullmq": "^5.63.2",
+    "pg": "^8.12.0"
+  }
+}

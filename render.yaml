@@ -1,0 +1,49 @@
+# ==============================
+# Magnus Flipper AI - Render Blueprint
+# ==============================
+
+services:
+  - type: web
+    name: magnus-flipper-ai-v1-0
+    env: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile.render
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      # ---- Core runtime ----
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: LOG_LEVEL
+        value: info
+
+      # ---- External services ----
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+      # ---- Security & API ----
+      - key: JWT_SECRET
+        sync: false
+      - key: RENDER_API_KEY
+        sync: false
+      - key: BASE_URL
+        value: https://magnus-flipper-ai-v1-0.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://flipperagents.com,https://app.flipperagents.com
+
+      # ---- Stripe ----
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

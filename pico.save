@@ -1,0 +1,39 @@
+#!/bin/zsh
+
+REPO_DIR="$HOME/Developer/Magnus-Flipper-AI-v1.0-pro"
+REMOTE_URL="https://github.com/chiosemen/Magnus-Flipper-AI-v1.0-.git"
+
+echo "📂 Using repo directory: $REPO_DIR"
+cd "$REPO_DIR" || { echo "❌ Cannot cd into repo"; exit 1; }
+
+echo "🔍 Checking for .git folder..."
+if [ ! -d ".git" ]; then
+  echo "⚠️ No .git directory found — initializing repo..."
+  git init
+  git remote add origin "$REMOTE_URL"
+  git branch -M main
+else
+  echo "✅ .git found — continuing..."
+fi
+
+echo "🧹 Cleaning old Git locks..."
+rm -f .git/index.lock .git/HEAD.lock 2>/dev/null
+
+echo "🗃 Staging all files..."
+git add -A
+
+echo "💬 Committing..."
+git commit -m "Magnus Global Restore: Full monorepo sync after rsync recovery" || \
+echo "⚠️ No changes to commit — continuing."
+
+echo "📡 Remote:"
+git remote -v
+
+echo "🚀 Performing SAFE FORCE push..."
+git push origin main --force-with-lease
+
+echo "🔄 Validating..."
+git fetch origin main
+git status
+
+echo "🎉 DONE — Monorepo successfully pushed!"

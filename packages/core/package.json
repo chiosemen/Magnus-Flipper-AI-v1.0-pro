@@ -1,0 +1,15 @@
+{
+  "name": "@magnus-flipper-ai/core",
+  "version": "1.0.0",
+  "main": "src/queue.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Shared types, utils, and queue configurations for Magnus Flipper AI.",
+  "dependencies": {
+    "bullmq": "^5.63.2"
+  }
+}

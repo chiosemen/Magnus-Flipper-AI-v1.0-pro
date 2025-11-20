@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # API Gateway (TS)
+  - job_name: api-gateway
+    static_configs:
+      - targets: ['api-gateway:9100']  # change if different
+    metrics_path: /metrics
+
+  # Ingestion Worker (Py)
+  - job_name: svc-ingestion
+    static_configs:
+      - targets: ['svc-ingestion:9101']
+    metrics_path: /metrics
+
+  # Scoring Worker (Py/TS)
+  - job_name: svc-scoring
+    static_configs:
+      - targets: ['svc-scoring:9102']
+    metrics_path: /metrics
+
+  # Alerts Worker (TS)
+  - job_name: svc-alerts
+    static_configs:
+      - targets: ['svc-alerts:9103']
+    metrics_path: /metrics

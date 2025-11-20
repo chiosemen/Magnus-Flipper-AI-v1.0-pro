@@ -1,0 +1,25 @@
+{
+  "name": "@magnus-flipper-ai/bot-telegram",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Telegram Sniper Bot for Magnus Flipper AI.",
+  "dependencies": {
+    "telegraf": "^4.16.1",
+    "axios": "^1.7.2",
+    "@magnus-flipper-ai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.3"
+  }
+}

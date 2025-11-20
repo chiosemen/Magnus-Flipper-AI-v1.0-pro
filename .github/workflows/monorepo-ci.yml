@@ -1,0 +1,245 @@
+name: Monorepo CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.15.4"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  changes:
+    name: Detect workspace changes
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      shared: ${{ steps.filter.outputs.shared }}
+      db: ${{ steps.filter.outputs.db }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            web:
+              - "web/**"
+              - "packages/sdk/**"
+              - "shared/**"
+            api:
+              - "packages/api/**"
+              - "shared/**"
+              - "packages/sdk/**"
+            mobile:
+              - "mobile/**"
+              - "shared/**"
+              - "packages/sdk/**"
+            shared:
+              - "shared/**"
+              - "packages/sdk/**"
+            db:
+              - "db/**"
+              - "packages/api/**"
+              - "shared/**"
+
+  core-quality:
+    name: Lint/Test/Build – web + api + shared
+    needs: changes
+    if: |
+      needs.changes.outputs.web == 'true' ||
+      needs.changes.outputs.api == 'true' ||
+      needs.changes.outputs.shared == 'true' ||
+      github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Restore turbo cache
+        id: turbo-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .turbo
+            node_modules/.cache
+          key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (turbo)
+        run: pnpm lint
+
+      - name: Unit tests (turbo)
+        run: pnpm test -- --runInBand
+
+      - name: Build web (Next.js)
+        run: pnpm --filter @magnus/web build
+
+      - name: Build API
+        run: pnpm --filter @magnus-flipper/api build
+
+      - name: Build SDK
+        run: pnpm --filter @magnus/sdk build
+
+      - name: Upload turbo cache
+        if: steps.turbo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .turbo
+            node_modules/.cache
+          key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}
+
+  mobile-quality:
+    name: Expo lint & type-check
+    needs: changes
+    if: |
+      needs.changes.outputs.mobile == 'true' ||
+      needs.changes.outputs.shared == 'true' ||
+      github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Expo lint
+        run: pnpm --filter mobile lint
+
+      - name: Expo type-check
+        run: pnpm --filter mobile type-check
+
+  sdk-contract:
+    name: OpenAPI + SDK drift detection
+    needs: [changes, core-quality]
+    if: |
+      needs.changes.outputs.api == 'true' ||
+      needs.changes.outputs.shared == 'true' ||
+      github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate OpenAPI spec
+        run: pnpm --filter @magnus-flipper/api openapi:gen
+
+      - name: Fail if OpenAPI not committed
+        run: |
+          if ! git diff --quiet --exit-code packages/api/src/openapi/openapi.yaml; then
+            echo "::error file=packages/api/src/openapi/openapi.yaml::OpenAPI spec changed. Commit updated artifact."
+            exit 1
+          fi
+
+      - name: Build SDK bundle
+        run: pnpm --filter @magnus/sdk build
+
+  db-smoke:
+    name: Validate Postgres migrations
+    needs: changes
+    if: |
+      needs.changes.outputs.db == 'true' ||
+      github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: magnus
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d magnus"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Postgres client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for database
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres -d magnus && break
+            sleep 2
+          done
+
+      - name: Apply base schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql postgresql://postgres@localhost:5432/magnus -f db/schema.sql
+
+      - name: Replay migrations
+        env:
+          PGPASSWORD: postgres
+        run: |
+          shopt -s nullglob
+          for file in db/migrations/*.sql; do
+            echo "Running $file"
+            psql postgresql://postgres@localhost:5432/magnus -f "$file"
+          done
+
+      - name: Seed data (optional)
+        if: hashFiles('db/seed.sql') != ''
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql postgresql://postgres@localhost:5432/magnus -f db/seed.sql

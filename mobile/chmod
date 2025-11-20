@@ -1,0 +1,65 @@
+#!/bin/bash
+set -e
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔥 MAGNUS EXPO IMAGE PATCHER v3 (FULL AUTO-REPAIR)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+CWD=$(pwd)
+echo "📁 Project: $CWD"
+
+CONFIG_FILE="app.json"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "❌ ERROR: app.json not found. Exiting."
+  exit 1
+fi
+
+echo "🔍 Preparing safe asset directory..."
+mkdir -p assets
+
+ICON="./assets/icon.png"
+SPLASH="./assets/splash.png"
+ADAPTIVE="./assets/adaptive-icon.png"
+NOTIF="./assets/notification-icon.png"
+
+# Download safe fallback assets
+curl -sL https://raw.githubusercontent.com/expo/expo/master/templates/expo-template-bare-minimum/assets/icon.png -o $ICON
+curl -sL https://raw.githubusercontent.com/expo/expo/master/templates/expo-template-bare-minimum/assets/splash.png -o $SPLASH
+curl -sL https://raw.githubusercontent.com/expo/expo/master/templates/expo-template-bare-minimum/assets/adaptive-icon.png -o $ADAPTIVE
+cp $ICON $NOTIF
+
+echo "🧼 Removing null image fields..."
+jq '
+  del(.expo.splash.backgroundImage) |
+  del(.expo.notification.icon) |
+  del(.expo.loading) |
+  del(.expo.ios.config.usesNonExemptEncryption) |
+  .expo.icon = "'$ICON'" |
+  .expo.splash.image = "'$SPLASH'" |
+  .expo.android.adaptiveIcon.foregroundImage = "'$ADAPTIVE'" |
+  .expo.ios.icon = "'$ICON'" |
+  .expo.notification.icon = "'$NOTIF'"
+' app.json > app.tmp.json
+
+mv app.tmp.json app.json
+
+echo "✔ app.json fully patched."
+
+echo "🔎 Validating images..."
+for img in $ICON $SPLASH $ADAPTIVE $NOTIF; do
+  if file "$img" | grep -q "PNG image data"; then
+    echo "✔ Valid PNG: $img"
+  else
+    echo "❌ Invalid PNG: $img"
+    exit 1
+  fi
+done
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🏗 Running iOS Prebuild…"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+pnpm expo prebuild --clean --platform ios
+
+echo "✔ Prebuild succeeded!"
+echo "🚀 Now run: pnpm expo run:ios"

@@ -1,0 +1,114 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Ingestion Errors (5m)",
+      "targets": [
+        { "expr": "sum(increase(ingest_failures_total[5m]))", "refId": "A" }
+      ],
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 }
+    },
+    {
+      "type": "stat",
+      "title": "Deals Scored (5m)",
+      "targets": [
+        { "expr": "sum(increase(scored_deals_total[5m]))", "refId": "A" }
+      ],
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 }
+    },
+    {
+      "type": "stat",
+      "title": "Alerts Sent (5m)",
+      "targets": [
+        { "expr": "sum(increase(alerts_sent_total[5m]))", "refId": "A" }
+      ],
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "API p95 Latency (ms)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket[5m])) by (le))",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue Depth (All Services)",
+      "targets": [
+        { "expr": "sum(queue_depth)", "refId": "A" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Budget Throttles (per 5m)",
+      "description": "Number of budget guard throttles triggered within the last 5 minutes (alerts + LLM).",
+      "targets": [
+        { "expr": "sum(increase(budget_throttles_total[5m]))", "refId": "A" }
+      ],
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 12 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "gauge",
+      "title": "SLO – Alerts Delivered Under Budget (%)",
+      "description": "Ratio of alerts delivered successfully without throttling.",
+      "targets": [
+        {
+          "expr": "100 * (sum(increase(alerts_sent_total[5m])) / (sum(increase(alerts_sent_total[5m])) + sum(increase(budget_throttles_total[5m]))))",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 6, "w": 12, "x": 6, "y": 12 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "horizontal",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 90 },
+              { "color": "green", "value": 99 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "title": "Magnus Flipper Ops (v2)",
+  "timezone": "browser",
+  "version": 2
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "c_user",
+    "value": "your_c_user_cookie",
+    "domain": ".facebook.com",
+    "path": "/"
+  },
+  {
+    "name": "xs",
+    "value": "your_xs_cookie",
+    "domain": ".facebook.com",
+    "path": "/"
+  },
+  {
+    "name": "fr",
+    "value": "your_fr_cookie",
+    "domain": ".facebook.com",
+    "path": "/"
+  },
+  {
+    "name": "spin_r",
+    "value": "your_spin_r_cookie",
+    "domain": ".facebook.com",
+    "path": "/"
+  },
+  {
+    "name": "spin_b",
+    "value": "your_spin_b_cookie",
+    "domain": ".facebook.com",
+    "path": "/"
+  },
+  {
+    "name": "spin_t",
+    "value": "your_spin_t_cookie",
+    "domain": ".facebook.com",
+    "path": "/"
+  },
+  {
+    "name": "datr",
+    "value": "your_datr_cookie",
+    "domain": ".facebook.com",
+    "path": "/"
+  }
+]

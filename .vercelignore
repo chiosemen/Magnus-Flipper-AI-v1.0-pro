@@ -1,0 +1,6 @@
+# Vercel only detects files directly in /api as serverless functions
+# Subdirectories like /api/dist are not auto-detected as functions
+# This file prevents specific files from being treated as functions
+
+# Config files that shouldn't be serverless functions
+api/jest.config.js

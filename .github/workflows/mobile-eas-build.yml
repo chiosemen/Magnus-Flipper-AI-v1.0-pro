@@ -1,0 +1,114 @@
+name: Mobile – Expo EAS
+
+on:
+  push:
+    tags:
+      - "mobile-v*"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - "shared/**"
+      - ".github/workflows/mobile-eas-build.yml"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS profile (preview|production|internal)"
+        required: false
+        default: "preview"
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.15.4"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  eas-build:
+    name: "EAS build (${{ matrix.platform }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Ensure Expo token
+        run: |
+          if [ -z "${EXPO_TOKEN}" ]; then
+            echo "::error::Missing EXPO_TOKEN secret. Aborting build."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup Expo/EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-cache: true
+          eas-cache: true
+          expo-version: latest
+          eas-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Determine build profile
+        id: profile
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/mobile-v* ]]; then
+            PROFILE="production"
+          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            PROFILE="${{ github.event.inputs.profile }}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            PROFILE="preview"
+          else
+            PROFILE="preview"
+          fi
+          echo "profile=$PROFILE" >> "$GITHUB_OUTPUT"
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Run EAS build
+        id: eas
+        working-directory: mobile
+        env:
+          EAS_NO_VCS: "1"
+        run: |
+          set -euo pipefail
+          RESULT=$(eas build --platform ${{ matrix.platform }} --profile ${{ steps.profile.outputs.profile }} --non-interactive --json)
+          echo "$RESULT" | tee "build-${{ matrix.platform }}.json"
+          URL=$(echo "$RESULT" | jq -r '.artifacts?.buildUrl // .artifacts?.applicationArchiveUrl // .artifacts?.applicationBinaryUrl // empty')
+          if [ -n "$URL" ]; then
+            echo "artifact_url=$URL" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload build metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: eas-${{ matrix.platform }}-build
+          path: mobile/build-${{ matrix.platform }}.json
+
+      - name: Comment build link
+        if: github.event_name == 'pull_request' && steps.eas.outputs.artifact_url != ''
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: eas-${{ matrix.platform }}
+          message: |
+            ✅ EAS build (**${{ steps.profile.outputs.profile }} / ${{ matrix.platform }}**) started from `${{ github.sha }}`.
+            Download: ${{ steps.eas.outputs.artifact_url }}

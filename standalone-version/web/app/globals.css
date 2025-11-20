@@ -1,0 +1,4 @@
+:root { color-scheme: dark; }
+body { background: #0A0F14; color: #E6F6FF; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
+.card { background: rgba(16,22,28,.8); border: 1px solid rgba(0,196,255,.2); border-radius: 16px; padding: 20px; }
+.glow { box-shadow: 0 0 40px rgba(0,196,255,.25); }

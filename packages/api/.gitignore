@@ -1,0 +1,15 @@
+node_modules
+.next
+build
+.expo
+.expo-shared
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite
+.env
+.env.local
+.DS_Store
+.vscode/
+.idea/

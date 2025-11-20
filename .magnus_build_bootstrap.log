@@ -1,0 +1,110 @@
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 Magnus Flipper Build Bootstrap v1
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 22:26:14] Using ROOT: /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 Sanity Checks
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 22:26:14] ✅ Git repo detected on branch: stability-v4-20251119_1839
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 Workspace & Package Sanity
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 22:26:14] ✅ pnpm-workspace.yaml present.
+[2025-11-19 22:26:14] ✅ Root package.json present.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 Installing Dependencies (pnpm install)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 22:26:14] ▶ Running: pnpm install
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+packages/sdk prepare$ tsc -p tsconfig.json
+packages/sdk prepare: Done
+Done in 1.2s using pnpm v10.20.0
+[2025-11-19 22:26:15] ✅ pnpm install completed successfully.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 Core Build: Root (turbo/pnpm build if present)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 22:26:15] ▶ Root has a build script – running: pnpm build (this may use turbo).
+
+> magnus-flipper-ai@1.0.0 build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro
+> turbo run build
+
+turbo 2.6.1
+
+• Packages in scope: @magnus-flipper-ai/core, @magnus-flipper-ai/notifications, @magnus-flipper-ai/sniper-engine, @magnus-flipper-ai/valuation-engine, @magnus-flipper/api, @magnus/sdk, @magnus/web, magnus-flipper-mobile
+• Running build in 8 packages
+• Remote caching disabled
+@magnus-flipper/api:build: cache miss, executing 3176619e5f874b2c
+@magnus/sdk:build: cache hit, replaying logs b2cd7a1d3c702e14
+@magnus/sdk:build: 
+@magnus/sdk:build: > @magnus/sdk@1.0.0 build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/packages/sdk
+@magnus/sdk:build: > tsc -p tsconfig.json
+@magnus/sdk:build: 
+@magnus-flipper/api:build: 
+@magnus-flipper/api:build: > @magnus-flipper/api@1.0.0 build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/packages/api
+@magnus-flipper/api:build: > esbuild src/server.ts src/vercel-handler.ts --bundle --platform=node --outdir=dist --format=cjs --sourcemap
+@magnus-flipper/api:build: 
+@magnus/web:build: cache hit, replaying logs bcb3aad32bec8ca2
+@magnus/web:build: 
+@magnus/web:build: > @magnus/web@ build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/web
+@magnus/web:build: > next build
+@magnus/web:build: 
+@magnus/web:build:    ▲ Next.js 14.1.0
+@magnus/web:build:    - Environments: .env.local
+@magnus/web:build: 
+@magnus/web:build:    Creating an optimized production build ...
+@magnus/web:build:  ✓ Compiled successfully
+@magnus/web:build:    Skipping validation of types
+@magnus/web:build:    Skipping linting
+@magnus/web:build:    Collecting page data ...
+@magnus/web:build:    Generating static pages (0/5) ...
+@magnus/web:build: @magnus/web:build:    Generating static pages (1/5) 
+@magnus/web:build: @magnus/web:build:    Generating static pages (2/5) 
+@magnus/web:build: @magnus/web:build:    Generating static pages (3/5) 
+@magnus/web:build: @magnus/web:build:  ✓ Generating static pages (5/5) 
+@magnus/web:build:    Finalizing page optimization ...
+@magnus/web:build:    Collecting build traces ...
+@magnus/web:build: 
+@magnus/web:build: Route (app)                              Size     First Load JS
+@magnus/web:build: ┌ ○ /                                    1.58 kB         107 kB
+@magnus/web:build: ├ ○ /_not-found                          885 B          85.1 kB
+@magnus/web:build: └ ○ /sniper/create                       4.75 kB        88.9 kB
+@magnus/web:build: + First Load JS shared by all            84.2 kB
+@magnus/web:build:   ├ chunks/41-1209a1a56c9ad0ea.js        28.9 kB
+@magnus/web:build:   ├ chunks/9ed1d46b-01ea4095c93287ab.js  53.4 kB
+@magnus/web:build:   └ other shared chunks (total)          1.86 kB
+@magnus/web:build: 
+@magnus/web:build: 
+@magnus/web:build: ○  (Static)  prerendered as static content
+@magnus/web:build: 
+@magnus-flipper/api:build: 
+@magnus-flipper/api:build:   dist/server.js              3.2mb ⚠️
+@magnus-flipper/api:build:   dist/vercel-handler.js      3.2mb ⚠️
+@magnus-flipper/api:build:   dist/server.js.map          5.0mb
+@magnus-flipper/api:build:   dist/vercel-handler.js.map  4.9mb
+@magnus-flipper/api:build: 
+@magnus-flipper/api:build: ⚡ Done in 451ms
+
+ Tasks:    3 successful, 3 total
+Cached:    2 cached, 3 total
+  Time:    934ms 
+
+[2025-11-19 22:26:17] ✅ Root build succeeded.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 Core Build: Web App
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 22:26:17] ℹ Web app build handled by turbo in root build – skipping redundant build.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 Core Check: Mobile Expo Doctor
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2025-11-19 22:26:17] ▶ Running Expo doctor: npx expo-doctor

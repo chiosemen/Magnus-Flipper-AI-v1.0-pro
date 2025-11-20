@@ -1,0 +1,158 @@
+name: Deploy API – Render
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/api/**"
+      - "shared/**"
+      - "Dockerfile.render"
+      - "render.yaml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/deploy-api-render.yml"
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.15.4"
+  REGISTRY: ghcr.io
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-and-push:
+    name: Build API + push image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_repository: ${{ steps.image.outputs.repository }}
+      image_tagged: ${{ steps.image.outputs.tagged }}
+      image_latest: ${{ steps.image.outputs.latest }}
+      image_digest: ${{ steps.build-image.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint API
+        run: pnpm --filter @magnus-flipper/api run --if-present lint
+
+      - name: Test API
+        run: pnpm --filter @magnus-flipper/api run --if-present test -- --runInBand
+
+      - name: Build API bundle
+        run: pnpm --filter @magnus-flipper/api build
+
+      - name: Compute image coordinates
+        id: image
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="${{ env.REGISTRY }}/$OWNER/magnus-flipper-api"
+          echo "repository=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "tagged=$IMAGE:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "latest=$IMAGE:latest" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        id: build-image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.render
+          push: true
+          tags: |
+            ${{ steps.image.outputs.tagged }}
+            ${{ steps.image.outputs.latest }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  supabase-migrate:
+    name: Apply Supabase/Postgres migrations
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Check Supabase credentials
+        id: guard
+        run: |
+          if [ -z "${SUPABASE_DB_URL}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Supabase connection string not configured. Skipping migrations."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip == 'false'
+
+      - name: Install Postgres client
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Apply SQL migrations
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for file in $(ls db/migrations | sort); do
+            echo "Applying db/migrations/$file"
+            psql "$SUPABASE_DB_URL" -v "ON_ERROR_STOP=1" -f "db/migrations/$file"
+          done
+
+  deploy-render:
+    name: Deploy container to Render
+    needs:
+      - build-and-push
+      - supabase-migrate
+    if: |
+      secrets.RENDER_API_KEY != '' &&
+      secrets.RENDER_SERVICE_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deployment
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          IMAGE: ${{ needs.build-and-push.outputs.image_tagged }}
+        run: |
+          set -euo pipefail
+          PAYLOAD=$(cat <<JSON
+          {
+            "clearCache": false,
+            "imageUrl": "$IMAGE",
+            "waitForLive": true
+          }
+JSON
+          )
+          curl -sS -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys"

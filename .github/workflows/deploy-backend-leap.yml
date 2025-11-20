@@ -1,0 +1,48 @@
+name: Deploy – Backend (Leap)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'api/**'
+      - 'workers/**'
+      - 'infra/scripts/leap_deploy.sh'
+      - '.github/workflows/deploy-backend-leap.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}-backend
+      LEAP_API_URL: ${{ secrets.LEAP_API_URL }}
+      LEAP_API_KEY: ${{ secrets.LEAP_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build container
+        run: |
+          docker build -t $REGISTRY/${{ github.repository_owner }}/$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]'):${{ github.sha }} -f api/Dockerfile .
+          docker tag $REGISTRY/${{ github.repository_owner }}/$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]'):${{ github.sha }} $REGISTRY/${{ github.repository_owner }}/$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]'):latest
+
+      - name: Push container
+        run: |
+          docker push $REGISTRY/${{ github.repository_owner }}/$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]'):${{ github.sha }}
+          docker push $REGISTRY/${{ github.repository_owner }}/$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]'):latest
+
+      - name: Deploy via Leap script
+        run: bash infra/scripts/leap_deploy.sh
+        env:
+          IMAGE_REF: $REGISTRY/${{ github.repository_owner }}/$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]'):latest
+          LEAP_API_URL: $LEAP_API_URL
+          LEAP_API_KEY: $LEAP_API_KEY

@@ -1,0 +1,11 @@
+
+> @magnus-flipper/api@1.0.0 build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/packages/api
+> esbuild src/server.ts src/vercel-handler.ts --bundle --platform=node --outdir=dist --format=cjs --sourcemap
+
+
+  dist/server.js              3.2mb ⚠️
+  dist/vercel-handler.js      3.2mb ⚠️
+  dist/server.js.map          5.0mb
+  dist/vercel-handler.js.map  4.9mb
+
+⚡ Done in 305ms

@@ -1,0 +1,39 @@
+{
+  "name": "@magnus/sdk",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./provider/useMagnusSDK": {
+      "types": "./dist/provider/useMagnusSDK.d.ts",
+      "import": "./dist/provider/useMagnusSDK.js",
+      "require": "./dist/provider/useMagnusSDK.js"
+    },
+    "./provider/MagnusContext": {
+      "types": "./dist/provider/MagnusContext.d.ts",
+      "import": "./dist/provider/MagnusContext.js",
+      "require": "./dist/provider/MagnusContext.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "axios": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "typescript": "^5.4.5",
+    "@types/react": "^18.2.46"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  }
+}

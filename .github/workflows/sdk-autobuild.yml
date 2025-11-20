@@ -1,0 +1,84 @@
+name: SDK Auto-Build + Version Bump + Preview Deploy
+
+on:
+  push:
+    paths:
+      - 'api/src/schemas/**'
+      - 'api/src/routes/**'
+      - 'api/src/openapi/**'
+      - '.github/workflows/sdk-autobuild.yml'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  sdk_autobuild:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate OpenAPI spec
+        working-directory: ./api
+        run: pnpm run openapi:gen
+
+      - name: Regenerate SDK from OpenAPI
+        run: |
+          pnpm dlx @openapitools/openapi-generator-cli generate \
+            -i api/src/openapi/openapi.yaml \
+            -g typescript-axios \
+            -o packages/sdk
+
+      - name: Auto bump SDK version
+        working-directory: ./packages/sdk
+        run: |
+          CURRENT=$(jq -r '.version' package.json)
+          NEXT=$(echo $CURRENT | awk -F. -v OFS=. '{$NF+=1;print}')
+          echo "Bumping version from $CURRENT to $NEXT"
+          jq --arg v "$NEXT" '.version=$v' package.json > tmp.json && mv tmp.json package.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore(sdk): bump version to $NEXT" || echo "No changes to commit"
+
+      - name: Build SDK
+        working-directory: ./packages/sdk
+        run: pnpm build
+
+      - name: Commit SDK changes
+        run: |
+          git add packages/sdk -f
+          git commit -m "chore(sdk): auto-regenerated SDK from OpenAPI" || echo "No changes"
+          git push origin HEAD:main
+
+      - name: Deploy Vercel Preview
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+          npx vercel build --token=$VERCEL_TOKEN
+          npx vercel deploy --prebuilt --token=$VERCEL_TOKEN --yes

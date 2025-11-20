@@ -1,0 +1,14 @@
+name: Deploy Magnus Flipper AI
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Blueprint Deploy
+        uses: render-oss/action-deploy@v1
+        with:
+          service-id: srv-d47rkeemcj7s73dj61lg
+          api-key: ${{ secrets.RENDER_API_KEY }}
