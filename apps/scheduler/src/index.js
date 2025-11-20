@@ -1,4 +1,4 @@
-const { createQueue, createScheduler, REDIS_CONNECTION } = require('@magnus-flipper-ai/core/src/queue');
+const { createQueue, createWorker, createScheduler, redisConnection } = require('@magnus-flipper-ai/core/src/queue');
 const { Client } = require('pg');
 
 const scanProfileQueue = createQueue('scan:profile');

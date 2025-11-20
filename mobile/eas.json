@@ -15,12 +15,25 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "ios": {
         "simulator": true,
         "resourceClass": "m-medium"
       },
       "android": {
         "buildType": "apk"
+      }
+    },
+    "shareable": {
+      "distribution": "internal",
+      "channel": "shareable",
+      "ios": {
+        "resourceClass": "m-medium",
+        "simulator": false
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
       }
     },
     "production": {
