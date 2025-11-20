@@ -13,3 +13,12 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+
+# Turbo build cache
+.turbo
+
+# Build logs
+*.log
+
+# Temporary patches
+*.patch

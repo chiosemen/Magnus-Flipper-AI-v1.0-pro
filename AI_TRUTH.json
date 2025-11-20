@@ -1,0 +1,8 @@
+{
+  "canonical_repo": "/Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro",
+  "note": "All AI tools must treat this path as the ONLY valid Magnus Flipper monorepo.",
+  "mobile_exists": true,
+  "web_exists": true,
+  "queue_workers": true,
+  "api_exists": true
+}
