@@ -302,8 +302,8 @@ section "Mobile Expo Doctor"
 if [ -d "mobile" ]; then
   pushd mobile >/dev/null
   if command -v pnpm >/dev/null; then
-    log "▶ pnpm expo doctor"
-    if ! pnpm expo doctor 2>&1 | tee -a "$LOG"; then
+    log "▶ npx expo-doctor"
+    if ! npx expo-doctor 2>&1 | tee -a "$LOG"; then
       fail "Expo doctor failed."
     else
       log "⚡ Expo doctor OK."
