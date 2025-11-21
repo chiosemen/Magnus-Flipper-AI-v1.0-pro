@@ -7,9 +7,6 @@ services:
     env: node
     region: frankfurt
     plan: starter
-    runtime: node
-    nodeVersion: 20
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/api build
@@ -51,9 +48,6 @@ services:
     env: node
     region: frankfurt
     plan: starter
-    runtime: node
-    nodeVersion: 20
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/scheduler build
@@ -83,9 +77,6 @@ services:
     env: node
     region: frankfurt
     plan: starter
-    runtime: node
-    nodeVersion: 20
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-crawler build &&
@@ -114,9 +105,6 @@ services:
     env: node
     region: frankfurt
     plan: starter
-    runtime: node
-    nodeVersion: 20
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-analyzer build
@@ -144,9 +132,6 @@ services:
     env: node
     region: frankfurt
     plan: starter
-    runtime: node
-    nodeVersion: 20
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-alerts build
@@ -178,9 +163,6 @@ services:
     env: node
     region: frankfurt
     plan: starter
-    runtime: node
-    nodeVersion: 20
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/bot-telegram build
@@ -202,14 +184,18 @@ services:
       - key: MAGNUS_API_KEY
         sync: false
 
+  # =========================
+  # REDIS INSTANCE
+  # =========================
+  - type: redis
+    name: magnus-flipper-redis
+    plan: starter
+    region: frankfurt
+    maxmemoryPolicy: allkeys-lru
+
 databases:
   - name: magnus-flipper-db
     plan: starter
     region: frankfurt
     databaseName: magnus_flipper
     user: magnus_flipper_user
-
-redis:
-  - name: magnus-flipper-redis
-    plan: starter
-    region: frankfurt
