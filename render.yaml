@@ -8,7 +8,7 @@ services:
     region: frankfurt
     plan: starter
     runtime: node
-    nodeVersion: 20
+    node: 20
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
@@ -52,7 +52,7 @@ services:
     region: frankfurt
     plan: starter
     runtime: node
-    nodeVersion: 20
+    node: 20
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
@@ -84,7 +84,7 @@ services:
     region: frankfurt
     plan: starter
     runtime: node
-    nodeVersion: 20
+    node: 20
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
@@ -115,7 +115,7 @@ services:
     region: frankfurt
     plan: starter
     runtime: node
-    nodeVersion: 20
+    node: 20
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
@@ -145,7 +145,7 @@ services:
     region: frankfurt
     plan: starter
     runtime: node
-    nodeVersion: 20
+    node: 20
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
@@ -179,7 +179,7 @@ services:
     region: frankfurt
     plan: starter
     runtime: node
-    nodeVersion: 20
+    node: 20
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
