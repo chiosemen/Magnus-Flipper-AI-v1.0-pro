@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { ReactNode } from "react";
-import { MagnusProvider } from "@magnus/sdk";
+import { MagnusProvider } from "@magnus-flipper-ai/sdk";
 
 export const metadata = {
   title: 'Magnus Flipper AI — Smart Market Scouting',

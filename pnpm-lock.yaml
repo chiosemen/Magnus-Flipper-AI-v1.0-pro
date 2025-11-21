@@ -247,7 +247,7 @@ importers:
 
   web:
     dependencies:
-      '@magnus/sdk':
+      '-flipper-ai/sdk':
         specifier: workspace:*
         version: link:../packages/sdk
       nanoid:

@@ -1,5 +1,5 @@
 {
-  "name": "@magnus/sdk",
+  "name": "@magnus-flipper-ai/sdk",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",

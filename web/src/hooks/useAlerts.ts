@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MagnusSDK, Alert } from "@magnus/sdk";
+import { MagnusSDK, Alert } from "@magnus-flipper-ai/sdk";
 
 const sdk = new MagnusSDK({ baseURL: process.env.NEXT_PUBLIC_API_URL });
 

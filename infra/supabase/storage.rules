@@ -1,0 +1,12 @@
+{
+  "rules": [
+    {
+      "bucket": "crawler-cache",
+      "public": false,
+      "allow": {
+        "read": true,
+        "write": false
+      }
+    }
+  ]
+}

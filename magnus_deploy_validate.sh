@@ -122,7 +122,7 @@ done
 echo ""
 echo "========================================================"
 if [ $ERRORS -eq 0 ]; then
-  echo "✅  DEPLOYMENT VALIDATION COMPLETE - NO CRITICAL ERRORS"
+  echo "✅  DEPLOYMENT VALIDATION COMPLETE - 0 CRITICAL ERRORS → SAFE TO DEPLOY"
   echo "========================================================"
   echo "Your Magnus Flipper monorepo is production-ready!"
 else

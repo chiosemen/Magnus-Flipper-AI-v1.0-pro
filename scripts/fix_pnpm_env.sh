@@ -35,7 +35,7 @@ echo "🧩 Installing missing global types..."
 pnpm add -D @types/node @types/express -w
 
 echo "🏗️ Rebuilding SDK & API..."
-pnpm -F @magnus/sdk build || true
+pnpm -F @magnus-flipper-ai/sdk build || true
 pnpm -F api build || true
 
 echo "✅ Environment repaired and ready."

@@ -1,0 +1,8 @@
+{
+  "android": {
+    "package": "com.sgmchi_m5.magnusflipperai"
+  },
+  "ios": {
+    "bundleIdentifier": "com.sgmchi-m5.magnusflipperai"
+  }
+}

@@ -339,8 +339,8 @@ All new pages use consistent styling:
 
 ## 📚 Resources
 
-- **Web Dashboard**: `/Users/chinyeosemene/Documents/magnus-web-dashboard`
-- **Mobile App**: `/Users/chinyeosemene/Documents/Magnus-Flipper-AI-v1.0-pro/mobile`
+- **Web Dashboard**: `/Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/magnus-web-dashboard`
+- **Mobile App**: `/Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/mobile`
 - **API Docs**: Check web dashboard `README.md`
 - **Supabase**: https://supabase.com/docs
 

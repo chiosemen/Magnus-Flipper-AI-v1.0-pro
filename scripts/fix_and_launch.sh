@@ -34,7 +34,7 @@ echo "🧩 Installing missing global types..."
 pnpm add -D @types/node @types/express -w || true
 
 echo "🏗️ Rebuilding SDK and API..."
-pnpm -F @magnus/sdk build || true
+pnpm -F @magnus-flipper-ai/sdk build || true
 pnpm -F api build || true
 
 echo "🔍 Checking Docker Compose setup..."

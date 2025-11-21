@@ -1,36 +1,9 @@
 {
-  "$schema": "https://turbo.build/schema.json",
-  "tasks": {
+  "pipeline": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "build/**"],
-      "env": [
-        "NODE_ENV",
-        "PORT",
-        "LOG_LEVEL",
-        "BASE_URL",
-        "ALLOWED_ORIGINS",
-        "SUPABASE_URL",
-        "SUPABASE_ANON_KEY",
-        "SUPABASE_SERVICE_ROLE",
-        "SUPABASE_JWT_SECRET",
-        "JWT_SECRET",
-        "STRIPE_SECRET_KEY",
-        "STRIPE_WEBHOOK_SECRET",
-        "REDIS_URL",
-        "VERCEL_AI_GATEWAY_API_KEY",
-        "RENDER_API_KEY",
-        "EXPO_PUBLIC_API_URL"
-      ]
-    },
-    "dev": {
-      "cache": false
-    },
-    "test": {
-      "cache": false
-    },
-    "lint": {
-      "cache": false
+      "inputs": ["packages/**", "apps/**"],
+      "outputs": ["dist/**"]
     }
   }
 }

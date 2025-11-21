@@ -1,0 +1,19 @@
+services:
+  - type: worker
+    name: magnus-analyzer
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: pnpm install --frozen-lockfile
+    startCommand: node apps/worker-analyzer/src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE
+        sync: false
+      - key: MAGNUS_API_KEY
+        sync: false

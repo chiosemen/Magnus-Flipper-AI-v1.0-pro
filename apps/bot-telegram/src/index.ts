@@ -1,6 +1,6 @@
 import { Telegraf, Markup } from 'telegraf';
 import axios from 'axios';
-// import { alertsQueue } from '@magnus/notifications/queues'; // This import path is incorrect based on current structure
+// import { alertsQueue } from '@magnus-flipper-ai/notifications/queues'; // This import path is incorrect based on current structure
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
@@ -29,18 +29,27 @@ bot.command('status', async ctx => {
       headers: { 'x-api-key': process.env.MAGNUS_API_KEY }
     });
 
-    if (!res.data.length) {
-      return ctx.reply('You have no active sniper profiles yet. Configure them inside the Magnus app.');
+    // Handle new API response format: { ok, count, profiles }
+    if (!res.data.ok) {
+      return ctx.reply(res.data.message || 'No Magnus account linked to this Telegram chat yet.');
     }
 
-    const msg = res.data.map((p: any) =>
-      `• ${p.marketplace.toUpperCase()} – "${p.query}" (£${p.min_price}–£${p.max_price}) – ${p.is_active ? '🟢' : '⚪️'}`
+    if (res.data.count === 0) {
+      return ctx.reply('📭 You have no active sniper profiles yet. Configure them inside the Magnus app.');
+    }
+
+    const msg = res.data.profiles.map((p: any) =>
+      `• ${p.marketplace.toUpperCase()} – "${p.search_term}" (${p.currency}${p.min_price}–${p.max_price}) – ${p.is_active ? '🟢' : '⚪️'}`
     ).join('\n');
 
-    await ctx.reply('Your sniper profiles:\n\n' + msg);
-  } catch (error) {
+    await ctx.reply(`🎯 Your sniper profiles (${res.data.count}):\n\n` + msg);
+  } catch (error: any) {
     console.error('Error fetching profiles:', error);
-    await ctx.reply('Failed to fetch profiles. Please try again later.');
+    if (error.response?.status === 404) {
+      await ctx.reply('❌ No Magnus account linked to this Telegram chat yet. Use /start to link your account.');
+    } else {
+      await ctx.reply('❌ Failed to fetch profiles. Please try again later.');
+    }
   }
 });
 

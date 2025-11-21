@@ -127,5 +127,16 @@ module.exports = {
       out_file: './logs/api-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
+    {
+      name: 'health-checker',
+      script: 'pnpm',
+      args: 'start --filter @magnus-flipper-ai/health-checker',
+      cwd: '/Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro',
+      env: {
+        NODE_ENV: 'production',
+        MAGNUS_WEB_URL: 'https://your-vercel-url-here.vercel.app',
+        MAGNUS_API_URL: 'https://your-render-api-here.onrender.com/health',
+      },
+    },
   ],
 };

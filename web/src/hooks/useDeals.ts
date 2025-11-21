@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MagnusSDK, Deal } from "@magnus/sdk";
+import { MagnusSDK, Deal } from "@magnus-flipper-ai/sdk";
 
 const sdk = new MagnusSDK({ baseURL: process.env.NEXT_PUBLIC_API_URL });
 

@@ -1,5 +1,5 @@
 {
-  "name": "@magnus/web",
+  "name": "@magnus-flipper-ai/web",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -7,7 +7,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@magnus/sdk": "workspace:*",
+    "@magnus-flipper-ai/sdk": "workspace:*",
     "nanoid": "^3.3.11",
     "next": "14.2.20",
     "react": "18.3.1",

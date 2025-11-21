@@ -1,0 +1,12 @@
+node_modules
+dist
+.turbo
+*.log
+.env*
+!.env.production
+README.md
+.git
+.DS_Store
+coverage
+*.test.ts
+*.spec.ts

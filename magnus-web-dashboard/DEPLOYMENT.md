@@ -35,7 +35,7 @@ Step-by-step guide to deploy your Magnus Flipper AI web dashboard to production.
 ### Step 1: Prepare Repository
 
 ```bash
-cd /Users/chinyeosemene/Documents/magnus-web-dashboard
+cd /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/magnus-web-dashboard
 
 # Initialize git (if not already)
 git init

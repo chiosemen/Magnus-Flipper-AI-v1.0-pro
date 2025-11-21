@@ -30,7 +30,7 @@ echo "🧩 Ensuring global types..."
 pnpm add -D @types/node @types/express -w || true
 
 echo "🏗️ Building SDK & API..."
-pnpm -F @magnus/sdk build || true
+pnpm -F @magnus-flipper-ai/sdk build || true
 pnpm -F api build || true
 
 if [ ! -f "infra/docker-compose.prod.yml" ]; then

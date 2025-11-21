@@ -80,7 +80,7 @@ magnus-web-dashboard/
 
 1. **Navigate to the project directory**:
    ```bash
-   cd /Users/chinyeosemene/Documents/magnus-web-dashboard
+   cd /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/magnus-web-dashboard
    ```
 
 2. **Install dependencies**:

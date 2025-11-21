@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMagnusSDK } from "@magnus/sdk";
+import { useMagnusSDK } from "@magnus-flipper-ai/sdk";
 
 export function useMagnusData() {
   const sdk = useMagnusSDK();

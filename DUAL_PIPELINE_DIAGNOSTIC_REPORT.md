@@ -38,7 +38,7 @@
 **Vercel Configuration:**
 ```json
 {
-  "buildCommand": "pnpm install --no-frozen-lockfile && turbo run build --filter=@magnus-flipper/api",
+  "buildCommand": "pnpm install --no-frozen-lockfile && turbo run build --filter=-flipper-ai/api",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "outputDirectory": "dist",
   "framework": null,
@@ -278,7 +278,7 @@ api/
 
 **Build Steps:**
 1. ✅ Install dependencies (`pnpm install`)
-2. ✅ Run Turborepo build (`turbo run build --filter=@magnus-flipper/api`)
+2. ✅ Run Turborepo build (`turbo run build --filter=-flipper-ai/api`)
 3. ✅ Compile TypeScript (`esbuild`)
 4. ✅ Generate dist/server.js
 5. ✅ Deploy to serverless
@@ -313,7 +313,7 @@ npm install && npm run build
 
 | Platform | Package Manager | Build Command | Status |
 |----------|----------------|---------------|--------|
-| Vercel | pnpm@10.20.0 | `pnpm install --no-frozen-lockfile && turbo run build --filter=@magnus-flipper/api` | ✅ Correct |
+| Vercel | pnpm@10.20.0 | `pnpm install --no-frozen-lockfile && turbo run build --filter=-flipper-ai/api` | ✅ Correct |
 | Render | npm (incorrect) | `npm install && npm run build` | ❌ Wrong |
 | **Required** | **pnpm@10.20.0** | `corepack enable pnpm && pnpm install --no-frozen-lockfile && pnpm run build` | Target |
 

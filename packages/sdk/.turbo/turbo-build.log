@@ -1,4 +1,4 @@
 
-> @magnus/sdk@1.0.0 build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/packages/sdk
+> @magnus-flipper-ai/sdk@1.0.0 build /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/packages/sdk
 > tsc -p tsconfig.json
 

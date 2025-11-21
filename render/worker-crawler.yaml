@@ -1,0 +1,16 @@
+services:
+  - type: worker
+    name: magnus-crawler
+    env: docker
+    dockerfilePath: apps/worker-crawler/Dockerfile
+    region: oregon
+    plan: standard
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false

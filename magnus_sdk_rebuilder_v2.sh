@@ -51,7 +51,7 @@ if [ "$MISSING" = true ]; then
 
   cat > "$SDK_DIR/package.json" <<EOF
 {
-  "name": "@magnus/sdk",
+  "name": "@magnus-flipper-ai/sdk",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

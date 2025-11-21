@@ -1,8 +1,8 @@
 packages:
   - "api"
   - "packages/*"
+  - "apps/*"
   - "mobile"
   - "web"
-  # Exclude standalone-version to avoid duplicate @magnus/web
+  # Exclude standalone-version to avoid duplicate @magnus-flipper-ai/web
   # - "standalone-version/*"
-

@@ -14,7 +14,7 @@ Get your Magnus Flipper AI web dashboard up and running in minutes!
 ### 1. Install Dependencies (1 min)
 
 ```bash
-cd /Users/chinyeosemene/Documents/magnus-web-dashboard
+cd /Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro/magnus-web-dashboard
 npm install
 ```
 

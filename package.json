@@ -1,5 +1,5 @@
 {
-  "name": "magnus-flipper-ai",
+  "name": "@magnus-flipper-ai/monorepo",
   "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@10.20.0",
@@ -15,7 +15,9 @@
     "lint": "turbo run lint",
     "clean": "turbo run clean",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "lint:namespaces": "node scripts/namespace-lint.js",
+    "precommit:namespaces": "node scripts/namespace-lint.js"
   },
   "devDependencies": {
     "turbo": "^2.6.0"

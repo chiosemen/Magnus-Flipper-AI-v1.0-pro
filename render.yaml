@@ -55,7 +55,8 @@ services:
     nodeVersion: 20
     rootDir: .
     buildCommand: >
-      pnpm install --frozen-lockfile
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @magnus-flipper-ai/scheduler build
     startCommand: >
       pnpm --filter @magnus-flipper-ai/scheduler start
     autoDeploy: true
@@ -87,6 +88,7 @@ services:
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
+      pnpm --filter @magnus-flipper-ai/worker-crawler build &&
       npx playwright install --with-deps chromium
     startCommand: >
       pnpm --filter @magnus-flipper-ai/worker-crawler start
@@ -116,7 +118,8 @@ services:
     nodeVersion: 20
     rootDir: .
     buildCommand: >
-      pnpm install --frozen-lockfile
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @magnus-flipper-ai/worker-analyzer build
     startCommand: >
       pnpm --filter @magnus-flipper-ai/worker-analyzer start
     autoDeploy: true
@@ -145,7 +148,8 @@ services:
     nodeVersion: 20
     rootDir: .
     buildCommand: >
-      pnpm install --frozen-lockfile
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @magnus-flipper-ai/worker-alerts build
     startCommand: >
       pnpm --filter @magnus-flipper-ai/worker-alerts start
     autoDeploy: true
@@ -178,7 +182,8 @@ services:
     nodeVersion: 20
     rootDir: .
     buildCommand: >
-      pnpm install --frozen-lockfile
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @magnus-flipper-ai/bot-telegram build
     startCommand: >
       node --loader ts-node/esm apps/bot-telegram/src/index.ts
     autoDeploy: true

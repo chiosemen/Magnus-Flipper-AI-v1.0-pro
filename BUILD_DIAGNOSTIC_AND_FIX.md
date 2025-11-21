@@ -206,7 +206,7 @@ After **10 consecutive failed deployments**, the Magnus Flipper AI API has been 
 ```json
 {
   "version": 2,
-  "buildCommand": "pnpm install --no-frozen-lockfile && turbo run build --filter=@magnus-flipper/api",
+  "buildCommand": "pnpm install --no-frozen-lockfile && turbo run build --filter=-flipper-ai/api",
   "installCommand": "pnpm install --no-frozen-lockfile",
   "outputDirectory": "api/dist",
   "framework": null,

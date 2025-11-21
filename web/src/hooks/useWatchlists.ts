@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Watchlist, WatchlistCreateInput } from "@magnus/sdk";
-import { useMagnusSDK } from "@magnus/sdk/provider/useMagnusSDK";
+import { Watchlist, WatchlistCreateInput } from "@magnus-flipper-ai/sdk";
+import { useMagnusSDK } from "@magnus-flipper-ai/sdk/provider/useMagnusSDK";
 
 export function useWatchlists() {
   const sdk = useMagnusSDK();

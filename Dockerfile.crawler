@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/playwright:v1.44.0-jammy
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages ./packages
+COPY apps ./apps
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN pnpm install --frozen-lockfile
+
+# Build only the crawler worker
+RUN pnpm --filter @magnus-flipper-ai/worker-crawler build
+
+CMD ["pnpm", "--filter", "@magnus-flipper-ai/worker-crawler", "start"]

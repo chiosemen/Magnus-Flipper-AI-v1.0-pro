@@ -10,9 +10,11 @@ __pycache__/
 *.sqlite
 .env
 .env.local
+.env.*
 .DS_Store
 .vscode/
 .idea/
+.vercel
 
 # Turbo build cache
 .turbo
