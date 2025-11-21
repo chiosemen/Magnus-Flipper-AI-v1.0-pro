@@ -1,3 +1,10 @@
+import {
+  MagnusProvider,
+  MagnusSDK,
+  SDKClient,
+  useMagnusSDK
+} from "./chunk-EOFR74GH.mjs";
+
 // src/helpers.ts
 function ping() {
   return "pong from Magnus SDK";
@@ -24,10 +31,14 @@ async function fetchDeals() {
   return res.data;
 }
 export {
+  MagnusProvider,
+  MagnusSDK,
+  SDKClient,
   UserSchema,
   apiClient,
   fetchDeals,
   getVersion,
-  ping
+  ping,
+  useMagnusSDK
 };
 //# sourceMappingURL=index.mjs.map

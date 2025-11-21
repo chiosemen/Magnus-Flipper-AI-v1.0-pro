@@ -1,11 +1,16 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: {
+    index: "src/index.ts",
+    client: "src/provider/MagnusContext.tsx"
+  },
   format: ["esm", "cjs"],
   dts: true,
-  splitting: false,
+  splitting: true,
   sourcemap: true,
   clean: true,
-  target: "es2020"
+  target: "es2020",
+  external: ["react"],
+  jsx: "react"
 });

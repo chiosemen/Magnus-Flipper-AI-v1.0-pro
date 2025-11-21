@@ -1,5 +1,5 @@
-import { SDKClient } from "../client.js";
-import { Watchlist, WatchlistCreateInput } from "../types.js";
+import { SDKClient } from "../client";
+import { Watchlist, WatchlistCreateInput } from "../types";
 
 export class WatchlistsAPI {
   constructor(private client: SDKClient) {}
