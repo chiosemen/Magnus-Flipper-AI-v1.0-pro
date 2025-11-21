@@ -192,6 +192,9 @@ services:
     plan: starter
     region: frankfurt
     maxmemoryPolicy: allkeys-lru
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all IPs
 
 databases:
   - name: magnus-flipper-db
