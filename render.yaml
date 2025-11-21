@@ -1,49 +1,210 @@
-# ==============================
-# Magnus Flipper AI - Render Blueprint
-# ==============================
-
 services:
+  # =========================
+  # API SERVICE (HTTP)
+  # =========================
   - type: web
-    name: magnus-flipper-ai-v1-0
-    env: docker
+    name: magnus-flipper-api
+    env: node
+    region: frankfurt
     plan: starter
-    region: oregon
-    dockerfilePath: ./Dockerfile.render
+    runtime: node
+    nodeVersion: 20
+    rootDir: .
+    buildCommand: >
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @magnus-flipper-ai/api build
+    startCommand: >
+      pnpm --filter @magnus-flipper-ai/api start
     autoDeploy: true
-    healthCheckPath: /health
     envVars:
-      # ---- Core runtime ----
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
-      - key: LOG_LEVEL
-        value: info
-
-      # ---- External services ----
+        value: "3001"
       - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-      - key: SUPABASE_JWT_SECRET
+      - key: SUPABASE_SERVICE_ROLE
         sync: false
       - key: REDIS_URL
-        sync: false
-
-      # ---- Security & API ----
-      - key: JWT_SECRET
-        sync: false
-      - key: RENDER_API_KEY
-        sync: false
-      - key: BASE_URL
-        value: https://magnus-flipper-ai-v1-0.onrender.com
-      - key: ALLOWED_ORIGINS
-        value: https://flipperagents.com,https://app.flipperagents.com
-
-      # ---- Stripe ----
+        fromService:
+          type: redis
+          name: magnus-flipper-redis
+          property: connectionString
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: MAGNUS_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_API_URL
+        value: https://magnus-flipper-api.onrender.com
+
+  # =========================
+  # WORKER: SCHEDULER
+  # =========================
+  - type: worker
+    name: magnus-scheduler
+    env: node
+    region: frankfurt
+    plan: starter
+    runtime: node
+    nodeVersion: 20
+    rootDir: .
+    buildCommand: >
+      pnpm install --frozen-lockfile
+    startCommand: >
+      pnpm --filter @magnus-flipper-ai/scheduler start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: magnus-flipper-redis
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE
+        sync: false
+      - key: MAGNUS_API_KEY
+        sync: false
+
+  # =========================
+  # WORKER: CRAWLER
+  # =========================
+  - type: worker
+    name: magnus-worker-crawler
+    env: node
+    region: frankfurt
+    plan: starter
+    runtime: node
+    nodeVersion: 20
+    rootDir: .
+    buildCommand: >
+      pnpm install --frozen-lockfile &&
+      npx playwright install --with-deps chromium
+    startCommand: >
+      pnpm --filter @magnus-flipper-ai/worker-crawler start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: magnus-flipper-redis
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE
+        sync: false
+
+  # =========================
+  # WORKER: ANALYZER
+  # =========================
+  - type: worker
+    name: magnus-worker-analyzer
+    env: node
+    region: frankfurt
+    plan: starter
+    runtime: node
+    nodeVersion: 20
+    rootDir: .
+    buildCommand: >
+      pnpm install --frozen-lockfile
+    startCommand: >
+      pnpm --filter @magnus-flipper-ai/worker-analyzer start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: magnus-flipper-redis
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE
+        sync: false
+
+  # =========================
+  # WORKER: ALERTS
+  # =========================
+  - type: worker
+    name: magnus-worker-alerts
+    env: node
+    region: frankfurt
+    plan: starter
+    runtime: node
+    nodeVersion: 20
+    rootDir: .
+    buildCommand: >
+      pnpm install --frozen-lockfile
+    startCommand: >
+      pnpm --filter @magnus-flipper-ai/worker-alerts start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: magnus-flipper-redis
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: MAGNUS_API_KEY
+        sync: false
+
+  # =========================
+  # TELEGRAM BOT
+  # =========================
+  - type: worker
+    name: magnus-telegram-bot
+    env: node
+    region: frankfurt
+    plan: starter
+    runtime: node
+    nodeVersion: 20
+    rootDir: .
+    buildCommand: >
+      pnpm install --frozen-lockfile
+    startCommand: >
+      node --loader ts-node/esm apps/bot-telegram/src/index.ts
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: magnus-flipper-redis
+          property: connectionString
+      - key: MAGNUS_API_URL
+        value: https://magnus-flipper-api.onrender.com
+      - key: MAGNUS_API_KEY
+        sync: false
+
+databases:
+  - name: magnus-flipper-db
+    plan: starter
+    region: frankfurt
+    databaseName: magnus_flipper
+    user: magnus_flipper_user
+
+redis:
+  - name: magnus-flipper-redis
+    plan: starter
+    region: frankfurt
