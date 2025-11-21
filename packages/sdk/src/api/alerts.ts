@@ -1,5 +1,5 @@
-import { SDKClient } from "../client.js";
-import { Alert } from "../types.js";
+import { SDKClient } from "../client";
+import { Alert } from "../types";
 
 export interface AlertCreateInput {
   user_id: string;

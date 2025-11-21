@@ -1,1 +1,1 @@
-export { useMagnusSDK, MagnusProvider } from "./MagnusContext.js";
+export { useMagnusSDK, MagnusProvider } from "./MagnusContext";

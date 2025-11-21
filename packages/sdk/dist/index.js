@@ -1,42 +1,9 @@
-"use strict";
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+"use strict";Object.defineProperty(exports, "__esModule", {value: true}); function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// src/index.ts
-var index_exports = {};
-__export(index_exports, {
-  UserSchema: () => UserSchema,
-  apiClient: () => apiClient,
-  fetchDeals: () => fetchDeals,
-  getVersion: () => getVersion,
-  ping: () => ping
-});
-module.exports = __toCommonJS(index_exports);
+
+
+
+var _chunkFQQQYP42js = require('./chunk-FQQQYP42.js');
 
 // src/helpers.ts
 function ping() {
@@ -47,15 +14,15 @@ function getVersion() {
 }
 
 // src/validators.ts
-var import_zod = require("zod");
-var UserSchema = import_zod.z.object({
-  id: import_zod.z.string(),
-  email: import_zod.z.string().email()
+var _zod = require('zod');
+var UserSchema = _zod.z.object({
+  id: _zod.z.string(),
+  email: _zod.z.string().email()
 });
 
 // src/apiClient.ts
-var import_axios = __toESM(require("axios"));
-var apiClient = import_axios.default.create({
+var _axios = require('axios'); var _axios2 = _interopRequireDefault(_axios);
+var apiClient = _axios2.default.create({
   baseURL: "https://api.magnus-flipper.ai",
   timeout: 1e4
 });
@@ -63,12 +30,15 @@ async function fetchDeals() {
   const res = await apiClient.get("/deals");
   return res.data;
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  UserSchema,
-  apiClient,
-  fetchDeals,
-  getVersion,
-  ping
-});
+
+
+
+
+
+
+
+
+
+
+exports.MagnusProvider = _chunkFQQQYP42js.MagnusProvider; exports.MagnusSDK = _chunkFQQQYP42js.MagnusSDK; exports.SDKClient = _chunkFQQQYP42js.SDKClient; exports.UserSchema = UserSchema; exports.apiClient = apiClient; exports.fetchDeals = fetchDeals; exports.getVersion = getVersion; exports.ping = ping; exports.useMagnusSDK = _chunkFQQQYP42js.useMagnusSDK;
 //# sourceMappingURL=index.js.map
