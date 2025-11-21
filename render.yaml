@@ -4,11 +4,9 @@ services:
   # =========================
   - type: web
     name: magnus-flipper-api
-    runtime: node
+    env: node
     region: frankfurt
     plan: starter
-    branch: main
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/api build
@@ -47,11 +45,9 @@ services:
   # =========================
   - type: worker
     name: magnus-scheduler
-    runtime: node
+    env: node
     region: frankfurt
     plan: starter
-    branch: main
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/scheduler build
@@ -78,11 +74,9 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-crawler
-    runtime: node
+    env: node
     region: frankfurt
     plan: starter
-    branch: main
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-crawler build &&
@@ -108,11 +102,9 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-analyzer
-    runtime: node
+    env: node
     region: frankfurt
     plan: starter
-    branch: main
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-analyzer build
@@ -137,11 +129,9 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-alerts
-    runtime: node
+    env: node
     region: frankfurt
     plan: starter
-    branch: main
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-alerts build
@@ -170,11 +160,9 @@ services:
   # =========================
   - type: worker
     name: magnus-telegram-bot
-    runtime: node
+    env: node
     region: frankfurt
     plan: starter
-    branch: main
-    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/bot-telegram build
@@ -206,11 +194,11 @@ services:
     maxmemoryPolicy: allkeys-lru
     ipAllowList:
       - source: 0.0.0.0/0
-        description: Allow all
+        description: Allow all IPs
 
 databases:
   - name: magnus-flipper-db
-    plan: basic-256mb
+    plan: starter
     region: frankfurt
     databaseName: magnus_flipper
     user: magnus_flipper_user
