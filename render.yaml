@@ -8,7 +8,6 @@ services:
     region: frankfurt
     plan: starter
     runtime: node
-    nodeVersion: 20
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
