@@ -4,9 +4,11 @@ services:
   # =========================
   - type: web
     name: magnus-flipper-api
-    env: node
+    runtime: node
     region: frankfurt
     plan: starter
+    branch: main
+    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/api build
@@ -26,7 +28,7 @@ services:
         sync: false
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
       - key: STRIPE_SECRET_KEY
@@ -45,9 +47,11 @@ services:
   # =========================
   - type: worker
     name: magnus-scheduler
-    env: node
+    runtime: node
     region: frankfurt
     plan: starter
+    branch: main
+    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/scheduler build
@@ -59,7 +63,7 @@ services:
         value: production
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
       - key: SUPABASE_URL
@@ -74,9 +78,11 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-crawler
-    env: node
+    runtime: node
     region: frankfurt
     plan: starter
+    branch: main
+    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-crawler build &&
@@ -89,7 +95,7 @@ services:
         value: production
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
       - key: SUPABASE_URL
@@ -102,9 +108,11 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-analyzer
-    env: node
+    runtime: node
     region: frankfurt
     plan: starter
+    branch: main
+    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-analyzer build
@@ -116,7 +124,7 @@ services:
         value: production
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
       - key: SUPABASE_URL
@@ -129,9 +137,11 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-alerts
-    env: node
+    runtime: node
     region: frankfurt
     plan: starter
+    branch: main
+    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-alerts build
@@ -143,7 +153,7 @@ services:
         value: production
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
       - key: SUPABASE_URL
@@ -160,9 +170,11 @@ services:
   # =========================
   - type: worker
     name: magnus-telegram-bot
-    env: node
+    runtime: node
     region: frankfurt
     plan: starter
+    branch: main
+    rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/bot-telegram build
@@ -176,7 +188,7 @@ services:
         sync: false
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
       - key: MAGNUS_API_URL
@@ -187,18 +199,18 @@ services:
   # =========================
   # REDIS INSTANCE
   # =========================
-  - type: redis
+  - type: keyvalue
     name: magnus-flipper-redis
     plan: starter
     region: frankfurt
     maxmemoryPolicy: allkeys-lru
     ipAllowList:
       - source: 0.0.0.0/0
-        description: Allow all IPs
+        description: Allow all
 
 databases:
   - name: magnus-flipper-db
-    plan: starter
+    plan: basic-256mb
     region: frankfurt
     databaseName: magnus_flipper
     user: magnus_flipper_user
