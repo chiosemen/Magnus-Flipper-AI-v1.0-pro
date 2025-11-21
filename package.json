@@ -39,8 +39,6 @@
     "react-native": "0.76.9"
   },
   "pnpm": {
-    "overrides": {
-      "@types/react": "18.3.12"
-    }
+    "overrides": {}
   }
 }

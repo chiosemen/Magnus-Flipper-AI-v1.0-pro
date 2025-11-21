@@ -1,22 +1,3 @@
-import { SDKClient, SDKClientOptions } from "./client.js";
-import { DealsAPI } from "./api/deals.js";
-import { AlertsAPI } from "./api/alerts.js";
-import { WatchlistsAPI } from "./api/watchlists.js";
-export { MagnusProvider, useMagnusSDK } from "./provider/MagnusContext.js";
-
-export class MagnusSDK {
-  deals: DealsAPI;
-  alerts: AlertsAPI;
-  watchlists: WatchlistsAPI;
-
-  constructor(opts: SDKClientOptions = {}) {
-    const client = new SDKClient(opts);
-    this.deals = new DealsAPI(client);
-    this.alerts = new AlertsAPI(client);
-    this.watchlists = new WatchlistsAPI(client);
-  }
-}
-
-export type { SDKClientOptions } from "./client.js";
-export * from "./types.js";
-export * from "./api/index.js";
+export * from "./helpers";
+export * from "./validators";
+export * from "./apiClient";

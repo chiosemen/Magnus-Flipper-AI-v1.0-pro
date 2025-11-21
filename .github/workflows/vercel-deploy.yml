@@ -1,0 +1,29 @@
+name: Vercel Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build web
+        run: pnpm --filter web build
+
+      - name: Deploy with Vercel
+        run: |
+          npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes

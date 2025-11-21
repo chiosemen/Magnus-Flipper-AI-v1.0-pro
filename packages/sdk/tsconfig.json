@@ -1,16 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
     "outDir": "dist",
     "declaration": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "declarationMap": true,
     "strict": true,
+    "module": "ESNext",
+    "target": "ES2020",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "baseUrl": "./",
+    "paths": {
+      "@magnus-flipper-ai/sdk/*": ["src/*"]
+    },
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node"],
-    "jsx": "react-jsx"
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src"]
 }

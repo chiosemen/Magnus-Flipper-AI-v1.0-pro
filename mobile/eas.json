@@ -1,63 +1,47 @@
 {
   "cli": {
-    "version": ">= 5.9.0"
+    "version": ">=5.0.0"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "resourceClass": "m-medium"
-      },
+    "production": {
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle",
+        "package": "com.magnusflipper.ai"
+      },
+      "ios": {
+        "simulator": false,
+        "bundleIdentifier": "com.magnusflipper.ai"
+      },
+      "env": {
+        "APP_ENV": "production"
       }
     },
     "preview": {
-      "distribution": "internal",
-      "channel": "preview",
-      "ios": {
-        "simulator": true,
-        "resourceClass": "m-medium"
-      },
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "shareable": {
-      "distribution": "internal",
-      "channel": "shareable",
-      "ios": {
-        "resourceClass": "m-medium",
-        "simulator": false
-      },
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
-      }
-    },
-    "production": {
+        "package": "com.magnusflipper.ai"
+      },
       "ios": {
-        "resourceClass": "m-medium",
+        "simulator": true,
         "bundleIdentifier": "com.magnusflipper.ai"
       },
-      "android": {
-        "buildType": "aab",
-        "gradleCommand": ":app:bundleRelease"
+      "env": {
+        "APP_ENV": "preview"
       }
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "your-apple-id@email.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
+    },
+    "development": {
+      "android": {
+        "buildType": "apk",
+        "package": "com.magnusflipper.ai"
       },
-      "android": {
-        "serviceAccountKeyPath": "./android-service-account.json",
-        "track": "production"
-      }
+      "ios": {
+        "simulator": true,
+        "bundleIdentifier": "com.magnusflipper.ai"
+      },
+      "env": {
+        "APP_ENV": "development"
+      },
+      "developmentClient": true
     }
   }
 }

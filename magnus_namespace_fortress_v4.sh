@@ -124,7 +124,7 @@ should_skip() {
 update_package_json() {
   local file="$1"
 
-  node <<'NODE' "$file" "$SCOPE" "$DRY_RUN"
+  node - "$file" "$SCOPE" "$DRY_RUN" <<'NODE'
 const fs = require('fs');
 const path = process.argv[2];
 const scope = process.argv[3];

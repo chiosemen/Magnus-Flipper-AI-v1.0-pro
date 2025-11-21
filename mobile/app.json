@@ -2,7 +2,6 @@
   "expo": {
     "name": "Magnus Flipper AI",
     "slug": "magnus-flipper-ai",
-    "scheme": "magnus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,72 +9,26 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A0F14"
+      "backgroundColor": "#ffffff"
     },
+
     "ios": {
-      "bundleIdentifier": "com.magnusflipper.ai",
-      "supportsTablet": true,
-      "infoPlist": {
-        "NSCameraUsageDescription": "Magnus Flipper needs camera access to scan product barcodes",
-        "NSPhotoLibraryUsageDescription": "Magnus Flipper needs photo library access to upload product images"
-      },
-      "config": {
-        "usesNonExemptEncryption": false
-      }
+      "supportsTablet": false
     },
+
     "android": {
-      "package": "com.magnusflipper.ai",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0A0F14"
-      },
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "NOTIFICATIONS"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#3B82F6",
-          "sounds": [
-            "./assets/notification.wav"
-          ]
-        }
-      ],
-      [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": "merchant.com.magnusflipper.ai",
-          "enableGooglePay": true
-        }
-      ],
-      "expo-secure-store",
-      "expo-font"
-    ],
-    "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "your-expo-project-id"
+        "backgroundColor": "#ffffff"
       }
     },
-    "owner": "magnusflipper",
-    "updates": {
-      "url": "https://u.expo.dev/your-expo-project-id"
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
+
+    "plugins": [
+      "expo-router"
+    ],
+
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

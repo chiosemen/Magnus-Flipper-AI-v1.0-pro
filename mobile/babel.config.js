@@ -3,23 +3,7 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      // NativeWind (Tailwind CSS)
-      'nativewind/babel',
-
-      // Inline environment variables at build time
-      [
-        'module:react-native-dotenv',
-        {
-          envName: 'APP_ENV',
-          moduleName: '@env',
-          path: '.env',
-          blocklist: null,
-          allowlist: null,
-          safe: false,
-          allowUndefined: true,
-          verbose: false,
-        },
-      ],
+      require.resolve("expo-router/babel"),
     ],
   };
 };

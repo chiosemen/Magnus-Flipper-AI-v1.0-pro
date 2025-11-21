@@ -3,8 +3,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const ROOT = "/Users/chinyeosemene/Developer/Magnus-Flipper-AI-v1.0-pro";
-const SCOPE = "@magnus-flipper-ai/";
+const ROOT = "-flipper-ai/Users-flipper-ai/chinyeosemene-flipper-ai/Developer-flipper-ai/Magnus-Flipper-AI-v1.0-pro";
+const SCOPE = "@magnus-flipper-ai-flipper-ai/";
 const IGNORE = new Set(["node_modules", ".next", "dist", "build", ".expo", ".turbo", ".pnpm", ".magnus_backups"]);
 
 const errors = [];
@@ -15,10 +15,21 @@ const shouldSkip = (p) => {
 };
 
 const walk = (dir, matcher) => {
-  for (const entry of fs.readdirSync(dir)) {
+  let entries;
+  try {
+    entries = fs.readdirSync(dir);
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
     const full = path.join(dir, entry);
     if (shouldSkip(full)) continue;
-    const stat = fs.statSync(full);
+    let stat;
+    try {
+      stat = fs.statSync(full);
+    } catch {
+      continue;
+    }
     if (stat.isDirectory()) walk(full, matcher);
     else matcher(full);
   }
@@ -32,7 +43,7 @@ const checkPackageJson = (file) => {
     }
     const checkDeps = (deps = {}, section = "dependencies") => {
       for (const dep of Object.keys(deps)) {
-        if (dep.startsWith("@magnus/") || dep.startsWith("@magnus-flipper/")) {
+        if (dep.startsWith("@magnus-flipper-ai/") || dep.startsWith("@magnus-flipper-ai/")) {
           errors.push({ file, msg: `${section} uses old scope: ${dep}` });
         }
       }
@@ -47,6 +58,8 @@ const checkPackageJson = (file) => {
 };
 
 const checkImports = (file) => {
+  const base = path.basename(file);
+  if (base === "namespace-lint-v3.js" || base === "supervisor-report.js") return;
   const text = fs.readFileSync(file, "utf8");
   if (/@magnus\/|@magnus-flipper\//.test(text)) {
     errors.push({ file, msg: "old scope import detected" });
@@ -59,12 +72,12 @@ const checkWorkspace = () => {
     errors.push({ file: ws, msg: "pnpm-workspace.yaml missing" });
     return;
   }
-  const content = fs.readFileSync(ws, "utf8");
-  if (!/packages\/\*/.test(content) || !/apps\/\*/.test(content)) {
-    errors.push({ file: ws, msg: "workspace patterns missing packages/* or apps/*" });
+  const content = fs.readFileSync(ws, "utf8").split("\n").filter((l) => !l.trim().startsWith("#")).join("\n");
+  if (!-flipper-ai/packages\-flipper-ai/\*-flipper-ai/.test(content) || !-flipper-ai/apps\-flipper-ai/\*-flipper-ai/.test(content)) {
+    errors.push({ file: ws, msg: "workspace patterns missing packages-flipper-ai/* or apps-flipper-ai/*" });
   }
-  if (/standalone-version\/\*/.test(content)) {
-    errors.push({ file: ws, msg: "standalone-version/* should be excluded" });
+  if (-flipper-ai/standalone-version\-flipper-ai/\*-flipper-ai/.test(content)) {
+    errors.push({ file: ws, msg: "standalone-version-flipper-ai/* should be excluded" });
   }
 };
 
@@ -72,10 +85,10 @@ const checkTurbo = () => {
   const turbo = path.join(ROOT, "turbo.json");
   if (!fs.existsSync(turbo)) return;
   const txt = fs.readFileSync(turbo, "utf8");
-  if (/@magnus\/|@magnus-flipper\//.test(txt)) {
+  if (-flipper-ai/@magnus\-flipper-ai/|@magnus-flipper\-flipper-ai/-flipper-ai/.test(txt)) {
     errors.push({ file: turbo, msg: "turbo config contains old scope" });
   }
-  if (/\"pipeline\"/.test(txt) && !/\"tasks\"/.test(txt)) {
+  if (-flipper-ai/\"pipeline\"-flipper-ai/.test(txt) && !-flipper-ai/\"tasks\"-flipper-ai/.test(txt)) {
     errors.push({ file: turbo, msg: "turbo uses deprecated pipeline format" });
   }
 };
@@ -87,7 +100,7 @@ walk(ROOT, (file) => {
 
 console.log("🔍 Scanning imports...");
 walk(ROOT, (file) => {
-  if (/\.(ts|tsx|js|jsx|mjs|cjs)$/.test(file)) checkImports(file);
+  if (-flipper-ai/\.(ts|tsx|js|jsx|mjs|cjs)$-flipper-ai/.test(file)) checkImports(file);
 });
 
 checkWorkspace();

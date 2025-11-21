@@ -15,5 +15,6 @@
     "@magnus-flipper-ai/core": "workspace:*",
     "@magnus-flipper-ai/valuation-engine": "workspace:*",
     "bullmq": "^5.63.2",
-    "pg": "^8.12.0"  }
+    "pg": "^8.12.0"
+  }
 }
