@@ -1,5 +1,5 @@
-import { SDKClient } from "../client.js";
-import { DealsResponse } from "../types.js";
+import { SDKClient } from "../client";
+import { DealsResponse } from "../types";
 
 export class DealsAPI {
   constructor(private client: SDKClient) {}

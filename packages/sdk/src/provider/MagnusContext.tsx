@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useMemo } from "react";
-import { MagnusSDK, SDKClientOptions } from "../index.js";
+import { MagnusSDK } from "../magnus";
+import { SDKClientOptions } from "../client";
 
 type MagnusContextType = { sdk: MagnusSDK };
 
