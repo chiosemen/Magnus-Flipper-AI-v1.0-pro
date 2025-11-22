@@ -1,5 +1,5 @@
 {
-  "name": "@magnus-flipper-ai/core",
+  "name": "@magnus-flipper-ai/shared",
   "version": "1.0.0",
   "private": true,
   "main": "./dist/index.js",
