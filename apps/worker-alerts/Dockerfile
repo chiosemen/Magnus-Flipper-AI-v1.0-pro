@@ -1,5 +1,5 @@
-# apps/worker-crawler/Dockerfile
-# Multi-stage build for production-ready crawler worker
+# apps/worker-alerts/Dockerfile
+# Multi-stage build for production-ready alerts worker
 
 FROM node:20-alpine AS builder
 
@@ -11,23 +11,23 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 
 # Copy package.json files
-COPY apps/worker-crawler/package.json ./apps/worker-crawler/
+COPY apps/worker-alerts/package.json ./apps/worker-alerts/
 COPY apps/api/package.json ./apps/api/
 COPY apps/scheduler/package.json ./apps/scheduler/
+COPY apps/worker-crawler/package.json ./apps/worker-crawler/
 COPY apps/worker-analyzer/package.json ./apps/worker-analyzer/
-COPY apps/worker-alerts/package.json ./apps/worker-alerts/
 COPY apps/bot-telegram/package.json ./apps/bot-telegram/
 COPY packages/*/package.json ./packages/
 
 # Install dependencies
-RUN pnpm install --filter worker-crawler... --frozen-lockfile
+RUN pnpm install --filter worker-alerts... --frozen-lockfile
 
 # Copy source code
-COPY apps/worker-crawler ./apps/worker-crawler
+COPY apps/worker-alerts ./apps/worker-alerts
 COPY packages ./packages
 
 # Build
-RUN pnpm --filter worker-crawler... build
+RUN pnpm --filter worker-alerts... build
 
 # -------- Runtime Stage --------
 FROM node:20-alpine AS runner
@@ -43,17 +43,17 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copy built worker
-COPY --from=builder /app/apps/worker-crawler/dist ./apps/worker-crawler/dist
-COPY --from=builder /app/apps/worker-crawler/package.json ./apps/worker-crawler/package.json
+COPY --from=builder /app/apps/worker-alerts/dist ./apps/worker-alerts/dist
+COPY --from=builder /app/apps/worker-alerts/package.json ./apps/worker-alerts/package.json
 
-# Copy workspace dependencies (includes fb-marketplace-crawler)
+# Copy workspace dependencies (includes notifications)
 COPY --from=builder /app/packages/core ./packages/core
 COPY --from=builder /app/packages/queue ./packages/queue
 COPY --from=builder /app/packages/shared ./packages/shared
-COPY --from=builder /app/packages/fb-marketplace-crawler ./packages/fb-marketplace-crawler
+COPY --from=builder /app/packages/notifications ./packages/notifications
 
 # Install production dependencies only
-RUN pnpm install --filter worker-crawler... --prod --frozen-lockfile
+RUN pnpm install --filter worker-alerts... --prod --frozen-lockfile
 
 # Security: non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -62,13 +62,13 @@ RUN addgroup -g 1001 -S nodejs && \
 
 USER nodejs
 
-# Health check (BullMQ worker process check)
+# Health check
 HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
-  CMD pgrep -f "node.*worker-crawler" > /dev/null || exit 1
+  CMD pgrep -f "node.*worker-alerts" > /dev/null || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "apps/worker-crawler/dist/index.js"]
+CMD ["node", "apps/worker-alerts/dist/index.js"]
 
-LABEL org.opencontainers.image.title="Magnus Flipper AI - Crawler Worker"
-LABEL org.opencontainers.image.description="BullMQ worker for crawling marketplace listings"
+LABEL org.opencontainers.image.title="Magnus Flipper AI - Alerts Worker"
+LABEL org.opencontainers.image.description="BullMQ worker for sending alerts"
 LABEL org.opencontainers.image.version="1.0.0"
