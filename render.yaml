@@ -11,9 +11,9 @@ services:
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
-      pnpm --filter @magnus-flipper-ai/api build
+      cd packages/api && pnpm build
     startCommand: >
-      pnpm --filter @magnus-flipper-ai/api start
+      node packages/api/dist/server.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -53,10 +53,9 @@ services:
     branch: main
     rootDir: .
     buildCommand: >
-      pnpm install --frozen-lockfile &&
-      pnpm --filter @magnus-flipper-ai/scheduler build
+      pnpm install --frozen-lockfile
     startCommand: >
-      pnpm --filter @magnus-flipper-ai/scheduler start
+      node apps/scheduler/src/index.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -85,10 +84,9 @@ services:
     rootDir: .
     buildCommand: >
       pnpm install --frozen-lockfile &&
-      pnpm --filter @magnus-flipper-ai/worker-crawler build &&
-      npx playwright install --with-deps chromium
+      pnpm exec playwright install --with-deps chromium
     startCommand: >
-      pnpm --filter @magnus-flipper-ai/worker-crawler start
+      node apps/worker-crawler/src/index.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -114,10 +112,9 @@ services:
     branch: main
     rootDir: .
     buildCommand: >
-      pnpm install --frozen-lockfile &&
-      pnpm --filter @magnus-flipper-ai/worker-analyzer build
+      pnpm install --frozen-lockfile
     startCommand: >
-      pnpm --filter @magnus-flipper-ai/worker-analyzer start
+      node apps/worker-analyzer/src/index.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -143,10 +140,9 @@ services:
     branch: main
     rootDir: .
     buildCommand: >
-      pnpm install --frozen-lockfile &&
-      pnpm --filter @magnus-flipper-ai/worker-alerts build
+      pnpm install --frozen-lockfile
     startCommand: >
-      pnpm --filter @magnus-flipper-ai/worker-alerts start
+      node apps/worker-alerts/src/index.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -176,10 +172,9 @@ services:
     branch: main
     rootDir: .
     buildCommand: >
-      pnpm install --frozen-lockfile &&
-      pnpm --filter @magnus-flipper-ai/bot-telegram build
+      pnpm install --frozen-lockfile
     startCommand: >
-      node --loader ts-node/esm apps/bot-telegram/src/index.ts
+      cd apps/bot-telegram && pnpm start
     autoDeploy: true
     envVars:
       - key: NODE_ENV
