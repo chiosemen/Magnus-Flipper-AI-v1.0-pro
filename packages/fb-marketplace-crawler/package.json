@@ -11,8 +11,8 @@
     "test": "echo 'Tests not configured'"
   },
   "dependencies": {
-    "@magnus-flipper-ai/shared": "workspace:*",
-    "puppeteer": "^22.0.0"
+    "puppeteer": "^23.10.0",
+    "@magnus-flipper-ai/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
