@@ -1,19 +1,21 @@
 {
   "name": "@magnus-flipper-ai/fb-marketplace-crawler",
   "version": "1.0.0",
-  "main": "src/crawler.js",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "start": "node src/crawler.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "echo 'Lint not configured'",
+    "test": "echo 'Tests not configured'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "Facebook Marketplace crawler for Magnus Flipper AI.",
   "dependencies": {
-    "@magnus-flipper-ai/core": "workspace:*",
-    "playwright": "^1.56.1",
-    "playwright-extra": "^4.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "@magnus-flipper-ai/shared": "workspace:*",
+    "puppeteer": "^21.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0"
   }
 }

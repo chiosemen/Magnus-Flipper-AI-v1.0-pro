@@ -1,20 +1,24 @@
 {
-  "name": "@magnus-flipper-ai/worker-analyzer",
+  "name": "worker-analyzer",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "private": true,
+  "main": "./dist/index.js",
   "scripts": {
-    "build": "echo \"skip build\"",
-    "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "lint": "echo 'Lint not configured'",
+    "test": "echo 'Tests not configured'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "Worker for analyzing listings, diffing, and scoring.",
   "dependencies": {
     "@magnus-flipper-ai/core": "workspace:*",
-    "@magnus-flipper-ai/valuation-engine": "workspace:*",
-    "bullmq": "^5.63.2",
-    "pg": "^8.12.0"
+    "@magnus-flipper-ai/queue": "workspace:*",
+    "@magnus-flipper-ai/shared": "workspace:*",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0",
+    "ts-node-dev": "^2.0.0"
   }
 }
