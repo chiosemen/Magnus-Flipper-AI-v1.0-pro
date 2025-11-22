@@ -1,0 +1,16 @@
+# Render Deployment Trigger
+# This file is used to trigger fresh deployments on Render
+# Last deployment: 2025-11-22T00:00:00Z
+
+DEPLOYMENT_ID=deploy-$(date +%Y%m%d-%H%M%S)
+TRIGGER_REASON="Manual full-stack deployment - all 7 services"
+SERVICES="magnus-flipper-api,magnus-scheduler,magnus-worker-crawler,magnus-worker-analyzer,magnus-worker-alerts,magnus-telegram-bot,magnus-flipper-redis"
+
+# Deployment Notes:
+# - All services configured with autoDeploy: true in render.yaml
+# - Render blueprint configured to watch main branch
+# - This commit will trigger simultaneous deployment of all services
+# - Monitor deployments at: https://dashboard.render.com
+
+echo "Triggering deployment for: $SERVICES"
+echo "Deployment ID: $DEPLOYMENT_ID"
