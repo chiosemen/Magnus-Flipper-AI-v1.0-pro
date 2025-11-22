@@ -253,7 +253,7 @@ importers:
         specifier: ^20.14.2
         version: 20.19.25
       esbuild:
-        specifier: ^0.19.0
+        specifier: ^0.19.12
         version: 0.19.12
       jest:
         specifier: ^29.7.0
@@ -351,7 +351,7 @@ importers:
         specifier: ^18.0.0
         version: 18.3.27
       tsup:
-        specifier: ^8.0.1
+        specifier: ^8.5.1
         version: 8.5.1(typescript@5.9.3)(yaml@2.8.1)
       typescript:
         specifier: ^5.4.0
