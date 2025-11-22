@@ -4,10 +4,10 @@ services:
   # =========================
   - type: web
     name: magnus-flipper-api
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:api
@@ -18,12 +18,12 @@ services:
         value: 10000
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -40,10 +40,10 @@ services:
   # =========================
   - type: worker
     name: magnus-scheduler
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:scheduler
@@ -52,12 +52,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -73,10 +73,10 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-crawler
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-crawler
@@ -85,12 +85,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -106,10 +106,10 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-analyzer
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-analyzer
@@ -118,12 +118,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -139,10 +139,10 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-alerts
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-alerts
@@ -151,12 +151,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -174,10 +174,10 @@ services:
   # =========================
   - type: worker
     name: magnus-telegram-bot
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:bot-telegram
@@ -186,12 +186,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: TELEGRAM_BOT_TOKEN
@@ -200,10 +200,11 @@ services:
         value: info
     autoDeploy: true
 
-databases:
   # =========================
-  # REDIS (Private Service)
+  # REDIS (Managed Key-Value Store)
   # =========================
-  - name: magnus-flipper-redis
+  - type: keyvalue
+    name: magnus-flipper-redis
     plan: free
+    maxmemoryPolicy: allkeys-lru
     ipAllowList: []
