@@ -11,8 +11,8 @@
     "test": "echo 'Tests not configured'"
   },
   "dependencies": {
-    "winston": "^3.11.0",
-    "zod": "^3.22.4"
+    "winston": "^3.18.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
