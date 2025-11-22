@@ -7,7 +7,7 @@ services:
     env: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:api
@@ -43,7 +43,7 @@ services:
     env: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:scheduler
@@ -76,7 +76,7 @@ services:
     env: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-crawler
@@ -109,7 +109,7 @@ services:
     env: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-analyzer
@@ -142,7 +142,7 @@ services:
     env: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-alerts
@@ -177,7 +177,7 @@ services:
     env: node
     plan: free
     buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
+      npm install -g pnpm
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:bot-telegram
