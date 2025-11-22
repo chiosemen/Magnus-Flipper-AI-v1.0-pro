@@ -89801,7 +89801,7 @@ try {
 } catch (error) {
   if (error instanceof external_exports.ZodError) {
     console.error("\u274C Invalid environment variables:");
-    error.errors.forEach((err) => {
+    error.issues.forEach((err) => {
       console.error(`  - ${err.path.join(".")}: ${err.message}`);
     });
     process.exit(1);
@@ -89956,7 +89956,7 @@ function errorHandler(err, req, res, next) {
     return res.status(400).json({
       error: "Validation Error",
       message: "Invalid request data",
-      details: err.errors.map((e) => ({
+      details: err.issues.map((e) => ({
         path: e.path.join("."),
         message: e.message
       }))

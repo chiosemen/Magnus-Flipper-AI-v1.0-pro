@@ -34,7 +34,7 @@ function validateEnv(schema) {
     catch (error) {
         if (error instanceof zod_1.z.ZodError) {
             console.error('❌ Environment validation failed:');
-            console.error(error.errors);
+            console.error(error.issues.map(issue => `  - ${issue.path.join('.')}: ${issue.message}`).join('\n'));
             process.exit(1);
         }
         throw error;
