@@ -1,216 +1,219 @@
 services:
-  # =========================
-  # API SERVICE (HTTP)
-  # =========================
+  # ------------------------------
+  # API SERVICE
+  # ------------------------------
   - type: web
-    name: magnus-flipper-api
-    env: node
-    plan: starter
-    region: oregon
-    buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
-      pnpm install --frozen-lockfile
-      pnpm build
-    startCommand: pnpm start:api
+    name: magnus-api
+    env: docker
+    autoDeploy: true
+    branch: main
+    dockerfilePath: apps/api/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: 4000
+      - key: LOG_LEVEL
+        value: info
       - key: REDIS_HOST
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: port
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-      - key: LOG_LEVEL
-        value: info
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
     healthCheckPath: /health
-    autoDeploy: true
+    plan: starter
+    region: oregon
 
-  # =========================
-  # SCHEDULER WORKER
-  # =========================
+  # ------------------------------
+  # SCHEDULER
+  # ------------------------------
   - type: worker
     name: magnus-scheduler
-    env: node
-    plan: starter
-    region: oregon
-    buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
-      pnpm install --frozen-lockfile
-      pnpm build
-    startCommand: pnpm start:scheduler
+    env: docker
+    autoDeploy: true
+    branch: main
+    dockerfilePath: apps/scheduler/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
+      - key: LOG_LEVEL
+        value: info
       - key: REDIS_HOST
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: port
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-      - key: LOG_LEVEL
-        value: info
-    autoDeploy: true
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+    plan: starter
+    region: oregon
 
-  # =========================
-  # CRAWLER WORKER
-  # =========================
+  # ------------------------------
+  # WORKER: CRAWLER
+  # ------------------------------
   - type: worker
     name: magnus-worker-crawler
-    env: node
-    plan: starter
-    region: oregon
-    buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
-      pnpm install --frozen-lockfile
-      pnpm build
-    startCommand: pnpm start:worker-crawler
+    env: docker
+    autoDeploy: true
+    branch: main
+    dockerfilePath: apps/worker-crawler/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
+      - key: LOG_LEVEL
+        value: info
       - key: REDIS_HOST
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: port
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-      - key: LOG_LEVEL
-        value: info
-    autoDeploy: true
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+    plan: starter
+    region: oregon
 
-  # =========================
-  # ANALYZER WORKER
-  # =========================
+  # ------------------------------
+  # WORKER: ANALYZER
+  # ------------------------------
   - type: worker
     name: magnus-worker-analyzer
-    env: node
-    plan: starter
-    region: oregon
-    buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
-      pnpm install --frozen-lockfile
-      pnpm build
-    startCommand: pnpm start:worker-analyzer
+    env: docker
+    autoDeploy: true
+    branch: main
+    dockerfilePath: apps/worker-analyzer/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
+      - key: LOG_LEVEL
+        value: info
       - key: REDIS_HOST
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: port
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-      - key: LOG_LEVEL
-        value: info
-    autoDeploy: true
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+    plan: starter
+    region: oregon
 
-  # =========================
-  # ALERTS WORKER
-  # =========================
+  # ------------------------------
+  # WORKER: ALERTS
+  # ------------------------------
   - type: worker
     name: magnus-worker-alerts
-    env: node
-    plan: starter
-    region: oregon
-    buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
-      pnpm install --frozen-lockfile
-      pnpm build
-    startCommand: pnpm start:worker-alerts
+    env: docker
+    autoDeploy: true
+    branch: main
+    dockerfilePath: apps/worker-alerts/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
+      - key: LOG_LEVEL
+        value: info
       - key: REDIS_HOST
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: port
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
-      - key: LOG_LEVEL
-        value: info
-    autoDeploy: true
-
-  # =========================
-  # TELEGRAM BOT
-  # =========================
-  - type: worker
-    name: magnus-telegram-bot
-    env: node
+      - key: TELEGRAM_CHAT_ID
+        sync: false
     plan: starter
     region: oregon
-    buildCommand: |
-      export PUPPETEER_SKIP_DOWNLOAD=true
-      pnpm install --frozen-lockfile
-      pnpm build
-    startCommand: pnpm start:bot-telegram
+
+  # ------------------------------
+  # TELEGRAM BOT
+  # ------------------------------
+  - type: worker
+    name: magnus-bot-telegram
+    env: docker
+    autoDeploy: true
+    branch: main
+    dockerfilePath: apps/bot-telegram/Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
+      - key: LOG_LEVEL
+        value: info
       - key: REDIS_HOST
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
-          name: magnus-flipper-redis
+          type: redis
+          name: magnus-redis
           property: port
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
-      - key: LOG_LEVEL
-        value: info
-    autoDeploy: true
-
-databases:
-  # =========================
-  # REDIS (Private Service)
-  # =========================
-  - name: magnus-flipper-redis
+      - key: TELEGRAM_CHAT_ID
+        sync: false
     plan: starter
+    region: oregon
+
+# ------------------------------
+# REDIS INSTANCE
+# ------------------------------
+databases:
+  - name: magnus-redis
+    databaseName: redis
+    plan: free
     region: oregon
     ipAllowList: []
