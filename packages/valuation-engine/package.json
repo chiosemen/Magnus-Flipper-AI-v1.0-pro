@@ -8,5 +8,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Valuation and scoring engine for Magnus Flipper AI."
+  "description": "Valuation and scoring engine for Magnus Flipper AI.",
+  "packageManager": "pnpm@9.15.4"
 }

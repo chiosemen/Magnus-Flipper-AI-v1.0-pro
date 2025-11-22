@@ -11,5 +11,6 @@
   "description": "Sniper engine for detecting new listings and price drops.",
   "dependencies": {
     "crypto": "^1.0.1"
-  }
+  },
+  "packageManager": "pnpm@9.15.4"
 }
