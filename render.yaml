@@ -41,7 +41,7 @@ services:
   - type: worker
     name: magnus-scheduler
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: |
       npm install -g pnpm
       pnpm install --frozen-lockfile
@@ -74,7 +74,7 @@ services:
   - type: worker
     name: magnus-worker-crawler
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: |
       npm install -g pnpm
       pnpm install --frozen-lockfile
@@ -107,7 +107,7 @@ services:
   - type: worker
     name: magnus-worker-analyzer
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: |
       npm install -g pnpm
       pnpm install --frozen-lockfile
@@ -140,7 +140,7 @@ services:
   - type: worker
     name: magnus-worker-alerts
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: |
       npm install -g pnpm
       pnpm install --frozen-lockfile
@@ -175,7 +175,7 @@ services:
   - type: worker
     name: magnus-telegram-bot
     runtime: node
-    plan: free
+    plan: starter
     buildCommand: |
       npm install -g pnpm
       pnpm install --frozen-lockfile
