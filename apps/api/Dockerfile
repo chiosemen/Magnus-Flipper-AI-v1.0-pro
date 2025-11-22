@@ -6,7 +6,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Enable pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 # Copy dependency manifests first (better layer caching)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
@@ -18,7 +18,11 @@ COPY apps/worker-crawler/package.json ./apps/worker-crawler/
 COPY apps/worker-analyzer/package.json ./apps/worker-analyzer/
 COPY apps/worker-alerts/package.json ./apps/worker-alerts/
 COPY apps/bot-telegram/package.json ./apps/bot-telegram/
-COPY packages/*/package.json ./packages/
+COPY packages/core/package.json ./packages/core/
+COPY packages/queue/package.json ./packages/queue/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/notifications/package.json ./packages/notifications/
+COPY packages/fb-marketplace-crawler/package.json ./packages/fb-marketplace-crawler/
 
 # Install dependencies (cached layer if package.json unchanged)
 RUN pnpm install --filter api... --frozen-lockfile
@@ -41,7 +45,7 @@ ENV NODE_ENV=production
 RUN apk add --no-cache dumb-init
 
 # Enable pnpm for runtime
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 # Copy root workspace config
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
