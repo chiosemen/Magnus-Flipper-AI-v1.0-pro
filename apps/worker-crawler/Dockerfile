@@ -5,7 +5,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 # Copy dependency manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
@@ -17,7 +17,11 @@ COPY apps/scheduler/package.json ./apps/scheduler/
 COPY apps/worker-analyzer/package.json ./apps/worker-analyzer/
 COPY apps/worker-alerts/package.json ./apps/worker-alerts/
 COPY apps/bot-telegram/package.json ./apps/bot-telegram/
-COPY packages/*/package.json ./packages/
+COPY packages/core/package.json ./packages/core/
+COPY packages/queue/package.json ./packages/queue/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/notifications/package.json ./packages/notifications/
+COPY packages/fb-marketplace-crawler/package.json ./packages/fb-marketplace-crawler/
 
 # Install dependencies
 RUN pnpm install --filter worker-crawler... --frozen-lockfile
@@ -50,7 +54,7 @@ RUN apk add --no-cache \
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 # Copy workspace config
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
