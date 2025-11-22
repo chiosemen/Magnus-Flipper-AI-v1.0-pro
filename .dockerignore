@@ -1,8 +1,62 @@
+# Dependencies
 node_modules
+**/node_modules
+
+# Build outputs
 dist
+**/dist
+build
+**/build
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment files (exclude from build context for security)
+.env
+.env.*
+!.env.example
+
+# Git
 .git
 .gitignore
-Dockerfile
-logs
-*.log
+.github
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (keep README for reference)
+*.md
+!README.md
+
+# CI/CD
+.circleci
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Misc
+tmp
+temp
 .cache

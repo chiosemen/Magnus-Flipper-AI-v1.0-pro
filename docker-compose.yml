@@ -1,59 +1,215 @@
-version: '3.8'
+# docker-compose.yml
+# Production-ready orchestration for Magnus Flipper AI
 
 services:
-  # Redis for BullMQ queues
+  # Redis - Message queue and cache
   redis:
     image: redis:7-alpine
+    container_name: magnus-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      interval: 10s
       timeout: 3s
-      retries: 5
+      retries: 3
+      start_period: 10s
+    networks:
+      - magnus-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
 
-  # PostgreSQL (optional - for local dev without Supabase)
-  postgres:
-    image: postgres:16-alpine
+  # API - REST API service
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: magnus-api
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: magnus_flipper
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 4000
+      NODE_ENV: production
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - "4000:4000"
+    restart: unless-stopped
+    networks:
+      - magnus-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
-  # Crawler Worker (with Playwright)
+  # Scheduler - Cron job scheduler
+  scheduler:
+    build:
+      context: .
+      dockerfile: apps/scheduler/Dockerfile
+    container_name: magnus-scheduler
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: production
+    restart: unless-stopped
+    networks:
+      - magnus-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # Worker: Crawler
   worker-crawler:
     build:
       context: .
       dockerfile: apps/worker-crawler/Dockerfile
-    environment:
-      NODE_ENV: production
-      REDIS_URL: redis://redis:6379
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    container_name: magnus-worker-crawler
     depends_on:
       redis:
         condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: production
     restart: unless-stopped
+    networks:
+      - magnus-network
     deploy:
-      replicas: 2
       resources:
         limits:
+          cpus: '1.0'
           memory: 1G
         reservations:
-          memory: 512M
+          cpus: '0.25'
+          memory: 256M
+      replicas: 1  # Can scale up with: docker-compose up --scale worker-crawler=3
 
+  # Worker: Analyzer
+  worker-analyzer:
+    build:
+      context: .
+      dockerfile: apps/worker-analyzer/Dockerfile
+    container_name: magnus-worker-analyzer
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: production
+    restart: unless-stopped
+    networks:
+      - magnus-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Worker: Alerts
+  worker-alerts:
+    build:
+      context: .
+      dockerfile: apps/worker-alerts/Dockerfile
+    container_name: magnus-worker-alerts
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: production
+    restart: unless-stopped
+    networks:
+      - magnus-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # Bot: Telegram
+  bot-telegram:
+    build:
+      context: .
+      dockerfile: apps/bot-telegram/Dockerfile
+    container_name: magnus-telegram-bot
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: production
+      # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID from .env
+    restart: unless-stopped
+    networks:
+      - magnus-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+# Named volumes for data persistence
 volumes:
   redis-data:
-  postgres-data:
+    driver: local
+
+# Custom network for service isolation
+networks:
+  magnus-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
