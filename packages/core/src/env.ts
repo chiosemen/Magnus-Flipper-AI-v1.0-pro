@@ -34,7 +34,7 @@ export function validateEnv<T extends z.ZodTypeAny>(schema: T): z.infer<T> {
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Environment validation failed:');
-      console.error(error.errors);
+      console.error(error.issues.map(issue => `  - ${issue.path.join('.')}: ${issue.message}`).join('\n'));
       process.exit(1);
     }
     throw error;

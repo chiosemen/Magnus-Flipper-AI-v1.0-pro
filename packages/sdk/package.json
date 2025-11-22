@@ -24,15 +24,15 @@
     "prepare": "pnpm run build"
   },
   "dependencies": {
-    "zod": "^3.23.0",
-    "axios": "^1.6.8"
+    "axios": "^1.6.8",
+    "zod": "^3.23.0"
   },
   "peerDependencies": {
     "react": "^18.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.0",
-    "tsup": "^8.0.1",
+    "tsup": "^8.5.1",
     "typescript": "^5.4.0"
   },
   "packageManager": "pnpm@9.15.4"
