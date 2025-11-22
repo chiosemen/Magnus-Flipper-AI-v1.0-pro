@@ -8,7 +8,7 @@ import json
 import sys
 from typing import Dict, List, Any
 
-API_KEY = "rnd_gYgyw9Ehi49ltN2NsOsveJIdrE68"
+API_KEY = "rnd_SPiLDcIxGZuzNimpKeFZXzL9UF3C"
 BASE_URL = "https://api.render.com/v1"
 
 headers = {
