@@ -1,5 +1,5 @@
 {
-  "name": "@magnus-flipper-ai/fb-marketplace-crawler",
+  "name": "@magnus-flipper-ai/crawler-fb-marketplace-playwright",
   "version": "1.0.0",
   "main": "src/crawler.js",
   "scripts": {
