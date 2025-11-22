@@ -4,63 +4,75 @@ services:
   # =========================
   - type: web
     name: magnus-flipper-api
-    env: node
+    runtime: node
     region: frankfurt
+    branch: main
+    rootDir: .
     plan: starter
-    buildCommand: >
-      pnpm install --frozen-lockfile &&
-      cd packages/api && pnpm build
-    startCommand: >
-      node packages/api/dist/server.js
+    buildCommand: |
+      cd packages/api
+      pnpm install --frozen-lockfile
+      pnpm build
+    startCommand: |
+      node dist/server.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "3001"
+
+      # Supabase
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE
         sync: false
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: magnus-flipper-redis
-          property: connectionString
+
+      # Stripe
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
+
+      # Internal
       - key: MAGNUS_API_KEY
         sync: false
       - key: NEXT_PUBLIC_API_URL
         value: https://magnus-flipper-api.onrender.com
 
-  # =========================
-  # WORKER: SCHEDULER
-  # =========================
-  - type: worker
-    name: magnus-scheduler
-    env: node
-    region: frankfurt
-    plan: starter
-    buildCommand: >
-      pnpm install --frozen-lockfile
-    startCommand: >
-      node apps/scheduler/src/index.js
-    autoDeploy: true
-    envVars:
-      - key: NODE_ENV
-        value: production
+      # Redis
       - key: REDIS_URL
         fromService:
           type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
+
+  # =========================
+  # SCHEDULER WORKER
+  # =========================
+  - type: worker
+    name: magnus-scheduler
+    runtime: node
+    region: frankfurt
+    branch: main
+    rootDir: .
+    plan: starter
+    buildCommand: "echo 'no build step'"
+    startCommand: |
+      node apps/scheduler/src/index.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: magnus-flipper-redis
+          property: connectionString
+
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE
@@ -69,83 +81,95 @@ services:
         sync: false
 
   # =========================
-  # WORKER: CRAWLER
+  # CRAWLER WORKER (Playwright)
   # =========================
   - type: worker
     name: magnus-worker-crawler
-    env: node
+    runtime: node
     region: frankfurt
+    branch: main
+    rootDir: .
     plan: starter
-    buildCommand: >
-      pnpm install --frozen-lockfile &&
-      pnpm exec playwright install --with-deps chromium
-    startCommand: >
-      node apps/worker-crawler/src/index.js
+    buildCommand: |
+      cd apps/worker-crawler
+      pnpm install --frozen-lockfile
+      npx playwright install chromium
+    startCommand: |
+      node src/index.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: REDIS_URL
         fromService:
           type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
+
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE
         sync: false
 
   # =========================
-  # WORKER: ANALYZER
+  # ANALYZER WORKER
   # =========================
   - type: worker
     name: magnus-worker-analyzer
-    env: node
+    runtime: node
     region: frankfurt
+    branch: main
+    rootDir: .
     plan: starter
-    buildCommand: >
-      pnpm install --frozen-lockfile
-    startCommand: >
+    buildCommand: "echo 'no build step'"
+    startCommand: |
       node apps/worker-analyzer/src/index.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: REDIS_URL
         fromService:
           type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
+
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE
         sync: false
 
   # =========================
-  # WORKER: ALERTS
+  # ALERTS WORKER
   # =========================
   - type: worker
     name: magnus-worker-alerts
-    env: node
+    runtime: node
     region: frankfurt
+    branch: main
+    rootDir: .
     plan: starter
-    buildCommand: >
-      pnpm install --frozen-lockfile
-    startCommand: >
+    buildCommand: "echo 'no build step'"
+    startCommand: |
       node apps/worker-alerts/src/index.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: REDIS_URL
         fromService:
           type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
+
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE
         sync: false
+
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: MAGNUS_API_KEY
@@ -156,31 +180,37 @@ services:
   # =========================
   - type: worker
     name: magnus-telegram-bot
-    env: node
+    runtime: node
     region: frankfurt
+    branch: main
+    rootDir: .
     plan: starter
-    buildCommand: >
+    buildCommand: |
+      cd apps/bot-telegram
       pnpm install --frozen-lockfile
-    startCommand: >
-      cd apps/bot-telegram && pnpm start
+    startCommand: |
+      pnpm start
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: TELEGRAM_BOT_TOKEN
         sync: false
+
       - key: REDIS_URL
         fromService:
           type: keyvalue
           name: magnus-flipper-redis
           property: connectionString
+
       - key: MAGNUS_API_URL
         value: https://magnus-flipper-api.onrender.com
       - key: MAGNUS_API_KEY
         sync: false
 
   # =========================
-  # REDIS INSTANCE
+  # REDIS KEY-VALUE STORE
   # =========================
   - type: keyvalue
     name: magnus-flipper-redis
@@ -190,10 +220,3 @@ services:
     ipAllowList:
       - source: 0.0.0.0/0
         description: Allow all IPs
-
-databases:
-  - name: magnus-flipper-db
-    plan: starter
-    region: frankfurt
-    databaseName: magnus_flipper
-    user: magnus_flipper_user
