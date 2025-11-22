@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "lint": "echo 'Lint not configured'",
+    "test": "echo 'Tests not configured'"
+  },
+  "dependencies": {
+    "@magnus-flipper-ai/core": "workspace:*",
+    "@magnus-flipper-ai/queue": "workspace:*",
+    "@magnus-flipper-ai/shared": "workspace:*",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0",
+    "ts-node-dev": "^2.0.0"
+  }
+}
