@@ -4,7 +4,7 @@ services:
   # =========================
   - type: web
     name: magnus-flipper-api
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
       npm install -g pnpm
@@ -18,12 +18,12 @@ services:
         value: 10000
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -40,7 +40,7 @@ services:
   # =========================
   - type: worker
     name: magnus-scheduler
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
       npm install -g pnpm
@@ -52,12 +52,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -73,7 +73,7 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-crawler
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
       npm install -g pnpm
@@ -85,12 +85,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -106,7 +106,7 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-analyzer
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
       npm install -g pnpm
@@ -118,12 +118,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -139,7 +139,7 @@ services:
   # =========================
   - type: worker
     name: magnus-worker-alerts
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
       npm install -g pnpm
@@ -151,12 +151,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: SUPABASE_URL
@@ -174,7 +174,7 @@ services:
   # =========================
   - type: worker
     name: magnus-telegram-bot
-    env: node
+    runtime: node
     plan: free
     buildCommand: |
       npm install -g pnpm
@@ -186,12 +186,12 @@ services:
         value: production
       - key: REDIS_HOST
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: host
       - key: REDIS_PORT
         fromService:
-          type: pserv
+          type: keyvalue
           name: magnus-flipper-redis
           property: port
       - key: TELEGRAM_BOT_TOKEN
@@ -201,15 +201,10 @@ services:
     autoDeploy: true
 
   # =========================
-  # REDIS (Private Service)
+  # REDIS (Managed Key-Value Store)
   # =========================
-  - type: pserv
+  - type: keyvalue
     name: magnus-flipper-redis
-    env: docker
     plan: free
-    image:
-      url: redis:7-alpine
-    disk:
-      name: redis-data
-      mountPath: /data
-      sizeGB: 1
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
