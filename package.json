@@ -1,44 +1,29 @@
 {
-  "name": "@magnus-flipper-ai/monorepo",
+  "name": "magnus-flipper-ai",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@10.20.0",
-  "description": "Magnus Flipper AI - Monorepo for API, Web, and Mobile applications",
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
-  },
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "lint": "turbo run lint",
-    "clean": "turbo run clean",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "lint:namespaces": "node scripts/namespace-lint.js",
-    "precommit:namespaces": "node scripts/namespace-lint.js"
+    "build": "pnpm -r --filter './packages/*' build && pnpm -r --filter './apps/*' build",
+    "dev:api": "pnpm --filter api dev",
+    "dev:scheduler": "pnpm --filter scheduler dev",
+    "dev:worker-crawler": "pnpm --filter worker-crawler dev",
+    "dev:worker-analyzer": "pnpm --filter worker-analyzer dev",
+    "dev:worker-alerts": "pnpm --filter worker-alerts dev",
+    "dev:bot-telegram": "pnpm --filter bot-telegram dev",
+    "start:api": "pnpm --filter api start",
+    "start:scheduler": "pnpm --filter scheduler start",
+    "start:worker-crawler": "pnpm --filter worker-crawler start",
+    "start:worker-analyzer": "pnpm --filter worker-analyzer start",
+    "start:worker-alerts": "pnpm --filter worker-alerts start",
+    "start:bot-telegram": "pnpm --filter bot-telegram start",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "deploy:check": "bash scripts/deploy-check.sh"
   },
   "devDependencies": {
-    "turbo": "^2.6.0"
-  },
-  "workspaces": [
-    "api",
-    "web",
-    "mobile",
-    "packages/*"
-  ],
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "bullmq": "^5.63.2",
-    "expo": "~52.0.47",
-    "react": "18.3.1",
-    "react-native": "0.76.9"
-  },
-  "pnpm": {
-    "overrides": {}
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0",
+    "ts-node-dev": "^2.0.0"
   }
 }

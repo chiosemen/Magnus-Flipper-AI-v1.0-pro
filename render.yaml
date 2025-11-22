@@ -4,219 +4,213 @@ services:
   # =========================
   - type: web
     name: magnus-flipper-api
-    runtime: node
-    region: frankfurt
-    branch: main
-    rootDir: .
+    env: node
     plan: starter
+    region: oregon
     buildCommand: |
-      cd packages/api
+      export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
       pnpm build
-    startCommand: |
-      node packages/api/dist/server.js
-    autoDeploy: true
+    startCommand: pnpm start:api
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: "3001"
-
-      # Supabase
+        value: 10000
+      - key: REDIS_HOST
+        fromService:
+          type: pserv
+          name: magnus-flipper-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: pserv
+          name: magnus-flipper-redis
+          property: port
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-      - key: SUPABASE_SERVICE_ROLE
-        sync: false
-
-      # Stripe
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-
-      # Internal
-      - key: MAGNUS_API_KEY
-        sync: false
-      - key: NEXT_PUBLIC_API_URL
-        value: https://magnus-flipper-api.onrender.com
-
-      # Redis
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: magnus-flipper-redis
-          property: connectionString
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+    autoDeploy: true
 
   # =========================
   # SCHEDULER WORKER
   # =========================
   - type: worker
     name: magnus-scheduler
-    runtime: node
-    region: frankfurt
-    branch: main
-    rootDir: .
+    env: node
     plan: starter
-    buildCommand: "echo 'no build step'"
-    startCommand: |
-      node apps/scheduler/src/index.js
-    autoDeploy: true
+    region: oregon
+    buildCommand: |
+      export PUPPETEER_SKIP_DOWNLOAD=true
+      pnpm install --frozen-lockfile
+      pnpm build
+    startCommand: pnpm start:scheduler
     envVars:
       - key: NODE_ENV
         value: production
-
-      - key: REDIS_URL
+      - key: REDIS_HOST
         fromService:
-          type: keyvalue
+          type: pserv
           name: magnus-flipper-redis
-          property: connectionString
-
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: pserv
+          name: magnus-flipper-redis
+          property: port
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_SERVICE_ROLE
+      - key: SUPABASE_ANON_KEY
         sync: false
-      - key: MAGNUS_API_KEY
-        sync: false
+      - key: LOG_LEVEL
+        value: info
+    autoDeploy: true
 
   # =========================
-  # CRAWLER WORKER (Playwright)
+  # CRAWLER WORKER
   # =========================
   - type: worker
     name: magnus-worker-crawler
-    runtime: node
-    region: frankfurt
-    branch: main
-    rootDir: .
+    env: node
     plan: starter
+    region: oregon
     buildCommand: |
-      cd apps/worker-crawler
+      export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
-      npx playwright install chromium
-    startCommand: |
-      node apps/worker-crawler/src/index.js
-    autoDeploy: true
+      pnpm build
+    startCommand: pnpm start:worker-crawler
     envVars:
       - key: NODE_ENV
         value: production
-
-      - key: REDIS_URL
+      - key: REDIS_HOST
         fromService:
-          type: keyvalue
+          type: pserv
           name: magnus-flipper-redis
-          property: connectionString
-
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: pserv
+          name: magnus-flipper-redis
+          property: port
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_SERVICE_ROLE
+      - key: SUPABASE_ANON_KEY
         sync: false
+      - key: LOG_LEVEL
+        value: info
+    autoDeploy: true
 
   # =========================
   # ANALYZER WORKER
   # =========================
   - type: worker
     name: magnus-worker-analyzer
-    runtime: node
-    region: frankfurt
-    branch: main
-    rootDir: .
+    env: node
     plan: starter
-    buildCommand: "echo 'no build step'"
-    startCommand: |
-      node apps/worker-analyzer/src/index.js
-    autoDeploy: true
+    region: oregon
+    buildCommand: |
+      export PUPPETEER_SKIP_DOWNLOAD=true
+      pnpm install --frozen-lockfile
+      pnpm build
+    startCommand: pnpm start:worker-analyzer
     envVars:
       - key: NODE_ENV
         value: production
-
-      - key: REDIS_URL
+      - key: REDIS_HOST
         fromService:
-          type: keyvalue
+          type: pserv
           name: magnus-flipper-redis
-          property: connectionString
-
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: pserv
+          name: magnus-flipper-redis
+          property: port
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_SERVICE_ROLE
+      - key: SUPABASE_ANON_KEY
         sync: false
+      - key: LOG_LEVEL
+        value: info
+    autoDeploy: true
 
   # =========================
   # ALERTS WORKER
   # =========================
   - type: worker
     name: magnus-worker-alerts
-    runtime: node
-    region: frankfurt
-    branch: main
-    rootDir: .
+    env: node
     plan: starter
-    buildCommand: "echo 'no build step'"
-    startCommand: |
-      node apps/worker-alerts/src/index.js
-    autoDeploy: true
+    region: oregon
+    buildCommand: |
+      export PUPPETEER_SKIP_DOWNLOAD=true
+      pnpm install --frozen-lockfile
+      pnpm build
+    startCommand: pnpm start:worker-alerts
     envVars:
       - key: NODE_ENV
         value: production
-
-      - key: REDIS_URL
+      - key: REDIS_HOST
         fromService:
-          type: keyvalue
+          type: pserv
           name: magnus-flipper-redis
-          property: connectionString
-
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: pserv
+          name: magnus-flipper-redis
+          property: port
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_SERVICE_ROLE
+      - key: SUPABASE_ANON_KEY
         sync: false
-
       - key: TELEGRAM_BOT_TOKEN
         sync: false
-      - key: MAGNUS_API_KEY
-        sync: false
+      - key: LOG_LEVEL
+        value: info
+    autoDeploy: true
 
   # =========================
   # TELEGRAM BOT
   # =========================
   - type: worker
     name: magnus-telegram-bot
-    runtime: node
-    region: frankfurt
-    branch: main
-    rootDir: .
+    env: node
     plan: starter
+    region: oregon
     buildCommand: |
-      cd apps/bot-telegram
+      export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
-    startCommand: |
-      cd apps/bot-telegram && pnpm start
-    autoDeploy: true
+      pnpm build
+    startCommand: pnpm start:bot-telegram
     envVars:
       - key: NODE_ENV
         value: production
-
+      - key: REDIS_HOST
+        fromService:
+          type: pserv
+          name: magnus-flipper-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: pserv
+          name: magnus-flipper-redis
+          property: port
       - key: TELEGRAM_BOT_TOKEN
         sync: false
+      - key: LOG_LEVEL
+        value: info
+    autoDeploy: true
 
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: magnus-flipper-redis
-          property: connectionString
-
-      - key: MAGNUS_API_URL
-        value: https://magnus-flipper-api.onrender.com
-      - key: MAGNUS_API_KEY
-        sync: false
-
+databases:
   # =========================
-  # REDIS KEY-VALUE STORE
+  # REDIS (Private Service)
   # =========================
-  - type: keyvalue
-    name: magnus-flipper-redis
+  - name: magnus-flipper-redis
     plan: starter
-    region: frankfurt
-    maxmemoryPolicy: allkeys-lru
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: Allow all IPs
+    region: oregon
+    ipAllowList: []
