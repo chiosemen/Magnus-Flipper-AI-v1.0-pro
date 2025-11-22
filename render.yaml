@@ -1,13 +1,13 @@
 services:
   # =========================
-  # API SERVICE (HTTP)
+  # API SERVICE (HTTP) - AUTO-DEPLOY ENABLED (Client-facing)
   # =========================
   - type: web
     name: magnus-flipper-api
     runtime: node
     plan: free
     buildCommand: |
-      npm install -g pnpm
+      npm install -g pnpm@9.15.4
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:api
@@ -36,14 +36,14 @@ services:
     autoDeploy: true
 
   # =========================
-  # SCHEDULER WORKER
+  # SCHEDULER WORKER - MANUAL DEPLOY (Conserve build minutes)
   # =========================
   - type: worker
     name: magnus-scheduler
     runtime: node
     plan: starter
     buildCommand: |
-      npm install -g pnpm
+      npm install -g pnpm@9.15.4
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:scheduler
@@ -66,17 +66,17 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: info
-    autoDeploy: true
+    autoDeploy: false
 
   # =========================
-  # CRAWLER WORKER
+  # CRAWLER WORKER - MANUAL DEPLOY (Conserve build minutes)
   # =========================
   - type: worker
     name: magnus-worker-crawler
     runtime: node
     plan: starter
     buildCommand: |
-      npm install -g pnpm
+      npm install -g pnpm@9.15.4
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-crawler
@@ -99,17 +99,17 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: info
-    autoDeploy: true
+    autoDeploy: false
 
   # =========================
-  # ANALYZER WORKER
+  # ANALYZER WORKER - MANUAL DEPLOY (Conserve build minutes)
   # =========================
   - type: worker
     name: magnus-worker-analyzer
     runtime: node
     plan: starter
     buildCommand: |
-      npm install -g pnpm
+      npm install -g pnpm@9.15.4
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-analyzer
@@ -132,17 +132,17 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: info
-    autoDeploy: true
+    autoDeploy: false
 
   # =========================
-  # ALERTS WORKER
+  # ALERTS WORKER - MANUAL DEPLOY (Conserve build minutes)
   # =========================
   - type: worker
     name: magnus-worker-alerts
     runtime: node
     plan: starter
     buildCommand: |
-      npm install -g pnpm
+      npm install -g pnpm@9.15.4
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:worker-alerts
@@ -167,17 +167,17 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: info
-    autoDeploy: true
+    autoDeploy: false
 
   # =========================
-  # TELEGRAM BOT
+  # TELEGRAM BOT - MANUAL DEPLOY (Conserve build minutes)
   # =========================
   - type: worker
     name: magnus-telegram-bot
     runtime: node
     plan: starter
     buildCommand: |
-      npm install -g pnpm
+      npm install -g pnpm@9.15.4
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: pnpm start:bot-telegram
@@ -198,7 +198,7 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: info
-    autoDeploy: true
+    autoDeploy: false
 
   # =========================
   # REDIS (Managed Key-Value Store)
