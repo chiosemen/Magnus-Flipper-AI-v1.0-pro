@@ -200,10 +200,16 @@ services:
         value: info
     autoDeploy: true
 
-databases:
   # =========================
   # REDIS (Private Service)
   # =========================
-  - name: magnus-flipper-redis
+  - type: pserv
+    name: magnus-flipper-redis
+    env: docker
     plan: free
-    ipAllowList: []
+    image:
+      url: redis:7-alpine
+    disk:
+      name: redis-data
+      mountPath: /data
+      sizeGB: 1
