@@ -86,7 +86,7 @@ services:
     buildCommand: >
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/worker-crawler build &&
-      npx playwright install --with-deps chromium
+      npx playwright install chromium
     startCommand: >
       pnpm --filter @magnus-flipper-ai/worker-crawler start
     autoDeploy: true
@@ -179,7 +179,7 @@ services:
       pnpm install --frozen-lockfile &&
       pnpm --filter @magnus-flipper-ai/bot-telegram build
     startCommand: >
-      node --loader ts-node/esm apps/bot-telegram/src/index.ts
+      pnpm --filter @magnus-flipper-ai/bot-telegram start
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -207,10 +207,3 @@ services:
     ipAllowList:
       - source: 0.0.0.0/0
         description: Allow all
-
-databases:
-  - name: magnus-flipper-db
-    plan: basic-256mb
-    region: frankfurt
-    databaseName: magnus_flipper
-    user: magnus_flipper_user
