@@ -5,7 +5,7 @@ services:
   - type: web
     name: magnus-flipper-api
     env: node
-    plan: starter
+    plan: free
     buildCommand: |
       export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
@@ -41,7 +41,7 @@ services:
   - type: worker
     name: magnus-scheduler
     env: node
-    plan: starter
+    plan: free
     buildCommand: |
       export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
@@ -74,7 +74,7 @@ services:
   - type: worker
     name: magnus-worker-crawler
     env: node
-    plan: starter
+    plan: free
     buildCommand: |
       export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
@@ -107,7 +107,7 @@ services:
   - type: worker
     name: magnus-worker-analyzer
     env: node
-    plan: starter
+    plan: free
     buildCommand: |
       export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
@@ -140,7 +140,7 @@ services:
   - type: worker
     name: magnus-worker-alerts
     env: node
-    plan: starter
+    plan: free
     buildCommand: |
       export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
@@ -175,7 +175,7 @@ services:
   - type: worker
     name: magnus-telegram-bot
     env: node
-    plan: starter
+    plan: free
     buildCommand: |
       export PUPPETEER_SKIP_DOWNLOAD=true
       pnpm install --frozen-lockfile
