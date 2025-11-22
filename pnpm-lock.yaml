@@ -7,6 +7,16 @@ settings:
 importers:
 
   .:
+    dependencies:
+      bullmq:
+        specifier: ^5
+        version: 5.64.1
+      winston:
+        specifier: ^3
+        version: 3.18.3
+      zod:
+        specifier: ^3
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^20.11.0
@@ -271,10 +281,10 @@ importers:
   packages/core:
     dependencies:
       winston:
-        specifier: ^3.11.0
+        specifier: ^3.18.3
         version: 3.18.3
       zod:
-        specifier: ^3.22.4
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -325,7 +335,7 @@ importers:
   packages/queue:
     dependencies:
       bullmq:
-        specifier: ^5.63.2
+        specifier: ^5.64.1
         version: 5.64.1
     devDependencies:
       '@types/node':
