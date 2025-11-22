@@ -1,15 +1,21 @@
 {
   "name": "@magnus-flipper-ai/core",
   "version": "1.0.0",
-  "main": "src/queue.js",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "lint": "echo 'Lint not configured'",
+    "test": "echo 'Tests not configured'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "Shared types, utils, and queue configurations for Magnus Flipper AI.",
   "dependencies": {
-    "bullmq": "^5.63.2"
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0"
   }
 }
