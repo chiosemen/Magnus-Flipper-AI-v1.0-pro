@@ -14,7 +14,7 @@ services:
       pnpm install --frozen-lockfile
       pnpm build
     startCommand: |
-      node dist/server.js
+      node packages/api/dist/server.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -95,7 +95,7 @@ services:
       pnpm install --frozen-lockfile
       npx playwright install chromium
     startCommand: |
-      node src/index.js
+      node apps/worker-crawler/src/index.js
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -189,7 +189,7 @@ services:
       cd apps/bot-telegram
       pnpm install --frozen-lockfile
     startCommand: |
-      pnpm start
+      cd apps/bot-telegram && pnpm start
     autoDeploy: true
     envVars:
       - key: NODE_ENV
