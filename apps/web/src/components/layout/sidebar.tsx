@@ -2,26 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Bell,
-  Activity,
-  Clock,
-  Database,
-  Cpu,
-  TrendingUp,
-} from 'lucide-react'
+import { LayoutDashboard, Bell, ShieldCheck, Settings, Target, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Marketplace', href: '/marketplace', icon: ShoppingCart },
+  { name: 'Saved Searches', href: '/saved-searches', icon: Target },
+  { name: 'Results', href: '/results', icon: Sparkles },
   { name: 'Alerts', href: '/alerts', icon: Bell },
-  { name: 'Crawler Status', href: '/crawler', icon: Activity },
-  { name: 'Scheduler', href: '/scheduler', icon: Clock },
-  { name: 'Redis Queue', href: '/queue', icon: Database },
-  { name: 'System Health', href: '/health', icon: Cpu },
+  { name: 'Plan', href: '/plan', icon: ShieldCheck },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 export function Sidebar() {

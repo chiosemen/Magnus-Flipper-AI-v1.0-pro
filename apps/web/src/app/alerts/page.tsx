@@ -1,36 +1,22 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useAPI } from '@/hooks/use-api'
-import { mockAlerts } from '@/lib/mock-data'
-import { Bell, AlertCircle, TrendingUp, ShoppingBag, CheckCircle } from 'lucide-react'
+import { useAlerts } from '@/hooks/use-app-api'
+import { Bell, CheckCircle, Link2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-
-const priorityIcons = {
-  high: AlertCircle,
-  medium: TrendingUp,
-  low: ShoppingBag,
-}
-
-const priorityColors = {
-  high: 'destructive',
-  medium: 'warning',
-  low: 'secondary',
-}
+import Link from 'next/link'
 
 export default function AlertsPage() {
-  const { data: alerts, isUsingFallback } = useAPI('/api/alerts', {
-    fallbackData: mockAlerts,
-    refreshInterval: 10000,
-  })
+  const { alerts, stats, isLoading } = useAlerts()
+  const [showUnread, setShowUnread] = useState(false)
 
-  const unreadCount = alerts?.filter((a: any) => !a.read).length || 0
+  const filteredAlerts = showUnread ? alerts.filter((a) => !a.notified) : alerts
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -38,90 +24,57 @@ export default function AlertsPage() {
             Alert Center
           </h1>
           <p className="text-muted-foreground">
-            Stay on top of high-value opportunities and price changes
+            Pulled from /api/alerts/recent with Supabase JWT auth header.
           </p>
         </div>
         <div className="flex items-center gap-4">
-          {isUsingFallback && <Badge variant="warning">Using Mock Data</Badge>}
-          <Badge variant="neon" className="text-base px-4 py-2">
-            {unreadCount} Unread
-          </Badge>
+          <Badge variant="secondary">{stats?.unread ?? 0} unread</Badge>
+          <Button variant="outline" onClick={() => setShowUnread((v) => !v)}>
+            {showUnread ? 'Show all' : 'Show unread'}
+          </Button>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex gap-4">
-            <Button variant="default">
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Mark All as Read
-            </Button>
-            <Button variant="outline">Configure Alerts</Button>
-          </div>
+      <Card className="neon-glow-hover">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Recent alerts</CardTitle>
+          <Button variant="outline" size="sm">
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Mark all read
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoading && <p className="text-sm text-muted-foreground">Loading alerts...</p>}
+          {!isLoading && filteredAlerts.length === 0 && (
+            <p className="text-sm text-muted-foreground">No alerts yet.</p>
+          )}
+          {filteredAlerts.map((alert) => (
+            <div
+              key={alert.id}
+              className="rounded-xl border border-border/60 bg-muted/30 p-4 transition hover:border-cyan-mint/60"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    {alert.savedSearch?.name || 'Saved search'}
+                  </p>
+                  <p className="text-lg font-semibold">{alert.listing?.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDistanceToNow(new Date(alert.matchedAt))} ago •{' '}
+                    {alert.listing?.site?.toLowerCase()}
+                  </p>
+                </div>
+                <Badge variant="outline">{alert.listing?.city || 'Unknown'}</Badge>
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                <Link href={`/listings/${alert.listingId}`} className="inline-flex items-center gap-2">
+                  <Link2 className="h-4 w-4" /> View listing
+                </Link>
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
-
-      {/* Alerts List */}
-      <div className="space-y-4">
-        {alerts?.map((alert: any) => {
-          const Icon = priorityIcons[alert.priority as keyof typeof priorityIcons]
-          const priorityVariant = priorityColors[alert.priority as keyof typeof priorityColors] as any
-
-          return (
-            <Card
-              key={alert.id}
-              className={`neon-glow-hover ${!alert.read ? 'border-cyan-mint/50' : ''}`}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`rounded-lg p-3 ${
-                      alert.priority === 'high'
-                        ? 'bg-red-500/10'
-                        : alert.priority === 'medium'
-                        ? 'bg-yellow-500/10'
-                        : 'bg-blue-500/10'
-                    }`}
-                  >
-                    <Icon
-                      className={`h-6 w-6 ${
-                        alert.priority === 'high'
-                          ? 'text-red-500'
-                          : alert.priority === 'medium'
-                          ? 'text-yellow-500'
-                          : 'text-blue-500'
-                      }`}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="font-semibold text-lg">{alert.title}</h3>
-                        <p className="mt-1 text-muted-foreground">{alert.message}</p>
-                      </div>
-                      <Badge variant={priorityVariant}>{alert.priority}</Badge>
-                    </div>
-                    <div className="mt-4 flex items-center gap-4">
-                      <span className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(alert.timestamp))} ago
-                      </span>
-                      {!alert.read && (
-                        <Badge variant="neon" className="text-xs">
-                          NEW
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
     </div>
   )
 }

@@ -15,27 +15,18 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="apps" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="deals"
-        options={{
-          title: 'Deals',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pricetag" size={size} color={color} />
+            <Ionicons name="home" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="watchlists"
         options={{
-          title: 'Watchlists',
+          title: 'Searches',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="eye" size={size} color={color} />
+            <Ionicons name="filter" size={size} color={color} />
           ),
         }}
       />
@@ -51,9 +42,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Settings',
           tabBarIcon: ({ color, size}) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="settings" size={size} color={color} />
           ),
         }}
       />

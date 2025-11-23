@@ -1,47 +1,48 @@
 {
   "cli": {
-    "version": ">=5.0.0"
+    "version": ">= 10.6.0"
   },
   "build": {
-    "production": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
       "android": {
-        "buildType": "app-bundle",
-        "package": "com.magnusflipper.ai"
+        "buildType": "apk"
       },
       "ios": {
-        "simulator": false,
-        "bundleIdentifier": "com.magnusflipper.ai"
+        "simulator": true
       },
       "env": {
-        "APP_ENV": "production"
+        "ENVIRONMENT": "development"
       }
     },
     "preview": {
+      "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "package": "com.magnusflipper.ai"
+        "buildType": "apk"
       },
       "ios": {
-        "simulator": true,
-        "bundleIdentifier": "com.magnusflipper.ai"
+        "simulator": false
       },
       "env": {
-        "APP_ENV": "preview"
+        "ENVIRONMENT": "preview"
       }
     },
-    "development": {
+    "production": {
+      "distribution": "store",
       "android": {
-        "buildType": "apk",
-        "package": "com.magnusflipper.ai"
+        "buildType": "app-bundle"
       },
       "ios": {
-        "simulator": true,
-        "bundleIdentifier": "com.magnusflipper.ai"
+        "simulator": false
       },
       "env": {
-        "APP_ENV": "development"
-      },
-      "developmentClient": true
+        "ENVIRONMENT": "production",
+        "API_URL": "https://<YOUR-AZURE-API>.azurecontainerapps.io"
+      }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
