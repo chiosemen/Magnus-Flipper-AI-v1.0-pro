@@ -5,7 +5,7 @@
 
 This is the production-grade monorepo for the Magnus Flipper AI system —
 a multi-marketplace scanning engine with automated scoring, alerting,
-queue-based workers, Telegram/WhatsApp bots, and a Next.js + Expo mobile platform.
+queue-based workers, notification system, and a Next.js + Expo mobile platform.
 
 **NOTE: The mobile app IS implemented in /mobile/.**
 Some earlier documentation incorrectly refers to it as "planned but not built."
@@ -14,8 +14,9 @@ Some earlier documentation incorrectly refers to it as "planned but not built."
 
 ```
 apps/
-  ├── bot-telegram/
+  ├── api/
   ├── scheduler/
+  ├── web/
   ├── worker-crawler/
   ├── worker-analyzer/
   ├── worker-alerts/

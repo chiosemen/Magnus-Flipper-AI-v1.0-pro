@@ -163,8 +163,6 @@ services:
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
       - key: LOG_LEVEL
         value: info
     autoDeploy: true

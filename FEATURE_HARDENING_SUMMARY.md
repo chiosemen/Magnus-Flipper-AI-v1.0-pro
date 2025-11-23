@@ -108,9 +108,8 @@ Validates:
 
 ## 📊 Files Modified/Created
 
-### Modified (2 files)
+### Modified (1 file)
 1. `apps/worker-crawler/src/index.js` - Added validation, Supabase integration, enhanced logging
-2. `apps/bot-telegram/src/index.ts` - Updated /status command to use new API format
 
 ### Created (7 files)
 1. `apps/worker-crawler/README.md` - Worker documentation

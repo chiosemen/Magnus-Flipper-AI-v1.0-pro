@@ -7,7 +7,7 @@
 
 ## 📊 Current Situation
 
-Your Render account currently has **1 service** (API only), but your `render.yaml` blueprint defines **7 services**:
+Your Render account currently has **1 service** (API only), but your `render.yaml` blueprint defines **6 services**:
 
 ### Services Defined in Blueprint (render.yaml):
 1. ✅ **magnus-flipper-api** (Web Service) - Currently deployed as `srv-d47rkeemcj7s73dj61lg`
@@ -15,8 +15,7 @@ Your Render account currently has **1 service** (API only), but your `render.yam
 3. ⚠️ **magnus-worker-crawler** (Worker) - Needs to be created
 4. ⚠️ **magnus-worker-analyzer** (Worker) - Needs to be created
 5. ⚠️ **magnus-worker-alerts** (Worker) - Needs to be created
-6. ⚠️ **magnus-telegram-bot** (Worker) - Needs to be created
-7. ⚠️ **magnus-flipper-redis** (KeyValue) - Needs to be created
+6. ⚠️ **magnus-flipper-redis** (KeyValue) - Needs to be created
 
 ---
 

@@ -18,7 +18,6 @@
   - ✅ magnus-worker-crawler (Worker)
   - ✅ magnus-worker-analyzer (Worker)
   - ✅ magnus-worker-alerts (Worker)
-  - ✅ magnus-telegram-bot (Worker)
   - ✅ magnus-flipper-redis (Key-Value Store)
 
 ### Vercel (Frontend)
@@ -167,7 +166,6 @@ fetch('https://magnus-flipper-api.onrender.com/api/deals')
    - magnus-worker-crawler
    - magnus-worker-analyzer
    - magnus-worker-alerts
-   - magnus-telegram-bot
    - magnus-flipper-redis
 
 **Check Logs:**

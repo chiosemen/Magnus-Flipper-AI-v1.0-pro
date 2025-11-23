@@ -157,13 +157,12 @@ git push origin main
 5. Branch: `main`
 6. Click **Apply**
 
-Render will create 6 services from `render.yaml`:
+Render will create 5 services from `render.yaml`:
 - magnus-flipper-api (Web Service)
 - magnus-flipper-scheduler (Worker)
 - magnus-flipper-worker-crawler (Worker)
 - magnus-flipper-worker-analyzer (Worker)
 - magnus-flipper-worker-alerts (Worker)
-- magnus-flipper-bot-telegram (Worker)
 
 ⚠️ **They will fail initially** - that's expected! We need to set environment variables.
 

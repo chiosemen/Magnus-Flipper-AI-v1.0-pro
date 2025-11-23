@@ -28,17 +28,14 @@ The system is composed of several key components that interact through a message
 
 5.  **Alert Dispatcher (`apps/worker-alerts`)**
     *   Consumes `alerts:dispatch` jobs.
-    *   Looks up the user's preferred notification channels (Telegram, WhatsApp, email, push) from the `users` table.
+    *   Looks up the user's preferred notification channels (WhatsApp, email, push) from the `users` table.
     *   Uses the `@magnus-flipper-ai/notifications` package to fan out alerts to the relevant notification handlers.
 
-6.  **Telegram Bot App (`apps/bot-telegram`)**
-    *   (Placeholder) A separate application for interacting with users via Telegram (e.g., long polling or webhooks).
-
-7.  **Redis**
+6.  **Redis**
     *   Used as a high-performance message broker for BullMQ queues.
     *   Acts as a simple de-duplication cache for job processing.
 
-8.  **Postgres (Supabase)**
+7.  **Postgres (Supabase)**
     *   Persistent storage for core data models: `users`, `sniper_profiles`, `listings`, and `profile_listings`.
 
 ## Monorepo Layout
@@ -49,9 +46,9 @@ Magnus-Flipper-AI/
     api/                    # REST/GraphQL for mobile + web
     worker-crawler/         # all marketplace crawlers
     worker-analyzer/        # diff, valuation, scoring
-    worker-alerts/          # Telegram, WhatsApp, email, push
-    bot-telegram/           # Telegram bot app (long polling / webhook)
+    worker-alerts/          # WhatsApp, email, push notifications
     scheduler/              # Job scheduler for scan:profile jobs
+    web/                    # Next.js web dashboard
   packages/
     core/                   # shared types, utils, logging, queue connections
     crawlers/
@@ -91,4 +88,4 @@ See `infra/schema.sql` for detailed table definitions.
 2.  **Profile Scanner Worker (within Scheduler)**: Loads profile from DB, then enqueues a job to the appropriate `scan:marketplace:<name>` queue.
 3.  **Marketplace Worker (`apps/worker-crawler`)**: Uses the relevant crawler package (e.g., `fb-marketplace-crawler`), scrapes raw listing snapshots, and enqueues them to `analyze:listings`.
 4.  **Analyzer Worker (`apps/worker-analyzer`)**: Normalizes listings, calculates scores, detects new listings/price drops, and if interesting, enqueues to `alerts:dispatch`.
-5.  **Alert Worker (`apps/worker-alerts`)**: For each alert job, looks up user's channels and fans out to relevant notification handlers using the `notifications` package.
+5.  **Alert Worker (`apps/worker-alerts`)**: For each alert job, looks up user's notification preferences and dispatches alerts using the `notifications` package.

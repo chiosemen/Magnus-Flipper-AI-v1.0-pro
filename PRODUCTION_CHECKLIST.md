@@ -139,7 +139,6 @@ pm2 start ecosystem.config.js --only scheduler
 pm2 start ecosystem.config.js --only worker-crawler
 pm2 start ecosystem.config.js --only worker-analyzer
 pm2 start ecosystem.config.js --only worker-alerts
-pm2 start ecosystem.config.js --only bot-telegram
 ```
 
 ---
@@ -212,7 +211,6 @@ pm2 restart api
 - Worker Crawler: `./logs/worker-crawler-*.log`
 - Worker Analyzer: `./logs/worker-analyzer-*.log`
 - Worker Alerts: `./logs/worker-alerts-*.log`
-- Telegram Bot: `./logs/bot-telegram-*.log`
 - API: `./logs/api-*.log`
 
 ---

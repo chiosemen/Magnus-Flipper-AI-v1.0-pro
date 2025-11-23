@@ -81,9 +81,8 @@
 1. [RENDER_QUICK_SETUP.md](./RENDER_QUICK_SETUP.md) - 5-minute setup
 2. [RENDER_ENV_TEMPLATES.md](./RENDER_ENV_TEMPLATES.md) - Copy/paste env vars
 
-### "I need to configure Telegram bot"
-1. [TELEGRAM_API_INTEGRATION.md](./TELEGRAM_API_INTEGRATION.md) - Bot setup
-2. [apps/bot-telegram/src/index.ts](./apps/bot-telegram/src/index.ts) - Code reference
+### "I need to configure notifications"
+1. [TELEGRAM_API_INTEGRATION.md](./TELEGRAM_API_INTEGRATION.md) - Notification setup
 
 ### "I'm having deployment issues"
 1. Check [DEPLOY_MASTER_GUIDE.md](./DEPLOY_MASTER_GUIDE.md) → Troubleshooting section
@@ -191,9 +190,8 @@ Apply these in Supabase SQL Editor:
 2. [apps/worker-crawler/README.md](./apps/worker-crawler/README.md)
 3. [MARKETPLACE_CONFIGS.md](./MARKETPLACE_CONFIGS.md)
 
-**Telegram Bot**:
+**Notifications**:
 1. [TELEGRAM_API_INTEGRATION.md](./TELEGRAM_API_INTEGRATION.md)
-2. [apps/bot-telegram/src/index.ts](./apps/bot-telegram/src/index.ts)
 
 **Web App**:
 1. [COMPLETE_DEPLOYMENT_GUIDE.md](./COMPLETE_DEPLOYMENT_GUIDE.md) → Web section

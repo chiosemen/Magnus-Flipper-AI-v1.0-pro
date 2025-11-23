@@ -50,7 +50,6 @@ Or trigger a redeploy from the Vercel dashboard.
 | magnus-worker-crawler | 🟢 Live | Crawls marketplaces |
 | magnus-worker-analyzer | 🟢 Live | Analyzes deals |
 | magnus-worker-alerts | 🟢 Live | Sends notifications |
-| magnus-telegram-bot | 🟢 Live | Telegram integration |
 | magnus-flipper-redis | 🟢 Live | Cache & queues |
 
 **If any service is not "Live":**

@@ -21,12 +21,6 @@ export const workerEnvSchema = baseEnvSchema.extend({
   SUPABASE_ANON_KEY: z.string(),
 });
 
-// Telegram bot environment schema
-export const botEnvSchema = baseEnvSchema.extend({
-  TELEGRAM_BOT_TOKEN: z.string(),
-  TELEGRAM_CHAT_ID: z.string().optional(),
-});
-
 // Validation helper
 export function validateEnv<T extends z.ZodTypeAny>(schema: T): z.infer<T> {
   try {
@@ -44,4 +38,3 @@ export function validateEnv<T extends z.ZodTypeAny>(schema: T): z.infer<T> {
 // Export validated environment configs
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
-export type BotEnv = z.infer<typeof botEnvSchema>;

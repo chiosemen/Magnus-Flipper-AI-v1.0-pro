@@ -78,7 +78,6 @@ module.exports = {
         NODE_ENV: 'production',
         REDIS_HOST: process.env.REDIS_HOST || 'localhost',
         REDIS_PORT: process.env.REDIS_PORT || '6379',
-        TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
         TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
         TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
         SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,

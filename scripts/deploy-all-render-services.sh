@@ -153,8 +153,8 @@ if [ "$deployed" -gt 0 ]; then
   echo ""
 fi
 
-if [ "$service_count" -lt 7 ]; then
-  echo "⚠️  WARNING: Expected 7 services, but only found $service_count"
+if [ "$service_count" -lt 6 ]; then
+  echo "⚠️  WARNING: Expected 6 services, but only found $service_count"
   echo ""
   echo "You may need to sync the Render blueprint to create all services:"
   echo "  render blueprint sync --file render.yaml --yes"

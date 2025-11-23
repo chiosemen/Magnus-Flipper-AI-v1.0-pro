@@ -228,37 +228,6 @@ LOG_LEVEL=info
 
 ---
 
-## 🤖 F) Telegram Bot — `magnus-flipper-bot-telegram`
-
-**Service Type**: Background Worker
-**Region**: Oregon
-**Plan**: Starter
-
-### Environment Variables
-
-```bash
-NODE_ENV=production
-
-# Telegram Bot
-TELEGRAM_BOT_TOKEN=<your-telegram-bot-token>
-
-# Magnus API
-MAGNUS_API_URL=https://magnus-flipper-api.onrender.com
-MAGNUS_API_KEY=<same-as-api-service>
-
-# Redis (for state management)
-REDIS_URL=redis://default:<password>@<host>:<port>
-
-# Optional: Logging
-LOG_LEVEL=info
-```
-
-### Notes
-- MAGNUS_API_URL should point to your deployed API service
-- Use the **same MAGNUS_API_KEY** as API service
-
----
-
 ## 🔐 How to Get Your Credentials
 
 ### Supabase

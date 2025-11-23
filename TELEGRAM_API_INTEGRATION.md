@@ -113,44 +113,30 @@ create table if not exists public.sniper_profiles (
 
 ## Bot Integration
 
-### Telegram Bot Code Example
+### Example Integration Code
+
+If you're building a separate bot service, you can use these endpoints:
 
 ```typescript
-// apps/bot-telegram/src/commands/status.ts
 import axios from 'axios';
 
-bot.command('status', async (ctx) => {
-  const chatId = ctx.chat.id.toString();
-
+async function getUserProfiles(chatId: string) {
   try {
     const response = await axios.get(
       `${process.env.MAGNUS_API_URL}/api/v1/telegram/${chatId}/profiles`
     );
 
     if (!response.data.ok) {
-      return ctx.reply('❌ ' + response.data.message);
+      console.error(response.data.message);
+      return [];
     }
 
-    const { count, profiles } = response.data;
-
-    if (count === 0) {
-      return ctx.reply('📭 You have no active sniper profiles.');
-    }
-
-    let message = `🎯 You have ${count} active sniper profile(s):\n\n`;
-
-    profiles.forEach((p: any, i: number) => {
-      message += `${i + 1}. ${p.marketplace.toUpperCase()} - "${p.search_term}"\n`;
-      message += `   💰 ${p.min_price}-${p.max_price} ${p.currency}\n`;
-      message += `   📍 ${p.location || 'Any location'}\n\n`;
-    });
-
-    return ctx.reply(message);
+    return response.data.profiles;
   } catch (error) {
-    console.error('Status command error:', error);
-    return ctx.reply('❌ Failed to fetch your profiles. Try again later.');
+    console.error('Failed to fetch profiles:', error);
+    return [];
   }
-});
+}
 ```
 
 ## Testing
@@ -248,7 +234,6 @@ Already works! The routes are part of the Express app.
 
 For issues or questions:
 - Check API logs: `pm2 logs magnus-flipper-api`
-- Check bot logs: `pm2 logs magnus-flipper-bot-telegram`
 - Verify database connection: Check Supabase dashboard
 
 ---

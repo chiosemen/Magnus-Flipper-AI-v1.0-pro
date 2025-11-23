@@ -17,13 +17,12 @@ In the dashboard:
 4. **Blueprint file**: `render.yaml` (auto-detected)
 5. Click **"Apply"**
 
-Render will create these 7 services:
+Render will create these 6 services:
 - ✅ magnus-flipper-api (Web Service)
 - ✅ magnus-scheduler (Worker)
 - ✅ magnus-worker-crawler (Worker)
 - ✅ magnus-worker-analyzer (Worker)
 - ✅ magnus-worker-alerts (Worker)
-- ✅ magnus-telegram-bot (Worker)
 - ✅ magnus-flipper-redis (KeyValue)
 
 ## Step 3: Configure Environment Variables

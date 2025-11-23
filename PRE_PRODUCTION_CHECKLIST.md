@@ -128,12 +128,10 @@
   - Fast response time
   - Location: `packages/api/src/routes/telegram.ts:52-68`
 
-- [x] **Bot Integration**
-  - /status command updated
-  - Calls new API endpoint
-  - Handles all response formats
+- [x] **Notification System**
+  - Alert dispatcher implemented
+  - Handles multiple notification channels
   - Error handling with user-friendly messages
-  - Location: `apps/bot-telegram/src/index.ts:25-54`
 
 ---
 
@@ -317,19 +315,12 @@
   curl https://magnus-flipper-api.onrender.com/api/v1/telegram/123/profiles
   ```
 
-- [ ] **Start Telegram Bot**
-  ```bash
-  # In Render or locally
-  pm2 start ecosystem.config.js --only bot-telegram
-  ```
-
 - [ ] **Test End-to-End Flow**
-  1. Link Telegram account
-  2. Create sniper profile in web app
-  3. Trigger manual crawl (or wait for scheduler)
-  4. Verify listing saved to database
-  5. Verify analysis job queued
-  6. Verify alert sent to Telegram
+  1. Create sniper profile in web app
+  2. Trigger manual crawl (or wait for scheduler)
+  3. Verify listing saved to database
+  4. Verify analysis job queued
+  5. Verify alert processing completed
 
 ---
 

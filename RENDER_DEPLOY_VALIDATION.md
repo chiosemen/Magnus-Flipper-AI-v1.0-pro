@@ -145,30 +145,6 @@ MAGNUS_API_KEY=<32-char-hex>           🟡 RECOMMENDED - If alerts call API
 
 #### 🔐 Security Check
 - ✅ NO `SUPABASE_ANON_KEY` (correct - backend worker)
-- ✅ `TELEGRAM_BOT_TOKEN` present (correct - sends alerts)
-
----
-
-### 6️⃣ Telegram Bot (`magnus-flipper-bot-telegram`)
-
-**Service Type**: Background Worker
-
-#### ✅ Required Variables
-```bash
-NODE_ENV=production                    ✅ Hardcoded
-MAGNUS_API_URL=https://magnus-flipper-api.onrender.com  ✅ Hardcoded
-```
-
-#### ⚠️ User Must Set
-```bash
-TELEGRAM_BOT_TOKEN=1234567890:ABC...   🔴 REQUIRED - Same as API
-MAGNUS_API_KEY=<32-char-hex>           🔴 REQUIRED - Same as API
-REDIS_URL=redis://default:pass@host... 🔴 REQUIRED - Same as API (for state)
-```
-
-#### 🔐 Security Check
-- ✅ NO `SUPABASE_*` keys (correct - bot only calls API, not DB)
-- ✅ `MAGNUS_API_URL` points to Render API (correct)
 
 ---
 
@@ -183,7 +159,6 @@ All services are configured correctly in `render.yaml`, but require user to set 
 3. **SUPABASE_ANON_KEY** - Get from Supabase dashboard (API only)
 4. **SUPABASE_SERVICE_ROLE_KEY** - Get from Supabase dashboard (all backend)
 5. **REDIS_URL** - Create Render Redis, use Internal URL
-6. **TELEGRAM_BOT_TOKEN** - Create bot with @BotFather
 
 ### 🟡 Recommended Additions
 
@@ -200,9 +175,8 @@ All services are configured correctly in `render.yaml`, but require user to set 
 
 All services correctly reference:
 ```
-NEXT_PUBLIC_API_URL=https://magnus-flipper-api.onrender.com (API service)
-MAGNUS_API_URL=https://magnus-flipper-api.onrender.com (Bot service)
-EXPO_PUBLIC_API_URL=https://magnus-flipper-api.onrender.com (.env.production)
+NEXT_PUBLIC_API_URL=https://magnus-flipper-api.onrender.com (Web app)
+EXPO_PUBLIC_API_URL=https://magnus-flipper-api.onrender.com (Mobile app)
 ```
 
 ### Key Distribution ✅
@@ -214,7 +188,6 @@ EXPO_PUBLIC_API_URL=https://magnus-flipper-api.onrender.com (.env.production)
 | Crawler | ❌ No | ✅ Yes | ✅ Correct (backend only) |
 | Analyzer | ❌ No | ✅ Yes | ✅ Correct (backend only) |
 | Alerts | ❌ No | ✅ Yes | ✅ Correct (backend only) |
-| Bot | ❌ No | ❌ No | ✅ Correct (API-only, no direct DB) |
 
 ### Web/Mobile Client Configuration ✅
 

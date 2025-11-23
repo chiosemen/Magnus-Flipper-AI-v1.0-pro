@@ -1,6 +1,6 @@
 # ⚡ Render Quick Setup - 5 Minutes
 
-**Ultra-fast copy/paste setup for all 6 Render services**
+**Ultra-fast copy/paste setup for all 5 Render services**
 
 ---
 
@@ -15,10 +15,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 # 2. Render Redis (Create in Render → New Redis → Copy Internal URL)
 REDIS_URL=redis://default:xxxxx@xxxxx.render.com:6379
 
-# 3. Telegram Bot (@BotFather → /newbot)
-TELEGRAM_BOT_TOKEN=1234567890:ABCdef...
-
-# 4. Generate API Key (run this command)
+# 3. Generate API Key (run this command)
 MAGNUS_API_KEY=$(openssl rand -hex 32)
 # Or manually: openssl rand -hex 32
 ```
@@ -47,7 +44,7 @@ MAGNUS_API_KEY=$(openssl rand -hex 32)
 4. Connect your GitHub repo
 5. Select branch: `main`
 6. Click **Apply**
-7. Render will create all 6 services automatically!
+7. Render will create all 5 services automatically!
 
 ### Option B: Manual Deploy
 
@@ -70,7 +67,6 @@ SUPABASE_URL=<paste-supabase-url>
 SUPABASE_ANON_KEY=<paste-anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<paste-service-role-key>
 REDIS_URL=<paste-redis-url>
-TELEGRAM_BOT_TOKEN=<paste-bot-token>
 ALLOWED_ORIGINS=https://magnus-flipper.vercel.app
 ```
 
@@ -113,18 +109,7 @@ NODE_ENV=production
 REDIS_URL=<paste-redis-url>
 SUPABASE_URL=<paste-supabase-url>
 SUPABASE_SERVICE_ROLE_KEY=<paste-service-role-key>
-TELEGRAM_BOT_TOKEN=<paste-bot-token>
 MAGNUS_API_KEY=<same-as-api>
-```
-
-### 6️⃣ Telegram Bot (`magnus-flipper-bot-telegram`)
-
-```bash
-NODE_ENV=production
-TELEGRAM_BOT_TOKEN=<paste-bot-token>
-MAGNUS_API_URL=https://magnus-flipper-api.onrender.com
-MAGNUS_API_KEY=<same-as-api>
-REDIS_URL=<paste-redis-url>
 ```
 
 ---
@@ -133,7 +118,7 @@ REDIS_URL=<paste-redis-url>
 
 ### Check All Services Are Live
 
-In Render Dashboard, all 6 services should show **🟢 Live**
+In Render Dashboard, all 5 services should show **🟢 Live**
 
 ### Test API
 
@@ -141,13 +126,6 @@ In Render Dashboard, all 6 services should show **🟢 Live**
 curl https://magnus-flipper-api.onrender.com/health
 # Expected: {"status":"ok"}
 ```
-
-### Test Telegram Bot
-
-1. Open Telegram
-2. Search for your bot
-3. Send `/start`
-4. Should receive welcome message
 
 ### Check Logs
 

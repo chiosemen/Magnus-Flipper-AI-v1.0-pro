@@ -20,7 +20,7 @@ for file in "${ROOT_FILES[@]}"; do
 done
 
 echo "📁 Ensuring apps/* directories exist..."
-APPS=( "api" "scheduler" "worker-crawler" "worker-analyzer" "worker-alerts" )
+APPS=( "api" "scheduler" "worker-crawler" "worker-analyzer" "worker-alerts" "web" )
 for app in "${APPS[@]}"; do
   if [ ! -d "apps/$app" ]; then
     echo "❌ Missing apps/$app — creating it."
