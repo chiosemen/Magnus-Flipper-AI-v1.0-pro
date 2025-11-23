@@ -16,7 +16,6 @@ COPY apps/api/package.json ./apps/api/
 COPY apps/scheduler/package.json ./apps/scheduler/
 COPY apps/worker-analyzer/package.json ./apps/worker-analyzer/
 COPY apps/worker-alerts/package.json ./apps/worker-alerts/
-COPY apps/bot-telegram/package.json ./apps/bot-telegram/
 COPY packages/core/package.json ./packages/core/
 COPY packages/queue/package.json ./packages/queue/
 COPY packages/shared/package.json ./packages/shared/
