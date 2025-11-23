@@ -2,36 +2,10 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  poweredByHeader: false,
-  compress: true,
-
-  // Environment variables available to the browser
+  transpilePackages: ['@magnus-flipper-ai/sdk'],
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
   },
+}
 
-  // Disable x-powered-by header
-  headers: async () => {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-        ],
-      },
-    ];
-  },
-};
-
-module.exports = nextConfig;
+module.exports = nextConfig

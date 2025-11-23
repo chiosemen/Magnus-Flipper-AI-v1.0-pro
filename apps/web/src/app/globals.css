@@ -4,48 +4,35 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --background: 220 15% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 220 13% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 220 13% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 220 80% 60%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 185 90% 64%;
+    --secondary-foreground: 220 15% 7%;
+
+    --muted: 220 13% 18%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 185 90% 64%;
+    --accent-foreground: 220 15% 7%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 220 80% 60%;
+
+    --radius: 1rem;
   }
 }
 
@@ -53,7 +40,106 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+}
+
+/* Custom Glassmorphism */
+.glass {
+  @apply bg-opacity-10 backdrop-blur-xl border border-white/10;
+}
+
+/* Neon Glow Effect */
+.neon-glow {
+  box-shadow: 0 0 10px rgba(92, 224, 230, 0.3),
+              0 0 20px rgba(92, 224, 230, 0.2),
+              0 0 30px rgba(92, 224, 230, 0.1);
+}
+
+.neon-glow-hover {
+  transition: all 0.3s ease;
+}
+
+.neon-glow-hover:hover {
+  box-shadow: 0 0 15px rgba(92, 224, 230, 0.5),
+              0 0 30px rgba(92, 224, 230, 0.3),
+              0 0 45px rgba(92, 224, 230, 0.2);
+}
+
+/* Gradient Border */
+.gradient-border {
+  position: relative;
+  background: linear-gradient(to right, #3C6FF7, #5CE0E6);
+  border-radius: 1rem;
+  padding: 1px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(to right, #3C6FF7, #5CE0E6);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Stats Counter Animation */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-counter {
+  animation: countUp 0.5s ease-out;
+}
+
+/* Skeleton Loader */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Pulse Animation for Live Indicators */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.33);
+  }
+  80%, 100% {
+    opacity: 0;
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
 }
