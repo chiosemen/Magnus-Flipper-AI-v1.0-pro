@@ -5,5 +5,4 @@ export declare const schedulerLogger: winston.Logger;
 export declare const crawlerLogger: winston.Logger;
 export declare const analyzerLogger: winston.Logger;
 export declare const alertsLogger: winston.Logger;
-export declare const botLogger: winston.Logger;
 //# sourceMappingURL=logger.d.ts.map
