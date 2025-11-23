@@ -1,4 +1,9 @@
-const { sendAlertToTelegram: sendTelegramBotAlert } = require('@magnus-flipper-ai/bot-telegram/src/index');
+// bot-telegram has been removed from the monorepo
+// This is a no-op fallback
+async function sendTelegramBotAlert(payload) {
+  console.warn("DEPRECATED: sendAlertToTelegram called but bot-telegram service has been removed", payload);
+  // No-op: bot-telegram service no longer exists
+}
 
 async function sendTelegramAlert(payload) {
   console.log("Telegram Alert (via bot):", payload);

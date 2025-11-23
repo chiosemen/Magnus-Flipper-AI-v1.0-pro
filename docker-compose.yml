@@ -207,34 +207,6 @@ services:
           cpus: '0.1'
           memory: 128M
 
-  # Bot: Telegram
-  bot-telegram:
-    build:
-      context: .
-      dockerfile: apps/bot-telegram/Dockerfile
-    container_name: magnus-telegram-bot
-    depends_on:
-      redis:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      NODE_ENV: production
-      # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID from .env
-    restart: unless-stopped
-    networks:
-      - magnus-network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 128M
-
 # Named volumes for data persistence
 volumes:
   redis-data:
