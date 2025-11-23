@@ -7,6 +7,10 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
+# Skip Puppeteer download during build - we use system chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
 # Copy dependency manifests
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 
