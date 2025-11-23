@@ -40,4 +40,3 @@ export const schedulerLogger = createLogger('scheduler');
 export const crawlerLogger = createLogger('worker-crawler');
 export const analyzerLogger = createLogger('worker-analyzer');
 export const alertsLogger = createLogger('worker-alerts');
-export const botLogger = createLogger('bot-telegram');
