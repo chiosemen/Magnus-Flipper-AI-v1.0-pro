@@ -59,37 +59,6 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
-  apps/bot-telegram:
-    dependencies:
-      '@magnus-flipper-ai/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@magnus-flipper-ai/queue':
-        specifier: workspace:*
-        version: link:../../packages/queue
-      '@magnus-flipper-ai/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-      dotenv:
-        specifier: ^16.3.1
-        version: 16.6.1
-      node-telegram-bot-api:
-        specifier: ^0.63.0
-        version: 0.63.0
-    devDependencies:
-      '@types/node':
-        specifier: ^20.11.0
-        version: 20.19.25
-      '@types/node-telegram-bot-api':
-        specifier: ^0.63.0
-        version: 0.63.3
-      ts-node-dev:
-        specifier: ^2.0.0
-        version: 2.0.0(@types/node@20.19.25)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
-
   apps/scheduler:
     dependencies:
       '@magnus-flipper-ai/core':
