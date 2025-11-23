@@ -1,36 +1,21 @@
 # apps/worker-crawler/Dockerfile
-# Multi-stage build for production-ready crawler worker
+# PNPM Monorepo-aware multi-stage build with Puppeteer support
 
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Enable pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Copy dependency manifests
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+# Copy entire monorepo (ensures all workspace packages are available)
+COPY . .
 
-# Copy package.json files
-COPY apps/worker-crawler/package.json ./apps/worker-crawler/
-COPY apps/api/package.json ./apps/api/
-COPY apps/scheduler/package.json ./apps/scheduler/
-COPY apps/worker-analyzer/package.json ./apps/worker-analyzer/
-COPY apps/worker-alerts/package.json ./apps/worker-alerts/
-COPY packages/core/package.json ./packages/core/
-COPY packages/queue/package.json ./packages/queue/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/notifications/package.json ./packages/notifications/
-COPY packages/fb-marketplace-crawler/package.json ./packages/fb-marketplace-crawler/
+# Install all dependencies with frozen lockfile
+RUN pnpm install --frozen-lockfile
 
-# Install dependencies
-RUN pnpm install --filter worker-crawler... --frozen-lockfile
-
-# Copy source code
-COPY apps/worker-crawler ./apps/worker-crawler
-COPY packages ./packages
-
-# Build
-RUN pnpm --filter worker-crawler... build
+# Build all workspace packages recursively
+RUN pnpm -r build
 
 # -------- Runtime Stage --------
 FROM node:20-alpine AS runner
@@ -55,21 +40,15 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Copy workspace config
+# Copy workspace configuration
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy built worker
-COPY --from=builder /app/apps/worker-crawler/dist ./apps/worker-crawler/dist
-COPY --from=builder /app/apps/worker-crawler/package.json ./apps/worker-crawler/package.json
-
-# Copy workspace dependencies (includes fb-marketplace-crawler)
-COPY --from=builder /app/packages/core ./packages/core
-COPY --from=builder /app/packages/queue ./packages/queue
-COPY --from=builder /app/packages/shared ./packages/shared
-COPY --from=builder /app/packages/fb-marketplace-crawler ./packages/fb-marketplace-crawler
+# Copy all built packages and apps from builder
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/worker-crawler ./apps/worker-crawler
 
 # Install production dependencies only
-RUN pnpm install --filter worker-crawler... --prod --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prod
 
 # Security: non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -78,7 +57,7 @@ RUN addgroup -g 1001 -S nodejs && \
 
 USER nodejs
 
-# Health check (BullMQ worker process check)
+# Health check
 HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
   CMD pgrep -f "node.*worker-crawler" > /dev/null || exit 1
 

@@ -2,11 +2,13 @@
 node_modules
 **/node_modules
 
-# Build outputs
+# Build outputs (will be rebuilt in container)
 dist
 **/dist
 build
 **/build
+.next
+**/.next
 
 # Logs
 *.log
@@ -42,9 +44,11 @@ coverage
 .DS_Store
 Thumbs.db
 
-# Documentation (keep README for reference)
-*.md
-!README.md
+# Documentation (keep for package metadata)
+# Note: Package README files may be needed for npm/pnpm metadata
+# Only exclude docs at root level
+/docs
+*.draft.md
 
 # CI/CD
 .circleci

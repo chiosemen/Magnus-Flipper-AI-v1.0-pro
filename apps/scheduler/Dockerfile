@@ -1,36 +1,21 @@
 # apps/scheduler/Dockerfile
-# Multi-stage build for production-ready scheduler service
+# PNPM Monorepo-aware multi-stage build
 
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Enable pnpm
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Copy dependency manifests
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+# Copy entire monorepo (ensures all workspace packages are available)
+COPY . .
 
-# Copy package.json files for workspace resolution
-COPY apps/scheduler/package.json ./apps/scheduler/
-COPY apps/api/package.json ./apps/api/
-COPY apps/worker-crawler/package.json ./apps/worker-crawler/
-COPY apps/worker-analyzer/package.json ./apps/worker-analyzer/
-COPY apps/worker-alerts/package.json ./apps/worker-alerts/
-COPY packages/core/package.json ./packages/core/
-COPY packages/queue/package.json ./packages/queue/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/notifications/package.json ./packages/notifications/
-COPY packages/fb-marketplace-crawler/package.json ./packages/fb-marketplace-crawler/
+# Install all dependencies with frozen lockfile
+RUN pnpm install --frozen-lockfile
 
-# Install dependencies
-RUN pnpm install --filter scheduler... --frozen-lockfile
-
-# Copy source code
-COPY apps/scheduler ./apps/scheduler
-COPY packages ./packages
-
-# Build scheduler and dependencies
-RUN pnpm --filter scheduler... build
+# Build all workspace packages recursively
+RUN pnpm -r build
 
 # -------- Runtime Stage --------
 FROM node:20-alpine AS runner
@@ -39,23 +24,19 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Install runtime dependencies
 RUN apk add --no-cache dumb-init
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
-# Copy workspace config
+# Copy workspace configuration
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy built scheduler
-COPY --from=builder /app/apps/scheduler/dist ./apps/scheduler/dist
-COPY --from=builder /app/apps/scheduler/package.json ./apps/scheduler/package.json
-
-# Copy workspace dependencies
-COPY --from=builder /app/packages/core ./packages/core
-COPY --from=builder /app/packages/queue ./packages/queue
-COPY --from=builder /app/packages/shared ./packages/shared
+# Copy all built packages and apps from builder
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/scheduler ./apps/scheduler
 
 # Install production dependencies only
-RUN pnpm install --filter scheduler... --prod --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prod
 
 # Security: non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -64,7 +45,7 @@ RUN addgroup -g 1001 -S nodejs && \
 
 USER nodejs
 
-# Health check (scheduler may not have HTTP endpoint - remove if not applicable)
+# Health check
 HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
   CMD pgrep -f "node.*scheduler" > /dev/null || exit 1
 
