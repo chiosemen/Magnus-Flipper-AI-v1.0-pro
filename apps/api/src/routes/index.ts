@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import healthRouter from './health';
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 router.use(healthRouter);
 
