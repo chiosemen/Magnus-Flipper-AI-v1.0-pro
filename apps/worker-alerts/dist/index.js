@@ -6,32 +6,44 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 const core_1 = require("@magnus-flipper-ai/core");
 const queue_1 = require("@magnus-flipper-ai/queue");
-const notifications_1 = require("@magnus-flipper-ai/notifications");
 // Load environment variables
 dotenv_1.default.config();
 // Validate environment
 const env = (0, core_1.validateEnv)(core_1.workerEnvSchema);
 async function processAlert(job) {
     core_1.alertsLogger.info('Processing alert', { jobId: job.id, alertType: job.alertType });
-    const notification = {
-        userId: job.userId,
-        channel: 'telegram',
-        subject: `Alert: ${job.alertType}`,
-        message: `New ${job.alertType} for item ${job.itemId}`,
-        metadata: {
-            jobId: job.id,
-            itemId: job.itemId,
-            alertType: job.alertType,
-        },
+    // DISABLED: Telegram notifications have been removed
+    // Notifications are currently disabled until an alternative channel is implemented
+    core_1.alertsLogger.warn('Alert notifications are currently disabled (Telegram was removed)', {
+        jobId: job.id,
+        alertType: job.alertType,
+        itemId: job.itemId,
+    });
+    // Return true to mark job as processed (logging-only mode)
+    return true;
+    /* Previous Telegram notification code - now disabled:
+    const notification: NotificationPayload = {
+      userId: job.userId,
+      channel: 'telegram',
+      subject: `Alert: ${job.alertType}`,
+      message: `New ${job.alertType} for item ${job.itemId}`,
+      metadata: {
+        jobId: job.id,
+        itemId: job.itemId,
+        alertType: job.alertType,
+      },
     };
-    const success = await (0, notifications_1.sendNotification)(notification);
+  
+    const success = await sendNotification(notification);
+  
     if (success) {
-        core_1.alertsLogger.info('Alert sent successfully', { jobId: job.id });
+      alertsLogger.info('Alert sent successfully', { jobId: job.id });
+    } else {
+      alertsLogger.error('Failed to send alert', { jobId: job.id });
     }
-    else {
-        core_1.alertsLogger.error('Failed to send alert', { jobId: job.id });
-    }
+  
     return success;
+    */
 }
 async function main() {
     core_1.alertsLogger.info('🔔 Alerts worker started', {

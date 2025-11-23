@@ -10,7 +10,6 @@ import watchlistsRouter from "./routes/watchlists.ts";
 import { profilesRouter } from "./routes/profiles.ts";
 import { channelsRouter } from "./routes/channels.ts";
 import { healthRouter } from "./routes/health.ts";
-import { registerTelegramRoutes } from "./routes/telegram.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
 import { metricsMiddleware, register } from "./middleware/metrics.ts";
 import { apiLimiter } from "./middleware/rateLimiter.ts";
@@ -83,7 +82,6 @@ apiV1.use(alertsRouter);
 apiV1.use(watchlistsRouter);
 apiV1.use(profilesRouter);
 apiV1.use(channelsRouter);
-registerTelegramRoutes(apiV1);
 app.use("/api/v1", apiV1);
 
 // Legacy routes (backwards compatibility)
@@ -92,7 +90,6 @@ app.use(alertsRouter);
 app.use(watchlistsRouter);
 app.use(profilesRouter);
 app.use(channelsRouter);
-registerTelegramRoutes(app);
 
 // 404 handler
 app.use((req, res) => {

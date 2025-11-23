@@ -13,6 +13,18 @@ const env = validateEnv(workerEnvSchema);
 async function processAlert(job: AlertJob): Promise<boolean> {
   alertsLogger.info('Processing alert', { jobId: job.id, alertType: job.alertType });
 
+  // DISABLED: Telegram notifications have been removed
+  // Notifications are currently disabled until an alternative channel is implemented
+  alertsLogger.warn('Alert notifications are currently disabled (Telegram was removed)', {
+    jobId: job.id,
+    alertType: job.alertType,
+    itemId: job.itemId,
+  });
+
+  // Return true to mark job as processed (logging-only mode)
+  return true;
+
+  /* Previous Telegram notification code - now disabled:
   const notification: NotificationPayload = {
     userId: job.userId,
     channel: 'telegram',
@@ -34,6 +46,7 @@ async function processAlert(job: AlertJob): Promise<boolean> {
   }
 
   return success;
+  */
 }
 
 async function main() {

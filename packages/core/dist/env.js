@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.botEnvSchema = exports.workerEnvSchema = exports.apiEnvSchema = void 0;
+exports.workerEnvSchema = exports.apiEnvSchema = void 0;
 exports.validateEnv = validateEnv;
 const zod_1 = require("zod");
 // Base environment schema shared across all services
@@ -20,11 +20,6 @@ exports.apiEnvSchema = baseEnvSchema.extend({
 exports.workerEnvSchema = baseEnvSchema.extend({
     SUPABASE_URL: zod_1.z.string(),
     SUPABASE_ANON_KEY: zod_1.z.string(),
-});
-// Telegram bot environment schema
-exports.botEnvSchema = baseEnvSchema.extend({
-    TELEGRAM_BOT_TOKEN: zod_1.z.string(),
-    TELEGRAM_CHAT_ID: zod_1.z.string().optional(),
 });
 // Validation helper
 function validateEnv(schema) {

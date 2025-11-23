@@ -48,31 +48,7 @@ export declare const workerEnvSchema: z.ZodObject<{
     REDIS_HOST?: string | undefined;
     REDIS_PORT?: string | undefined;
 }>;
-export declare const botEnvSchema: z.ZodObject<{
-    NODE_ENV: z.ZodDefault<z.ZodEnum<["development", "production", "test"]>>;
-    LOG_LEVEL: z.ZodDefault<z.ZodEnum<["error", "warn", "info", "debug"]>>;
-    REDIS_HOST: z.ZodDefault<z.ZodString>;
-    REDIS_PORT: z.ZodDefault<z.ZodString>;
-} & {
-    TELEGRAM_BOT_TOKEN: z.ZodString;
-    TELEGRAM_CHAT_ID: z.ZodOptional<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    NODE_ENV: "development" | "production" | "test";
-    LOG_LEVEL: "error" | "warn" | "info" | "debug";
-    REDIS_HOST: string;
-    REDIS_PORT: string;
-    TELEGRAM_BOT_TOKEN: string;
-    TELEGRAM_CHAT_ID?: string | undefined;
-}, {
-    TELEGRAM_BOT_TOKEN: string;
-    NODE_ENV?: "development" | "production" | "test" | undefined;
-    LOG_LEVEL?: "error" | "warn" | "info" | "debug" | undefined;
-    REDIS_HOST?: string | undefined;
-    REDIS_PORT?: string | undefined;
-    TELEGRAM_CHAT_ID?: string | undefined;
-}>;
 export declare function validateEnv<T extends z.ZodTypeAny>(schema: T): z.infer<T>;
 export type ApiEnv = z.infer<typeof apiEnvSchema>;
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
-export type BotEnv = z.infer<typeof botEnvSchema>;
 //# sourceMappingURL=env.d.ts.map
