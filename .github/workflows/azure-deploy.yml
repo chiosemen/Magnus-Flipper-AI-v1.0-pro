@@ -1,0 +1,187 @@
+name: Azure - Build & Deploy
+
+on:
+  push:
+    branches: [main, claude/*]
+    paths:
+      - "apps/api/**"
+      - "apps/worker-alerts/**"
+      - "packages/**"
+      - "Dockerfile.api"
+      - "Dockerfile.worker-alerts"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/azure-deploy.yml"
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Deploy target (api, worker, both)"
+        required: true
+        default: "both"
+        type: choice
+        options:
+          - api
+          - worker
+          - both
+
+env:
+  ACR_NAME: magnusacr
+  REGISTRY: magnusacr.azurecr.io
+  RESOURCE_GROUP: magnus-rg
+  API_APP_NAME: magnus-api
+  ALERTS_JOB_NAME: worker-alerts-job
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: ACR Login
+        run: |
+          az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & Push API Image
+        if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
+        run: |
+          docker buildx build \
+            --file Dockerfile.api \
+            --tag ${{ env.REGISTRY }}/magnus-api:latest \
+            --tag ${{ env.REGISTRY }}/magnus-api:${{ github.sha }} \
+            --platform linux/amd64 \
+            --push \
+            .
+
+      - name: Build & Push Alerts Worker Image
+        if: github.event.inputs.deploy_target == 'worker' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
+        run: |
+          docker buildx build \
+            --file Dockerfile.worker-alerts \
+            --tag ${{ env.REGISTRY }}/alerts-worker:latest \
+            --tag ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }} \
+            --platform linux/amd64 \
+            --push \
+            .
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
+
+  deploy-azure:
+    name: Deploy to Azure Container Apps
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy API Container App
+        if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
+        run: |
+          echo "Deploying API with image: ${{ env.REGISTRY }}/magnus-api:${{ github.sha }}"
+
+          az containerapp update \
+            --name ${{ env.API_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY }}/magnus-api:${{ github.sha }}
+
+          echo "API deployed successfully"
+
+      - name: Deploy Alerts Worker Job
+        if: github.event.inputs.deploy_target == 'worker' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
+        run: |
+          echo "Deploying Alerts Worker with image: ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }}"
+
+          az containerapp job update \
+            --name ${{ env.ALERTS_JOB_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }}
+
+          echo "Alerts Worker deployed successfully"
+
+      - name: Get API URL
+        if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
+        run: |
+          API_FQDN=$(az containerapp show \
+            --name ${{ env.API_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query 'properties.configuration.ingress.fqdn' \
+            --output tsv)
+
+          echo "API URL: https://$API_FQDN"
+          echo "API_URL=https://$API_FQDN" >> $GITHUB_ENV
+
+      - name: Health Check
+        if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
+        run: |
+          echo "Waiting for API to be ready..."
+          sleep 30
+
+          HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_URL }}/health || echo "000")
+
+          if [ "$HEALTH_STATUS" = "200" ]; then
+            echo "✅ API health check passed"
+          else
+            echo "❌ API health check failed (status: $HEALTH_STATUS)"
+            exit 1
+          fi
+
+      - name: Test Alerts Worker Job (manual trigger)
+        if: github.event.inputs.deploy_target == 'worker' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
+        run: |
+          echo "Testing alerts worker job..."
+
+          # Trigger a manual execution
+          az containerapp job start \
+            --name ${{ env.ALERTS_JOB_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }}
+
+          echo "✅ Alerts worker job triggered successfully"
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
+
+  notify:
+    name: Deployment Notification
+    needs: [build-and-push, deploy-azure]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ needs.deploy-azure.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.deploy-azure.result }}" = "success" ]; then
+            echo "✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Deployment failed. Check logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
