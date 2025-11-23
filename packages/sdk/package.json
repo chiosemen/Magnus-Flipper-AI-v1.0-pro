@@ -20,7 +20,7 @@
     "build": "tsup",
     "clean": "rm -rf dist",
     "dev": "tsup --watch",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "axios": "^1.6.8",
