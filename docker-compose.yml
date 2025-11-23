@@ -201,6 +201,38 @@ services:
           cpus: '0.1'
           memory: 128M
 
+  # Web: Frontend Dashboard
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: magnus-web
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:4000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - magnus-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
 # Named volumes for data persistence
 volumes:
   redis-data:
