@@ -1,3 +1,4 @@
-declare const router: import("express-serve-static-core").Router;
+import { Router } from 'express';
+declare const router: ReturnType<typeof Router>;
 export default router;
 //# sourceMappingURL=index.d.ts.map
