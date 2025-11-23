@@ -21,7 +21,7 @@ echo ""
 echo "Step 3: Checking dist directories..."
 MISSING=0
 
-for app in api scheduler worker-crawler worker-analyzer worker-alerts bot-telegram; do
+for app in api scheduler worker-crawler worker-analyzer worker-alerts; do
   if [ ! -d "apps/$app/dist" ]; then
     echo -e "${RED}✗ Missing: apps/$app/dist${NC}"
     MISSING=$((MISSING + 1))

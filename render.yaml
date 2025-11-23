@@ -170,37 +170,6 @@ services:
     autoDeploy: true
 
   # =========================
-  # TELEGRAM BOT
-  # =========================
-  - type: worker
-    name: magnus-telegram-bot
-    runtime: node
-    plan: starter
-    buildCommand: |
-      npm install -g pnpm
-      pnpm install --frozen-lockfile
-      pnpm build
-    startCommand: pnpm start:bot-telegram
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: REDIS_HOST
-        fromService:
-          type: keyvalue
-          name: magnus-flipper-redis
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          type: keyvalue
-          name: magnus-flipper-redis
-          property: port
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: LOG_LEVEL
-        value: info
-    autoDeploy: true
-
-  # =========================
   # REDIS (Managed Key-Value Store)
   # =========================
   - type: keyvalue
