@@ -2,7 +2,10 @@
 create table if not exists public.users (
   id uuid primary key,
   email text,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  subscription_plan text not null default 'STARTER',
+  subscription_updated_at timestamptz default now(),
+  constraint subscription_plan_check check (subscription_plan in ('STARTER', 'BASIC', 'PREMIUM', 'ULTRA'))
 );
 
 -- Mirror auth.users into public.users on sign-up (optional; can be handled in app)
