@@ -21,7 +21,6 @@
     "clean": "rm -rf dist",
     "dev": "tsup --watch",
     "type-check": "tsc --noEmit",
-    "prepare": "pnpm run build"
   },
   "dependencies": {
     "axios": "^1.6.8",
