@@ -1,62 +1,123 @@
 # Dependencies
 node_modules
 **/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store
 
-# Build outputs
+# Build outputs (we build inside Docker)
 dist
 **/dist
 build
 **/build
+.next
+.turbo
+.vercel
 
-# Logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
+# Testing
+coverage
+.nyc_output
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+tests
+**/tests
+__tests__
+**/__tests__
+.jest
 
 # Environment files (exclude from build context for security)
 .env
 .env.*
 !.env.example
+.env.local
+.env.development
+.env.test
+.env.production.local
+*.local
 
-# Git
-.git
-.gitignore
-.github
-
-# IDE
+# IDE and editor files
 .vscode
 .idea
 *.swp
 *.swo
 *~
-
-# Testing
-coverage
-.nyc_output
-*.test.js
-*.test.ts
-*.spec.js
-*.spec.ts
-
-# OS
 .DS_Store
 Thumbs.db
+*.sublime-project
+*.sublime-workspace
 
-# Documentation (keep README for reference)
-*.md
-!README.md
+# Git
+.git
+.gitignore
+.gitattributes
+.github
 
-# CI/CD
-.circleci
-.gitlab-ci.yml
-.travis.yml
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+docs
+**/*.md
+!node_modules/**/*.md
 
-# Docker
+# Docker files (don't need these inside the container)
 Dockerfile*
-docker-compose*
+docker-compose*.yml
 .dockerignore
 
-# Misc
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+azure-pipelines.yml
+
+# Logs
+logs
+*.log
+
+# Database files
+*.sqlite
+*.db
+
+# Temporary files
 tmp
 temp
+*.tmp
 .cache
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform
+**/.terraform
+
+# Monorepo specific - exclude apps not needed for API/worker
+# (Keep only what each Dockerfile needs)
+apps/web
+apps/scheduler
+apps/worker-crawler
+apps/worker-analyzer
+packages/crawlers
+packages/fb-marketplace-crawler
+packages/sniper-engine
+packages/valuation-engine
+packages/sdk
+mobile
+magnus-web-dashboard
+standalone-version
+
+# Supabase local development
+supabase/.branches
+supabase/.temp
+
+# Scripts (not needed in container)
+scripts
+
+# Infra
+infra
+terraform

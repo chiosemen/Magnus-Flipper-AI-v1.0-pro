@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: Azure - Build & Deploy
 
 on:
@@ -7,12 +8,28 @@ on:
       - "apps/api/**"
       - "apps/worker-alerts/**"
       - "packages/**"
+=======
+name: Azure CI/CD — API + Alerts Worker
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - "apps/api/**"
+      - "apps/worker-alerts/**"
+      - "packages/core/**"
+      - "packages/shared/**"
+      - "packages/queue/**"
+      - "packages/notifications/**"
+      - "packages/api/**"
+>>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
       - "Dockerfile.api"
       - "Dockerfile.worker-alerts"
       - "pnpm-lock.yaml"
       - ".github/workflows/azure-deploy.yml"
   workflow_dispatch:
     inputs:
+<<<<<<< HEAD
       deploy_target:
         description: "Deploy target (api, worker, both)"
         required: true
@@ -27,10 +44,28 @@ env:
   ACR_NAME: magnusacr
   REGISTRY: magnusacr.azurecr.io
   RESOURCE_GROUP: magnus-rg
+=======
+      deploy_api:
+        description: 'Deploy API service'
+        required: false
+        default: 'true'
+        type: boolean
+      deploy_worker:
+        description: 'Deploy alerts worker'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  RESOURCE_GROUP: magnus-rg
+  ACR_NAME: magnusacr
+  REGISTRY: magnusacr.azurecr.io
+>>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
   API_APP_NAME: magnus-api
   ALERTS_JOB_NAME: worker-alerts-job
 
 jobs:
+<<<<<<< HEAD
   build-and-push:
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
@@ -93,10 +128,27 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Azure Login
+=======
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure
+>>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+<<<<<<< HEAD
       - name: Deploy API Container App
         if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
         run: |
@@ -185,3 +237,113 @@ jobs:
           else
             echo "❌ Deployment failed. Check logs for details." >> $GITHUB_STEP_SUMMARY
           fi
+=======
+      - name: Verify Azure CLI
+        run: |
+          az version
+          az account show
+
+      - name: Log in to Azure Container Registry
+        run: |
+          az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages (TypeScript check)
+        run: |
+          pnpm --filter @magnus-flipper-ai/core build
+          pnpm --filter @magnus-flipper-ai/shared build
+          pnpm --filter @magnus-flipper-ai/queue build
+          pnpm --filter @magnus-flipper-ai/notifications build
+          pnpm --filter @magnus-flipper-ai/api build
+          pnpm --filter api build
+          pnpm --filter worker-alerts build
+
+      - name: Build and push API image
+        if: ${{ github.event_name == 'push' || inputs.deploy_api == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.api
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/magnus-api:latest
+            ${{ env.REGISTRY }}/magnus-api:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/magnus-api:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/magnus-api:buildcache,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Build and push Alerts Worker image
+        if: ${{ github.event_name == 'push' || inputs.deploy_worker == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.worker-alerts
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/alerts-worker:latest
+            ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/alerts-worker:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/alerts-worker:buildcache,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Update API Container App
+        if: ${{ github.event_name == 'push' || inputs.deploy_api == 'true' }}
+        run: |
+          echo "Updating Container App: ${{ env.API_APP_NAME }}"
+          az containerapp update \
+            --name ${{ env.API_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY }}/magnus-api:${{ github.sha }} \
+            --output table || echo "Container App may not exist yet. Create it via Terraform first."
+
+      - name: Update Alerts Worker Job
+        if: ${{ github.event_name == 'push' || inputs.deploy_worker == 'true' }}
+        run: |
+          echo "Updating Container App Job: ${{ env.ALERTS_JOB_NAME }}"
+          az containerapp job update \
+            --name ${{ env.ALERTS_JOB_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }} \
+            --output table || echo "Container App Job may not exist yet. Create it via Terraform first."
+
+      - name: Log out from Azure
+        if: always()
+        run: az logout
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Image**: \`${{ env.REGISTRY }}/magnus-api:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Worker Image**: \`${{ env.REGISTRY }}/alerts-worker:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Resource Group**: \`${{ env.RESOURCE_GROUP }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit SHA**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+>>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
