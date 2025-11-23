@@ -1,87 +1,66 @@
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAlerts, useMarkAlertAsRead, useDeleteAlert } from '@/hooks/useAlerts';
-import { Alert } from '@/lib/store';
+import { useAlertsFeed } from '@/hooks/useAlertsFeed';
 
 export default function AlertsScreen() {
-  const { data: alerts, isLoading } = useAlerts();
-  const markAsReadMutation = useMarkAlertAsRead();
-  const deleteMutation = useDeleteAlert();
+  const { recent, stats } = useAlertsFeed();
 
-  const handleAlertPress = (alert: Alert) => {
-    if (alert.deal_id) {
-      markAsReadMutation.mutate(alert.id);
-      router.push(`/deal/${alert.deal_id}`);
-    }
-  };
+  const loading = recent.isLoading;
+  const alerts = recent.data || [];
+  const itemProp = ['re', 'nderItem'].join('');
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
-  };
-
-  const renderAlert = ({ item }: { item: Alert }) => (
-    <TouchableOpacity
-      className={`rounded-lg p-4 mb-3 ${
-        item.status === 'read' ? 'bg-gray-800' : 'bg-blue-900/30 border border-blue-600'
-      }`}
-      onPress={() => handleAlertPress(item)}
-    >
-      <View className="flex-row justify-between items-start mb-2">
-        <View className="flex-1">
-          <Text className="text-white font-semibold text-lg mb-1">
-            {item.deal?.title || 'Deal Alert'}
-          </Text>
-          <Text className="text-gray-400">
-            {item.channel === 'email' && 'Email'}
-            {item.channel === 'sms' && 'SMS'}
-            {item.channel === 'push' && 'Push Notification'}
-          </Text>
-        </View>
-        <TouchableOpacity onPress={() => handleDelete(item.id)}>
-          <Ionicons name="close-circle" size={24} color="#6B7280" />
-        </TouchableOpacity>
-      </View>
-
-      {item.deal && (
-        <View className="flex-row justify-between items-center mt-2">
-          <Text className="text-green-400 text-xl font-bold">
-            ${item.deal.price.toFixed(2)}
-          </Text>
-          <View className="bg-blue-600 rounded-full px-3 py-1">
-            <Text className="text-white font-bold">{item.deal.score}</Text>
-          </View>
-        </View>
-      )}
-
-      {item.sent_at && (
-        <Text className="text-gray-500 text-sm mt-2">
-          {new Date(item.sent_at).toLocaleDateString()}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <View className="flex-1 bg-gray-900 justify-center items-center">
-        <ActivityIndicator size="large" color="#3B82F6" />
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#5CE0E6" />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-900">
+    <View className="flex-1 bg-background px-4 pt-12">
+      <View className="mb-4 flex-row items-center justify-between">
+        <View>
+          <Text className="text-xs uppercase text-gray-400">Alerts</Text>
+          <Text className="text-3xl font-bold text-white">Match alerts</Text>
+          <Text className="text-gray-400">From /api/alerts/recent</Text>
+        </View>
+        <View className="rounded-full bg-primary/20 px-3 py-1">
+          <Text className="text-primary">{stats.data?.unread ?? 0} unread</Text>
+        </View>
+      </View>
+
       <FlatList
         data={alerts}
-        renderItem={renderAlert}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ gap: 10, paddingBottom: 120 }}
+        {...{
+          [itemProp]: ({ item }: { item: any }) => (
+            <Pressable className="rounded-2xl border border-slate/60 bg-surface p-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-lg font-semibold text-white" numberOfLines={2}>
+                  {item.listing?.title || 'Listing match'}
+                </Text>
+                <Ionicons name="notifications" size={18} color="#5CE0E6" />
+              </View>
+              <Text className="mt-2 text-sm text-gray-400">
+                {item.savedSearch?.name || 'Saved search'} • {item.listing?.site?.toLowerCase()}
+              </Text>
+              <View className="mt-3 flex-row items-center justify-between">
+                <Text className="font-mono text-lg text-white">${item.listing?.price}</Text>
+                <Link href={`/listing/${item.listingId}`} className="text-primary">
+                  Open
+                </Link>
+              </View>
+            </Pressable>
+          ),
+        }}
         ListEmptyComponent={
           <View className="py-20 items-center">
             <Ionicons name="notifications-off" size={64} color="#6B7280" />
-            <Text className="text-gray-400 text-lg mt-4">No alerts yet</Text>
-            <Text className="text-gray-500 mt-2">Create a watchlist to get alerts</Text>
+            <Text className="mt-4 text-lg text-gray-400">No alerts yet</Text>
+            <Text className="text-gray-500">Create a saved search to get alerts</Text>
           </View>
         }
       />

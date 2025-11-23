@@ -70,6 +70,14 @@ export default function RootLayout() {
                 headerBackTitle: 'Back',
               }}
             />
+            <Stack.Screen
+              name="listing/[id]"
+              options={{
+                headerShown: true,
+                headerTitle: 'Listing Detail',
+                headerBackTitle: 'Back',
+              }}
+            />
           </Stack>
           <StatusBar style="light" />
         </StripeProvider>

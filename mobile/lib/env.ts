@@ -54,7 +54,7 @@ function getBoolEnvVar(key: string, defaultValue: boolean = false): boolean {
  */
 export const env = {
   // API Configuration
-  apiUrl: getEnvVar('EXPO_PUBLIC_API_URL', 'http://localhost:4000/api/v1'),
+  apiUrl: getEnvVar('EXPO_PUBLIC_API_URL', 'http://localhost:4000'),
   socketUrl: getEnvVar('EXPO_PUBLIC_SOCKET_URL', 'ws://localhost:4000/socket'),
   assetCdn: getEnvVar('EXPO_PUBLIC_ASSET_CDN'),
 

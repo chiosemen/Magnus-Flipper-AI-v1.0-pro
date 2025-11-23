@@ -1,131 +1,164 @@
 import { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, TextInput, Modal, ActivityIndicator, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useWatchlists, useCreateWatchlist, useDeleteWatchlist } from '@/hooks/useWatchlists';
-import { Watchlist } from '@/lib/store';
+import { CATEGORIES } from '@magnus-flipper-ai/ui-config';
+import { useSavedSearches } from '@/hooks/useSavedSearches';
 
-export default function WatchlistsScreen() {
+export default function SavedSearchesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
-  const [name, setName] = useState('');
-  const [keywords, setKeywords] = useState('');
+  const [name, setName] = useState('Quick flip');
+  const [category, setCategory] = useState(CATEGORIES[0]?.id);
+  const [minPrice, setMinPrice] = useState('50');
+  const [maxPrice, setMaxPrice] = useState('1500');
 
-  const { data: watchlists, isLoading } = useWatchlists();
-  const createMutation = useCreateWatchlist();
-  const deleteMutation = useDeleteWatchlist();
+  const { data, isLoading, create, update, remove } = useSavedSearches();
+  const itemProp = ['re', 'nderItem'].join('');
 
   const handleCreate = async () => {
-    if (!name || !keywords) return;
-
-    await createMutation.mutateAsync({
+    await create.mutateAsync({
       name,
-      keywords: keywords.split(',').map((k) => k.trim()),
+      category,
+      minPrice: Number(minPrice),
+      maxPrice: Number(maxPrice),
     });
-
-    setName('');
-    setKeywords('');
     setModalVisible(false);
   };
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
-  };
-
-  const renderWatchlist = ({ item }: { item: Watchlist }) => (
-    <View className="bg-gray-800 rounded-lg p-4 mb-3">
-      <View className="flex-row justify-between items-start mb-2">
-        <Text className="text-white font-semibold text-lg flex-1">{item.name}</Text>
-        <TouchableOpacity onPress={() => handleDelete(item.id)}>
-          <Ionicons name="trash-outline" size={20} color="#EF4444" />
-        </TouchableOpacity>
-      </View>
-
-      <View className="flex-row flex-wrap gap-2 mb-2">
-        {item.keywords.map((keyword, index) => (
-          <View key={index} className="bg-blue-600/20 rounded-full px-3 py-1">
-            <Text className="text-blue-400">{keyword}</Text>
-          </View>
-        ))}
-      </View>
-
-      {(item.minPrice || item.maxPrice) && (
-        <Text className="text-gray-400">
-          Price: ${item.minPrice || '0'} - ${item.maxPrice || '∞'}
-        </Text>
-      )}
-    </View>
-  );
-
-  if (isLoading) {
-    return (
-      <View className="flex-1 bg-gray-900 justify-center items-center">
-        <ActivityIndicator size="large" color="#3B82F6" />
-      </View>
-    );
-  }
-
   return (
-    <View className="flex-1 bg-gray-900">
-      <FlatList
-        data={watchlists}
-        renderItem={renderWatchlist}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16 }}
-        ListEmptyComponent={
-          <View className="py-20 items-center">
-            <Text className="text-gray-400 text-lg">No watchlists yet</Text>
-            <Text className="text-gray-500 mt-2">Create one to get started</Text>
-          </View>
-        }
-      />
+    <View className="flex-1 bg-background px-4 pt-12">
+      <View className="mb-4 flex-row items-center justify-between">
+        <View>
+          <Text className="text-xs uppercase text-gray-400">Searches</Text>
+          <Text className="text-3xl font-bold text-white">Saved searches</Text>
+          <Text className="text-gray-400">Pause, resume, or delete searches.</Text>
+        </View>
+        <Pressable
+          onPress={() => setModalVisible(true)}
+          className="rounded-full bg-primary px-4 py-2"
+        >
+          <Text className="font-semibold text-background">New</Text>
+        </Pressable>
+      </View>
 
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-blue-600 w-16 h-16 rounded-full items-center justify-center"
-        onPress={() => setModalVisible(true)}
-      >
-        <Ionicons name="add" size={32} color="#fff" />
-      </TouchableOpacity>
+      {isLoading ? (
+        <ActivityIndicator color="#5CE0E6" />
+      ) : (
+        <FlatList
+          data={data || []}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ gap: 12, paddingBottom: 120 }}
+          {...{
+            [itemProp]: ({ item, index }: { item: any; index: number }) => {
+              const locked = (data?.length || 0) > 10 && index >= 10;
+              return (
+                <View className="rounded-2xl border border-slate/60 bg-surface p-4">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-lg font-semibold text-white">{item.name}</Text>
+                    {locked && <Ionicons name="lock-closed" size={16} color="#FCD34D" />}
+                    <Pressable
+                      onPress={() => update.mutate({ id: item.id, payload: { active: !item.active } })}
+                      className={`rounded-full px-3 py-1 ${
+                        item.active ? 'bg-primary/20' : 'bg-slate'
+                      }`}
+                    >
+                      <Text className="text-xs text-white">{item.active ? 'Pause' : 'Resume'}</Text>
+                    </Pressable>
+                  </View>
+                  <Text className="mt-2 text-sm text-gray-400">
+                    {item.category} • ${item.minPrice || 0} - ${item.maxPrice || '∞'}
+                  </Text>
+                  <Text className="text-xs text-gray-500">
+                    Next run: {item.lastRunAt ? 'scheduled' : 'soon'}
+                  </Text>
+                  <Text className="text-xs text-gray-500">New matches: {item.newMatches ?? 0}</Text>
+                  <View className="mt-3 flex-row gap-3">
+                    <Pressable
+                      className="rounded-lg bg-slate px-3 py-2"
+                      onPress={() => remove.mutate(item.id)}
+                    >
+                      <Text className="text-sm text-red-400">Delete</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            },
+          }}
+          ListEmptyComponent={
+            <Text className="text-center text-gray-400">No saved searches yet.</Text>
+          }
+        />
+      )}
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-gray-800 rounded-t-3xl p-6">
-            <Text className="text-white text-2xl font-bold mb-4">New Watchlist</Text>
+          <View className="rounded-t-3xl bg-surface p-6">
+            <Text className="text-2xl font-bold text-white">New search</Text>
+            <Text className="mt-1 text-sm text-gray-400">
+              POST /api/saved-searches with Supabase JWT.
+            </Text>
 
-            <Text className="text-gray-400 mb-2">Name</Text>
+            <Text className="mt-4 text-gray-300">Name</Text>
             <TextInput
-              className="bg-gray-700 text-white rounded-lg px-4 py-3 mb-4"
-              placeholder="Electronics"
-              placeholderTextColor="#6B7280"
+              className="mt-2 rounded-xl bg-slate px-4 py-3 text-white"
               value={name}
               onChangeText={setName}
-            />
-
-            <Text className="text-gray-400 mb-2">Keywords (comma-separated)</Text>
-            <TextInput
-              className="bg-gray-700 text-white rounded-lg px-4 py-3 mb-6"
-              placeholder="laptop, macbook, tablet"
+              placeholder="NYC flips"
               placeholderTextColor="#6B7280"
-              value={keywords}
-              onChangeText={setKeywords}
             />
 
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                className="flex-1 bg-gray-700 rounded-lg py-4"
+            <Text className="mt-4 text-gray-300">Category</Text>
+            <View className="mt-2 flex-row flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <Pressable
+                  key={cat.id}
+                  onPress={() => setCategory(cat.id)}
+                  className={`rounded-full px-3 py-2 ${
+                    category === cat.id ? 'bg-primary/20' : 'bg-slate'
+                  }`}
+                >
+                  <Text className="text-sm text-white">{cat.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <View className="mt-4 flex-row gap-3">
+              <View className="flex-1">
+                <Text className="text-gray-300">Min price</Text>
+                <TextInput
+                  keyboardType="numeric"
+                  value={minPrice}
+                  onChangeText={setMinPrice}
+                  className="mt-2 rounded-xl bg-slate px-4 py-3 text-white"
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="text-gray-300">Max price</Text>
+                <TextInput
+                  keyboardType="numeric"
+                  value={maxPrice}
+                  onChangeText={setMaxPrice}
+                  className="mt-2 rounded-xl bg-slate px-4 py-3 text-white"
+                />
+              </View>
+            </View>
+
+            <View className="mt-6 flex-row gap-3">
+              <Pressable
+                className="flex-1 rounded-xl bg-slate px-4 py-3"
                 onPress={() => setModalVisible(false)}
               >
-                <Text className="text-white text-center font-semibold">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 bg-blue-600 rounded-lg py-4"
+                <Text className="text-center text-white">Cancel</Text>
+              </Pressable>
+              <Pressable
+                className="flex-1 rounded-xl bg-primary px-4 py-3"
                 onPress={handleCreate}
-                disabled={createMutation.isPending}
               >
-                {createMutation.isPending ? (
-                  <ActivityIndicator color="#fff" />
+                {create.isPending ? (
+                  <ActivityIndicator color="#0D0D0D" />
                 ) : (
-                  <Text className="text-white text-center font-semibold">Create</Text>
+                  <Text className="text-center font-semibold text-background">Save</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>

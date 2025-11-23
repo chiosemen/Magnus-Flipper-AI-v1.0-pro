@@ -124,6 +124,48 @@ class MagnusAPI {
     await this.client.post('/alerts/push/unregister', { deviceId });
   }
 
+  // Saved Searches
+  async getSavedSearches() {
+    const { data } = await this.client.get('/api/saved-searches');
+    return data;
+  }
+
+  async createSavedSearch(payload: any) {
+    const { data } = await this.client.post('/api/saved-searches', payload);
+    return data;
+  }
+
+  async updateSavedSearch(id: string, payload: any) {
+    const { data } = await this.client.patch(`/api/saved-searches/${id}`, payload);
+    return data;
+  }
+
+  async deleteSavedSearch(id: string) {
+    await this.client.delete(`/api/saved-searches/${id}`);
+  }
+
+  // Listings feed + detail
+  async getListingsFeed(params?: Record<string, string | number | undefined>) {
+    const { data } = await this.client.get('/api/listings/feed', { params });
+    return data;
+  }
+
+  async getListing(id: string) {
+    const { data } = await this.client.get(`/api/listings/${id}`);
+    return data;
+  }
+
+  // Alerts
+  async getRecentAlerts() {
+    const { data } = await this.client.get('/api/alerts/recent');
+    return data;
+  }
+
+  async getAlertsStats() {
+    const { data } = await this.client.get('/api/alerts/stats');
+    return data;
+  }
+
   // Profile API
   async getProfile() {
     const { data } = await this.client.get('/profile');

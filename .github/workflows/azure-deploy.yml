@@ -1,349 +1,87 @@
-<<<<<<< HEAD
-name: Azure - Build & Deploy
+name: Azure Deploy
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main, claude/*]
+    branches: [main]
     paths:
       - "apps/api/**"
       - "apps/worker-alerts/**"
-      - "packages/**"
-=======
-name: Azure CI/CD — API + Alerts Worker
-
-on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - "apps/api/**"
-      - "apps/worker-alerts/**"
-      - "packages/core/**"
-      - "packages/shared/**"
-      - "packages/queue/**"
-      - "packages/notifications/**"
-      - "packages/api/**"
->>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
+      - "apps/worker-analyzer/**"
+      - "apps/worker-crawler/**"
+      - "apps/web/**"
       - "Dockerfile.api"
       - "Dockerfile.worker-alerts"
+      - "Dockerfile.worker-analyzer"
+      - "Dockerfile.worker-crawler"
+      - "Dockerfile.web"
       - "pnpm-lock.yaml"
       - ".github/workflows/azure-deploy.yml"
-  workflow_dispatch:
-    inputs:
-<<<<<<< HEAD
-      deploy_target:
-        description: "Deploy target (api, worker, both)"
-        required: true
-        default: "both"
-        type: choice
-        options:
-          - api
-          - worker
-          - both
 
 env:
-  ACR_NAME: magnusacr
-  REGISTRY: magnusacr.azurecr.io
-  RESOURCE_GROUP: magnus-rg
-=======
-      deploy_api:
-        description: 'Deploy API service'
-        required: false
-        default: 'true'
-        type: boolean
-      deploy_worker:
-        description: 'Deploy alerts worker'
-        required: false
-        default: 'true'
-        type: boolean
-
-env:
-  RESOURCE_GROUP: magnus-rg
-  ACR_NAME: magnusacr
-  REGISTRY: magnusacr.azurecr.io
->>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
-  API_APP_NAME: magnus-api
-  ALERTS_JOB_NAME: worker-alerts-job
+  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AZURE_API_APP: magnus-api
+  AZURE_WEB_APP: magnus-web
+  AZURE_ALERTS_JOB: magnus-worker-alerts
+  AZURE_ANALYZER_JOB: magnus-worker-analyzer
+  AZURE_CRAWLER_JOB: magnus-worker-crawler
 
 jobs:
-<<<<<<< HEAD
-  build-and-push:
-    name: Build & Push Docker Images
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: ACR Login
-        run: |
-          az acr login --name ${{ env.ACR_NAME }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build & Push API Image
-        if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
-        run: |
-          docker buildx build \
-            --file Dockerfile.api \
-            --tag ${{ env.REGISTRY }}/magnus-api:latest \
-            --tag ${{ env.REGISTRY }}/magnus-api:${{ github.sha }} \
-            --platform linux/amd64 \
-            --push \
-            .
-
-      - name: Build & Push Alerts Worker Image
-        if: github.event.inputs.deploy_target == 'worker' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
-        run: |
-          docker buildx build \
-            --file Dockerfile.worker-alerts \
-            --tag ${{ env.REGISTRY }}/alerts-worker:latest \
-            --tag ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }} \
-            --platform linux/amd64 \
-            --push \
-            .
-
-      - name: Azure Logout
-        if: always()
-        run: az logout
-
-  deploy-azure:
-    name: Deploy to Azure Container Apps
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Azure Login
-=======
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+      id-token: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Azure
->>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-<<<<<<< HEAD
-      - name: Deploy API Container App
-        if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
-        run: |
-          echo "Deploying API with image: ${{ env.REGISTRY }}/magnus-api:${{ github.sha }}"
-
-          az containerapp update \
-            --name ${{ env.API_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY }}/magnus-api:${{ github.sha }}
-
-          echo "API deployed successfully"
-
-      - name: Deploy Alerts Worker Job
-        if: github.event.inputs.deploy_target == 'worker' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
-        run: |
-          echo "Deploying Alerts Worker with image: ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }}"
-
-          az containerapp job update \
-            --name ${{ env.ALERTS_JOB_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }}
-
-          echo "Alerts Worker deployed successfully"
-
-      - name: Get API URL
-        if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
-        run: |
-          API_FQDN=$(az containerapp show \
-            --name ${{ env.API_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --query 'properties.configuration.ingress.fqdn' \
-            --output tsv)
-
-          echo "API URL: https://$API_FQDN"
-          echo "API_URL=https://$API_FQDN" >> $GITHUB_ENV
-
-      - name: Health Check
-        if: github.event.inputs.deploy_target == 'api' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
-        run: |
-          echo "Waiting for API to be ready..."
-          sleep 30
-
-          HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_URL }}/health || echo "000")
-
-          if [ "$HEALTH_STATUS" = "200" ]; then
-            echo "✅ API health check passed"
-          else
-            echo "❌ API health check failed (status: $HEALTH_STATUS)"
-            exit 1
-          fi
-
-      - name: Test Alerts Worker Job (manual trigger)
-        if: github.event.inputs.deploy_target == 'worker' || github.event.inputs.deploy_target == 'both' || github.event.inputs.deploy_target == ''
-        run: |
-          echo "Testing alerts worker job..."
-
-          # Trigger a manual execution
-          az containerapp job start \
-            --name ${{ env.ALERTS_JOB_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }}
-
-          echo "✅ Alerts worker job triggered successfully"
-
-      - name: Azure Logout
-        if: always()
-        run: az logout
-
-  notify:
-    name: Deployment Notification
-    needs: [build-and-push, deploy-azure]
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Deployment Summary
-        run: |
-          echo "## Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Status**: ${{ needs.deploy-azure.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if [ "${{ needs.deploy-azure.result }}" = "success" ]; then
-            echo "✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Deployment failed. Check logs for details." >> $GITHUB_STEP_SUMMARY
-          fi
-=======
-      - name: Verify Azure CLI
-        run: |
-          az version
-          az account show
-
-      - name: Log in to Azure Container Registry
-        run: |
-          az acr login --name ${{ env.ACR_NAME }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
         with:
           version: 9
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: 20
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages (TypeScript check)
-        run: |
-          pnpm --filter @magnus-flipper-ai/core build
-          pnpm --filter @magnus-flipper-ai/shared build
-          pnpm --filter @magnus-flipper-ai/queue build
-          pnpm --filter @magnus-flipper-ai/notifications build
-          pnpm --filter @magnus-flipper-ai/api build
-          pnpm --filter api build
-          pnpm --filter worker-alerts build
+      - name: Build packages
+        run: pnpm build
 
-      - name: Build and push API image
-        if: ${{ github.event_name == 'push' || inputs.deploy_api == 'true' }}
-        uses: docker/build-push-action@v6
+      - name: Azure login
+        uses: azure/login@v2
         with:
-          context: .
-          file: ./Dockerfile.api
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/magnus-api:latest
-            ${{ env.REGISTRY }}/magnus-api:${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/magnus-api:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/magnus-api:buildcache,mode=max
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and push Alerts Worker image
-        if: ${{ github.event_name == 'push' || inputs.deploy_worker == 'true' }}
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.worker-alerts
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/alerts-worker:latest
-            ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/alerts-worker:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/alerts-worker:buildcache,mode=max
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
-
-      - name: Update API Container App
-        if: ${{ github.event_name == 'push' || inputs.deploy_api == 'true' }}
+      - name: Build and push images to ACR
         run: |
-          echo "Updating Container App: ${{ env.API_APP_NAME }}"
-          az containerapp update \
-            --name ${{ env.API_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY }}/magnus-api:${{ github.sha }} \
-            --output table || echo "Container App may not exist yet. Create it via Terraform first."
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/api:${{ github.sha }} -f Dockerfile.api .
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-alerts:${{ github.sha }} -f Dockerfile.worker-alerts .
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-analyzer:${{ github.sha }} -f Dockerfile.worker-analyzer .
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-crawler:${{ github.sha }} -f Dockerfile.worker-crawler .
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/web:${{ github.sha }} -f Dockerfile.web .
 
-      - name: Update Alerts Worker Job
-        if: ${{ github.event_name == 'push' || inputs.deploy_worker == 'true' }}
+      - name: Deploy to Azure Container Apps
         run: |
-          echo "Updating Container App Job: ${{ env.ALERTS_JOB_NAME }}"
-          az containerapp job update \
-            --name ${{ env.ALERTS_JOB_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY }}/alerts-worker:${{ github.sha }} \
-            --output table || echo "Container App Job may not exist yet. Create it via Terraform first."
+          az containerapp update --name "$AZURE_API_APP" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/api:${{ github.sha }}" || true
+          az containerapp update --name "$AZURE_WEB_APP" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/web:${{ github.sha }}" || true
+          az containerapp job update --name "$AZURE_ALERTS_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-alerts:${{ github.sha }}" || true
+          az containerapp job update --name "$AZURE_ANALYZER_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-analyzer:${{ github.sha }}" || true
+          az containerapp job update --name "$AZURE_CRAWLER_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-crawler:${{ github.sha }}" || true
 
-      - name: Log out from Azure
-        if: always()
-        run: az logout
-
-      - name: Deployment summary
-        if: always()
+      - name: Summary
         run: |
-          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **API Image**: \`${{ env.REGISTRY }}/magnus-api:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Worker Image**: \`${{ env.REGISTRY }}/alerts-worker:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Resource Group**: \`${{ env.RESOURCE_GROUP }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit SHA**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
->>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
+          echo "## Azure Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "- API image: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/api:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Web image: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/web:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Alerts job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-alerts:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Analyzer job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-analyzer:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Crawler job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-crawler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
