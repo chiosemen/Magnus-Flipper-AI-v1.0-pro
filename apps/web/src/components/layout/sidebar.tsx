@@ -2,15 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Bell, ShieldCheck, Settings, Target, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Bell, ShieldCheck, Settings, Target, Sparkles, TrendingUp, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Saved Searches', href: '/saved-searches', icon: Target },
-  { name: 'Results', href: '/results', icon: Sparkles },
+  { name: 'Searches', href: '/searches', icon: Target },
   { name: 'Alerts', href: '/alerts', icon: Bell },
-  { name: 'Plan', href: '/plan', icon: ShieldCheck },
+  { name: 'Billing', href: '/billing', icon: Zap },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
