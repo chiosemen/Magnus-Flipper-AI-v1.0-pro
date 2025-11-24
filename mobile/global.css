@@ -1,0 +1,20 @@
+/* Global styles for Magnus Flipper Mobile - NativeWind/Tailwind */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom color variables */
+:root {
+  --color-background: #0A0F14;
+  --color-surface: #0F1419;
+  --color-elevated: #1A1F24;
+  --color-primary: #3B82F6;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-text-primary: #E6F6FF;
+  --color-text-secondary: #94A3B8;
+  --color-text-tertiary: #64748B;
+  --color-border: #1E293B;
+}
