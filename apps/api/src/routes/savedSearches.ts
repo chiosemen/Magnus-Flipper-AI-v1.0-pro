@@ -2,12 +2,11 @@
  * Saved Searches API Routes
  * Handles CRUD operations for user-defined marketplace search criteria
  */
-import { Router } from 'express';
+import express, { Router, Response } from 'express';
 import { z } from 'zod';
 import { supabaseAdmin } from '../lib/db';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { apiLogger } from '@magnus-flipper-ai/core';
-import type { CreateSavedSearchRequest, UpdateSavedSearchRequest } from '@magnus-flipper-ai/core';
 
 const router = Router();
 
@@ -31,16 +30,14 @@ const createSavedSearchSchema = z.object({
 
 const updateSavedSearchSchema = createSavedSearchSchema.partial();
 
-// Apply auth middleware to all routes
-router.use(requireAuth);
-
 /**
  * GET /api/saved-searches
  * List all saved searches for the authenticated user
  */
-router.get('/', async (req: AuthenticatedRequest, res) => {
+router.get('/', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
-    const userId = req.user.id;
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
 
     const { data, error } = await supabaseAdmin
       .from('saved_searches')
@@ -52,8 +49,8 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
 
     res.json(data || []);
   } catch (error) {
-    apiLogger.error('Failed to fetch saved searches', { error, userId: req.user.id });
-    res.status(500).json({ error: 'Failed to fetch saved searches' });
+    apiLogger.error('Failed to fetch saved searches', { error, userId: (req as AuthenticatedRequest).user.id });
+    next(error);
   }
 });
 
@@ -61,9 +58,10 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
  * GET /api/saved-searches/:id
  * Get a specific saved search by ID
  */
-router.get('/:id', async (req: AuthenticatedRequest, res) => {
+router.get('/:id', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
-    const userId = req.user.id;
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
     const { id } = req.params;
 
     const { data, error } = await supabaseAdmin
@@ -74,13 +72,14 @@ router.get('/:id', async (req: AuthenticatedRequest, res) => {
       .single();
 
     if (error || !data) {
-      return res.status(404).json({ error: 'Saved search not found' });
+      res.status(404).json({ error: 'Saved search not found' });
+      return;
     }
 
     res.json(data);
   } catch (error) {
     apiLogger.error('Failed to fetch saved search', { error, id: req.params.id });
-    res.status(500).json({ error: 'Failed to fetch saved search' });
+    next(error);
   }
 });
 
@@ -88,9 +87,10 @@ router.get('/:id', async (req: AuthenticatedRequest, res) => {
  * POST /api/saved-searches
  * Create a new saved search
  */
-router.post('/', async (req: AuthenticatedRequest, res) => {
+router.post('/', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
-    const userId = req.user.id;
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
 
     // Validate request body
     const parsed = createSavedSearchSchema.parse(req.body);
@@ -123,10 +123,11 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     res.status(201).json(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request body', details: error.errors });
+      res.status(400).json({ error: 'Invalid request body', details: error.errors });
+      return;
     }
-    apiLogger.error('Failed to create saved search', { error, userId: req.user.id });
-    res.status(500).json({ error: 'Failed to create saved search' });
+    apiLogger.error('Failed to create saved search', { error, userId: (req as AuthenticatedRequest).user.id });
+    next(error);
   }
 });
 
@@ -134,9 +135,10 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
  * PATCH /api/saved-searches/:id
  * Update an existing saved search
  */
-router.patch('/:id', async (req: AuthenticatedRequest, res) => {
+router.patch('/:id', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
-    const userId = req.user.id;
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
     const { id } = req.params;
 
     // Validate request body
@@ -171,17 +173,19 @@ router.patch('/:id', async (req: AuthenticatedRequest, res) => {
       .single();
 
     if (error || !data) {
-      return res.status(404).json({ error: 'Saved search not found' });
+      res.status(404).json({ error: 'Saved search not found' });
+      return;
     }
 
     apiLogger.info('Saved search updated', { userId, searchId: id });
     res.json(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid request body', details: error.errors });
+      res.status(400).json({ error: 'Invalid request body', details: error.errors });
+      return;
     }
     apiLogger.error('Failed to update saved search', { error, id: req.params.id });
-    res.status(500).json({ error: 'Failed to update saved search' });
+    next(error);
   }
 });
 
@@ -189,9 +193,10 @@ router.patch('/:id', async (req: AuthenticatedRequest, res) => {
  * DELETE /api/saved-searches/:id
  * Delete a saved search
  */
-router.delete('/:id', async (req: AuthenticatedRequest, res) => {
+router.delete('/:id', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
-    const userId = req.user.id;
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
     const { id } = req.params;
 
     const { error } = await supabaseAdmin
@@ -206,7 +211,7 @@ router.delete('/:id', async (req: AuthenticatedRequest, res) => {
     res.status(204).send();
   } catch (error) {
     apiLogger.error('Failed to delete saved search', { error, id: req.params.id });
-    res.status(500).json({ error: 'Failed to delete saved search' });
+    next(error);
   }
 });
 
