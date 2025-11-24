@@ -2,15 +2,12 @@
  * Alerts API Routes
  * Handles fetching recent alerts and notification history
  */
-import { Router } from 'express';
+import express, { Router, Response } from 'express';
 import { supabaseAdmin } from '../lib/db';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { apiLogger } from '@magnus-flipper-ai/core';
 
 const router = Router();
-
-// Apply auth middleware to all routes
-router.use(requireAuth);
 
 /**
  * GET /api/alerts/recent
@@ -19,9 +16,10 @@ router.use(requireAuth);
  *   - limit: number (default: 50, max: 200)
  *   - savedSearchId: UUID (optional - filter by specific search)
  */
-router.get('/recent', async (req: AuthenticatedRequest, res) => {
+router.get('/recent', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
-    const userId = req.user.id;
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
     const { limit = '50', savedSearchId } = req.query;
 
     const limitNum = Math.min(200, Math.max(1, parseInt(limit as string, 10)));
@@ -34,10 +32,11 @@ router.get('/recent', async (req: AuthenticatedRequest, res) => {
 
     if (searchesError) throw searchesError;
 
-    const searchIds = userSearches?.map((s) => s.id) || [];
+    const searchIds = userSearches?.map((s: any) => s.id) || [];
 
     if (searchIds.length === 0) {
-      return res.json({ matches: [], total: 0 });
+      res.json({ matches: [], total: 0 });
+      return;
     }
 
     // Build query for listing matches
@@ -113,8 +112,8 @@ router.get('/recent', async (req: AuthenticatedRequest, res) => {
       total: count || 0,
     });
   } catch (error) {
-    apiLogger.error('Failed to fetch recent alerts', { error, userId: req.user.id });
-    res.status(500).json({ error: 'Failed to fetch recent alerts' });
+    apiLogger.error('Failed to fetch recent alerts', { error, userId: (req as AuthenticatedRequest).user.id });
+    next(error);
   }
 });
 
@@ -122,9 +121,10 @@ router.get('/recent', async (req: AuthenticatedRequest, res) => {
  * GET /api/alerts/stats
  * Get alert statistics for the user
  */
-router.get('/stats', async (req: AuthenticatedRequest, res) => {
+router.get('/stats', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
-    const userId = req.user.id;
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
 
     // Get user's saved searches
     const { data: userSearches, error: searchesError } = await supabaseAdmin
@@ -134,15 +134,16 @@ router.get('/stats', async (req: AuthenticatedRequest, res) => {
 
     if (searchesError) throw searchesError;
 
-    const searchIds = userSearches?.map((s) => s.id) || [];
+    const searchIds = userSearches?.map((s: any) => s.id) || [];
 
     if (searchIds.length === 0) {
-      return res.json({
+      res.json({
         totalAlerts: 0,
         alertsLast24h: 0,
         alertsLast7d: 0,
         activeSavedSearches: 0,
       });
+      return;
     }
 
     // Total alerts
@@ -184,8 +185,8 @@ router.get('/stats', async (req: AuthenticatedRequest, res) => {
       activeSavedSearches: activeSavedSearches || 0,
     });
   } catch (error) {
-    apiLogger.error('Failed to fetch alert stats', { error, userId: req.user.id });
-    res.status(500).json({ error: 'Failed to fetch alert stats' });
+    apiLogger.error('Failed to fetch alert stats', { error, userId: (req as AuthenticatedRequest).user.id });
+    next(error);
   }
 });
 

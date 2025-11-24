@@ -2,15 +2,12 @@
  * Listings API Routes
  * Handles fetching marketplace listings and matched results
  */
-import { Router } from 'express';
+import express, { Router, Response } from 'express';
 import { supabaseAdmin } from '../lib/db';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { apiLogger } from '@magnus-flipper-ai/core';
 
 const router = Router();
-
-// Apply auth middleware to all routes
-router.use(requireAuth);
 
 /**
  * GET /api/listings/feed
@@ -20,13 +17,15 @@ router.use(requireAuth);
  *   - page: number (default: 1)
  *   - pageSize: number (default: 20, max: 100)
  */
-router.get('/feed', async (req: AuthenticatedRequest, res) => {
+router.get('/feed', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
-    const userId = req.user.id;
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.user.id;
     const { savedSearchId, page = '1', pageSize = '20' } = req.query;
 
     if (!savedSearchId || typeof savedSearchId !== 'string') {
-      return res.status(400).json({ error: 'savedSearchId is required' });
+      res.status(400).json({ error: 'savedSearchId is required' });
+      return;
     }
 
     // Verify the saved search belongs to the user
@@ -38,7 +37,8 @@ router.get('/feed', async (req: AuthenticatedRequest, res) => {
       .single();
 
     if (searchError || !savedSearch) {
-      return res.status(404).json({ error: 'Saved search not found' });
+      res.status(404).json({ error: 'Saved search not found' });
+      return;
     }
 
     const pageNum = Math.max(1, parseInt(page as string, 10));
@@ -105,8 +105,8 @@ router.get('/feed', async (req: AuthenticatedRequest, res) => {
       hasMore: (count || 0) > offset + sizeNum,
     });
   } catch (error) {
-    apiLogger.error('Failed to fetch listings feed', { error, userId: req.user.id });
-    res.status(500).json({ error: 'Failed to fetch listings feed' });
+    apiLogger.error('Failed to fetch listings feed', { error, userId: (req as AuthenticatedRequest).user.id });
+    next(error);
   }
 });
 
@@ -114,7 +114,7 @@ router.get('/feed', async (req: AuthenticatedRequest, res) => {
  * GET /api/listings/:id
  * Get a specific listing by ID
  */
-router.get('/:id', async (req: AuthenticatedRequest, res) => {
+router.get('/:id', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -125,13 +125,14 @@ router.get('/:id', async (req: AuthenticatedRequest, res) => {
       .single();
 
     if (error || !data) {
-      return res.status(404).json({ error: 'Listing not found' });
+      res.status(404).json({ error: 'Listing not found' });
+      return;
     }
 
     res.json(data);
   } catch (error) {
     apiLogger.error('Failed to fetch listing', { error, id: req.params.id });
-    res.status(500).json({ error: 'Failed to fetch listing' });
+    next(error);
   }
 });
 
@@ -140,7 +141,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res) => {
  * Run an ad-hoc search (without saving) - for preview/testing
  * Query params: category, manufacturer, models[], minPrice, maxPrice, etc.
  */
-router.get('/search/run', async (req: AuthenticatedRequest, res) => {
+router.get('/search/run', requireAuth as express.RequestHandler, async (req, res, next): Promise<void> => {
   try {
     const {
       category,
@@ -187,8 +188,8 @@ router.get('/search/run', async (req: AuthenticatedRequest, res) => {
       hasMore: (count || 0) > offset + sizeNum,
     });
   } catch (error) {
-    apiLogger.error('Failed to run search', { error, userId: req.user.id });
-    res.status(500).json({ error: 'Failed to run search' });
+    apiLogger.error('Failed to run search', { error, userId: (req as AuthenticatedRequest).user.id });
+    next(error);
   }
 });
 
