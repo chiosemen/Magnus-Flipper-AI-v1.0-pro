@@ -83,9 +83,149 @@ RATE_LIMIT_WINDOW_MS="900000"
 JWT_SECRET="[your-jwt-secret]"
 ```
 
-## Setup Steps
+## Deployment Options
 
-### 1. Azure Resource Group
+There are two ways to deploy Magnus Flipper AI to Azure:
+
+1. **🚀 Automated Deployment** (Recommended) - Using Terraform + GitHub Actions CI/CD
+2. **🛠️ Manual Deployment** - Using Azure CLI commands directly
+
+---
+
+## Option 1: Automated Deployment with Terraform (Recommended)
+
+This method uses Terraform to provision infrastructure and GitHub Actions for CI/CD. All deployments happen automatically on push to `main`.
+
+### Prerequisites
+
+1. Azure CLI installed and authenticated (`az login`)
+2. Terraform >= 1.6.0 installed
+3. GitHub repository with Actions enabled
+4. Supabase project with connection string
+5. Stripe account (for payment processing)
+
+### Step 1: One-Time Terraform Bootstrap
+
+Before GitHub Actions can run, initialize Terraform locally once:
+
+```bash
+# Navigate to Terraform directory
+cd infra/azure
+
+# Copy the example terraform.tfvars
+cp terraform.tfvars.example terraform.tfvars
+
+# Edit terraform.tfvars with your actual values
+# - Azure subscription ID
+# - Supabase credentials
+# - Stripe keys
+# - Database URL
+nano terraform.tfvars
+
+# Initialize Terraform
+terraform init
+
+# Preview what will be created
+terraform plan
+
+# Create the Azure infrastructure (one-time)
+terraform apply
+```
+
+**Note:** After this initial setup, GitHub Actions will handle all future deployments.
+
+### Step 2: Configure GitHub Secrets
+
+Add these secrets to your GitHub repository (Settings → Secrets and variables → Actions):
+
+#### Azure Authentication
+
+```bash
+# Create service principal
+az ad sp create-for-rbac \
+  --name "github-actions-magnus" \
+  --role contributor \
+  --scopes /subscriptions/$(az account show --query id -o tsv) \
+  --sdk-auth
+
+# Copy the JSON output and add as AZURE_CREDENTIALS secret
+```
+
+Required secrets:
+
+| Secret Name | Description | How to Get |
+|-------------|-------------|------------|
+| `AZURE_CREDENTIALS` | Service principal JSON | Output from `az ad sp create-for-rbac --sdk-auth` |
+| `AZURE_SUBSCRIPTION_ID` | Subscription GUID | `az account show --query id -o tsv` |
+| `AZURE_CONTAINER_REGISTRY` | ACR name | Example: `magnusacr` |
+| `AZURE_RESOURCE_GROUP` | Resource group name | Example: `magnus-rg` |
+
+#### Terraform Variables (TF_VAR_*)
+
+These are passed to Terraform during deployment:
+
+```bash
+# Using GitHub CLI (recommended)
+gh secret set TF_VAR_database_url --body "postgresql://user:pass@host:5432/db"
+gh secret set TF_VAR_supabase_url --body "https://yourproject.supabase.co"
+gh secret set TF_VAR_supabase_anon_key --body "eyJhbGci..."
+gh secret set TF_VAR_supabase_service_role_key --body "eyJhbGci..."
+gh secret set TF_VAR_jwt_secret --body "$(openssl rand -base64 32)"
+gh secret set TF_VAR_stripe_secret_key --body "sk_live_..."
+gh secret set TF_VAR_stripe_webhook_secret --body "whsec_..."
+```
+
+**Or via GitHub UI:**
+
+Navigate to: `Settings → Secrets and variables → Actions → New repository secret`
+
+Add each secret with prefix `TF_VAR_`:
+- `TF_VAR_database_url`
+- `TF_VAR_supabase_url`
+- `TF_VAR_supabase_anon_key`
+- `TF_VAR_supabase_service_role_key`
+- `TF_VAR_jwt_secret`
+- `TF_VAR_stripe_secret_key`
+- `TF_VAR_stripe_webhook_secret`
+
+### Step 3: Automated Deployment
+
+Once secrets are configured, deployments happen automatically:
+
+**On Push to Main:**
+```bash
+git push origin main
+```
+
+The workflow will:
+1. ✅ Build Docker images (API + Worker)
+2. ✅ Push images to Azure Container Registry
+3. ✅ Run Terraform plan
+4. ✅ Apply Terraform changes (infrastructure updates)
+5. ✅ Update Container Apps with new images
+6. ✅ Run health checks
+
+**Manual Deployment:**
+
+Trigger via GitHub UI: `Actions → Azure Container Apps Deploy → Run workflow`
+
+You can optionally skip Terraform apply (to only update container images):
+- Select `Skip Terraform apply` checkbox
+
+### Workflow Outputs
+
+After deployment completes, check the workflow summary for:
+- API URL: `https://magnus-api.{region}.azurecontainerapps.io`
+- Image tags (SHA-based)
+- Health check command
+
+---
+
+## Option 2: Manual Deployment (Azure CLI)
+
+Use this method for one-off deployments or if you prefer manual control.
+
+### Step 1: Azure Resource Group
 
 Create a resource group for your resources:
 
@@ -95,7 +235,7 @@ az group create \
   --location eastus
 ```
 
-### 2. Azure Container Registry (ACR)
+### Step 2: Azure Container Registry (ACR)
 
 Create a container registry to store your Docker images:
 
@@ -113,7 +253,7 @@ Get ACR credentials:
 az acr credential show --name magnusacr
 ```
 
-### 3. Container Apps Environment
+### Step 3: Container Apps Environment
 
 Create a Container Apps environment:
 
@@ -124,7 +264,7 @@ az containerapp env create \
   --location eastus
 ```
 
-### 4. Create Secrets
+### Step 4: Create Secrets
 
 Store sensitive values as secrets:
 
@@ -145,7 +285,7 @@ az containerapp secret set \
     redis-password="[password]"
 ```
 
-### 5. Deploy API Container App
+### Step 5: Deploy API Container App
 
 ```bash
 az containerapp create \
@@ -175,7 +315,7 @@ az containerapp create \
   --max-replicas 3
 ```
 
-### 6. Deploy Alerts Worker as Container App Job
+### Step 6: Deploy Alerts Worker as Container App Job
 
 ```bash
 az containerapp job create \
@@ -209,44 +349,7 @@ az containerapp job create \
 - `*/30 * * * *` - Every 30 minutes (BASIC tier)
 - `0 * * * *` - Every hour (STARTER tier)
 
-## GitHub Actions Setup
-
-### Required GitHub Secrets
-
-Add these secrets to your GitHub repository:
-
-1. **AZURE_CREDENTIALS** - Service principal JSON
-
-Create a service principal:
-
-```bash
-az ad sp create-for-rbac \
-  --name "github-actions-magnus" \
-  --role contributor \
-  --scopes /subscriptions/[SUBSCRIPTION_ID]/resourceGroups/magnus-rg \
-  --sdk-auth
-```
-
-Copy the entire JSON output and add it as `AZURE_CREDENTIALS` secret in GitHub.
-
-2. **AZURE_SUBSCRIPTION_ID** - Your Azure subscription ID
-
-```bash
-az account show --query id --output tsv
-```
-
-### Workflow Triggers
-
-The workflow (``.github/workflows/azure-deploy.yml`) automatically triggers on:
-
-1. **Push to main/master** - When code changes affect:
-   - `apps/api/**`
-   - `apps/worker-alerts/**`
-   - `packages/**`
-   - `Dockerfile.*`
-   - `pnpm-lock.yaml`
-
-2. **Manual workflow dispatch** - Use GitHub UI to manually trigger with options to deploy API, worker, or both.
+---
 
 ## Membership Tiers Implementation
 

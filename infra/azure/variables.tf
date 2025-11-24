@@ -79,3 +79,15 @@ variable "api_max_replicas" {
   type        = number
   default     = 5
 }
+
+variable "stripe_secret_key" {
+  description = "Stripe secret key for payment processing"
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook secret for validating webhooks"
+  type        = string
+  sensitive   = true
+}

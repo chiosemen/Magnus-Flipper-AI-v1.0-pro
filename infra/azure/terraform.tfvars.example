@@ -1,0 +1,49 @@
+# Azure Configuration
+# ====================
+# Get your subscription ID: az account show --query id --output tsv
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Azure region for all resources
+location = "eastus"
+
+# Resource naming
+resource_group_name   = "magnus-rg"
+acr_name              = "magnusacr"  # Must be globally unique, alphanumeric only
+containerapps_env_name = "magnus-ca-env"
+redis_name            = "magnus-redis"  # Must be globally unique
+
+# Database Configuration
+# =======================
+# Supabase Postgres connection string (or Azure PostgreSQL)
+# Format: postgresql://[user]:[password]@[host]:[port]/[database]?pgbouncer=true
+database_url = "postgresql://postgres.abcdefghijklmnop:your-password@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+
+# Supabase Configuration
+# ========================
+supabase_url              = "https://abcdefghijklmnop.supabase.co"
+supabase_anon_key         = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key"
+supabase_service_role_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-service-role-key"
+
+# Authentication
+# ===============
+# Generate a secure random string for JWT signing
+# Example: openssl rand -base64 32
+jwt_secret = "your-super-secure-jwt-secret-change-this"
+
+# Stripe Configuration
+# =====================
+# Get from Stripe Dashboard: https://dashboard.stripe.com/apikeys
+stripe_secret_key = "sk_test_51abc...your-stripe-secret-key"
+
+# Get from Stripe Dashboard → Webhooks → Add endpoint → Signing secret
+stripe_webhook_secret = "whsec_abc...your-webhook-secret"
+
+# Environment
+# ============
+node_env = "production"  # or "staging", "development"
+
+# Scaling Configuration
+# ======================
+# API Container App replicas
+api_min_replicas = 1  # Set to 0 for dev/staging to scale to zero
+api_max_replicas = 3  # Maximum replicas under load

@@ -1,27 +1,3 @@
-terraform {
-  required_version = ">= 1.6.0"
-
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.113"
-    }
-  }
-
-  # Optional: Configure remote state storage
-  # backend "azurerm" {
-  #   resource_group_name  = "terraform-state-rg"
-  #   storage_account_name = "tfstatemagnusflipperai"
-  #   container_name       = "tfstate"
-  #   key                  = "magnus-flipper-ai.tfstate"
-  # }
-}
-
-provider "azurerm" {
-  features {}
-  subscription_id = var.subscription_id
-}
-
 # ===========================================================================
 # Resource Group
 # ===========================================================================
@@ -161,6 +137,16 @@ resource "azurerm_container_app" "api" {
     value = azurerm_redis_cache.redis.primary_access_key
   }
 
+  secret {
+    name  = "stripe-secret-key"
+    value = var.stripe_secret_key
+  }
+
+  secret {
+    name  = "stripe-webhook-secret"
+    value = var.stripe_webhook_secret
+  }
+
   ingress {
     external_enabled = true
     target_port      = 4000
@@ -232,6 +218,21 @@ resource "azurerm_container_app" "api" {
       env {
         name  = "PORT"
         value = "4000"
+      }
+
+      env {
+        name        = "STRIPE_SECRET_KEY"
+        secret_name = "stripe-secret-key"
+      }
+
+      env {
+        name        = "STRIPE_WEBHOOK_SECRET"
+        secret_name = "stripe-webhook-secret"
+      }
+
+      env {
+        name  = "APP_URL"
+        value = "https://${azurerm_container_app.api.latest_revision_fqdn}"
       }
     }
 

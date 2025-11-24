@@ -1,31 +1,30 @@
-name: Azure Deploy
+name: Azure Container Apps Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      skip_terraform:
+        description: 'Skip Terraform apply (only update container images)'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - "apps/api/**"
       - "apps/worker-alerts/**"
-      - "apps/worker-analyzer/**"
-      - "apps/worker-crawler/**"
-      - "apps/web/**"
+      - "packages/**"
       - "Dockerfile.api"
       - "Dockerfile.worker-alerts"
-      - "Dockerfile.worker-analyzer"
-      - "Dockerfile.worker-crawler"
-      - "Dockerfile.web"
+      - "infra/azure/**"
       - "pnpm-lock.yaml"
       - ".github/workflows/azure-deploy.yml"
 
 env:
-  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
-  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
-  AZURE_API_APP: magnus-api
-  AZURE_WEB_APP: magnus-web
-  AZURE_ALERTS_JOB: magnus-worker-alerts
-  AZURE_ANALYZER_JOB: magnus-worker-analyzer
-  AZURE_CRAWLER_JOB: magnus-worker-crawler
+  AZURE_REGION: eastus
+  ACR_NAME: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  API_IMAGE_NAME: magnus-api
+  WORKER_IMAGE_NAME: alerts-worker
 
 jobs:
   build-and-deploy:
@@ -36,7 +35,7 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
@@ -44,7 +43,7 @@ jobs:
         with:
           version: 9
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -61,27 +60,123 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and push images to ACR
+      - name: Login to Azure Container Registry
         run: |
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/api:${{ github.sha }} -f Dockerfile.api .
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-alerts:${{ github.sha }} -f Dockerfile.worker-alerts .
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-analyzer:${{ github.sha }} -f Dockerfile.worker-analyzer .
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-crawler:${{ github.sha }} -f Dockerfile.worker-crawler .
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/web:${{ github.sha }} -f Dockerfile.web .
+          az acr login --name $ACR_NAME
 
-      - name: Deploy to Azure Container Apps
+      - name: Build and push API image
         run: |
-          az containerapp update --name "$AZURE_API_APP" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/api:${{ github.sha }}" || true
-          az containerapp update --name "$AZURE_WEB_APP" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/web:${{ github.sha }}" || true
-          az containerapp job update --name "$AZURE_ALERTS_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-alerts:${{ github.sha }}" || true
-          az containerapp job update --name "$AZURE_ANALYZER_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-analyzer:${{ github.sha }}" || true
-          az containerapp job update --name "$AZURE_CRAWLER_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-crawler:${{ github.sha }}" || true
+          IMAGE_TAG="${{ github.sha }}"
+          echo "Building API image: $ACR_NAME.azurecr.io/$API_IMAGE_NAME:$IMAGE_TAG"
 
-      - name: Summary
+          docker build \
+            -f Dockerfile.api \
+            -t $ACR_NAME.azurecr.io/$API_IMAGE_NAME:$IMAGE_TAG \
+            -t $ACR_NAME.azurecr.io/$API_IMAGE_NAME:latest \
+            .
+
+          docker push $ACR_NAME.azurecr.io/$API_IMAGE_NAME:$IMAGE_TAG
+          docker push $ACR_NAME.azurecr.io/$API_IMAGE_NAME:latest
+
+      - name: Build and push Worker image
         run: |
-          echo "## Azure Deploy" >> $GITHUB_STEP_SUMMARY
-          echo "- API image: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/api:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Web image: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/web:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Alerts job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-alerts:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Analyzer job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-analyzer:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Crawler job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-crawler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          IMAGE_TAG="${{ github.sha }}"
+          echo "Building Worker image: $ACR_NAME.azurecr.io/$WORKER_IMAGE_NAME:$IMAGE_TAG"
+
+          docker build \
+            -f Dockerfile.worker-alerts \
+            -t $ACR_NAME.azurecr.io/$WORKER_IMAGE_NAME:$IMAGE_TAG \
+            -t $ACR_NAME.azurecr.io/$WORKER_IMAGE_NAME:latest \
+            .
+
+          docker push $ACR_NAME.azurecr.io/$WORKER_IMAGE_NAME:$IMAGE_TAG
+          docker push $ACR_NAME.azurecr.io/$WORKER_IMAGE_NAME:latest
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        if: github.event.inputs.skip_terraform != 'true'
+        working-directory: infra/azure
+        run: terraform init
+
+      - name: Terraform Plan
+        if: github.event.inputs.skip_terraform != 'true'
+        working-directory: infra/azure
+        env:
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_database_url: ${{ secrets.TF_VAR_database_url }}
+          TF_VAR_supabase_url: ${{ secrets.TF_VAR_supabase_url }}
+          TF_VAR_supabase_anon_key: ${{ secrets.TF_VAR_supabase_anon_key }}
+          TF_VAR_supabase_service_role_key: ${{ secrets.TF_VAR_supabase_service_role_key }}
+          TF_VAR_jwt_secret: ${{ secrets.TF_VAR_jwt_secret }}
+          TF_VAR_stripe_secret_key: ${{ secrets.TF_VAR_stripe_secret_key }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_stripe_webhook_secret }}
+        run: |
+          terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event.inputs.skip_terraform != 'true' && github.ref == 'refs/heads/main'
+        working-directory: infra/azure
+        env:
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_database_url: ${{ secrets.TF_VAR_database_url }}
+          TF_VAR_supabase_url: ${{ secrets.TF_VAR_supabase_url }}
+          TF_VAR_supabase_anon_key: ${{ secrets.TF_VAR_supabase_anon_key }}
+          TF_VAR_supabase_service_role_key: ${{ secrets.TF_VAR_supabase_service_role_key }}
+          TF_VAR_jwt_secret: ${{ secrets.TF_VAR_jwt_secret }}
+          TF_VAR_stripe_secret_key: ${{ secrets.TF_VAR_stripe_secret_key }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_stripe_webhook_secret }}
+        run: |
+          terraform apply -auto-approve tfplan
+
+      - name: Update API Container App
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          echo "Updating API Container App with image: $ACR_NAME.azurecr.io/$API_IMAGE_NAME:$IMAGE_TAG"
+
+          az containerapp update \
+            --name magnus-api \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_NAME.azurecr.io/$API_IMAGE_NAME:$IMAGE_TAG \
+            || echo "⚠️  API update failed - this is expected if resources don't exist yet"
+
+      - name: Update Worker Job
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          echo "Updating Worker Job with image: $ACR_NAME.azurecr.io/$WORKER_IMAGE_NAME:$IMAGE_TAG"
+
+          az containerapp job update \
+            --name worker-alerts-job \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_NAME.azurecr.io/$WORKER_IMAGE_NAME:$IMAGE_TAG \
+            || echo "⚠️  Worker update failed - this is expected if resources don't exist yet"
+
+      - name: Get API URL
+        id: get_api_url
+        run: |
+          API_FQDN=$(az containerapp show \
+            --name magnus-api \
+            --resource-group $RESOURCE_GROUP \
+            --query properties.configuration.ingress.fqdn \
+            --output tsv 2>/dev/null || echo "not-deployed-yet")
+
+          echo "api_url=https://$API_FQDN" >> $GITHUB_OUTPUT
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Images Built & Pushed" >> $GITHUB_STEP_SUMMARY
+          echo "- **API**: \`$ACR_NAME.azurecr.io/$API_IMAGE_NAME:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Worker**: \`$ACR_NAME.azurecr.io/$WORKER_IMAGE_NAME:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: $AZURE_REGION" >> $GITHUB_STEP_SUMMARY
+          echo "- **Resource Group**: $RESOURCE_GROUP" >> $GITHUB_STEP_SUMMARY
+          echo "- **API URL**: ${{ steps.get_api_url.outputs.api_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "Test the API: \`curl ${{ steps.get_api_url.outputs.api_url }}/health\`" >> $GITHUB_STEP_SUMMARY
