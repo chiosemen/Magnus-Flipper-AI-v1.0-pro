@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Progress } from '@/components/ui/progress'
 import { formatDistanceToNow } from 'date-fns'
 import {
   Bell,
@@ -13,25 +14,23 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  Zap,
 } from 'lucide-react'
 import { useSavedSearches, useAlerts, useListingsFeed } from '@/hooks/use-app-api'
+import { usePlan } from '@/hooks/use-plan'
+import { PLAN_METADATA } from '@magnus-flipper-ai/core'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 
-function ProgressBar({ value, label }: { value: number; label: string }) {
-  const clamped = Math.min(100, Math.max(0, value))
+function UsageBar({ value, max, label }: { value: number; max: number; label: string }) {
+  const percentage = Math.min(100, Math.max(0, (value / max) * 100))
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>{label}</span>
-        <span>{clamped}%</span>
+        <span>{value} / {max}</span>
       </div>
-      <div className="h-2 w-full rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-indigo-blue to-cyan-mint transition-all"
-          style={{ width: `${clamped}%` }}
-        />
-      </div>
+      <Progress value={value} max={max} />
     </div>
   )
 }
@@ -40,16 +39,10 @@ export default function DashboardPage() {
   const { searches, isLoading: loadingSearches } = useSavedSearches()
   const { stats: alertStats, alerts } = useAlerts()
   const { feed, isLoading: loadingFeed } = useListingsFeed({ page: 1, pageSize: 6 })
+  const { plan, limits, usage, isLoading: loadingPlan } = usePlan()
 
-  const usage = useMemo(() => {
-    const allowance = 10 // this would come from plan metadata
-    const used = searches.length
-    return {
-      used,
-      allowance,
-      percent: allowance ? Math.min(100, Math.round((used / allowance) * 100)) : 0,
-    }
-  }, [searches.length])
+  const planMeta = plan ? PLAN_METADATA[plan] : null
+  const activeSearchCount = searches.filter((s) => s.active).length
 
   return (
     <div className="space-y-8">
@@ -62,10 +55,10 @@ export default function DashboardPage() {
         </div>
         <div className="flex gap-3">
           <Button variant="secondary" asChild>
-            <Link href="/results">Browse Results</Link>
+            <Link href="/alerts">View Alerts</Link>
           </Button>
           <Button asChild>
-            <Link href="/saved-searches/new">
+            <Link href="/searches/new">
               <PlusCircle className="mr-2 h-4 w-4" />
               Create Search
             </Link>
@@ -82,21 +75,48 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Plan</p>
-                <p className="text-xl font-semibold">Pro Trader</p>
-              </div>
-              <Badge variant="neon">Active</Badge>
-            </div>
-            <ProgressBar value={usage.percent} label={`Saved searches ${usage.used}/${usage.allowance}`} />
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Alerts</span>
-              <span>{alertStats?.unread ?? 0} unread</span>
-            </div>
-            <Button variant="outline" asChild>
-              <Link href="/plan">Manage Plan</Link>
-            </Button>
+            {loadingPlan ? (
+              <>
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Plan</p>
+                    <p className="text-xl font-semibold">{planMeta?.displayName || 'Starter'}</p>
+                  </div>
+                  <Badge variant="neon">Active</Badge>
+                </div>
+                {limits && usage && (
+                  <>
+                    <UsageBar
+                      value={usage.savedSearches}
+                      max={limits.maxSavedSearches}
+                      label="Saved searches"
+                    />
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+                        <div className="text-muted-foreground">Active</div>
+                        <div className="text-lg font-semibold">{activeSearchCount}</div>
+                      </div>
+                      <div className="rounded-lg border border-border/50 bg-muted/30 p-3">
+                        <div className="text-muted-foreground">Check freq.</div>
+                        <div className="text-lg font-semibold">{limits.minRunIntervalMinutes}m</div>
+                      </div>
+                    </div>
+                  </>
+                )}
+                <Button variant="outline" asChild className="w-full">
+                  <Link href="/billing">
+                    <Zap className="mr-2 h-4 w-4" />
+                    Manage Plan
+                  </Link>
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -150,17 +170,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <Link
-              href="/saved-searches"
+              href="/searches"
               className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3 transition hover:border-cyan-mint/60"
             >
               <span>Manage saved searches</span>
               <Badge variant="outline">{searches.length}</Badge>
             </Link>
             <Link
-              href="/results"
+              href="/alerts"
               className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3 transition hover:border-cyan-mint/60"
             >
-              <span>See live results</span>
+              <span>View recent alerts</span>
               <TrendingUp className="h-4 w-4 text-cyan-mint" />
             </Link>
             <Link

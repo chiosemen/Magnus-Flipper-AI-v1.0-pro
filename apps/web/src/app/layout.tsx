@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { MainLayout } from '@/components/layout/main-layout'
+import { ToastProvider } from '@/components/ui/toast'
 
 export const metadata: Metadata = {
   title: 'Magnus Flipper AI - Premium Trading Dashboard',
@@ -23,7 +24,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
-        <MainLayout>{children}</MainLayout>
+        <ToastProvider>
+          <MainLayout>{children}</MainLayout>
+        </ToastProvider>
       </body>
     </html>
   )
