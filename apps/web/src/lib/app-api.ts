@@ -3,7 +3,22 @@ import type {
   Listing,
   ListingMatch,
   SearchFilter,
+  SubscriptionPlan,
 } from '@magnus-flipper-ai/core'
+
+export interface PlanUsage {
+  plan: SubscriptionPlan
+  usage: {
+    savedSearches: number
+    alertsThisMonth: number
+    scansThisMonth: number
+  }
+  limits: {
+    savedSearches: number
+    alertsPerMonth: number
+    scansPerMonth: number
+  }
+}
 
 export interface AlertsStats {
   unread: number
@@ -98,4 +113,8 @@ export function getAlertsRecent() {
 
 export function getAlertsStats() {
   return authedFetch<AlertsStats>('/api/alerts/stats')
+}
+
+export function getPlan() {
+  return authedFetch<PlanUsage>('/api/plan')
 }

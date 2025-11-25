@@ -14,7 +14,7 @@ import {
   Target,
   TrendingUp,
 } from 'lucide-react'
-import { useSavedSearches, useAlerts, useListingsFeed } from '@/hooks/use-app-api'
+import { useSavedSearches, useAlerts, useListingsFeed, usePlan } from '@/lib/queries'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -39,17 +39,16 @@ function ProgressBar({ value, label }: { value: number; label: string }) {
 export default function DashboardPage() {
   const { searches, isLoading: loadingSearches } = useSavedSearches()
   const { stats: alertStats, alerts } = useAlerts()
-  const { feed, isLoading: loadingFeed } = useListingsFeed({ page: 1, pageSize: 6 })
+  const { listings, isLoading: loadingFeed } = useListingsFeed({ page: 1, pageSize: 6 })
+  const { plan, usage, limits, isLoading: loadingPlan } = usePlan()
 
-  const usage = useMemo(() => {
-    const allowance = 10 // this would come from plan metadata
-    const used = searches.length
-    return {
-      used,
-      allowance,
-      percent: allowance ? Math.min(100, Math.round((used / allowance) * 100)) : 0,
-    }
-  }, [searches.length])
+  const usagePercent = useMemo(() => {
+    if (!usage || !limits) return 0
+    const percent = limits.savedSearches
+      ? Math.min(100, Math.round((usage.savedSearches / limits.savedSearches) * 100))
+      : 0
+    return percent
+  }, [usage, limits])
 
   return (
     <div className="space-y-8">
@@ -85,11 +84,16 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Plan</p>
-                <p className="text-xl font-semibold">Pro Trader</p>
+                <p className="text-xl font-semibold capitalize">
+                  {loadingPlan ? 'Loading...' : plan || 'Free'}
+                </p>
               </div>
               <Badge variant="neon">Active</Badge>
             </div>
-            <ProgressBar value={usage.percent} label={`Saved searches ${usage.used}/${usage.allowance}`} />
+            <ProgressBar
+              value={usagePercent}
+              label={`Saved searches ${usage?.savedSearches || 0}/${limits?.savedSearches || 0}`}
+            />
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Alerts</span>
               <span>{alertStats?.unread ?? 0} unread</span>
@@ -197,7 +201,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-3">
-              {feed?.listings?.map((listing) => (
+              {listings?.map((listing) => (
                 <Link key={listing.id} href={`/listings/${listing.id}`}>
                   <div className="rounded-xl border border-border/60 bg-muted/30 p-4 transition hover:border-cyan-mint/60 hover:bg-muted/50">
                     <div className="aspect-video w-full rounded-lg bg-gradient-to-br from-indigo-blue/20 to-cyan-mint/10" />
@@ -219,7 +223,7 @@ export default function DashboardPage() {
                   </div>
                 </Link>
               ))}
-              {feed?.listings?.length === 0 && (
+              {listings?.length === 0 && (
                 <p className="text-sm text-muted-foreground">No matches yet. Try adding a search.</p>
               )}
             </div>
