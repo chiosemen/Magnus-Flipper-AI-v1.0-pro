@@ -3,12 +3,23 @@ import type {
   Listing,
   ListingMatch,
   SearchFilter,
+  SubscriptionPlan,
+  PlanLimits,
 } from '@magnus-flipper-ai/core'
 
 export interface AlertsStats {
   unread: number
   lastNotifiedAt?: string | null
   totalMatches: number
+}
+
+export interface PlanResponse {
+  plan: SubscriptionPlan
+  limits: PlanLimits
+  usage: {
+    savedSearches: number
+    activeSearches: number
+  }
 }
 
 export interface ListingsFeedResponse {
@@ -98,4 +109,21 @@ export function getAlertsRecent() {
 
 export function getAlertsStats() {
   return authedFetch<AlertsStats>('/api/alerts/stats')
+}
+
+export function getPlan() {
+  return authedFetch<PlanResponse>('/api/plan')
+}
+
+export function createCheckoutSession(planId: string) {
+  return authedFetch<{ url: string }>('/api/billing/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ planId }),
+  })
+}
+
+export function createBillingPortalSession() {
+  return authedFetch<{ url: string }>('/api/billing/portal', {
+    method: 'POST',
+  })
 }
