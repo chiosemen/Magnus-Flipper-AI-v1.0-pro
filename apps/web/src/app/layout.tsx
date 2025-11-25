@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { MainLayout } from '@/components/layout/main-layout'
+import { SWRProvider } from '@/lib/providers/swr-provider'
 
 export const metadata: Metadata = {
   title: 'Magnus Flipper AI - Premium Trading Dashboard',
@@ -23,7 +23,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
-        <MainLayout>{children}</MainLayout>
+        <SWRProvider>{children}</SWRProvider>
       </body>
     </html>
   )
