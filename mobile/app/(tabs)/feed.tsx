@@ -1,17 +1,30 @@
+/**
+ * Feed Screen - Main listing feed with filters and infinite scroll
+ * Shows 2-column grid of listings with pull-to-refresh
+ */
+
 import { useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, SectionList, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  SectionList,
+  TextInput,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { FlashList } from '@shopify/flash-list';
 import { ListingCard } from '@/components/ListingCard';
-import { useListingsFeed } from '@/hooks/useListings';
+import { useListingsFeed } from '@/hooks/api/useListingsFeed';
 import { useSavedSearches } from '@/hooks/useSavedSearches';
 import {
   CATEGORIES,
   getManufacturersForCategory,
   getModelsForManufacturer,
 } from '@magnus-flipper-ai/ui-config';
-import type { Listing } from '@magnus-flipper-ai/core';
+import type { Listing, MarketplaceSite, Condition } from '@magnus-flipper-ai/core';
 
 function CategorySheet({
   onSelect,
@@ -71,23 +84,32 @@ export default function HomeFeed() {
   const [manufacturerQuery, setManufacturerQuery] = useState('');
   const [minPrice, setMinPrice] = useState<number | undefined>();
   const [radius, setRadius] = useState<number | undefined>();
-  const [conditions, setConditions] = useState<string[]>([]);
+  const [conditions, setConditions] = useState<Condition[]>([]);
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const modelSheetRef = useRef<BottomSheetModal>(null);
   const filterSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['45%'], []);
   const savedSearches = useSavedSearches();
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useListingsFeed({
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+  } = useListingsFeed({
     category,
     manufacturer,
-    models: models.join(','),
+    models,
     minPrice,
-    radius,
-    conditions: conditions.join(','),
+    radiusMiles: radius,
+    conditions,
   });
 
-  const listings = (data?.pages || []).flatMap((p: any) => p?.listings || []) as Listing[];
+  const listings = (data?.pages || []).flatMap((p) => p?.listings || []);
 
   const openManufacturer = () => bottomSheetRef.current?.present();
   const itemProp = ['re', 'nderItem'].join('');
@@ -115,26 +137,83 @@ export default function HomeFeed() {
           </View>
         </View>
 
-        <FlashList
-          data={listings}
-          numColumns={2}
-          keyExtractor={(item) => item.id}
-          {...{
-            [itemProp]: ({ item }: { item: Listing }) => (
-              <View className="w-1/2 p-1">
-                <ListingCard listing={item} />
-              </View>
-            ),
-          }}
-          estimatedItemSize={280}
-          onEndReached={() => hasNextPage && fetchNextPage()}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <Text className="py-4 text-center text-gray-400">Loading more...</Text>
-            ) : null
-          }
-        />
+        {/* Loading State */}
+        {isLoading && (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text className="mt-4 text-[#94A3B8]">Loading listings...</Text>
+          </View>
+        )}
+
+        {/* Error State */}
+        {isError && !isLoading && (
+          <View className="flex-1 items-center justify-center px-8">
+            <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
+            <Text className="mt-4 text-center text-lg font-semibold text-[#E6F6FF]">
+              Failed to load listings
+            </Text>
+            <Text className="mt-2 text-center text-[#94A3B8]">
+              Check your connection and try again
+            </Text>
+            <Pressable
+              className="mt-6 rounded-xl bg-[#3B82F6] px-6 py-3"
+              onPress={() => refetch()}
+            >
+              <Text className="font-semibold text-white">Retry</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !isError && listings.length === 0 && (
+          <View className="flex-1 items-center justify-center px-8">
+            <Ionicons name="search-outline" size={64} color="#64748B" />
+            <Text className="mt-4 text-center text-lg font-semibold text-[#E6F6FF]">
+              No listings found
+            </Text>
+            <Text className="mt-2 text-center text-[#94A3B8]">
+              Try adjusting your filters or check back later
+            </Text>
+          </View>
+        )}
+
+        {/* Listings Grid */}
+        {!isLoading && !isError && listings.length > 0 && (
+          <FlashList
+            data={listings}
+            numColumns={2}
+            keyExtractor={(item) => item.id}
+            {...{
+              [itemProp]: ({ item }: { item: Listing }) => (
+                <View className="w-1/2 px-1">
+                  <ListingCard listing={item} />
+                </View>
+              ),
+            }}
+            estimatedItemSize={300}
+            onEndReached={() => {
+              if (hasNextPage && !isFetchingNextPage) {
+                fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={() => refetch()}
+                tintColor="#3B82F6"
+                colors={['#3B82F6']}
+              />
+            }
+            ListFooterComponent={
+              isFetchingNextPage ? (
+                <View className="py-8">
+                  <ActivityIndicator size="small" color="#3B82F6" />
+                </View>
+              ) : null
+            }
+          />
+        )}
 
         <BottomSheetModal ref={bottomSheetRef} snapPoints={snapPoints} enablePanDownToClose>
           <View className="flex-1 p-4">
@@ -239,7 +318,7 @@ export default function HomeFeed() {
             </Pressable>
             <Text className="mt-4 text-gray-300">Condition</Text>
             <View className="mt-2 flex-row flex-wrap gap-2">
-              {['NEW', 'LIKE_NEW', 'GOOD', 'FAIR'].map((cond) => {
+              {(['NEW', 'LIKE_NEW', 'GOOD', 'FAIR'] as Condition[]).map((cond) => {
                 const active = conditions.includes(cond);
                 return (
                   <Pressable
@@ -251,7 +330,7 @@ export default function HomeFeed() {
                     }
                     className={`rounded-full px-3 py-2 ${active ? 'bg-primary/20' : 'bg-slate'}`}
                   >
-                    <Text className="text-white">{cond}</Text>
+                    <Text className="text-white">{cond.replace('_', ' ')}</Text>
                   </Pressable>
                 );
               })}
