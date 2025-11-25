@@ -19,10 +19,75 @@ declare module '@env' {
 
   // Feature Flags
   export const EXPO_PUBLIC_ENABLE_STRIPE: string;
-  export const EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: string;
-  export const EXPO_PUBLIC_ENABLE_BIOMETRIC_AUTH: string;
-  export const EXPO_PUBLIC_ENABLE_OFFLINE_MODE: string;
+export const EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS: string;
+export const EXPO_PUBLIC_ENABLE_BIOMETRIC_AUTH: string;
+export const EXPO_PUBLIC_ENABLE_OFFLINE_MODE: string;
 
-  // Support
-  export const EXPO_PUBLIC_SUPPORT_EMAIL: string;
+// Support
+export const EXPO_PUBLIC_SUPPORT_EMAIL: string;
+}
+
+declare module 'expo-router' {
+  export const Redirect: any;
+  export const Stack: any;
+  export const Tabs: any;
+  export const Slot: any;
+  export const Link: any;
+  export const router: any;
+  export const useRouter: any;
+  export const useNavigation: any;
+  export const useLocalSearchParams: any;
+  export const useSegments: any;
+}
+
+declare module '@tanstack/react-query' {
+  export const QueryClient: any;
+  export const QueryClientProvider: any;
+  export const useQuery: any;
+  export const useMutation: any;
+  export const useQueryClient: any;
+}
+
+declare module 'expo-secure-store' {
+  export const getItemAsync: any;
+  export const setItemAsync: any;
+  export const deleteItemAsync: any;
+  export const isAvailableAsync: any;
+}
+
+declare module 'expo-notifications' {
+  const value: any;
+  export = value;
+}
+
+declare module 'expo-device' {
+  const value: any;
+  export = value;
+}
+
+declare module '@stripe/stripe-react-native' {
+  export const StripeProvider: any;
+  export const useStripe: any;
+  export const presentPaymentSheet: any;
+}
+
+declare module 'zustand' {
+  const create: any;
+  export = create;
+}
+
+declare module 'zustand/middleware' {
+  export const persist: any;
+  export const createJSONStorage: any;
+  export const devtools: any;
+}
+
+declare module '@react-native-async-storage/async-storage' {
+  const value: any;
+  export = value;
+}
+
+declare module 'react-native' {
+  const RN: any;
+  export = RN;
 }

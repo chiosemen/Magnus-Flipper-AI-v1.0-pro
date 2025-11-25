@@ -43,7 +43,6 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
   store: redisClient
     ? new RedisStore({
-        // @ts-expect-error - Known type mismatch between redis@4 and rate-limit-redis
         sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
       })
     : undefined, // Falls back to memory store if Redis not available
@@ -76,7 +75,6 @@ export const strictLimiter = rateLimit({
   legacyHeaders: false,
   store: redisClient
     ? new RedisStore({
-        // @ts-expect-error - Known type mismatch
         sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
         prefix: "strict:",
       })
@@ -106,7 +104,6 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true, // Don't count successful auth attempts
   store: redisClient
     ? new RedisStore({
-        // @ts-expect-error - Known type mismatch
         sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
         prefix: "auth:",
       })

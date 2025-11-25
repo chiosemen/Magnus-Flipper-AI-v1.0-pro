@@ -20,5 +20,6 @@ const doc = generator.generateDocument({
 });
 
 const out = path.resolve("src/openapi/openapi.yaml");
-fs.writeFileSync(out, generator.generateYaml(doc));
+const serialized = JSON.stringify(doc, null, 2);
+fs.writeFileSync(out, serialized);
 console.log("✅ OpenAPI spec generated at:", out);
