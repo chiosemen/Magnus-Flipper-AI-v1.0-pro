@@ -1,25 +1,15 @@
-import { useCallback, useState } from 'react'
-import { api } from '../lib/api'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@magnus-flipper-ai/api-client';
 
-export function useDeleteSavedSearch(onSuccess?: () => void) {
-  const [isLoading, setLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
+const QUERY_KEY = ['saved-searches'];
 
-  const mutate = useCallback(
-    async (id: string) => {
-      setLoading(true)
-      setError(null)
-      try {
-        await api.deleteSavedSearch(id)
-        onSuccess?.()
-      } catch (err: any) {
-        setError(err)
-      } finally {
-        setLoading(false)
-      }
+export function useDeleteSavedSearch() {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, unknown, string>({
+    mutationFn: (id) => apiClient.savedSearches.remove(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
-    [onSuccess]
-  )
-
-  return { mutate, isLoading, error }
+  });
 }

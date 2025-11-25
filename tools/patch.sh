@@ -14,12 +14,21 @@ fi
 
 echo "⚡ Opening Codex patch mode for: $FILE"
 echo ""
-echo "Type your instructions below. When done, press CTRL+D."
+echo "Type your @patch instructions below. When done, press CTRL+D."
 echo ""
 
-codex -m gpt-5.1-codex-max apply <<EOF
+INSTRUCTIONS=$(cat)
+
+if [ -z "$INSTRUCTIONS" ]; then
+  echo "❌ No instructions provided. Aborting."
+  exit 1
+fi
+
+PROMPT=$(cat <<EOF
 @patch $FILE
 # FIX / MODIFY / IMPROVE THIS FILE
-# Your instructions go under here:
-
+$INSTRUCTIONS
 EOF
+)
+
+codex exec --sandbox workspace-write -m gpt-5.1-codex-max "$PROMPT"

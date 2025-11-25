@@ -1,10 +1,21 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import {
+  createApiClient,
+  type AlertRecord,
+  type AlertsStats as ApiAlertsStats,
+  type Listing as ApiListing,
+  type SavedSearch as ApiSavedSearch,
+} from '@magnus-flipper-ai/api-client';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { env } from './env';
 
 class MagnusAPI {
   private client: AxiosInstance;
+  private restClient = createApiClient({
+    baseUrl: env.apiUrl,
+    getToken: () => SecureStore.getItemAsync('authToken'),
+  });
 
   constructor() {
     this.client = axios.create({
@@ -39,6 +50,48 @@ class MagnusAPI {
         return Promise.reject(error);
       }
     );
+  }
+
+  private mapSavedSearch(api: ApiSavedSearch) {
+    const createdAt = api.createdAt ?? new Date().toISOString();
+    return {
+      ...api,
+      name: api.category,
+      locationCity: api.location,
+      createdAt,
+    };
+  }
+
+  private mapListing(api: ApiListing) {
+    const postedAt = api.postedAt ?? new Date().toISOString();
+    return {
+      ...api,
+      site: api.source,
+      city: api.location,
+      imageUrls: api.image ? [api.image] : [],
+      scrapedAt: postedAt,
+    };
+  }
+
+  private async hydrateAlert(record: AlertRecord) {
+    const [listingResult, savedSearchResult] = await Promise.allSettled([
+      this.restClient.listings.getById(record.listing_id),
+      this.restClient.savedSearches.getById(record.saved_search_id),
+    ]);
+
+    return {
+      ...record,
+      listing: listingResult.status === 'fulfilled' ? this.mapListing(listingResult.value) : undefined,
+      savedSearch: savedSearchResult.status === 'fulfilled' ? this.mapSavedSearch(savedSearchResult.value) : undefined,
+    };
+  }
+
+  private mapAlertsStats(stats: ApiAlertsStats) {
+    return {
+      unread: stats.totalAlerts ?? 0,
+      lastNotifiedAt: stats.lastMatch ?? null,
+      totalMatches: stats.totalAlerts ?? 0,
+    };
   }
 
   // Deals API
@@ -125,45 +178,55 @@ class MagnusAPI {
   }
 
   // Saved Searches
-  async getSavedSearches() {
-    const { data } = await this.client.get('/api/saved-searches');
-    return data;
+  async getSavedSearches(signal?: AbortSignal) {
+    const data = await this.restClient.savedSearches.list(signal);
+    return data.map((s) => this.mapSavedSearch(s));
   }
 
-  async createSavedSearch(payload: any) {
-    const { data } = await this.client.post('/api/saved-searches', payload);
-    return data;
+  async createSavedSearch(payload: any, signal?: AbortSignal) {
+    const data = await this.restClient.savedSearches.create(payload as ApiSavedSearch, signal);
+    return this.mapSavedSearch(data);
   }
 
-  async updateSavedSearch(id: string, payload: any) {
-    const { data } = await this.client.patch(`/api/saved-searches/${id}`, payload);
-    return data;
+  async updateSavedSearch(id: string, payload: any, signal?: AbortSignal) {
+    const data = await this.restClient.savedSearches.update(id, payload as ApiSavedSearch, signal);
+    return this.mapSavedSearch(data);
   }
 
-  async deleteSavedSearch(id: string) {
-    await this.client.delete(`/api/saved-searches/${id}`);
+  async deleteSavedSearch(id: string, signal?: AbortSignal) {
+    await this.restClient.savedSearches.remove(id, signal);
   }
 
   // Listings feed + detail
-  async getListingsFeed(params?: Record<string, string | number | undefined>) {
-    const { data } = await this.client.get('/api/listings/feed', { params });
-    return data;
+  async getListingsFeed(params?: Record<string, string | number | undefined>, signal?: AbortSignal) {
+    const page = params?.page !== undefined ? Number(params.page) : undefined;
+    const limit =
+      (params?.pageSize ?? params?.limit) !== undefined ? Number(params?.pageSize ?? params?.limit) : undefined;
+    const listings = await this.restClient.listings.feed({ page, limit }, signal);
+    const mapped = listings.map((l) => this.mapListing(l));
+    const pageSize = limit ?? mapped.length || 0;
+    return {
+      listings: mapped,
+      total: mapped.length,
+      page: page ?? 1,
+      pageSize,
+    };
   }
 
-  async getListing(id: string) {
-    const { data } = await this.client.get(`/api/listings/${id}`);
-    return data;
+  async getListing(id: string, signal?: AbortSignal) {
+    const data = await this.restClient.listings.getById(id, signal);
+    return this.mapListing(data);
   }
 
   // Alerts
-  async getRecentAlerts() {
-    const { data } = await this.client.get('/api/alerts/recent');
-    return data;
+  async getRecentAlerts(signal?: AbortSignal) {
+    const data = await this.restClient.alerts.recent(signal);
+    return Promise.all(data.map((a) => this.hydrateAlert(a)));
   }
 
-  async getAlertsStats() {
-    const { data } = await this.client.get('/api/alerts/stats');
-    return data;
+  async getAlertsStats(signal?: AbortSignal) {
+    const stats = await this.restClient.alerts.stats(signal);
+    return this.mapAlertsStats(stats);
   }
 
   // Profile API

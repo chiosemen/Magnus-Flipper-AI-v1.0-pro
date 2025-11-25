@@ -1,25 +1,15 @@
-import { useCallback, useState } from 'react'
-import { api, SavedSearchPayload } from '../lib/api'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient, type SavedSearch, type SavedSearchUpdateRequest } from '@magnus-flipper-ai/api-client';
 
-export function useUpdateSavedSearch(onSuccess?: () => void) {
-  const [isLoading, setLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
+const QUERY_KEY = ['saved-searches'];
 
-  const mutate = useCallback(
-    async (id: string, payload: SavedSearchPayload) => {
-      setLoading(true)
-      setError(null)
-      try {
-        await api.updateSavedSearch(id, payload)
-        onSuccess?.()
-      } catch (err: any) {
-        setError(err)
-      } finally {
-        setLoading(false)
-      }
+export function useUpdateSavedSearch() {
+  const queryClient = useQueryClient();
+
+  return useMutation<SavedSearch, unknown, { id: string; payload: SavedSearchUpdateRequest }>({
+    mutationFn: ({ id, payload }) => apiClient.savedSearches.update(id, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
-    [onSuccess]
-  )
-
-  return { mutate, isLoading, error }
+  });
 }

@@ -66,7 +66,7 @@ export function useListing(id?: string) {
 
 export function useAlerts() {
   const { data, error, isLoading, mutate } = useSWR<
-    Array<ListingMatch & { listing: Listing }>
+    Array<ListingMatch & { listing?: Listing; savedSearch?: SavedSearch }>
   >('alerts-recent', () => fetcher(getAlertsRecent), { revalidateOnFocus: false })
 
   const stats = useSWR<AlertsStats>('alerts-stats', () => fetcher(getAlertsStats), {

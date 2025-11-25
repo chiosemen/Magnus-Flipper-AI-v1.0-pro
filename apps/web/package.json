@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@magnus-flipper-ai/api-client": "workspace:*",
+    "@magnus-flipper-ai/ui-config": "workspace:*",
     "@magnus-flipper-ai/sdk": "workspace:*",
+    "@tanstack/react-query": "^5.17.9",
     "next": "14.2.20",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

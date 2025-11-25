@@ -1,10 +1,10 @@
 import useSWR from 'swr'
 import { api } from '../lib/api'
-import type { Listing, ListingMatch } from '@magnus-flipper-ai/core'
+import type { Listing, ListingMatch, SavedSearch } from '@magnus-flipper-ai/core'
 import type { AlertsStats } from '../lib/api'
 
 export function useAlerts() {
-  const recent = useSWR<Array<ListingMatch & { listing: Listing; savedSearch: any }>>(
+  const recent = useSWR<Array<ListingMatch & { listing?: Listing; savedSearch?: SavedSearch }>>(
     'alerts-recent',
     () => api.getAlertsRecent(),
     { revalidateOnFocus: false }

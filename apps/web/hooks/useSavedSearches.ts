@@ -1,17 +1,42 @@
-import useSWR from 'swr'
-import { api, SavedSearchPayload } from '../lib/api'
-import type { SavedSearch } from '@magnus-flipper-ai/core'
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient, type SavedSearch, type SavedSearchCreateRequest, type SavedSearchUpdateRequest } from '@magnus-flipper-ai/api-client';
+
+const QUERY_KEY = ['saved-searches'];
 
 export function useSavedSearches() {
-  const { data, error, isLoading, mutate } = useSWR<SavedSearch[]>(
-    'saved-searches',
-    () => api.getSavedSearches(),
-    { revalidateOnFocus: false }
-  )
+  const queryClient = useQueryClient();
 
-  const create = (payload: SavedSearchPayload) => api.createSavedSearch(payload).then(() => mutate())
-  const update = (id: string, payload: SavedSearchPayload) => api.updateSavedSearch(id, payload).then(() => mutate())
-  const remove = (id: string) => api.deleteSavedSearch(id).then(() => mutate())
+  const query = useQuery<SavedSearch[]>({
+    queryKey: QUERY_KEY,
+    queryFn: () => apiClient.savedSearches.list(),
+    staleTime: 60_000,
+  });
 
-  return { data, error, isLoading, mutate, create, update, remove }
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+
+  const create = async (payload: SavedSearchCreateRequest) => {
+    const created = await apiClient.savedSearches.create(payload);
+    await invalidate();
+    return created;
+  };
+
+  const update = async (id: string, payload: SavedSearchUpdateRequest) => {
+    const updated = await apiClient.savedSearches.update(id, payload);
+    await invalidate();
+    return updated;
+  };
+
+  const remove = async (id: string) => {
+    await apiClient.savedSearches.remove(id);
+    await invalidate();
+  };
+
+  return {
+    ...query,
+    searches: query.data ?? [],
+    create,
+    update,
+    remove,
+    refresh: invalidate,
+  };
 }

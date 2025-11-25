@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Bell, ShieldCheck, Settings, Target, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Bell, ShieldCheck, Settings, Target, Sparkles, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
