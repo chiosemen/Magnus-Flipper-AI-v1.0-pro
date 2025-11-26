@@ -17,5 +17,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Barrel export for @magnus-flipper-ai/core
 __exportStar(require("./logger"), exports);
 __exportStar(require("./env"), exports);
+__exportStar(require("./search"), exports);
 __exportStar(require("./plans"), exports);
 //# sourceMappingURL=index.js.map

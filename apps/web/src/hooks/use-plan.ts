@@ -13,12 +13,25 @@ export function usePlan() {
     { revalidateOnFocus: false }
   )
 
+  if (error) {
+    return {
+      plan: undefined,
+      limits: undefined,
+      usage: undefined,
+      isLoading: false,
+      error,
+      refresh: mutate,
+      isError: true,
+    }
+  }
+
   return {
     plan: data?.plan,
     limits: data?.limits,
     usage: data?.usage,
     isLoading,
-    error,
+    error: null,
     refresh: mutate,
+    isError: false,
   }
 }

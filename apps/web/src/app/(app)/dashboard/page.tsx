@@ -15,6 +15,8 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { useSavedSearches, useAlerts, useListingsFeed } from '@/hooks/use-app-api'
+import { useBilling } from '@/lib/queries/useBilling'
+import { TrialBanner } from '@/components/billing/TrialBanner'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -40,6 +42,7 @@ export default function DashboardPage() {
   const { searches, isLoading: loadingSearches } = useSavedSearches()
   const { stats: alertStats, alerts } = useAlerts()
   const { feed, isLoading: loadingFeed } = useListingsFeed({ page: 1, pageSize: 6 })
+  const { data: billing } = useBilling()
 
   const usage = useMemo(() => {
     const allowance = 10 // this would come from plan metadata
@@ -53,6 +56,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <TrialBanner plan={billing?.plan} status={billing?.status} trialExpiresAt={billing?.trial_expires_at} />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Magnus Marketplace Dashboard</h1>
@@ -117,7 +122,7 @@ export default function DashboardPage() {
                 {alerts.slice(0, 3).map((alert) => (
                   <div key={alert.id} className="flex items-center justify-between text-sm">
                     <div>
-                      <p className="font-medium">{alert.savedSearch?.name || 'Match'}</p>
+                      <p className="font-medium">{alert.savedSearchId || 'Match'}</p>
                       <p className="text-muted-foreground">
                         {formatDistanceToNow(new Date(alert.matchedAt))} ago
                       </p>
