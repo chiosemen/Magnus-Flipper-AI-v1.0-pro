@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from 'next'
 import './globals.css'
 import { SWRProvider } from '@/lib/providers/swr-provider'

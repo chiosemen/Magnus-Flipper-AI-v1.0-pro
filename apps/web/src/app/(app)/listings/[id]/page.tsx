@@ -1,76 +1,51 @@
-'use client'
+"use client";
 
-import { useParams } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { useListing } from '@/hooks/use-app-api'
-import { formatDistanceToNow } from 'date-fns'
-import { ExternalLink } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { getListing } from "@/lib/app-api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function ListingDetailPage() {
-  const params = useParams<{ id: string }>()
-  const { listing, isLoading } = useListing(params.id)
+  const { id } = useParams<{ id: string }>();
+  const [listing, setListing] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (isLoading) {
-    return <p className="text-muted-foreground">Loading listing...</p>
-  }
+  useEffect(() => {
+    let mounted = true;
+    if (!id) return;
+    getListing(id as string)
+      .then((data) => mounted && setListing(data))
+      .catch(() => mounted && setListing(null))
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
 
-  if (!listing) {
-    return <p className="text-muted-foreground">Listing not found.</p>
-  }
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading listing…</div>;
+  if (!listing) return <div className="p-6 text-sm text-muted-foreground">Listing not found.</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground capitalize">{listing.site?.toLowerCase()}</p>
-          <h1 className="text-3xl font-bold">{listing.title}</h1>
-          <p className="text-muted-foreground">
-            {listing.city || listing.region || 'Unknown location'} •{' '}
-            {listing.postedAt ? `${formatDistanceToNow(new Date(listing.postedAt))} ago` : 'posted'}
-          </p>
-        </div>
-        <Badge variant="secondary">{listing.condition || 'n/a'}</Badge>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2 neon-glow-hover">
-          <CardContent className="p-4 space-y-3">
-            <div className="aspect-video rounded-xl bg-gradient-to-br from-indigo-blue/20 to-cyan-mint/10" />
-            <p className="text-sm text-muted-foreground">{listing.description || 'No description.'}</p>
-          </CardContent>
-        </Card>
-        <Card className="neon-glow-hover">
-          <CardHeader>
-            <CardTitle>Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Price</span>
-              <span className="font-mono text-xl">${listing.price}</span>
-            </div>
-            {listing.model && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Model</span>
-                <span className="font-semibold">{listing.model}</span>
-              </div>
-            )}
-            {listing.manufacturer && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Manufacturer</span>
-                <span className="font-semibold">{listing.manufacturer}</span>
-              </div>
-            )}
-            <Button asChild className="w-full">
-              <a href={listing.url} target="_blank" rel="noreferrer">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Open original
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>{listing.title}</span>
+            {listing.site && <Badge variant="outline" className="capitalize">{listing.site}</Badge>}
+          </CardTitle>
+          <p className="text-muted-foreground">{listing.location || "Unknown location"}</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-2xl font-bold text-foreground">${listing.price}</p>
+          {listing.description && <p className="text-sm text-muted-foreground">{listing.description}</p>}
+          {listing.url && (
+            <a className="text-sm text-cyan-400 underline" href={listing.url} target="_blank" rel="noreferrer">
+              View on marketplace
+            </a>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 }

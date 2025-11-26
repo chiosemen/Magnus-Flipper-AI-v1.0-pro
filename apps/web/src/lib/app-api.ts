@@ -37,7 +37,7 @@ export interface SavedSearchPayload extends Partial<SearchFilter> {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 
-function getAuthHeader() {
+function getAuthHeader(): Record<string, string> {
   if (typeof window === 'undefined') return {}
   // Supabase stores the access token in localStorage; fall back to a generic key for SSR safety.
   const token =
@@ -49,13 +49,15 @@ function getAuthHeader() {
 }
 
 async function authedFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...getAuthHeader(),
+    ...(init?.headers as Record<string, string> | undefined),
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeader(),
-      ...(init?.headers || {}),
-    },
+    headers,
     cache: 'no-store',
   })
 
