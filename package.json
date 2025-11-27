@@ -19,6 +19,9 @@
     "start:worker-alerts": "pnpm --filter worker-alerts start",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
+    "test:e2e": "cypress run --config-file tests/cypress.config.ts",
+    "test:e2e:open": "cypress open --config-file tests/cypress.config.ts",
+    "spec:check": "ts-node scripts/validate-imports.ts",
     "deploy:check": "bash scripts/deploy-check.sh"
   },
   "devDependencies": {
