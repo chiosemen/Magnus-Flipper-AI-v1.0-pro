@@ -1,93 +1,121 @@
 import type { Metadata } from "next";
-import { FlipHero } from "@/components/marketing/FlipHero";
-import { FeatureCards } from "@/components/marketing/FeatureCards";
-import { PricingCalculator } from "@/components/marketing/PricingCalculator";
-import { ComparisonTable } from "@/components/marketing/ComparisonTable";
-import { TrialCTA } from "@/components/marketing/TrialCTA";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  MarketingFeatureBlock,
+  MarketingHero,
+  MarketingPricingCTA,
+  MarketingScreenshots,
+  MarketingSEO,
+} from "@/components/marketing/shared";
+
 export const metadata: Metadata = {
-  title: "Flip Couches | Magnus Flipper",
-  description: "Turn couches into quick flips with instant alerts across top marketplaces.",
+  title: "Flip Couches & Furniture | Magnus Flipper",
+  description: "Local pickup alerts, condition filters, and price comps for furniture flips.",
   openGraph: {
-    title: "Flip Couches | Magnus Flipper",
-    description: "Turn couches into quick flips with instant alerts across top marketplaces.",
+    title: "Flip Couches & Furniture | Magnus Flipper",
+    description: "Local pickup alerts, condition filters, and price comps for furniture flips.",
     url: "https://magnusflipper.ai/flip/couches",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Flip Couches | Magnus Flipper",
-    description: "Turn couches into quick flips with instant alerts across top marketplaces.",
   },
   alternates: {
     canonical: "https://magnusflipper.ai/flip/couches",
   },
 };
 
-export default function FlipCouchesPage() {
+export default function CouchesPage() {
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-12 space-y-12">
-        <div className="space-y-3">
-          <h1 className="text-4xl font-bold tracking-tight">Flip Couches</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
-            Turn couches into quick flips with instant alerts across top marketplaces.
-          </p>
-        </div>
-
-        <FlipHero
-          eyebrow="Couches"
-          title="Turn couches into quick flips with real-time alerts."
-          subtitle="Magnus watches the marketplaces nonstop, filters spam, and pings you when quality sofas appear nearby."
+    <div className="bg-slate-950 text-slate-100">
+      <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 py-12 sm:py-16">
+        <MarketingHero
+          eyebrow="Furniture Flips"
+          title="Snipe profitable couches before they vanish."
+          subtitle="Magnus prioritizes clean couches, sectionals, and designer pieces with pickup-ready alerts and price history context."
+          highlights={[
+            "Local pickup tuned",
+            "Condition + material tags",
+            "Photo-first spam filtering",
+          ]}
+          actions={
+            <>
+              <Button asChild size="lg" className="bg-white text-slate-900 hover:bg-slate-100">
+                <Link href="/pricing">Start free trial</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="border-white/50 text-white hover:bg-white/10">
+                <Link href="/marketplace">See marketplaces</Link>
+              </Button>
+            </>
+          }
         />
 
-        <FeatureCards
-          heading="Why flip couches with Magnus?"
-          copy="Less scrolling, more profitable pickups."
+        <MarketingFeatureBlock
+          title="Filters built for furniture flippers"
+          description="Focus on clean inventory with fast pickup potential — not junk on the curb."
+          features={[
+            { title: "Condition & material", body: "Tag leather, fabric, and sectional layouts with condition cues." },
+            { title: "Pickup fit", body: "Filter by distance, stairs likelihood, and vehicle size guidance." },
+            { title: "Photo-first scanning", body: "Magnus surfaces real photos and suppresses stock-image spam." },
+            { title: "Designer alerts", body: "Prioritize named brands and high-demand silhouettes automatically." },
+            { title: "Price anchors", body: "See historical lows and suggested offers to keep margin healthy." },
+            { title: "Instant mobile alerts", body: "Get notified within minutes while keeping noise out." },
+          ]}
+        />
+
+        <MarketingScreenshots
+          title="Real-time couch alerts with pickup notes"
+          description="See condition tags, pickup fit, and quick-message links — all ranked by resale potential."
           items={[
-            { title: "Condition targeting", body: "Keywords for ‘like new’, ‘no pets’, ‘smoke free’ keep quality high." },
-            { title: "Radius controls", body: "Focus on drivable pickups with tight distance filters." },
-            { title: "Fast alerts", body: "Message sellers first and secure pickup windows.", tag: "Speed" },
+            { title: "Alert tiles", caption: "Condition, material, and pickup notes in one glance." },
+            { title: "Margin view", caption: "Suggested offers and expected resale based on comps." },
+            { title: "Route ready", caption: "Distance and vehicle fit hints before you reach out." },
           ]}
         />
 
-        <PricingCalculator />
+        <section className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-lg sm:p-10">
+          <div className="space-y-4 sm:flex sm:items-center sm:justify-between sm:space-y-0">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-200/80">Trusted Signals</p>
+              <h2 className="text-2xl font-semibold text-white sm:text-3xl">
+                Only listings you can actually pick up and profit from.
+              </h2>
+              <p className="mt-2 max-w-2xl text-slate-300">
+                Magnus filters out moldy, broken, or “free, you haul” junk, so your alerts focus on clean inventory worth
+                the drive.
+              </p>
+            </div>
+            <div className="grid gap-3 text-sm text-slate-200 sm:text-base">
+              <div className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3">
+                <p className="text-xs uppercase text-cyan-200/80">Quality filter</p>
+                <p className="text-lg font-semibold text-white">90% junk suppressed</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3">
+                <p className="text-xs uppercase text-cyan-200/80">Alert speed</p>
+                <p className="text-lg font-semibold text-white">Under 5 minutes</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        <FeatureCards
-          heading="Marketplace coverage"
-          copy="Unified feed across Facebook Marketplace, OfferUp, Craigslist, Gumtree."
-          items={[
-            { title: "Brand filters", body: "Search for West Elm, Article, IKEA, and more." },
-            { title: "Photo-first browsing", body: "Preview quickly, skip obvious spam." },
-            { title: "Cadence tuning", body: "Increase scan speed for hot metro areas." },
-          ]}
+        <MarketingPricingCTA
+          title="Flip couches with cleaner signals and faster alerts."
+          description="Run local pickup playbooks with confidence — Magnus keeps your inbox free of junk."
+          primaryAction={
+            <Button asChild size="lg" className="bg-white text-slate-900 hover:bg-slate-100">
+              <Link href="/pricing">Get started</Link>
+            </Button>
+          }
+          secondaryAction={
+            <Button asChild size="lg" variant="outline" className="border-white/60 text-white hover:bg-white/10">
+              <Link href="/marketplace">See coverage</Link>
+            </Button>
+          }
         />
 
-        <ComparisonTable
-          heading="Manual searching vs Magnus"
-          copy="Stop refreshing; let alerts bring the best sofas to you."
-          rows={[
-            { label: "Scan speed", magnus: "2–5 min (plan-based)", competitor: "Manual refresh every 20–40 min" },
-            { label: "Noise", magnus: "Spam + duplicates filtered", competitor: "Reposts, bait pricing, rentals" },
-            { label: "Pickups", magnus: "Secure slots before others see it", competitor: "Late to message sellers" },
-          ]}
-        />
-
-        <TrialCTA />
-
-        <script
-          type="application/ld+json"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Product",
-              name: "Magnus Flipper Couches",
-              description: "Marketplace scanning and alerting for couch flippers.",
-              brand: "Magnus Flipper",
-              offers: [{ "@type": "Offer", availability: "https://schema.org/InStock" }],
-            }),
-          }}
+        <MarketingSEO
+          name="Magnus Flipper — Couch Flipping Alerts"
+          description="Local pickup-ready couch flipping alerts with condition filters and price comps."
+          url="https://magnusflipper.ai/flip/couches"
         />
       </div>
-    </main>
+    </div>
   );
 }

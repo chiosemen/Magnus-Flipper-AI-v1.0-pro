@@ -5,8 +5,11 @@ import { AlertCard } from "@/components/AlertCard";
 import { Loading } from "@/components/Loading";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { useAlerts } from "@/lib/queries/useAlerts";
+import { useTrialGate } from "@/hooks/useTrialGate";
 
 export default function AlertsPage() {
+  const { gate } = useTrialGate();
+  gate(["active", "trialing"]);
   const { alerts, isLoading, error } = useAlerts();
   const [filter, setFilter] = useState<"all" | "unread">("all");
 

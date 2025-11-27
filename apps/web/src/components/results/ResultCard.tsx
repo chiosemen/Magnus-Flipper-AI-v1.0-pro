@@ -9,7 +9,10 @@ import type { Listing } from "@magnus-flipper-ai/core";
 export function ResultCard({ item }: { item: Listing }) {
   return (
     <Link href={`/listings/${item.id}`}>
-      <Card className="cursor-pointer transition hover:shadow-lg">
+      <Card
+        className="cursor-pointer transition hover:shadow-lg"
+        data-testid="listing-card"
+      >
         <CardContent className="space-y-2 p-4">
           <div className="flex items-center justify-between">
             <h3 className="line-clamp-1 text-lg font-semibold">{item.title}</h3>

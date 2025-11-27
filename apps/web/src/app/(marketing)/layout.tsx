@@ -8,9 +8,8 @@ export default function MarketingLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-dark-slate">
-      {/* TODO: Add marketing header/nav in future */}
-      <main>{children}</main>
+    <div className="min-h-screen bg-slate-950 text-slate-100 antialiased scroll-smooth">
+      <main className="flex min-h-screen flex-col">{children}</main>
     </div>
   )
 }

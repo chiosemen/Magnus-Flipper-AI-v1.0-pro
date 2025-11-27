@@ -4,12 +4,12 @@ import { Feather } from "@expo/vector-icons";
 import { AppHeader } from "@/components/AppHeader";
 import { Loading } from "@/components/Loading";
 import { ErrorMessage } from "@/components/ErrorMessage";
-import { useSavedSearches } from "@/lib/queries/useSavedSearches";
+import { useSavedSearches } from "@/hooks/useSavedSearches";
 
 const MARKETPLACES = ["Facebook Marketplace", "Craigslist", "Gumtree", "OfferUp"];
 
 export default function NewSearchPage() {
-  const { create, isLoading: loadingList, error } = useSavedSearches();
+  const { createSavedSearch, loading: loadingList, error } = useSavedSearches();
   const [step, setStep] = useState(0);
   const [marketplace, setMarketplace] = useState<string | null>(MARKETPLACES[0]);
   const [keywords, setKeywords] = useState("");
@@ -20,7 +20,7 @@ export default function NewSearchPage() {
   if (error) return <ErrorMessage message="Failed to load saved searches." />;
 
   const handleCreate = async () => {
-    await create.mutateAsync({
+    await createSavedSearch({
       name: keywords || "New search",
       category: marketplace || undefined,
       minPrice: minPrice ? Number(minPrice) : undefined,

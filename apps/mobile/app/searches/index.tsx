@@ -1,22 +1,36 @@
-import { SafeAreaView, ScrollView, View, Text, Pressable } from "react-native";
-import { Link } from "expo-router";
+import { SafeAreaView, ScrollView, View, Text, Pressable, RefreshControl, Alert } from "react-native";
+import { Link, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { AppHeader } from "@/components/AppHeader";
 import { SavedSearchCard } from "@/components/SavedSearchCard";
 import { Loading } from "@/components/Loading";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { EmptyState } from "@/components/EmptyState";
-import { useSavedSearches } from "@/lib/queries/useSavedSearches";
+import { useSavedSearches } from "@/hooks/useSavedSearches";
+import { useTrialGate } from "@/hooks/useTrialGate";
 
 export default function SearchesPage() {
-  const { searches, isLoading, error } = useSavedSearches();
+  const { gate } = useTrialGate();
+  gate(["active", "trialing"]);
+  const router = useRouter();
+  const { searches, loading, error, refresh, deleteSavedSearch } = useSavedSearches();
 
-  if (isLoading) return <Loading />;
+  if (loading && searches.length === 0) return <Loading />;
   if (error) return <ErrorMessage message="Failed to load searches." />;
+
+  const confirmDelete = (id: string) => {
+    Alert.alert("Delete search", "Are you sure you want to delete this search?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => deleteSavedSearch(id).then(refresh) },
+    ]);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 24 }}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#22d3ee" />}
+      >
         <AppHeader title="Saved Searches" />
         <View className="px-4">
           <Link href="/searches/new" asChild>
@@ -33,9 +47,12 @@ export default function SearchesPage() {
               <SavedSearchCard
                 key={s.id}
                 name={s.name || "Search"}
-                filters={[s.category, s.minPrice ? `$${s.minPrice}+` : null, s.maxPrice ? `<$${s.maxPrice}` : null]
+                summary={[s.category, s.minPrice ? `$${s.minPrice}+` : null, s.maxPrice ? `<$${s.maxPrice}` : null]
                   .filter(Boolean)
                   .join(" • ")}
+                createdAt={s.createdAt}
+                onPress={() => router.push(`/searches/${s.id}`)}
+                onDelete={() => confirmDelete(s.id)}
               />
             ))
           )}

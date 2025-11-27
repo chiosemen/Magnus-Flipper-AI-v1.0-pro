@@ -4,129 +4,88 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { MarketplaceSelect } from "@/components/pricing/MarketplaceSelect";
+import { FeatureSlider } from "@/components/pricing/FeatureSlider";
+import { ResultsBox } from "@/components/pricing/ResultsBox";
 import type { SubscriptionPlan } from "@magnus-flipper-ai/core";
 
-const MARKETPLACES = ["Facebook Marketplace", "Craigslist", "Gumtree", "OfferUp", "Kijiji", "eBay"];
+export function PriceCalculator() {
+  const [marketplaces, setMarketplaces] = useState<string[]>(["Facebook Marketplace"]);
+  const [keywords, setKeywords] = useState<number>(4);
+  const [freqMinutes, setFreqMinutes] = useState<number>(5);
+  const [windowMinutes, setWindowMinutes] = useState<number>(15);
 
-interface PriceCalculatorProps {
-  onPlanSuggested?: (planId: SubscriptionPlan) => void;
-}
-
-export function PriceCalculator({ onPlanSuggested }: PriceCalculatorProps) {
-  const [selectedMarkets, setSelectedMarkets] = useState<string[]>(["Facebook Marketplace", "Craigslist"]);
-  const [keywordCount, setKeywordCount] = useState(3);
-  const [instant, setInstant] = useState(true);
-  const [coverage, setCoverage] = useState<"local" | "regional" | "national">("regional");
-
-  const recommended = useMemo(() => {
+  const recommended = useMemo<SubscriptionPlan>(() => {
     let plan: SubscriptionPlan = "STARTER";
-    if (keywordCount <= 2 && !instant) plan = "STARTER";
-    else if (keywordCount <= 5) plan = "BASIC";
-    else if (keywordCount <= 8) plan = "PREMIUM";
-    else plan = "ULTRA";
-    if (instant && plan !== "ULTRA") plan = "PREMIUM";
-    if (selectedMarkets.length > 3) plan = "ULTRA";
-    onPlanSuggested?.(plan);
+    if (marketplaces.length > 1) plan = "BASIC";
+    if (keywords > 8) plan = "PREMIUM";
+    if (freqMinutes <= 5) plan = "ULTRA";
     return plan;
-  }, [keywordCount, instant, selectedMarkets.length, onPlanSuggested]);
+  }, [marketplaces.length, keywords, freqMinutes]);
 
-  const coverageLabel =
-    coverage === "local" ? "Local radius" : coverage === "regional" ? "Regional coverage" : "Nationwide sweep";
+  const estimatedFlips = Math.max(5, Math.round((marketplaces.length * keywords * (60 / freqMinutes)) / 4));
+  const supportedSearches =
+    recommended === "STARTER" ? 3 : recommended === "BASIC" ? 10 : recommended === "PREMIUM" ? 30 : 100;
 
   return (
-    <Card className="border-slate-800 bg-slate-950/80">
+    <Card className="border-slate-800 bg-slate-950/85">
       <CardHeader>
-        <CardTitle className="text-lg">Pricing calculator</CardTitle>
+        <CardTitle className="text-lg font-semibold text-white">Pricing calculator</CardTitle>
         <p className="text-sm text-slate-300">
-          Tune how aggressively you want to scan; we’ll suggest a plan.
+          Tune marketplaces, keywords, and scan speed to find your ideal plan. Higher tiers increase scan frequency and
+          alert window coverage.
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Marketplaces</p>
-          <div className="flex flex-wrap gap-2">
-            {MARKETPLACES.map((mkt) => {
-              const active = selectedMarkets.includes(mkt);
-              return (
-                <button
-                  key={mkt}
-                  type="button"
-                  onClick={() =>
-                    setSelectedMarkets((prev) =>
-                      prev.includes(mkt) ? prev.filter((x) => x !== mkt) : [...prev, mkt]
-                    )
-                  }
-                  className={`rounded-full border px-3 py-1 text-xs transition ${
-                    active
-                      ? "border-cyan-400 bg-cyan-500/10 text-cyan-200"
-                      : "border-slate-700 bg-slate-900/60 text-slate-300 hover:border-slate-500"
-                  }`}
-                >
-                  {mkt}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      <CardContent className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-5">
+          <MarketplaceSelect value={marketplaces} onChange={setMarketplaces} />
 
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Keywords to track</p>
-          <Input
-            type="number"
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Keywords</p>
+            <Input
+              type="number"
+              min={1}
+              max={30}
+              value={keywords}
+              onChange={(e) => setKeywords(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+            />
+            <p className="text-[11px] text-slate-500">More keywords expand coverage; higher plans fit larger sets.</p>
+          </div>
+
+          <FeatureSlider
+            label="Search frequency (minutes)"
+            value={freqMinutes}
             min={1}
-            max={12}
-            value={keywordCount}
-            onChange={(e) => setKeywordCount(Math.max(1, Math.min(12, Number(e.target.value))))}
+            max={60}
+            onChange={setFreqMinutes}
           />
-          <p className="text-[11px] text-slate-400">
-            Each saved search can include multiple keywords; add more for broader coverage.
-          </p>
-        </div>
 
-        <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/70 px-4 py-3">
-          <div>
-            <p className="text-sm text-slate-100">Instant alerts</p>
-            <p className="text-xs text-slate-400">Faster scans suggest higher tiers.</p>
+          <FeatureSlider
+            label="Alert window (minutes)"
+            value={windowMinutes}
+            min={1}
+            max={60}
+            onChange={setWindowMinutes}
+          />
+
+          <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            Higher plans increase scan frequency & alert window size. Choose a plan that fits your deal velocity.
           </div>
-          <Switch checked={instant} onChange={(e) => setInstant(e.target.checked)} />
-        </div>
 
-        <div className="space-y-3">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Coverage window</p>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            {["local", "regional", "national"].map((scope) => {
-              const active = coverage === scope;
-              return (
-                <button
-                  key={scope}
-                  type="button"
-                  onClick={() => setCoverage(scope as any)}
-                  className={`rounded-lg border px-3 py-2 ${
-                    active
-                      ? "border-cyan-400 bg-cyan-500/10 text-cyan-100"
-                      : "border-slate-700 bg-slate-900/60 text-slate-200"
-                  }`}
-                >
-                  {scope === "local" ? "Local" : scope === "regional" ? "Regional" : "National"}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-[11px] text-slate-400">{coverageLabel}</p>
-        </div>
-
-        <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
-          <p className="text-xs uppercase tracking-wide text-cyan-300">Recommended plan</p>
-          <p className="text-2xl font-semibold text-slate-50">{recommended}</p>
-          <p className="text-sm text-slate-200">
-            Based on {selectedMarkets.length} marketplaces, {keywordCount} keywords,{" "}
-            {instant ? "instant" : "standard"} alerts, {coverageLabel.toLowerCase()}.
-          </p>
-          <Button className="mt-3 rounded-full text-sm font-semibold" onClick={() => onPlanSuggested?.(recommended)}>
-            Start 7-day free trial
+          <Button asChild className="w-full rounded-full bg-white text-slate-900 hover:bg-slate-100">
+            <a href="/signin?trial=1">Start 7-Day Free Trial</a>
           </Button>
         </div>
+
+        <ResultsBox
+          marketplaces={marketplaces.length}
+          keywords={keywords}
+          freqMinutes={freqMinutes}
+          windowMinutes={windowMinutes}
+          estimatedFlips={estimatedFlips}
+          supportedSearches={supportedSearches}
+          recommendedPlan={recommended}
+        />
       </CardContent>
     </Card>
   );

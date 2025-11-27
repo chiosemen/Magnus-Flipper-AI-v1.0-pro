@@ -1,43 +1,65 @@
-import { SafeAreaView, ScrollView, View, Text, Pressable } from "react-native";
-import { useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AppHeader } from "@/components/AppHeader";
-import { Loading } from "@/components/Loading";
+import { SafeAreaView, ScrollView, View } from "react-native";
+import { useRouter } from "expo-router";
+import { useSavedSearches } from "@/hooks/useSavedSearches";
+import { useAlerts } from "@/hooks/useAlerts";
+import { useListingsFeed } from "@/hooks/useListings";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useTrialGate } from "@/hooks/useTrialGate";
+import { OnboardingStepCard } from "@/components/onboarding/OnboardingStepCard";
+import { FirstFlipHeader } from "@/components/onboarding/FirstFlipHeader";
+import { isDemoMode } from "@/lib/config/demo-mode";
+import { MOBILE_DEMO_SEARCHES, MOBILE_DEMO_ALERTS, MOBILE_DEMO_LISTINGS } from "@/lib/demo-data";
 
-const STEPS = ["Pick niche", "Set search", "Enable push"] as const;
+export default function FirstFlipOnboardingMobile() {
+  const router = useRouter();
+  const { gate } = useTrialGate();
+  gate(["active", "trialing", "trial_expired", "none"]); // allow entry but gate deeper routes
 
-export default function FirstFlipOnboarding() {
-  const [step, setStep] = useState(0);
-  const [busy, setBusy] = useState(false);
+  const { searches } = useSavedSearches();
+  const { alerts } = useAlerts();
+  const { listings } = useListingsFeed({ pageSize: 5 });
+  const { subscription } = useSubscription();
+  const demo = isDemoMode();
 
-  const complete = async () => {
-    setBusy(true);
-    await AsyncStorage.setItem("onboarding_complete", "true");
-    setBusy(false);
-  };
+  const effectiveSearches = demo && (searches?.length ?? 0) === 0 ? MOBILE_DEMO_SEARCHES : searches || [];
+  const effectiveAlerts = demo && (alerts?.length ?? 0) === 0 ? MOBILE_DEMO_ALERTS : alerts || [];
+  const effectiveListings = demo && (listings?.length ?? 0) === 0 ? MOBILE_DEMO_LISTINGS : listings || [];
 
-  if (busy) return <Loading />;
+  const searchesCount = effectiveSearches.length;
+  const alertsCount = effectiveAlerts.length;
+  const hasListings = effectiveListings.length > 0;
+
+  const step1Status = searchesCount > 0 ? "done" : "todo";
+  const step2Status = searchesCount > 0 && alertsCount > 0 ? "done" : step1Status === "done" ? "in_progress" : "todo";
+  const step3Status = step2Status === "done" && hasListings ? "done" : step2Status === "done" ? "in_progress" : "todo";
 
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        <AppHeader title="First Flip" subtitle={`Step ${step + 1} of ${STEPS.length}`} />
-        <View className="px-4 space-y-3">
-          <Text className="text-lg font-semibold text-white">{STEPS[step]}</Text>
-          <Text className="text-sm text-slate-300">
-            Configure your first search and enable notifications to catch deals fast.
-          </Text>
-          <Pressable
-            className="mt-4 rounded-full bg-cyan-500 px-4 py-2"
-            onPress={() => setStep(Math.min(step + 1, STEPS.length - 1))}
-          >
-            <Text className="text-center font-semibold text-slate-900">Next</Text>
-          </Pressable>
-          {step === STEPS.length - 1 && (
-            <Pressable className="rounded-full border border-slate-700 px-4 py-2" onPress={complete}>
-              <Text className="text-center font-semibold text-slate-200">Finish</Text>
-            </Pressable>
-          )}
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+        <FirstFlipHeader status={subscription?.status} trialEndsAt={subscription?.trialEndsAt} />
+
+        <View className="space-y-3">
+          <OnboardingStepCard
+            step={1}
+            title="Set up your first search"
+            description="Choose marketplace, category, and filters."
+            status={step1Status as any}
+            onPress={() => router.push("/searches/new/category")}
+          />
+          <OnboardingStepCard
+            step={2}
+            title="Turn on alerts"
+            description="Let Magnus notify you when deals appear."
+            status={step2Status as any}
+            onPress={() => router.push("/alerts")}
+          />
+          <OnboardingStepCard
+            step={3}
+            title="Review your first deals"
+            description="Check listings and margin."
+            status={step3Status as any}
+            onPress={() => router.push("/listings")}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,0 +1,15 @@
+export {
+  MarketingHero,
+  MarketingFeatureBlock,
+  MarketingScreenshots,
+  MarketingPricingCTA,
+  MarketingSEO,
+  HeroSection,
+  SocialProofStrip,
+  FeatureGridSection,
+  UseCaseSection,
+  HowItWorksSection,
+  PricingPreviewSection,
+  FAQSection,
+  FooterSection,
+} from '../../../../../packages/ui/src/marketing';
