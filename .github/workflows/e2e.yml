@@ -14,6 +14,8 @@ jobs:
           version: 8
       - name: Install deps
         run: pnpm install --frozen-lockfile
+      - name: Generate Prisma Client
+        run: pnpm --filter @magnus-flipper-ai/core prisma:generate
       - name: Build web
         run: pnpm --filter web build
       - name: Run Cypress
