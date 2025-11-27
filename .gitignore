@@ -24,3 +24,6 @@ __pycache__/
 
 # Temporary patches
 *.patch
+
+tests/screenshots/
+tests/videos/
