@@ -1,53 +1,43 @@
-import { Queue, Worker, QueueOptions, WorkerOptions } from 'bullmq';
 import { QUEUE_NAMES } from './queueNames';
 
-// Redis connection configuration
-const getRedisConnection = () => ({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
-});
-
-// Default queue options
-const defaultQueueOptions: QueueOptions = {
-  connection: getRedisConnection(),
-  defaultJobOptions: {
-    removeOnComplete: {
-      age: 3600, // Keep completed jobs for 1 hour
-      count: 100, // Keep max 100 completed jobs
-    },
-    removeOnFail: {
-      age: 7200, // Keep failed jobs for 2 hours
-    },
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
-    },
-  },
+const log = (message: string, payload?: unknown) => {
+  console.info(`[queue] ${message}`, payload ?? '');
 };
 
-// Queue factory
-export function createQueue(queueName: string, options?: QueueOptions): Queue {
-  return new Queue(queueName, {
-    ...defaultQueueOptions,
-    ...options,
-  });
+export interface NoopWorker {
+  close(): Promise<void>;
 }
 
-// Pre-configured queue instances
+export interface NoopQueue {
+  name: string;
+  add(jobName: string, payload: unknown): Promise<void>;
+  close(): Promise<void>;
+}
+
+export function createQueue(queueName: string): NoopQueue {
+  log('createQueue (NO-OP)', { queueName });
+
+  return {
+    name: queueName,
+    async add(jobName: string, payload: unknown) {
+      log('enqueue job (NO-OP)', { queue: queueName, jobName, payload });
+    },
+    async close() {
+      log('close queue (NO-OP)', { queueName });
+    },
+  };
+}
+
 export const crawlerQueue = createQueue(QUEUE_NAMES.CRAWLER);
 export const analyzerQueue = createQueue(QUEUE_NAMES.ANALYZER);
 export const alertsQueue = createQueue(QUEUE_NAMES.ALERTS);
 export const schedulerQueue = createQueue(QUEUE_NAMES.SCHEDULER);
 
-// Worker factory
-export function createWorker<T = any, R = any, N extends string = string>(
-  queueName: string,
-  processor: (job: any) => Promise<any>,
-  options?: Omit<WorkerOptions, 'connection'>
-): Worker<T, R, N> {
-  return new Worker(queueName, processor, {
-    connection: getRedisConnection(),
-    ...options,
-  });
+export function createWorker(): NoopWorker {
+  log('createWorker called (NO-OP)');
+  return {
+    async close() {
+      log('close worker (NO-OP)');
+    },
+  };
 }

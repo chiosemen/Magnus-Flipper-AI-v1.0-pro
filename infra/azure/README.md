@@ -182,3 +182,4 @@ az acr credential show --name magnusacr
 
 - [Azure Container Apps Documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
 - [Terraform Azure Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+- Deployment smoke test details: refer to `AZURE_DEPLOYMENT.md`.

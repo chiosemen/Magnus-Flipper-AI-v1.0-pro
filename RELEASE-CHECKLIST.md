@@ -11,6 +11,12 @@ This checklist ensures all critical components are configured, tested, and ready
 - [ ] Confirm: `git status` → "working tree clean"
 - [ ] Confirm: no unfinished feature branches that contain critical changes
 
+## Secrets & Environment Sync
+
+- [ ] Review [`SECRETS-MAP.md`](./SECRETS-MAP.md) and ensure all required GitHub Secrets are configured
+- [ ] Confirm `infra/azure/terraform.tfvars` aligns with `SECRETS-MAP.md`
+- [ ] Confirm Azure Container Apps secrets/env match the mapping in `SECRETS-MAP.md`
+
 ---
 
 ## 2. Environment & Secrets
@@ -179,3 +185,22 @@ Once all checks pass:
 ---
 
 **You are ready to launch! 🚀**
+
+## Launch Runbook
+Once this checklist is complete, follow [LAUNCH-RUNBOOK.md](./LAUNCH-RUNBOOK.md) for the full production release runbook.
+
+----------------------------------------------------------------------
+## Quick Commands — Release Dress Rehearsal
+
+Before deploying to Azure, you can run a full release rehearsal locally:
+
+```bash
+# 1) Run full release checks (lint + tests + build + env verification)
+pnpm release:full
+
+# 2) Run Azure dry-run (monorepo build + terraform plan, NO apply)
+./scripts/deploy/dry-run.sh
+
+# 3) One-shot combined command:
+pnpm predeploy:azure
+```

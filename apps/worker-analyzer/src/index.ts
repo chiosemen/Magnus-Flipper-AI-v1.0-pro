@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 import { analyzerLogger, validateEnv, workerEnvSchema } from '@magnus-flipper-ai/core';
-import { createWorker, QUEUE_NAMES } from '@magnus-flipper-ai/queue';
 import { AnalysisJob, AnalysisResult } from '@magnus-flipper-ai/shared';
 
 // Load environment variables
@@ -29,43 +28,24 @@ async function analyzeItem(job: AnalysisJob): Promise<AnalysisResult> {
 async function main() {
   analyzerLogger.info('🔍 Analyzer worker started', {
     nodeEnv: env.NODE_ENV,
-    redisHost: env.REDIS_HOST,
   });
 
-  const worker = createWorker(QUEUE_NAMES.ANALYZER, async (job) => {
-    const analysisJob = job.data as AnalysisJob;
-    analyzerLogger.info('Processing analysis job', { jobId: analysisJob.id });
+  analyzerLogger.info(
+    'Analyzer queue integration is disabled. Worker will remain idle until future updates.'
+  );
 
-    try {
-      const result = await analyzeItem(analysisJob);
-      analyzerLogger.info('Analysis completed', { jobId: result.jobId, score: result.score });
-      return result;
-    } catch (error) {
-      analyzerLogger.error('Error processing analysis job', { error, jobId: analysisJob.id });
-      throw error;
-    }
-  });
+  const heartbeat = setInterval(() => {
+    analyzerLogger.debug('Analyzer heartbeat', { timestamp: new Date().toISOString() });
+  }, 5 * 60 * 1000);
 
-  worker.on('completed', (job) => {
-    analyzerLogger.info('Job completed', { jobId: job.id });
-  });
-
-  worker.on('failed', (job, err) => {
-    analyzerLogger.error('Job failed', { jobId: job?.id, error: err.message });
-  });
-
-  // Graceful shutdown
-  process.on('SIGTERM', async () => {
-    analyzerLogger.info('Received SIGTERM, shutting down gracefully');
-    await worker.close();
+  const shutdown = (signal: string) => {
+    analyzerLogger.info(`Received ${signal}, shutting down gracefully`);
+    clearInterval(heartbeat);
     process.exit(0);
-  });
+  };
 
-  process.on('SIGINT', async () => {
-    analyzerLogger.info('Received SIGINT, shutting down gracefully');
-    await worker.close();
-    process.exit(0);
-  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 main().catch((error) => {

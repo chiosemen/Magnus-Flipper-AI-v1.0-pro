@@ -1,3 +1,3 @@
-import { prisma } from "@magnus-flipper-ai/core/db";
+import { prisma } from "@magnus-flipper-ai/core";
 
 export default prisma;

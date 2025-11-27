@@ -18,7 +18,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 const supabase_js_1 = require("@supabase/supabase-js");
-const expo_server_sdk_1 = require("expo-server-sdk");
 // Load environment variables
 dotenv_1.default.config();
 // Initialize Supabase client
@@ -33,8 +32,10 @@ const supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseServiceKey
         persistSession: false,
     },
 });
-// Initialize Expo push notification client
-const expo = new expo_server_sdk_1.Expo();
+async function sendPushNotificationStub({ userId, title, body, metadata, }) {
+    console.info('Stubbed push notification', { userId, title, body, metadata });
+    return true;
+}
 /**
  * Calculate haversine distance between two lat/lng points in miles
  */
@@ -95,45 +96,6 @@ function applyInMemoryFilters(listings, filter) {
         });
     }
     return listings;
-}
-/**
- * Send Expo push notification to user
- */
-async function sendExpoPushNotification(pushToken, listing, search) {
-    try {
-        if (!expo_server_sdk_1.Expo.isExpoPushToken(pushToken)) {
-            console.warn(`Invalid Expo push token: ${pushToken}`);
-            return false;
-        }
-        const message = {
-            to: pushToken,
-            sound: 'default',
-            title: `New ${search.category} match!`,
-            body: `${listing.title} • $${listing.price} • ${listing.city || 'Unknown location'}`,
-            data: {
-                listingId: listing.id,
-                savedSearchId: search.id,
-                url: listing.url,
-            },
-        };
-        const chunks = expo.chunkPushNotifications([message]);
-        const tickets = [];
-        for (const chunk of chunks) {
-            try {
-                const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-                tickets.push(...ticketChunk);
-            }
-            catch (error) {
-                console.error('Error sending push notification chunk:', error);
-            }
-        }
-        console.log('Expo push sent:', { listingId: listing.id, tickets });
-        return true;
-    }
-    catch (error) {
-        console.error('Error in sendExpoPushNotification:', error);
-        return false;
-    }
 }
 /**
  * Process a single saved search
@@ -197,27 +159,25 @@ async function processSavedSearch(search) {
         }
         console.log(`Created new match: ${newMatch.id} for listing ${listing.id}`);
         // Step 5: Send notification to user
-        const { data: user } = await supabase
-            .from('users')
-            .select('expo_push_token')
-            .eq('id', search.user_id)
-            .single();
-        if (user?.expo_push_token) {
-            const notificationSent = await sendExpoPushNotification(user.expo_push_token, listing, search);
-            if (notificationSent) {
-                // Update match as notified
-                await supabase
-                    .from('listing_matches')
-                    .update({
-                    notified: true,
-                    notified_at: new Date().toISOString(),
-                })
-                    .eq('id', newMatch.id);
-                console.log(`Notification sent for match ${newMatch.id}`);
-            }
-        }
-        else {
-            console.log(`No Expo push token for user ${search.user_id}`);
+        const notificationSent = await sendPushNotificationStub({
+            userId: search.user_id,
+            title: `New ${search.category} match!`,
+            body: `${listing.title} • $${listing.price} • ${listing.city || 'Unknown location'}`,
+            metadata: {
+                listingId: listing.id,
+                savedSearchId: search.id,
+                url: listing.url,
+            },
+        });
+        if (notificationSent) {
+            await supabase
+                .from('listing_matches')
+                .update({
+                notified: true,
+                notified_at: new Date().toISOString(),
+            })
+                .eq('id', newMatch.id);
+            console.log(`Notification stubbed for match ${newMatch.id}`);
         }
     }
     // Step 6: Update last_run_at

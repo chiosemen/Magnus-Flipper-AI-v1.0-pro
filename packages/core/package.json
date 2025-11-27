@@ -4,6 +4,14 @@
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./db": "./dist/db.js",
+    "./env": "./dist/env.js",
+    "./logger": "./dist/logger.js",
+    "./search": "./dist/search.js",
+    "./plans": "./dist/plans.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",

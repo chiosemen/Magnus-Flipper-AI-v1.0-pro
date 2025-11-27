@@ -19,4 +19,5 @@ __exportStar(require("./logger"), exports);
 __exportStar(require("./env"), exports);
 __exportStar(require("./search"), exports);
 __exportStar(require("./plans"), exports);
+__exportStar(require("./db"), exports);
 //# sourceMappingURL=index.js.map

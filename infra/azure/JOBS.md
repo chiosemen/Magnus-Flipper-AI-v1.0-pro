@@ -10,7 +10,7 @@ Magnus Flipper AI uses Azure Container Apps Jobs for background workers and sche
 - **Schedule**: Every 5 minutes (`*/5 * * * *`)
 - **Timeout**: 600 seconds (10 minutes)
 - **Resources**: 0.25 CPU, 0.5Gi memory
-- **Trigger**: Both scheduled and manual
+- **Trigger**: Scheduled
 
 **Environment Variables:**
 - `DATABASE_URL` - PostgreSQL connection string (secret)
@@ -24,7 +24,7 @@ Magnus Flipper AI uses Azure Container Apps Jobs for background workers and sche
 - **Schedule**: Every 10 minutes (`*/10 * * * *`)
 - **Timeout**: 900 seconds (15 minutes)
 - **Resources**: 0.5 CPU, 1Gi memory
-- **Trigger**: Both scheduled and manual
+- **Trigger**: Scheduled
 
 **Environment Variables:**
 - `DATABASE_URL` - PostgreSQL connection string (secret)
@@ -38,7 +38,7 @@ Magnus Flipper AI uses Azure Container Apps Jobs for background workers and sche
 - **Schedule**: Every minute (`* * * * *`)
 - **Timeout**: 300 seconds (5 minutes)
 - **Resources**: 0.25 CPU, 0.5Gi memory
-- **Trigger**: Both scheduled and manual
+- **Trigger**: Scheduled
 
 **Environment Variables:**
 - `DATABASE_URL` - PostgreSQL connection string (secret)

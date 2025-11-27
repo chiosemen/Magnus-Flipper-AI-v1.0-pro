@@ -130,10 +130,10 @@ resource "azurerm_container_app" "api" {
     }
   }
 
-  template {
-    container {
-      name   = "api"
-      image  = "${azurerm_container_registry.acr.login_server}/magnus-api:${var.image_tag}"
+      template {
+        container {
+          name   = "api"
+          image  = "${azurerm_container_registry.acr.login_server}/magnus-api:${var.image_tag}"
       cpu    = 0.5
       memory = "1Gi"
 
@@ -225,12 +225,6 @@ resource "azurerm_container_app_job" "alerts_job" {
   replica_timeout_in_seconds = 600
   replica_retry_limit        = 1
 
-  # Manual trigger config (can be invoked via API or CLI)
-  manual_trigger_config {
-    parallelism              = 1
-    replica_completion_count = 1
-  }
-
   # Schedule trigger config (cron: every 5 minutes)
   schedule_trigger_config {
     cron_expression = "*/5 * * * *"
@@ -263,10 +257,10 @@ resource "azurerm_container_app_job" "alerts_job" {
     value = var.supabase_service_role_key
   }
 
-  template {
-    container {
-      name   = "alerts-worker"
-      image  = "${azurerm_container_registry.acr.login_server}/magnus-worker-alerts:${var.image_tag}"
+      template {
+        container {
+          name   = "alerts-worker"
+          image  = "${azurerm_container_registry.acr.login_server}/magnus-worker-alerts:${var.image_tag}"
       cpu    = 0.25
       memory = "0.5Gi"
 
@@ -315,11 +309,6 @@ resource "azurerm_container_app_job" "crawler_job" {
   replica_timeout_in_seconds = 900
   replica_retry_limit        = 1
 
-  manual_trigger_config {
-    parallelism              = 1
-    replica_completion_count = 1
-  }
-
   schedule_trigger_config {
     cron_expression = "*/10 * * * *"
     parallelism     = 1
@@ -351,10 +340,10 @@ resource "azurerm_container_app_job" "crawler_job" {
     value = var.supabase_service_role_key
   }
 
-  template {
-    container {
-      name   = "crawler-worker"
-      image  = "${azurerm_container_registry.acr.login_server}/magnus-worker-crawler:${var.image_tag}"
+      template {
+        container {
+          name   = "crawler-worker"
+          image  = "${azurerm_container_registry.acr.login_server}/magnus-worker-crawler:${var.image_tag}"
       cpu    = 0.5
       memory = "1Gi"
 
@@ -403,11 +392,6 @@ resource "azurerm_container_app_job" "scheduler_job" {
   replica_timeout_in_seconds = 300
   replica_retry_limit        = 1
 
-  manual_trigger_config {
-    parallelism              = 1
-    replica_completion_count = 1
-  }
-
   schedule_trigger_config {
     cron_expression = "* * * * *"
     parallelism     = 1
@@ -439,10 +423,10 @@ resource "azurerm_container_app_job" "scheduler_job" {
     value = var.supabase_service_role_key
   }
 
-  template {
-    container {
-      name   = "scheduler-worker"
-      image  = "${azurerm_container_registry.acr.login_server}/magnus-scheduler:${var.image_tag}"
+      template {
+        container {
+          name   = "scheduler-worker"
+          image  = "${azurerm_container_registry.acr.login_server}/magnus-scheduler:${var.image_tag}"
       cpu    = 0.25
       memory = "0.5Gi"
 

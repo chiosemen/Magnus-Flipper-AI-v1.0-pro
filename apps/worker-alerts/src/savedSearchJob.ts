@@ -14,7 +14,6 @@
 
 import dotenv from 'dotenv';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import type { SearchFilter, SavedSearch, Listing } from '@magnus-flipper-ai/core';
 
 // Load environment variables
@@ -35,8 +34,20 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
   },
 });
 
-// Initialize Expo push notification client
-const expo = new Expo();
+async function sendPushNotificationStub({
+  userId,
+  title,
+  body,
+  metadata,
+}: {
+  userId: string;
+  title: string;
+  body: string;
+  metadata?: Record<string, unknown>;
+}) {
+  console.info('Stubbed push notification', { userId, title, body, metadata });
+  return true;
+}
 
 /**
  * Calculate haversine distance between two lat/lng points in miles
@@ -127,52 +138,6 @@ function applyInMemoryFilters(listings: any[], filter: SearchFilter): any[] {
 }
 
 /**
- * Send Expo push notification to user
- */
-async function sendExpoPushNotification(
-  pushToken: string,
-  listing: any,
-  search: SavedSearch
-): Promise<boolean> {
-  try {
-    if (!Expo.isExpoPushToken(pushToken)) {
-      console.warn(`Invalid Expo push token: ${pushToken}`);
-      return false;
-    }
-
-    const message: ExpoPushMessage = {
-      to: pushToken,
-      sound: 'default',
-      title: `New ${search.category} match!`,
-      body: `${listing.title} • $${listing.price} • ${listing.city || 'Unknown location'}`,
-      data: {
-        listingId: listing.id,
-        savedSearchId: search.id,
-        url: listing.url,
-      },
-    };
-
-    const chunks = expo.chunkPushNotifications([message]);
-    const tickets = [];
-
-    for (const chunk of chunks) {
-      try {
-        const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-        tickets.push(...ticketChunk);
-      } catch (error) {
-        console.error('Error sending push notification chunk:', error);
-      }
-    }
-
-    console.log('Expo push sent:', { listingId: listing.id, tickets });
-    return true;
-  } catch (error) {
-    console.error('Error in sendExpoPushNotification:', error);
-    return false;
-  }
-}
-
-/**
  * Process a single saved search
  */
 async function processSavedSearch(search: any): Promise<void> {
@@ -249,33 +214,27 @@ async function processSavedSearch(search: any): Promise<void> {
     console.log(`Created new match: ${newMatch.id} for listing ${listing.id}`);
 
     // Step 5: Send notification to user
-    const { data: user } = await supabase
-      .from('users')
-      .select('expo_push_token')
-      .eq('id', search.user_id)
-      .single();
+    const notificationSent = await sendPushNotificationStub({
+      userId: search.user_id,
+      title: `New ${search.category} match!`,
+      body: `${listing.title} • $${listing.price} • ${listing.city || 'Unknown location'}`,
+      metadata: {
+        listingId: listing.id,
+        savedSearchId: search.id,
+        url: listing.url,
+      },
+    });
 
-    if (user?.expo_push_token) {
-      const notificationSent = await sendExpoPushNotification(
-        user.expo_push_token,
-        listing,
-        search
-      );
+    if (notificationSent) {
+      await supabase
+        .from('listing_matches')
+        .update({
+          notified: true,
+          notified_at: new Date().toISOString(),
+        })
+        .eq('id', newMatch.id);
 
-      if (notificationSent) {
-        // Update match as notified
-        await supabase
-          .from('listing_matches')
-          .update({
-            notified: true,
-            notified_at: new Date().toISOString(),
-          })
-          .eq('id', newMatch.id);
-
-        console.log(`Notification sent for match ${newMatch.id}`);
-      }
-    } else {
-      console.log(`No Expo push token for user ${search.user_id}`);
+      console.log(`Notification stubbed for match ${newMatch.id}`);
     }
   }
 

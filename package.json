@@ -25,7 +25,10 @@
     "deploy:check": "bash scripts/deploy-check.sh",
     "release:check": "pnpm lint && pnpm test && pnpm build",
     "release:verify": "node scripts/deploy/verify.mjs",
-    "release:full": "pnpm release:check && pnpm release:verify"
+    "release:full": "pnpm release:check && pnpm release:verify",
+    "predeploy:azure": "pnpm release:full && ./scripts/deploy/dry-run.sh",
+    "launch:prep": "pnpm release:full",
+    "launch:ci-hint": "echo 'After launch:prep, run Azure Dry Run, then Deploy/Promote workflows.'"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

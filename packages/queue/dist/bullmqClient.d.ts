@@ -1,8 +1,15 @@
-import { Queue, Worker, QueueOptions, WorkerOptions } from 'bullmq';
-export declare function createQueue(queueName: string, options?: QueueOptions): Queue;
-export declare const crawlerQueue: Queue<any, any, string, any, any, string>;
-export declare const analyzerQueue: Queue<any, any, string, any, any, string>;
-export declare const alertsQueue: Queue<any, any, string, any, any, string>;
-export declare const schedulerQueue: Queue<any, any, string, any, any, string>;
-export declare function createWorker<T = any, R = any, N extends string = string>(queueName: string, processor: (job: any) => Promise<any>, options?: Omit<WorkerOptions, 'connection'>): Worker<T, R, N>;
+export interface NoopWorker {
+    close(): Promise<void>;
+}
+export interface NoopQueue {
+    name: string;
+    add(jobName: string, payload: unknown): Promise<void>;
+    close(): Promise<void>;
+}
+export declare function createQueue(queueName: string): NoopQueue;
+export declare const crawlerQueue: NoopQueue;
+export declare const analyzerQueue: NoopQueue;
+export declare const alertsQueue: NoopQueue;
+export declare const schedulerQueue: NoopQueue;
+export declare function createWorker(): NoopWorker;
 //# sourceMappingURL=bullmqClient.d.ts.map

@@ -27,7 +27,6 @@ app.listen(port, '0.0.0.0', () => {
     core_1.apiLogger.info(`🚀 API server started`, {
         port,
         nodeEnv: env.NODE_ENV,
-        redisHost: env.REDIS_HOST,
     });
 });
 //# sourceMappingURL=index.js.map

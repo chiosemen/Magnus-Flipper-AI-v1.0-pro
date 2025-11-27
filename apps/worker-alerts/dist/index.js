@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 const core_1 = require("@magnus-flipper-ai/core");
-const queue_1 = require("@magnus-flipper-ai/queue");
 const notifications_1 = require("@magnus-flipper-ai/notifications");
 // Load environment variables
 dotenv_1.default.config();
@@ -36,37 +35,15 @@ async function processAlert(job) {
 async function main() {
     core_1.alertsLogger.info('🔔 Alerts worker started', {
         nodeEnv: env.NODE_ENV,
-        redisHost: env.REDIS_HOST,
     });
-    const worker = (0, queue_1.createWorker)(queue_1.QUEUE_NAMES.ALERTS, async (job) => {
-        const alertJob = job.data;
-        try {
-            const result = await processAlert(alertJob);
-            if (!result) {
-                throw new Error('Failed to send notification');
-            }
-            return result;
-        }
-        catch (error) {
-            core_1.alertsLogger.error('Error processing alert job', { error, jobId: alertJob.id });
-            throw error;
-        }
-    });
-    worker.on('completed', (job) => {
-        core_1.alertsLogger.info('Job completed', { jobId: job.id });
-    });
-    worker.on('failed', (job, err) => {
-        core_1.alertsLogger.error('Job failed', { jobId: job?.id, error: err.message });
-    });
+    core_1.alertsLogger.info('Alert queue integration is disabled. Worker will remain idle.');
     // Graceful shutdown
-    process.on('SIGTERM', async () => {
+    process.on('SIGTERM', () => {
         core_1.alertsLogger.info('Received SIGTERM, shutting down gracefully');
-        await worker.close();
         process.exit(0);
     });
-    process.on('SIGINT', async () => {
+    process.on('SIGINT', () => {
         core_1.alertsLogger.info('Received SIGINT, shutting down gracefully');
-        await worker.close();
         process.exit(0);
     });
 }

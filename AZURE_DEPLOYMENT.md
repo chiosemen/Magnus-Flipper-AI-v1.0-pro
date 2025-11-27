@@ -60,10 +60,8 @@ SUPABASE_SERVICE_ROLE="[service-role-key]"
 # Node Environment
 NODE_ENV="production"
 
-# Redis (for queue management)
-REDIS_HOST="[redis-host]"
-REDIS_PORT="6379"
-REDIS_PASSWORD="[redis-password]"
+# Demo mode flag
+DEMO_MODE="false"
 
 # API Port (Container Apps will inject this)
 PORT="4000"
@@ -141,8 +139,7 @@ az containerapp secret set \
   --resource-group magnus-rg \
   --secrets \
     supabase-url="[url]" \
-    supabase-service-role="[key]" \
-    redis-password="[password]"
+    supabase-service-role="[key]"
 ```
 
 ### 5. Deploy API Container App
@@ -161,12 +158,10 @@ az containerapp create \
   --secrets \
     database-url="[supabase-url]" \
     supabase-service-role="[key]" \
-    redis-password="[password]" \
   --env-vars \
     DATABASE_URL=secretref:database-url \
     SUPABASE_URL=secretref:supabase-url \
     SUPABASE_SERVICE_ROLE=secretref:supabase-service-role \
-    REDIS_PASSWORD=secretref:redis-password \
     NODE_ENV=production \
     PORT=4000 \
   --cpu 0.5 \
@@ -191,12 +186,10 @@ az containerapp job create \
   --secrets \
     database-url="[supabase-url]" \
     supabase-service-role="[key]" \
-    redis-password="[password]" \
   --env-vars \
     DATABASE_URL=secretref:database-url \
     SUPABASE_URL=secretref:supabase-url \
     SUPABASE_SERVICE_ROLE=secretref:supabase-service-role \
-    REDIS_PASSWORD=secretref:redis-password \
     NODE_ENV=production \
   --cpu 0.5 \
   --memory 1Gi \
@@ -212,8 +205,6 @@ az containerapp job create \
 ## GitHub Actions Setup
 
 ### Required GitHub Secrets
-
-Add these secrets to your GitHub repository:
 
 1. **AZURE_CREDENTIALS** - Service principal JSON
 
@@ -237,16 +228,32 @@ az account show --query id --output tsv
 
 ### Workflow Triggers
 
-The workflow (``.github/workflows/azure-deploy.yml`) automatically triggers on:
+The workflow (`.github/workflows/azure-deploy.yml`) automatically triggers on:
 
 1. **Push to main/master** - When code changes affect:
    - `apps/api/**`
    - `apps/worker-alerts/**`
-   - `packages/**`
-   - `Dockerfile.*`
+   - `apps/worker-analyzer/**`
+   - `apps/worker-crawler/**`
+   - `apps/scheduler/**`
+   - `Dockerfile.api`
+   - `Dockerfile.worker-alerts`
+   - `Dockerfile.scheduler`
    - `pnpm-lock.yaml`
+   - `.github/workflows/azure-deploy.yml`
+   - `infra/azure/**`
 
-2. **Manual workflow dispatch** - Use GitHub UI to manually trigger with options to deploy API, worker, or both.
+2. **Manual workflow dispatch** - Use GitHub UI to manually trigger the release job.
+
+### Post-Deploy Smoke Test
+
+Every deployment triggered via `azure-promote.yml`/`azure-deploy.yml` runs `scripts/deploy/smoke.sh` against the promoted `APP_URL`.
+The smoke test exercises `GET /health` and fails the workflow if the endpoint does not return HTTP 200.
+You can run the same check locally with:
+
+```bash
+APP_URL="https://your-app-url" bash scripts/deploy/smoke.sh
+```
 
 ## Membership Tiers Implementation
 
@@ -440,3 +447,17 @@ For issues or questions:
 - GitHub Issues: [repository-url]/issues
 - Documentation: This file
 - Azure Support: https://portal.azure.com
+
+For the full production launch steps, see [LAUNCH-RUNBOOK.md](./LAUNCH-RUNBOOK.md).
+
+### Secrets & Variable Mapping
+
+For a complete, always-up-to-date list of GitHub Secrets, Terraform variables, Azure secrets, and runtime env vars, consult [`SECRETS-MAP.md`](./SECRETS-MAP.md).
+
+### Production Promotion Workflow
+To deploy a previously built image to production:
+
+1. Open **Actions → Promote Image to Production**
+2. Provide the `image_tag` (Git SHA) you wish to promote
+3. The workflow will run Terraform init/plan/apply and execute the smoke test
+4. Review the summary for tag, smoke test, and apply confirmation

@@ -27,3 +27,5 @@ node_env   = "production"
 demo_mode  = "false"
 log_level  = "info"
 image_tag  = "latest"
+api_min_replicas = 1
+api_max_replicas = 5

@@ -7,8 +7,6 @@ const zod_1 = require("zod");
 const baseEnvSchema = zod_1.z.object({
     NODE_ENV: zod_1.z.enum(['development', 'production', 'test']).default('development'),
     LOG_LEVEL: zod_1.z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-    REDIS_HOST: zod_1.z.string().default('localhost'),
-    REDIS_PORT: zod_1.z.string().default('6379'),
 });
 // API-specific environment schema
 exports.apiEnvSchema = baseEnvSchema.extend({

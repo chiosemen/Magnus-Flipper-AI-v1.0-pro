@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@magnus-flipper-ai/core": "workspace:*",
-    "@magnus-flipper-ai/queue": "workspace:*",
     "@magnus-flipper-ai/shared": "workspace:*",
+    "@magnus-flipper-ai/fb-marketplace-crawler": "workspace:*",
     "node-cron": "^3.0.3",
     "dotenv": "^16.3.1"
   },

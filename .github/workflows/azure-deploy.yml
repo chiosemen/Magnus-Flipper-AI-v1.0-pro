@@ -82,6 +82,10 @@ jobs:
           TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           TF_VAR_openai_key: ${{ secrets.OPENAI_API_KEY }}
           TF_VAR_app_url: ${{ secrets.APP_URL }}
+          TF_VAR_demo_mode: ${{ secrets.DEMO_MODE }}
+          TF_VAR_log_level: ${{ secrets.LOG_LEVEL }}
+          TF_VAR_node_env: ${{ secrets.NODE_ENV }}
+          TF_VAR_image_tag: ${{ github.sha }}
 
       - name: Build and push images to ACR
         run: |
@@ -108,6 +112,17 @@ jobs:
           TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           TF_VAR_openai_key: ${{ secrets.OPENAI_API_KEY }}
           TF_VAR_app_url: ${{ secrets.APP_URL }}
+          TF_VAR_demo_mode: ${{ secrets.DEMO_MODE }}
+          TF_VAR_log_level: ${{ secrets.LOG_LEVEL }}
+          TF_VAR_node_env: ${{ secrets.NODE_ENV }}
+          TF_VAR_image_tag: ${{ github.sha }}
+
+      - name: Deployment Smoke Test
+        run: |
+          echo "Running post-deploy smoke test against: $APP_URL"
+          bash scripts/deploy/smoke.sh "$APP_URL"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
 
       - name: Summary
         run: |
@@ -116,3 +131,4 @@ jobs:
           echo "- Worker Alerts: magnus-worker-alerts:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Worker Crawler: magnus-worker-crawler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Scheduler: magnus-scheduler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Smoke test: scripts/deploy/smoke.sh against $APP_URL" >> $GITHUB_STEP_SUMMARY
