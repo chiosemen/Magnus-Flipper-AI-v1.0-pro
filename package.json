@@ -22,7 +22,10 @@
     "test:e2e": "cypress run --config-file tests/cypress.config.ts",
     "test:e2e:open": "cypress open --config-file tests/cypress.config.ts",
     "spec:check": "ts-node scripts/validate-imports.ts",
-    "deploy:check": "bash scripts/deploy-check.sh"
+    "deploy:check": "bash scripts/deploy-check.sh",
+    "release:check": "pnpm lint && pnpm test && pnpm build",
+    "release:verify": "node scripts/deploy/verify.mjs",
+    "release:full": "pnpm release:check && pnpm release:verify"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
