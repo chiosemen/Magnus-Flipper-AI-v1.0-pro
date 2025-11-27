@@ -9,23 +9,17 @@ on:
       - "apps/worker-alerts/**"
       - "apps/worker-analyzer/**"
       - "apps/worker-crawler/**"
-      - "apps/web/**"
+      - "apps/scheduler/**"
       - "Dockerfile.api"
       - "Dockerfile.worker-alerts"
-      - "Dockerfile.worker-analyzer"
-      - "Dockerfile.worker-crawler"
-      - "Dockerfile.web"
+      - "Dockerfile.scheduler"
       - "pnpm-lock.yaml"
       - ".github/workflows/azure-deploy.yml"
+      - "infra/azure/**"
 
 env:
   AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
   AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
-  AZURE_API_APP: magnus-api
-  AZURE_WEB_APP: magnus-web
-  AZURE_ALERTS_JOB: magnus-worker-alerts
-  AZURE_ANALYZER_JOB: magnus-worker-analyzer
-  AZURE_CRAWLER_JOB: magnus-worker-crawler
 
 jobs:
   build-and-deploy:
@@ -61,27 +55,64 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        working-directory: infra/azure
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra/azure
+        run: terraform plan -var="image_tag=${{ github.sha }}"
+        env:
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_location: ${{ secrets.AZURE_LOCATION }}
+          TF_VAR_resource_group_name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          TF_VAR_acr_name: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+          TF_VAR_containerapps_env_name: ${{ secrets.AZURE_CONTAINERAPPS_ENV }}
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
+          TF_VAR_supabase_url: ${{ secrets.SUPABASE_URL }}
+          TF_VAR_supabase_anon_key: ${{ secrets.SUPABASE_ANON_KEY }}
+          TF_VAR_supabase_service_role_key: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          TF_VAR_openai_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_app_url: ${{ secrets.APP_URL }}
+
       - name: Build and push images to ACR
         run: |
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/api:${{ github.sha }} -f Dockerfile.api .
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-alerts:${{ github.sha }} -f Dockerfile.worker-alerts .
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-analyzer:${{ github.sha }} -f Dockerfile.worker-analyzer .
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/worker-crawler:${{ github.sha }} -f Dockerfile.worker-crawler .
-          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus/web:${{ github.sha }} -f Dockerfile.web .
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus-api:${{ github.sha }} --image magnus-api:latest -f Dockerfile.api .
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus-worker-alerts:${{ github.sha }} --image magnus-worker-alerts:latest -f Dockerfile.worker-alerts .
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus-worker-crawler:${{ github.sha }} --image magnus-worker-crawler:latest -f Dockerfile.worker-crawler .
+          az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus-scheduler:${{ github.sha }} --image magnus-scheduler:latest -f Dockerfile.scheduler .
 
-      - name: Deploy to Azure Container Apps
-        run: |
-          az containerapp update --name "$AZURE_API_APP" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/api:${{ github.sha }}" || true
-          az containerapp update --name "$AZURE_WEB_APP" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/web:${{ github.sha }}" || true
-          az containerapp job update --name "$AZURE_ALERTS_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-alerts:${{ github.sha }}" || true
-          az containerapp job update --name "$AZURE_ANALYZER_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-analyzer:${{ github.sha }}" || true
-          az containerapp job update --name "$AZURE_CRAWLER_JOB" --resource-group "$AZURE_RESOURCE_GROUP" --image "$AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-crawler:${{ github.sha }}" || true
+      - name: Terraform Apply
+        working-directory: infra/azure
+        run: terraform apply -auto-approve -var="image_tag=${{ github.sha }}"
+        env:
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_location: ${{ secrets.AZURE_LOCATION }}
+          TF_VAR_resource_group_name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          TF_VAR_acr_name: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+          TF_VAR_containerapps_env_name: ${{ secrets.AZURE_CONTAINERAPPS_ENV }}
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
+          TF_VAR_supabase_url: ${{ secrets.SUPABASE_URL }}
+          TF_VAR_supabase_anon_key: ${{ secrets.SUPABASE_ANON_KEY }}
+          TF_VAR_supabase_service_role_key: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          TF_VAR_openai_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_app_url: ${{ secrets.APP_URL }}
 
       - name: Summary
         run: |
           echo "## Azure Deploy" >> $GITHUB_STEP_SUMMARY
-          echo "- API image: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/api:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Web image: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/web:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Alerts job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-alerts:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Analyzer job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-analyzer:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Crawler job: $AZURE_CONTAINER_REGISTRY.azurecr.io/magnus/worker-crawler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- API: magnus-api:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Worker Alerts: magnus-worker-alerts:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Worker Crawler: magnus-worker-crawler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Scheduler: magnus-scheduler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

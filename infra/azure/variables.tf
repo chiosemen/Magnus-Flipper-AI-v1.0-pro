@@ -6,31 +6,21 @@ variable "subscription_id" {
 variable "location" {
   description = "Azure region for resources"
   type        = string
-  default     = "eastus"
 }
 
 variable "resource_group_name" {
   description = "Name of the resource group"
   type        = string
-  default     = "magnus-rg"
 }
 
 variable "acr_name" {
   description = "Name of the Azure Container Registry"
   type        = string
-  default     = "magnusacr"
 }
 
 variable "containerapps_env_name" {
   description = "Name of the Container Apps environment"
   type        = string
-  default     = "magnus-ca-env"
-}
-
-variable "redis_name" {
-  description = "Name of the Azure Redis cache"
-  type        = string
-  default     = "magnus-redis"
 }
 
 variable "database_url" {
@@ -60,6 +50,47 @@ variable "jwt_secret" {
   description = "JWT secret for API authentication"
   type        = string
   sensitive   = true
+}
+
+variable "stripe_secret_key" {
+  description = "Stripe secret key for payments"
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_webhook_secret" {
+  description = "Stripe webhook secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "openai_key" {
+  description = "OpenAI API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "app_url" {
+  description = "Application URL (e.g., https://magnus.ai)"
+  type        = string
+}
+
+variable "demo_mode" {
+  description = "Enable demo mode (true/false)"
+  type        = string
+  default     = "false"
+}
+
+variable "log_level" {
+  description = "Log level (debug, info, warn, error)"
+  type        = string
+  default     = "info"
+}
+
+variable "image_tag" {
+  description = "Docker image tag to deploy"
+  type        = string
+  default     = "latest"
 }
 
 variable "node_env" {

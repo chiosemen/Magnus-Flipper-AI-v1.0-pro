@@ -25,6 +25,9 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        run: pnpm --filter @magnus-flipper-ai/core prisma:generate
+
       - name: Build monorepo
         run: pnpm -r --workspace-concurrency=1 build
 
