@@ -434,6 +434,124 @@ docker run --rm \
 4. **Implement Stripe integration** for plan upgrades
 5. **Create admin dashboard** for user management
 
+## Two-Step Deployment Model
+
+As of PATCH 23, the deployment process is split into two separate workflows for safer production deployments:
+
+### Workflow 1: Build & Publish (Automatic)
+
+**Workflow:** `.github/workflows/azure-deploy.yml`
+**Triggers:** Push to `main` or manual dispatch
+**Purpose:** Build and publish Docker images to ACR without deploying
+
+This workflow:
+1. Builds the entire monorepo
+2. Runs Terraform plan (validation only)
+3. Builds and pushes 4 Docker images to ACR:
+   - `magnus-api:${{ github.sha }}`
+   - `magnus-worker-alerts:${{ github.sha }}`
+   - `magnus-worker-crawler:${{ github.sha }}`
+   - `magnus-scheduler:${{ github.sha }}`
+4. Tags each image with both the commit SHA and `latest`
+5. **Does NOT deploy** to Azure Container Apps
+
+**Result:** Images are built and available in ACR, but not yet deployed to production.
+
+### Workflow 2: Promote (Manual)
+
+**Workflow:** `.github/workflows/azure-promote.yml`
+**Triggers:** Manual dispatch only
+**Purpose:** Deploy a specific image tag to production
+
+This workflow:
+1. Requires input: `image_tag` (e.g., commit SHA)
+2. Runs Terraform plan with the specified tag
+3. Runs Terraform apply to deploy the images
+4. Updates all Container Apps to use the specified image tag
+
+**Result:** Production is updated to run the specified image tag.
+
+### How to Deploy to Production
+
+#### Step 1: Find a Valid Image Tag
+
+Option A - From GitHub Actions:
+1. Go to **Actions** > **Azure Deploy**
+2. Find a successful build run
+3. Copy the commit SHA from the run (e.g., `a1b2c3d4...`)
+
+Option B - From ACR:
+```bash
+az acr repository show-tags \
+  --name $AZURE_CONTAINER_REGISTRY \
+  --repository magnus-api \
+  --orderby time_desc \
+  --output table
+```
+
+Option C - From Git:
+```bash
+git log --oneline -n 10
+```
+
+#### Step 2: Promote to Production
+
+1. Go to **Actions** > **Azure Promote**
+2. Click **Run workflow**
+3. Enter the image tag (commit SHA) you want to deploy
+4. Click **Run workflow**
+
+The workflow will:
+- Show you a Terraform plan (what will change)
+- Apply the changes automatically
+- Update all Container Apps to the new image tag
+
+### Why Two Steps?
+
+**Benefits:**
+1. **Safety** - Builds are separated from deployments
+2. **Validation** - Images are tested in ACR before production
+3. **Rollback** - Easy to promote any previous image tag
+4. **Control** - Manual approval required for production changes
+5. **Auditability** - Clear record of what was deployed when
+
+### Example Deployment Flow
+
+```bash
+# 1. Developer pushes to main
+git push origin main
+
+# 2. GitHub Actions automatically:
+#    - Builds monorepo
+#    - Validates Terraform
+#    - Builds & pushes images with SHA tag (e.g., abc123)
+#    - Reports: "Images built, NOT deployed"
+
+# 3. Team reviews and decides to deploy
+#    - Go to Actions > Azure Promote
+#    - Enter image_tag: abc123
+#    - Click Run workflow
+
+# 4. Production is updated to image tag abc123
+```
+
+### Emergency Rollback
+
+To rollback to a previous version:
+
+1. Find the previous working image tag from Git history or ACR
+2. Run **Azure Promote** workflow with that tag
+3. Production rolls back in ~2-3 minutes
+
+Example:
+```bash
+# Find previous deployment
+git log --oneline -n 5
+
+# Use Azure Promote workflow with the previous SHA
+# Input: previous-sha-here
+```
+
 ## Support
 
 For issues or questions:

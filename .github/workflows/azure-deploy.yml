@@ -22,7 +22,7 @@ env:
   AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
 
 jobs:
-  build-and-deploy:
+  build-and-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -90,29 +90,12 @@ jobs:
           az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus-worker-crawler:${{ github.sha }} --image magnus-worker-crawler:latest -f Dockerfile.worker-crawler .
           az acr build --registry "$AZURE_CONTAINER_REGISTRY" --image magnus-scheduler:${{ github.sha }} --image magnus-scheduler:latest -f Dockerfile.scheduler .
 
-      - name: Terraform Apply
-        working-directory: infra/azure
-        run: terraform apply -auto-approve -var="image_tag=${{ github.sha }}"
-        env:
-          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          TF_VAR_location: ${{ secrets.AZURE_LOCATION }}
-          TF_VAR_resource_group_name: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          TF_VAR_acr_name: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
-          TF_VAR_containerapps_env_name: ${{ secrets.AZURE_CONTAINERAPPS_ENV }}
-          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
-          TF_VAR_supabase_url: ${{ secrets.SUPABASE_URL }}
-          TF_VAR_supabase_anon_key: ${{ secrets.SUPABASE_ANON_KEY }}
-          TF_VAR_supabase_service_role_key: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
-          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
-          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          TF_VAR_openai_key: ${{ secrets.OPENAI_API_KEY }}
-          TF_VAR_app_url: ${{ secrets.APP_URL }}
-
       - name: Summary
         run: |
-          echo "## Azure Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "## Azure Build & Publish (images built, NOT deployed)" >> $GITHUB_STEP_SUMMARY
           echo "- API: magnus-api:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Worker Alerts: magnus-worker-alerts:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Worker Crawler: magnus-worker-crawler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- Scheduler: magnus-scheduler:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To deploy these images, trigger the 'Azure Promote' workflow with image_tag=${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
