@@ -182,3 +182,35 @@ az acr credential show --name magnusacr
 
 - [Azure Container Apps Documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
 - [Terraform Azure Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+
+---
+
+## Dry Run Deployment (Local + GitHub Actions)
+
+Before deploying to Azure, you can validate your configuration and monorepo build without making any infrastructure changes.
+
+### Local Dry Run
+
+Run the dry run script from the repository root:
+
+```bash
+./scripts/deploy/dry-run.sh
+```
+
+This script will:
+1. Install dependencies and build the entire monorepo
+2. Run `terraform init` to prepare Terraform
+3. Run `terraform plan` to preview infrastructure changes
+4. **NOT apply any changes** - completely safe to run
+
+### CI Dry Run (GitHub Actions)
+
+The **"Azure Deploy Dry Run"** workflow runs automatically on pull requests to `main`, or you can trigger it manually:
+
+1. Go to **Actions** tab in GitHub
+2. Select **"Azure Deploy Dry Run"** workflow
+3. Click **"Run workflow"**
+
+This workflow performs the same validation steps as the local script, plus it verifies that all required GitHub Secrets are configured correctly.
+
+**Both dry runs are completely safe** - they only validate your configuration and build process without deploying anything to Azure.

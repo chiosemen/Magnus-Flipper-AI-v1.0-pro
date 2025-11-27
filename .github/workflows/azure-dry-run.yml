@@ -1,0 +1,69 @@
+name: Azure Deploy Dry Run
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @magnus-flipper-ai/core prisma:generate
+
+      - name: Monorepo Build Check (READ-ONLY)
+        run: pnpm build
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init (READ-ONLY)
+        working-directory: infra/azure
+        run: terraform init
+
+      - name: Terraform Plan (NO APPLY)
+        working-directory: infra/azure
+        run: terraform plan -var="image_tag=dry-run-${{ github.sha }}"
+        env:
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
+          TF_VAR_supabase_url: ${{ secrets.SUPABASE_URL }}
+          TF_VAR_supabase_anon_key: ${{ secrets.SUPABASE_ANON_KEY }}
+          TF_VAR_supabase_service_role_key: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          TF_VAR_openai_key: ${{ secrets.OPENAI_API_KEY }}
+          TF_VAR_app_url: ${{ secrets.APP_URL }}
+          TF_VAR_demo_mode: "false"
+          TF_VAR_log_level: "info"
+
+      - name: Summary
+        run: |
+          echo "## Azure Dry Run" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
+          echo "- Terraform plan completed (no apply)" >> $GITHUB_STEP_SUMMARY
