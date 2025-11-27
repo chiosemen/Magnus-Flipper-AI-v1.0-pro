@@ -1,27 +1,3 @@
-terraform {
-  required_version = ">= 1.6.0"
-
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.113"
-    }
-  }
-
-  # Optional: Configure remote state storage
-  # backend "azurerm" {
-  #   resource_group_name  = "terraform-state-rg"
-  #   storage_account_name = "tfstatemagnusflipperai"
-  #   container_name       = "tfstate"
-  #   key                  = "magnus-flipper-ai.tfstate"
-  # }
-}
-
-provider "azurerm" {
-  features {}
-  subscription_id = var.subscription_id
-}
-
 # ===========================================================================
 # Resource Group
 # ===========================================================================
@@ -61,29 +37,6 @@ resource "azurerm_container_registry" "acr" {
   location            = azurerm_resource_group.rg.location
   sku                 = "Basic"
   admin_enabled       = true
-
-  tags = {
-    Environment = var.node_env
-    Project     = "Magnus-Flipper-AI"
-  }
-}
-
-# ===========================================================================
-# Azure Cache for Redis
-# ===========================================================================
-resource "azurerm_redis_cache" "redis" {
-  name                = var.redis_name
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  capacity            = 1
-  family              = "C"
-  sku_name            = "Standard"
-  enable_non_ssl_port = false
-  minimum_tls_version = "1.2"
-
-  redis_configuration {
-    maxmemory_policy = "allkeys-lru"
-  }
 
   tags = {
     Environment = var.node_env
@@ -152,13 +105,18 @@ resource "azurerm_container_app" "api" {
   }
 
   secret {
-    name  = "redis-host"
-    value = azurerm_redis_cache.redis.hostname
+    name  = "stripe-secret-key"
+    value = var.stripe_secret_key
   }
 
   secret {
-    name  = "redis-key"
-    value = azurerm_redis_cache.redis.primary_access_key
+    name  = "stripe-webhook-secret"
+    value = var.stripe_webhook_secret
+  }
+
+  secret {
+    name  = "openai-key"
+    value = var.openai_key
   }
 
   ingress {
@@ -175,7 +133,7 @@ resource "azurerm_container_app" "api" {
   template {
     container {
       name   = "api"
-      image  = "${azurerm_container_registry.acr.login_server}/magnus-api:latest"
+      image  = "${azurerm_container_registry.acr.login_server}/magnus-api:${var.image_tag}"
       cpu    = 0.5
       memory = "1Gi"
 
@@ -205,23 +163,28 @@ resource "azurerm_container_app" "api" {
       }
 
       env {
-        name        = "REDIS_HOST"
-        secret_name = "redis-host"
+        name        = "STRIPE_SECRET_KEY"
+        secret_name = "stripe-secret-key"
       }
 
       env {
-        name        = "REDIS_KEY"
-        secret_name = "redis-key"
+        name        = "STRIPE_WEBHOOK_SECRET"
+        secret_name = "stripe-webhook-secret"
       }
 
       env {
-        name  = "REDIS_PORT"
-        value = "6380"
+        name        = "OPENAI_API_KEY"
+        secret_name = "openai-key"
       }
 
       env {
-        name  = "REDIS_TLS"
-        value = "true"
+        name  = "APP_URL"
+        value = var.app_url
+      }
+
+      env {
+        name  = "DEMO_MODE"
+        value = var.demo_mode
       }
 
       env {
@@ -232,6 +195,11 @@ resource "azurerm_container_app" "api" {
       env {
         name  = "PORT"
         value = "4000"
+      }
+
+      env {
+        name  = "LOG_LEVEL"
+        value = var.log_level
       }
     }
 
@@ -295,25 +263,15 @@ resource "azurerm_container_app_job" "alerts_job" {
     value = var.supabase_service_role_key
   }
 
-  secret {
-    name  = "redis-host"
-    value = azurerm_redis_cache.redis.hostname
-  }
-
-  secret {
-    name  = "redis-key"
-    value = azurerm_redis_cache.redis.primary_access_key
-  }
-
   template {
     container {
       name   = "alerts-worker"
-      image  = "${azurerm_container_registry.acr.login_server}/alerts-worker:latest"
+      image  = "${azurerm_container_registry.acr.login_server}/magnus-worker-alerts:${var.image_tag}"
       cpu    = 0.25
       memory = "0.5Gi"
 
       env {
-        name  = "DATABASE_URL"
+        name        = "DATABASE_URL"
         secret_name = "database-url"
       }
 
@@ -328,28 +286,189 @@ resource "azurerm_container_app_job" "alerts_job" {
       }
 
       env {
-        name        = "REDIS_HOST"
-        secret_name = "redis-host"
+        name  = "NODE_ENV"
+        value = var.node_env
       }
 
       env {
-        name        = "REDIS_KEY"
-        secret_name = "redis-key"
+        name  = "LOG_LEVEL"
+        value = var.log_level
+      }
+    }
+  }
+
+  tags = {
+    Environment = var.node_env
+    Project     = "Magnus-Flipper-AI"
+  }
+}
+
+# ===========================================================================
+# Container Apps Job: Crawler Worker
+# ===========================================================================
+resource "azurerm_container_app_job" "crawler_job" {
+  name                         = "worker-crawler-job"
+  resource_group_name          = azurerm_resource_group.rg.name
+  location                     = azurerm_resource_group.rg.location
+  container_app_environment_id = azurerm_container_app_environment.ca_env.id
+
+  replica_timeout_in_seconds = 900
+  replica_retry_limit        = 1
+
+  manual_trigger_config {
+    parallelism              = 1
+    replica_completion_count = 1
+  }
+
+  schedule_trigger_config {
+    cron_expression = "*/10 * * * *"
+    parallelism     = 1
+  }
+
+  registry {
+    server               = azurerm_container_registry.acr.login_server
+    username             = azurerm_container_registry.acr.admin_username
+    password_secret_name = "acr-password"
+  }
+
+  secret {
+    name  = "acr-password"
+    value = azurerm_container_registry.acr.admin_password
+  }
+
+  secret {
+    name  = "database-url"
+    value = var.database_url
+  }
+
+  secret {
+    name  = "supabase-url"
+    value = var.supabase_url
+  }
+
+  secret {
+    name  = "supabase-service-role-key"
+    value = var.supabase_service_role_key
+  }
+
+  template {
+    container {
+      name   = "crawler-worker"
+      image  = "${azurerm_container_registry.acr.login_server}/magnus-worker-crawler:${var.image_tag}"
+      cpu    = 0.5
+      memory = "1Gi"
+
+      env {
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
       }
 
       env {
-        name  = "REDIS_PORT"
-        value = "6380"
+        name        = "SUPABASE_URL"
+        secret_name = "supabase-url"
       }
 
       env {
-        name  = "REDIS_TLS"
-        value = "true"
+        name        = "SUPABASE_SERVICE_ROLE_KEY"
+        secret_name = "supabase-service-role-key"
       }
 
       env {
         name  = "NODE_ENV"
         value = var.node_env
+      }
+
+      env {
+        name  = "LOG_LEVEL"
+        value = var.log_level
+      }
+    }
+  }
+
+  tags = {
+    Environment = var.node_env
+    Project     = "Magnus-Flipper-AI"
+  }
+}
+
+# ===========================================================================
+# Container Apps Job: Scheduler Worker
+# ===========================================================================
+resource "azurerm_container_app_job" "scheduler_job" {
+  name                         = "worker-scheduler-job"
+  resource_group_name          = azurerm_resource_group.rg.name
+  location                     = azurerm_resource_group.rg.location
+  container_app_environment_id = azurerm_container_app_environment.ca_env.id
+
+  replica_timeout_in_seconds = 300
+  replica_retry_limit        = 1
+
+  manual_trigger_config {
+    parallelism              = 1
+    replica_completion_count = 1
+  }
+
+  schedule_trigger_config {
+    cron_expression = "* * * * *"
+    parallelism     = 1
+  }
+
+  registry {
+    server               = azurerm_container_registry.acr.login_server
+    username             = azurerm_container_registry.acr.admin_username
+    password_secret_name = "acr-password"
+  }
+
+  secret {
+    name  = "acr-password"
+    value = azurerm_container_registry.acr.admin_password
+  }
+
+  secret {
+    name  = "database-url"
+    value = var.database_url
+  }
+
+  secret {
+    name  = "supabase-url"
+    value = var.supabase_url
+  }
+
+  secret {
+    name  = "supabase-service-role-key"
+    value = var.supabase_service_role_key
+  }
+
+  template {
+    container {
+      name   = "scheduler-worker"
+      image  = "${azurerm_container_registry.acr.login_server}/magnus-scheduler:${var.image_tag}"
+      cpu    = 0.25
+      memory = "0.5Gi"
+
+      env {
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
+      }
+
+      env {
+        name        = "SUPABASE_URL"
+        secret_name = "supabase-url"
+      }
+
+      env {
+        name        = "SUPABASE_SERVICE_ROLE_KEY"
+        secret_name = "supabase-service-role-key"
+      }
+
+      env {
+        name  = "NODE_ENV"
+        value = var.node_env
+      }
+
+      env {
+        name  = "LOG_LEVEL"
+        value = var.log_level
       }
     }
   }
