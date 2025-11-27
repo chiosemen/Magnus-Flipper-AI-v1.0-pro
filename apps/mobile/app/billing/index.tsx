@@ -5,9 +5,13 @@ import { Loading } from "@/components/Loading";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { usePlan } from "@/lib/queries/usePlan";
 import { api } from "@/lib/api";
+import { useTrial } from "@/lib/useTrial";
+import { useRouter } from "expo-router";
 
 export default function BillingPage() {
   const { data, isLoading, error } = usePlan();
+  const { startTrial } = useTrial();
+  const router = useRouter();
 
   if (isLoading) return <Loading />;
   if (error) return <ErrorMessage message="Failed to load billing." />;
@@ -18,8 +22,12 @@ export default function BillingPage() {
   };
 
   const handleTrial = async () => {
-    const res = await api.plan.trial();
-    if (res.url) Linking.openURL(res.url);
+    const res = await startTrial();
+    if (res?.url) {
+      Linking.openURL(res.url);
+      return;
+    }
+    router.push("/dashboard");
   };
 
   return (

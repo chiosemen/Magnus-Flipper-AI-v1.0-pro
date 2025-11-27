@@ -8,8 +8,25 @@ import Link from 'next/link'
 export function TopNav() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/50 bg-background/95 backdrop-blur-xl px-4 sm:px-6 lg:px-8">
-      {/* Search Bar */}
-      <div className="flex flex-1 items-center gap-4">
+      {/* Navigation + Search */}
+      <div className="flex flex-1 items-center gap-6">
+        <nav className="hidden lg:flex items-center gap-4 text-sm text-muted-foreground">
+          <Link className="transition hover:text-foreground" href="/flip/phones">
+            Flip Phones
+          </Link>
+          <Link className="transition hover:text-foreground" href="/flip/cars">
+            Flip Cars
+          </Link>
+          <Link className="transition hover:text-foreground" href="/flip/couches">
+            Flip Couches
+          </Link>
+          <Link className="transition hover:text-foreground" href="/pricing">
+            Pricing
+          </Link>
+          <Link className="transition hover:text-foreground" href="/marketplace">
+            Marketplace
+          </Link>
+        </nav>
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input

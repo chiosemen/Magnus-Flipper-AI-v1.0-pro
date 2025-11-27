@@ -107,7 +107,7 @@ export function PricingPageClient() {
               Tell Magnus how aggressively you want to hunt and we’ll recommend a plan.
             </p>
           </div>
-          <PriceCalculator onPlanSuggested={setSuggested} />
+          <PriceCalculator />
           {suggested && (
             <p className="text-sm text-cyan-200">
               Recommended: {suggested}. Use the buttons above to start checkout.

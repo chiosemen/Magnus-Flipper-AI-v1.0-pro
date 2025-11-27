@@ -1,93 +1,121 @@
 import type { Metadata } from "next";
-import { FlipHero } from "@/components/marketing/FlipHero";
-import { FeatureCards } from "@/components/marketing/FeatureCards";
-import { PricingCalculator } from "@/components/marketing/PricingCalculator";
-import { ComparisonTable } from "@/components/marketing/ComparisonTable";
-import { TrialCTA } from "@/components/marketing/TrialCTA";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  MarketingFeatureBlock,
+  MarketingHero,
+  MarketingPricingCTA,
+  MarketingScreenshots,
+  MarketingSEO,
+} from "@/components/marketing/shared";
+
 export const metadata: Metadata = {
-  title: "Flip Cars | Magnus Flipper",
-  description: "Snipe undervalued cars with instant alerts and spam filtering across key marketplaces.",
+  title: "Flip Cars with Confidence | Magnus Flipper",
+  description: "VIN-aware alerts, radius controls, and price comps for fast car flips.",
   openGraph: {
-    title: "Flip Cars | Magnus Flipper",
-    description: "Snipe undervalued cars with instant alerts and spam filtering across key marketplaces.",
+    title: "Flip Cars with Confidence | Magnus Flipper",
+    description: "VIN-aware alerts, radius controls, and price comps for fast car flips.",
     url: "https://magnusflipper.ai/flip/cars",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Flip Cars | Magnus Flipper",
-    description: "Snipe undervalued cars with instant alerts and spam filtering across key marketplaces.",
   },
   alternates: {
     canonical: "https://magnusflipper.ai/flip/cars",
   },
 };
 
-export default function FlipCarsPage() {
+export default function CarsPage() {
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-12 space-y-12">
-        <div className="space-y-3">
-          <h1 className="text-4xl font-bold tracking-tight">Flip Cars</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
-            Snipe undervalued cars with instant alerts and spam filtering across key marketplaces.
-          </p>
-        </div>
-
-        <FlipHero
-          eyebrow="Cars"
-          title="Snipe undervalued cars before the crowd."
-          subtitle="Magnus monitors auto listings continuously, filters spam, and pings you the second a profitable car appears."
+    <div className="bg-slate-950 text-slate-100">
+      <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 py-12 sm:py-16">
+        <MarketingHero
+          eyebrow="Car Flips"
+          title="VIN-aware alerts for profitable car flips."
+          subtitle="Magnus scans marketplaces for your exact trims, surfaces clean VIN data, and alerts you with price comps and local pickup fit."
+          highlights={[
+            "Trim + drivetrain filters",
+            "Radius + metro targeting",
+            "Title + condition tagging",
+          ]}
+          actions={
+            <>
+              <Button asChild size="lg" className="bg-white text-slate-900 hover:bg-slate-100">
+                <Link href="/pricing">Start free trial</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="border-white/50 text-white hover:bg-white/10">
+                <Link href="/marketplace">See coverage</Link>
+              </Button>
+            </>
+          }
         />
 
-        <FeatureCards
-          heading="Why flip cars with Magnus?"
-          copy="Fast scans, vehicle-friendly filters, and multi-market coverage."
+        <MarketingFeatureBlock
+          title="Know the deal before you drive"
+          description="VIN-backed intel plus local pickup filters keep you from wasting weekends on dead leads."
+          features={[
+            { title: "VIN & trim awareness", body: "Surface exact trims, mileage, and drivetrain details instantly." },
+            { title: "Radius + metro sweeps", body: "Blend local pickups with metro searches to widen your deal flow." },
+            { title: "Title & history cues", body: "Flag salvage, rebuilt, and missing title issues before you DM." },
+            { title: "Dealer noise removed", body: "Strip out buy-here-pay-here spam and broker reposts." },
+            { title: "Offer guidance", body: "Price comps and target offers so you negotiate faster." },
+            { title: "Mobile alerts", body: "Get notified within minutes of a viable listing hitting the feed." },
+          ]}
+        />
+
+        <MarketingScreenshots
+          title="Real-time car alerts with context"
+          description="Listings scored by profit potential, with VIN decoded insights, location fit, and contact shortcuts."
           items={[
-            { title: "VIN + trim targeting", body: "Dial in year, mileage, trims, and exclusions." },
-            { title: "Spam cleanup", body: "Hide auctions, rentals, and obvious scams automatically." },
-            { title: "Instant alerts", body: "Move first on test drives with near-instant alerts.", tag: "Speed" },
+            { title: "Alert stream", caption: "Fresh cars ranked with mileage, trim, and title notes inline." },
+            { title: "Geo fit", caption: "See drive time, radius, and pickup suggestions instantly." },
+            { title: "Offer prep", caption: "Suggested offers and resale projections for quick decisions." },
           ]}
         />
 
-        <PricingCalculator />
+        <section className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-lg sm:p-10">
+          <div className="space-y-4 sm:flex sm:items-center sm:justify-between sm:space-y-0">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-200/80">Trust the signals</p>
+              <h2 className="text-2xl font-semibold text-white sm:text-3xl">
+                Speed + accuracy built for car flippers.
+              </h2>
+              <p className="mt-2 max-w-2xl text-slate-300">
+                Magnus ranks each car on margin potential, factoring mileage, trim scarcity, and title status so you
+                move on the right vehicles first.
+              </p>
+            </div>
+            <div className="grid gap-3 text-sm text-slate-200 sm:text-base">
+              <div className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3">
+                <p className="text-xs uppercase text-cyan-200/80">Spam removed</p>
+                <p className="text-lg font-semibold text-white">Dealer/broker noise filtered</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3">
+                <p className="text-xs uppercase text-cyan-200/80">Alert window</p>
+                <p className="text-lg font-semibold text-white">Under 5 minutes</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        <FeatureCards
-          heading="Marketplace coverage"
-          copy="One feed across Facebook Marketplace, Craigslist, Gumtree, OfferUp."
-          items={[
-            { title: "Local + regional sweeps", body: "Balance radius to avoid wasted drives." },
-            { title: "Condition keywords", body: "Target ‘clean title’, ‘one owner’, ‘no accidents’." },
-            { title: "Cadence control", body: "Set faster scans for hot metro areas." },
-          ]}
+        <MarketingPricingCTA
+          title="Source your next profitable flip with VIN-aware alerts."
+          description="Get marketplace-wide car alerts with price comps and location fit in minutes."
+          primaryAction={
+            <Button asChild size="lg" className="bg-white text-slate-900 hover:bg-slate-100">
+              <Link href="/pricing">Choose a plan</Link>
+            </Button>
+          }
+          secondaryAction={
+            <Button asChild size="lg" variant="outline" className="border-white/60 text-white hover:bg-white/10">
+              <Link href="/marketplace">View coverage</Link>
+            </Button>
+          }
         />
 
-        <ComparisonTable
-          heading="Manual searching vs Magnus"
-          copy="Stop losing to faster buyers; let alerts do the refresh work."
-          rows={[
-            { label: "Scan speed", magnus: "2–5 min (plan-based)", competitor: "Manual 15–30 min refresh" },
-            { label: "Noise", magnus: "Spam + duplicates filtered", competitor: "Bait posts, repeats, rentals" },
-            { label: "Outreach", magnus: "Message first with instant alerts", competitor: "Arrive late to sellers" },
-          ]}
-        />
-
-        <TrialCTA />
-
-        <script
-          type="application/ld+json"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Product",
-              name: "Magnus Flipper Cars",
-              description: "Marketplace scanning and alerting for car flippers.",
-              brand: "Magnus Flipper",
-              offers: [{ "@type": "Offer", availability: "https://schema.org/InStock" }],
-            }),
-          }}
+        <MarketingSEO
+          name="Magnus Flipper — Car Flipping Alerts"
+          description="VIN-aware, radius-tuned car flipping alerts with spam filtering and price comps."
+          url="https://magnusflipper.ai/flip/cars"
         />
       </div>
-    </main>
+    </div>
   );
 }

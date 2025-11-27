@@ -2,6 +2,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { SWRProvider } from '@/lib/providers/swr-provider'
+import { isDemoMode } from '@/lib/config/demo-mode'
+import { DemoBanner } from '@magnus-flipper-ai/ui'
 
 export const metadata: Metadata = {
   title: 'Magnus Flipper AI - Premium Trading Dashboard',
@@ -13,6 +15,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const demo = isDemoMode()
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -24,6 +28,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
+        {demo && <DemoBanner />}
         <SWRProvider>{children}</SWRProvider>
       </body>
     </html>

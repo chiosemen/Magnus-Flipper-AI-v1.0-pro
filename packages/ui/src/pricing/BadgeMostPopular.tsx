@@ -1,13 +1,9 @@
-import { Badge } from "../../../../../apps/web/src/components/ui/badge";
+import React from "react";
 
-interface BadgeMostPopularProps {
-  label?: string;
-}
-
-export function BadgeMostPopular({ label = "Most Popular" }: BadgeMostPopularProps) {
+export function BadgeMostPopular({ label = "Most Popular" }: { label?: string }) {
   return (
-    <Badge className="bg-cyan-500 text-[10px] font-semibold uppercase tracking-wide text-slate-950">
+    <span className="inline-flex items-center rounded-full bg-cyan-500 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-950">
       {label}
-    </Badge>
+    </span>
   );
 }

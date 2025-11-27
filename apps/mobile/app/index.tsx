@@ -11,11 +11,13 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { useAlerts } from "@/lib/queries/useAlerts";
 import { useListingsFeed } from "@/lib/queries/useListings";
 import { usePlan } from "@/lib/queries/usePlan";
+import { isDemoMode } from "@/lib/config/demo-mode";
 
 export default function DashboardPage() {
   const { alerts, isLoading: alertsLoading, error: alertsError } = useAlerts();
   const { feed, isLoading: listingsLoading, error: listingsError } = useListingsFeed();
   const { plan, usage } = usePlan();
+  const demo = isDemoMode();
 
   if (alertsLoading || listingsLoading) return <Loading />;
   if (alertsError || listingsError) return <ErrorMessage message="Failed to load dashboard." />;
@@ -23,6 +25,13 @@ export default function DashboardPage() {
   return (
     <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+        {demo ? (
+          <View className="mb-3 bg-amber-500/10 border border-amber-400/40 px-4 py-2">
+            <Text className="text-xs font-semibold text-amber-200">
+              Demo Mode: Sample data. Connect real marketplaces from the web app.
+            </Text>
+          </View>
+        ) : null}
         <AppHeader title="Magnus Dashboard" subtitle="Stay ahead on flips" />
 
         <View className="px-4">

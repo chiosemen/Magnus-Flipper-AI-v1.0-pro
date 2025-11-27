@@ -1,29 +1,33 @@
 import { View, Text, Pressable, Image } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Listing } from "@/lib/api";
 
-interface ListingCardProps {
-  title: string;
-  price: string;
-  site?: string;
-  location?: string;
-  imageUrl?: string;
+type ListingCardProps = {
+  item: Listing;
   onPress?: () => void;
-}
+};
 
-export function ListingCard({ title, price, site, location, imageUrl, onPress }: ListingCardProps) {
+export function ListingCard({ item, onPress }: ListingCardProps) {
   return (
-    <Pressable onPress={onPress} className="mb-3 rounded-xl bg-slate-800/70 p-4">
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} className="mb-3 h-40 w-full rounded-lg" resizeMode="cover" />
-      ) : (
-        <View className="mb-3 h-40 w-full rounded-lg bg-slate-700/60" />
-      )}
-      <Text className="text-base font-semibold text-white">{title}</Text>
-      <View className="mt-1 flex-row items-center justify-between">
-        <Text className="text-lg font-bold text-cyan-300">{price}</Text>
-        <View className="flex-row items-center gap-1">
-          <Feather name="map-pin" size={14} color="#94a3b8" />
-          <Text className="text-xs text-slate-400">{location || site || "Unknown"}</Text>
+    <Pressable
+      onPress={onPress}
+      className="mb-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-4"
+    >
+      <View className="flex-row gap-3">
+        <View className="h-16 w-16 items-center justify-center rounded-xl bg-slate-800">
+          {item.imageUrl ? (
+            <Image source={{ uri: item.imageUrl }} className="h-16 w-16 rounded-xl" />
+          ) : (
+            <Text className="text-xs text-slate-400">Image</Text>
+          )}
+        </View>
+        <View className="flex-1">
+          <Text className="text-base font-semibold text-white" numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text className="text-sm text-cyan-200">${item.price}</Text>
+          <Text className="text-xs text-slate-400">
+            {item.site || "Marketplace"} • {item.location || "Unknown"}
+          </Text>
         </View>
       </View>
     </Pressable>

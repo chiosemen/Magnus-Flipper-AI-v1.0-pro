@@ -19,6 +19,8 @@ import { useBilling } from '@/lib/queries/useBilling'
 import { TrialBanner } from '@/components/billing/TrialBanner'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
+import { isDemoMode } from '@/lib/config/demo-mode'
+import { DEMO_ALERTS, DEMO_LISTINGS, DEMO_SEARCHES } from '@/lib/demo-data/dashboard'
 
 function ProgressBar({ value, label }: { value: number; label: string }) {
   const clamped = Math.min(100, Math.max(0, value))
@@ -44,18 +46,23 @@ export default function DashboardPage() {
   const { feed, isLoading: loadingFeed } = useListingsFeed({ page: 1, pageSize: 6 })
   const { data: billing } = useBilling()
 
+  const demo = isDemoMode()
+  const effectiveSearches = demo && searches.length === 0 ? DEMO_SEARCHES : searches
+  const effectiveAlerts = demo && alerts.length === 0 ? DEMO_ALERTS : alerts
+  const effectiveListings = demo && feed?.listings?.length === 0 ? DEMO_LISTINGS : feed?.listings
+
   const usage = useMemo(() => {
     const allowance = 10 // this would come from plan metadata
-    const used = searches.length
+    const used = effectiveSearches.length
     return {
       used,
       allowance,
       percent: allowance ? Math.min(100, Math.round((used / allowance) * 100)) : 0,
     }
-  }, [searches.length])
+  }, [effectiveSearches.length])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="dashboard-page">
       <TrialBanner plan={billing?.plan} status={billing?.status} trialExpiresAt={billing?.trial_expires_at} />
 
       <div className="flex items-center justify-between">
@@ -79,7 +86,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="neon-glow-hover">
+        <Card className="neon-glow-hover" data-testid="dashboard-plan-summary">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-cyan-mint" />
@@ -105,7 +112,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="neon-glow-hover">
+        <Card className="neon-glow-hover" data-testid="dashboard-alerts">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-cyan-mint" />
@@ -119,7 +126,7 @@ export default function DashboardPage() {
                 <Badge variant="secondary">{alerts.length}</Badge>
               </div>
               <div className="mt-3 space-y-2">
-                {alerts.slice(0, 3).map((alert) => (
+                {effectiveAlerts.slice(0, 3).map((alert) => (
                   <div key={alert.id} className="flex items-center justify-between text-sm">
                     <div>
                       <p className="font-medium">{alert.savedSearchId || 'Match'}</p>
@@ -132,7 +139,7 @@ export default function DashboardPage() {
                     </Badge>
                   </div>
                 ))}
-                {alerts.length === 0 && (
+                {effectiveAlerts.length === 0 && (
                   <p className="text-sm text-muted-foreground">No alerts yet.</p>
                 )}
               </div>
@@ -159,7 +166,7 @@ export default function DashboardPage() {
               className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-3 transition hover:border-cyan-mint/60"
             >
               <span>Manage saved searches</span>
-              <Badge variant="outline">{searches.length}</Badge>
+              <Badge variant="outline">{effectiveSearches.length}</Badge>
             </Link>
             <Link
               href="/results"
@@ -202,9 +209,12 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-3">
-              {feed?.listings?.map((listing) => (
+              {effectiveListings?.map((listing) => (
                 <Link key={listing.id} href={`/listings/${listing.id}`}>
-                  <div className="rounded-xl border border-border/60 bg-muted/30 p-4 transition hover:border-cyan-mint/60 hover:bg-muted/50">
+                  <div
+                    className="rounded-xl border border-border/60 bg-muted/30 p-4 transition hover:border-cyan-mint/60 hover:bg-muted/50"
+                    data-testid="listing-card"
+                  >
                     <div className="aspect-video w-full rounded-lg bg-gradient-to-br from-indigo-blue/20 to-cyan-mint/10" />
                     <div className="mt-3 space-y-1">
                       <p className="line-clamp-2 font-semibold">{listing.title}</p>
@@ -224,7 +234,7 @@ export default function DashboardPage() {
                   </div>
                 </Link>
               ))}
-              {feed?.listings?.length === 0 && (
+              {effectiveListings?.length === 0 && (
                 <p className="text-sm text-muted-foreground">No matches yet. Try adding a search.</p>
               )}
             </div>

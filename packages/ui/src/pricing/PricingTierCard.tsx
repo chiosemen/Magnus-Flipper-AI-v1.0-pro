@@ -1,7 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "../../../../../apps/web/src/components/ui/card";
-import { Button } from "../../../../../apps/web/src/components/ui/button";
+import React from "react";
 import { BadgeMostPopular } from "./BadgeMostPopular";
 import { FeatureRow } from "./FeatureRow";
 
@@ -29,35 +28,34 @@ export function PricingTierCard({
   footerNote,
 }: PricingTierCardProps) {
   return (
-    <Card
-      className={`flex h-full flex-col border-slate-800 bg-slate-950/85 ${
+    <div
+      className={`flex h-full flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/85 p-4 ${
         isMostPopular ? "ring-2 ring-cyan-400/70 shadow-xl shadow-cyan-900/40" : "shadow-md shadow-black/30"
       }`}
     >
-      <CardHeader className="space-y-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl">{name}</CardTitle>
-          {isMostPopular && <BadgeMostPopular />}
-        </div>
-        {headline && <p className="text-sm text-slate-300">{headline}</p>}
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold">{price}</span>
-          <span className="text-xs text-slate-400">/ {period}</span>
-        </div>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col space-y-4 text-sm">
-        <ul className="space-y-2 text-slate-200">
-          {features.map((item) => (
-            <FeatureRow key={item} text={item} />
-          ))}
-        </ul>
-        <div className="mt-auto space-y-2">
-          <Button className="w-full rounded-full" onClick={onSelect}>
-            {ctaLabel}
-          </Button>
-          {footerNote && <p className="text-[11px] text-slate-400">{footerNote}</p>}
-        </div>
-      </CardContent>
-    </Card>
+      <div className="flex items-center justify-between">
+        <p className="text-xl font-semibold text-white">{name}</p>
+        {isMostPopular && <BadgeMostPopular />}
+      </div>
+      {headline && <p className="mt-2 text-sm text-slate-300">{headline}</p>}
+      <div className="mt-2 flex items-baseline gap-1">
+        <span className="text-3xl font-bold text-white">{price}</span>
+        <span className="text-xs text-slate-400">/ {period}</span>
+      </div>
+      <ul className="mt-3 flex-1 space-y-2 text-sm text-slate-200">
+        {features.map((item) => (
+          <FeatureRow key={item} text={item} />
+        ))}
+      </ul>
+      <div className="mt-auto space-y-2">
+        <button
+          className="w-full rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900"
+          onClick={onSelect}
+        >
+          {ctaLabel}
+        </button>
+        {footerNote && <p className="text-[11px] text-slate-400">{footerNote}</p>}
+      </div>
+    </div>
   );
 }

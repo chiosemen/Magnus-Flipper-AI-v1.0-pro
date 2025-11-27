@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "src/index.ts",
+    "src/demo-banner.tsx",
+    "src/usage-bar.tsx",
+    "src/empty-state.tsx"
+  ],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/pricing/**/*", "src/marketing/**/*", "src/error-state.tsx", "src/TrialBadge.tsx"]
+}
