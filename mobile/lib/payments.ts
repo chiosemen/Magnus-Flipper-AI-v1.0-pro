@@ -114,8 +114,48 @@ export function usePayments() {
     }
   };
 
+  /**
+   * Process trial setup - collect payment method without charging
+   */
+  const processTrialSetup = async (setupIntentClientSecret: string, customerEmail?: string) => {
+    try {
+      // 1. Initialize payment sheet with SetupIntent
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: 'Magnus Flipper AI',
+        setupIntentClientSecret,
+        allowsDelayedPaymentMethods: true,
+        returnURL: 'magnus://trial/success',
+        defaultBillingDetails: {
+          email: customerEmail,
+        },
+      });
+
+      if (initError) {
+        throw new Error(initError.message);
+      }
+
+      // 2. Present payment sheet
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        // User cancelled
+        if (presentError.code === 'Canceled') {
+          return { success: false, cancelled: true };
+        }
+        throw new Error(presentError.message);
+      }
+
+      // Payment method successfully added
+      return { success: true, cancelled: false };
+    } catch (error) {
+      console.error('Trial setup failed:', error);
+      return { success: false, error, cancelled: false };
+    }
+  };
+
   return {
     processSubscription,
+    processTrialSetup,
   };
 }
 

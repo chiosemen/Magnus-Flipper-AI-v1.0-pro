@@ -233,6 +233,44 @@ class MagnusAPI {
     const { data } = await this.client.get<{ portalUrl: string }>('/api/billing/portal');
     return data;
   }
+
+  // Mobile Trial Flow API
+  async startTrial(): Promise<{
+    trialSessionId: string;
+    setupIntentClientSecret: string;
+    customerId: string;
+  }> {
+    const { data } = await this.client.post<{
+      trialSessionId: string;
+      setupIntentClientSecret: string;
+      customerId: string;
+    }>('/mobile/trial/start');
+    return data;
+  }
+
+  async confirmTrial(params: { trialSessionId: string }): Promise<{
+    success: boolean;
+    trialExpiresAt: string;
+  }> {
+    const { data } = await this.client.post<{
+      success: boolean;
+      trialExpiresAt: string;
+    }>('/mobile/trial/confirm', params);
+    return data;
+  }
+
+  async syncTrialStatus(): Promise<{
+    subscriptionStatus: string;
+    plan: string;
+    trialExpiresAt?: string;
+  }> {
+    const { data } = await this.client.post<{
+      subscriptionStatus: string;
+      plan: string;
+      trialExpiresAt?: string;
+    }>('/mobile/trial/sync');
+    return data;
+  }
 }
 
 export const api = new MagnusAPI();
