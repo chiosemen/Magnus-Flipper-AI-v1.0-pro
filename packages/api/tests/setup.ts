@@ -1,3 +1,7 @@
+/// <reference types="jest" />
+
+import { jest } from "@jest/globals";
+
 /**
  * Jest test setup
  * Runs before all tests

@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Magnus Flipper AI",
+    "slug": "magnus-flipper-ai",
+    "plugins": ["expo-router"],
+    "experiments": { "tsconfigPaths": true },
+    "config": {
+      "appConfig": "./app.config.ts"
+    }
+  }
+}

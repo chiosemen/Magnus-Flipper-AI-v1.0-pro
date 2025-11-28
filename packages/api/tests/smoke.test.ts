@@ -1,3 +1,5 @@
+import { describe, expect, it } from "@jest/globals";
+
 /**
  * Smoke tests for critical API endpoints
  * Run these after deployment to verify basic functionality

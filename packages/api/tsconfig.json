@@ -12,8 +12,9 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "types": ["node", "jest"]
   },
-  "include": ["src"],
+  "include": ["src", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

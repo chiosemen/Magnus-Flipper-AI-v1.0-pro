@@ -1,8 +1,0 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MarketingScreenshots = MarketingScreenshots;
-const jsx_runtime_1 = require("react/jsx-runtime");
-function MarketingScreenshots({ title, description, items }) {
-    return ((0, jsx_runtime_1.jsxs)("section", { className: "space-y-6 rounded-3xl border border-white/10 bg-slate-950/70 p-6 shadow-lg sm:p-10", children: [(0, jsx_runtime_1.jsxs)("div", { className: "space-y-2", children: [(0, jsx_runtime_1.jsx)("h2", { className: "text-2xl font-semibold text-white", children: title }), (0, jsx_runtime_1.jsx)("p", { className: "text-slate-300", children: description })] }), (0, jsx_runtime_1.jsx)("div", { className: "grid gap-4 md:grid-cols-3", children: items.map((item, idx) => ((0, jsx_runtime_1.jsxs)("div", { className: "relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-5 shadow-inner", children: [(0, jsx_runtime_1.jsx)("div", { className: "absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.18),transparent_40%)]" }), (0, jsx_runtime_1.jsxs)("div", { className: "relative space-y-3", children: [(0, jsx_runtime_1.jsx)("div", { className: "h-32 rounded-xl bg-slate-800/70 ring-1 ring-white/10" }), (0, jsx_runtime_1.jsxs)("div", { children: [(0, jsx_runtime_1.jsx)("h3", { className: "text-lg font-semibold text-white", children: item.title }), (0, jsx_runtime_1.jsx)("p", { className: "text-sm text-slate-300", children: item.caption })] })] })] }, `${item.title}-${idx}`))) })] }));
-}
-//# sourceMappingURL=MarketingScreenshots.js.map

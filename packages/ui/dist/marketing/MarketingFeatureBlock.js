@@ -1,8 +1,0 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MarketingFeatureBlock = MarketingFeatureBlock;
-const jsx_runtime_1 = require("react/jsx-runtime");
-function MarketingFeatureBlock({ title, description, features }) {
-    return ((0, jsx_runtime_1.jsxs)("section", { className: "space-y-6 rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-lg backdrop-blur sm:p-10", children: [(0, jsx_runtime_1.jsxs)("div", { className: "space-y-2", children: [(0, jsx_runtime_1.jsx)("p", { className: "text-sm font-semibold uppercase tracking-wide text-cyan-200/80", children: title }), (0, jsx_runtime_1.jsx)("p", { className: "text-lg text-slate-200 sm:text-xl", children: description })] }), (0, jsx_runtime_1.jsx)("div", { className: "grid gap-4 sm:grid-cols-2 lg:grid-cols-3", children: features.map((feature) => ((0, jsx_runtime_1.jsxs)("div", { className: "rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-inner transition hover:-translate-y-1 hover:border-cyan-300/60 hover:shadow-cyan-500/20", children: [feature.badge ? ((0, jsx_runtime_1.jsx)("span", { className: "mb-2 inline-flex rounded-full bg-cyan-500/15 px-3 py-1 text-xs font-semibold text-cyan-100", children: feature.badge })) : null, (0, jsx_runtime_1.jsx)("h3", { className: "text-lg font-semibold text-white", children: feature.title }), (0, jsx_runtime_1.jsx)("p", { className: "mt-2 text-sm text-slate-300", children: feature.body })] }, feature.title))) })] }));
-}
-//# sourceMappingURL=MarketingFeatureBlock.js.map

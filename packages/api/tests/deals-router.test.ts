@@ -1,5 +1,5 @@
+import { describe, expect, it, jest } from "@jest/globals";
 import express from "express";
-import { jest } from "@jest/globals";
 import type { AddressInfo } from "node:net";
 
 type QueryResult<T> = {

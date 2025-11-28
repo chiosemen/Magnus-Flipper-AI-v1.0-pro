@@ -1,8 +1,0 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MarketingHero = MarketingHero;
-const jsx_runtime_1 = require("react/jsx-runtime");
-function MarketingHero({ eyebrow, title, subtitle, highlights = [], actions, }) {
-    return ((0, jsx_runtime_1.jsxs)("section", { className: "relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-indigo-500 to-cyan-400 px-6 py-12 shadow-2xl sm:px-10 sm:py-16", children: [(0, jsx_runtime_1.jsx)("div", { className: "absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.2),transparent_35%)]" }), (0, jsx_runtime_1.jsxs)("div", { className: "relative space-y-6", children: [eyebrow ? ((0, jsx_runtime_1.jsx)("p", { className: "inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-50", children: eyebrow })) : null, (0, jsx_runtime_1.jsxs)("div", { className: "space-y-3 text-slate-100", children: [(0, jsx_runtime_1.jsx)("h1", { className: "text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl", children: title }), (0, jsx_runtime_1.jsx)("p", { className: "max-w-3xl text-base text-slate-100/80 sm:text-lg", children: subtitle })] }), highlights.length ? ((0, jsx_runtime_1.jsx)("div", { className: "grid gap-3 sm:grid-cols-3", children: highlights.map((item) => ((0, jsx_runtime_1.jsx)("div", { className: "rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white backdrop-blur", children: item }, item))) })) : null, actions ? (0, jsx_runtime_1.jsx)("div", { className: "flex flex-wrap items-center gap-3", children: actions }) : null] })] }));
-}
-//# sourceMappingURL=MarketingHero.js.map
