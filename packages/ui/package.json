@@ -2,14 +2,8 @@
   "name": "@magnus-flipper-ai/ui",
   "version": "1.0.0",
   "private": true,
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "source": "src/index.ts",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist",
-    "dev": "tsc -p tsconfig.json --watch"
-  },
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
