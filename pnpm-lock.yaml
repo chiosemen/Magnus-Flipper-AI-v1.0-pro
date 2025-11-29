@@ -312,6 +312,12 @@ importers:
       '@prisma/client':
         specifier: ^5.22.0
         version: 5.22.0(prisma@5.22.0)
+      winston:
+        specifier: ^3.11.0
+        version: 3.18.3
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
     devDependencies:
       prisma:
         specifier: ^5.22.0
@@ -329,7 +335,14 @@ importers:
 
   packages/sniper-engine: {}
 
-  packages/ui: {}
+  packages/ui:
+    dependencies:
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.0.0
+        version: 18.3.1(react@18.3.1)
 
   packages/ui-config: {}
 
