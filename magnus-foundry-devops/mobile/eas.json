@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "requireCommit": false
+  },
+  "build": {
+    "development": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "ios": {
+        "simulator": false
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  },
+  "channel": {
+    "staging": {
+      "branch": "staging"
+    },
+    "production": {
+      "branch": "production"
+    }
+  }
+}

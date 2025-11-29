@@ -1,0 +1,10 @@
+name: dev-tunnel
+trigger: manual
+
+steps:
+  - uses: actions/checkout@v4
+
+  - name: Start Expo Dev Server via Cloud Tunnel
+    run: |
+      cd mobile
+      npx expo start --tunnel

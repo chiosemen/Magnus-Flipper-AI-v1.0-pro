@@ -1,0 +1,19 @@
+version: 1
+
+project:
+  name: Magnus Flipper AI
+  type: expo
+
+cloud:
+  ios_build_machine: macos-ventura-xcode-16
+  android_build_machine: ubuntu-latest
+  dev_tunnels: enabled
+  monitoring: enabled
+
+pipelines:
+  - ios-build.yaml
+  - android-build.yaml
+  - tunnel.yaml
+  - ota-release.yaml
+  - monitoring.yaml
+  - crash-reporting.yaml
