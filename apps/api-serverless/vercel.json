@@ -9,7 +9,6 @@
   },
   "build": {
     "env": {
-      "NEXT_PUBLIC_API_URL": "@api-url",
       "SUPABASE_URL": "@supabase-url",
       "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-key",
       "DATABASE_URL": "@database-url",

@@ -30,3 +30,4 @@ tests/screenshots/
 tests/videos/
 .terraform/
 .terraform.lock.hcl
+.env*.local
