@@ -1,22 +1,13 @@
 {
   "name": "@magnus-flipper-ai/valuation-engine",
   "version": "1.0.0",
+  "private": true,
   "main": "src/index.ts",
-  "scripts": {
-    "test": "echo 'No tests' && exit 0"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "Valuation and scoring engine for Magnus Flipper AI.",
-  "packageManager": "pnpm@9.15.4",
   "types": "src/index.ts",
-  "files": [
-    "src"
-  ],
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*"
   },
-  "private": true
+  "files": ["src"],
+  "dependencies": {}
 }
