@@ -1,6 +1,8 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "pnpm install && pnpm generate && pnpm --filter web build",
+  "framework": "nextjs",
   "installCommand": "pnpm install",
+  "buildCommand": "pnpm install && pnpm generate && pnpm --filter @magnus-flipper-ai/web build",
   "outputDirectory": "apps/web/.next"
 }
