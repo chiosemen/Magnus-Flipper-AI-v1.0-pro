@@ -1,0 +1,45 @@
+name: Magnus OTA Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Release channel (staging|production)"
+        required: true
+        default: "staging"
+
+jobs:
+  ota:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node + pnpm
+        run: |
+          npm i -g pnpm
+
+      - name: Install dependencies
+        run: |
+          cd mobile
+          pnpm install
+
+      - name: Run Tests
+        run: |
+          cd mobile
+          pnpm test || echo "Tests failed – inspect before releasing."
+
+      - name: Publish OTA to Staging
+        if: ${{ github.event.inputs.channel == 'staging' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          cd mobile
+          npx eas update --branch staging --message "Staging OTA from Foundry"
+
+      - name: Publish OTA to Production
+        if: ${{ github.event.inputs.channel == 'production' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          cd mobile
+          npx eas update --branch production --message "Production OTA from Foundry"

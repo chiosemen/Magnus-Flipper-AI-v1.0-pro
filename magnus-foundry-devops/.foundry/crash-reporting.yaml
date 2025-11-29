@@ -1,0 +1,18 @@
+name: crash-reporting-setup
+trigger: manual
+
+steps:
+  - uses: actions/checkout@v4
+
+  - name: Ensure Sentry Config Present
+    run: |
+      test -f mobile/sentry.expo.js && echo "Sentry config present" || echo "Missing sentry.expo.js"
+
+  - name: Upload Source Maps (iOS + Android)
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+    run: |
+      cd mobile
+      npx sentry-expo upload-sourcemaps

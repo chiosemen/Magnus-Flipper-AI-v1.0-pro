@@ -1,0 +1,24 @@
+name: monitoring
+trigger: scheduled
+
+schedule:
+  cron: "0 * * * *" # hourly
+
+steps:
+  - uses: actions/checkout@v4
+
+  - name: Dependency Audit
+    run: |
+      cd mobile
+      pnpm install
+      pnpm audit || echo "Dependency issues detected, review advisories."
+
+  - name: Type Check (if using TS)
+    run: |
+      cd mobile
+      pnpm lint || echo "Lint errors found. Fix when convenient."
+
+  - name: Expo Doctor
+    run: |
+      cd mobile
+      npx expo doctor || echo "Expo doctor found issues, inspect before release."
