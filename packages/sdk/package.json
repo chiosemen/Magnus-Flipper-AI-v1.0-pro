@@ -1,7 +1,7 @@
 {
   "name": "@magnus-flipper-ai/sdk",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
