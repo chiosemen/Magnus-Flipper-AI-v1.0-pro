@@ -1,14 +1,14 @@
 {
   "name": "@magnus-flipper-ai/api",
   "version": "1.0.0",
-  "main": "dist/vercel-handler.js",
+  "main": "src/index.ts",
   "scripts": {
     "build": "esbuild src/server.ts src/vercel-handler.ts --bundle --platform=node --outdir=dist --format=cjs --sourcemap",
     "start": "node dist/server.js",
     "dev": "ts-node --esm src/server.ts",
     "openapi:gen": "ts-node --esm src/openapi/generate.ts",
     "seed": "ts-node --esm scripts/seed.ts",
-  "test": "echo 'No tests' && exit 0",
+    "test": "echo 'No tests' && exit 0",
     "test:smoke": "jest tests/smoke.test.ts",
     "clean": "rm -rf dist"
   },
@@ -41,5 +41,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@9.15.4",
+  "types": "src/index.ts",
+  "files": [
+    "src"
+  ]
 }
