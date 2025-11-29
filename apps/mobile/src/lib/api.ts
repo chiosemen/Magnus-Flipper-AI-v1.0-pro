@@ -1,6 +1,6 @@
 import { API_URL } from "./env";
 import { QueryClient } from "@tanstack/react-query";
-import { createMagnusClient, type MagnusClient } from "@magnus-flipper-ai/api-client";
+import { createMagnusClient, type MagnusClient } from "@magnus-flipper-ai/sdk";
 
 let client: MagnusClient | null = null;
 
