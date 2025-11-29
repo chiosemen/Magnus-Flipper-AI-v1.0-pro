@@ -45,5 +45,10 @@
   "types": "src/index.ts",
   "files": [
     "src"
-  ]
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "private": true
 }

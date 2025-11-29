@@ -8,6 +8,8 @@
     ".": "./src/index.ts",
     "./*": "./src/*"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "files": [
+    "src"
+  ]
 }
-
