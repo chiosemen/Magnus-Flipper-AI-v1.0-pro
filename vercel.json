@@ -3,7 +3,6 @@
   "version": 2,
   "framework": "nextjs",
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm --filter @magnus-flipper-ai/web build",
+  "buildCommand": "pnpm install && pnpm generate && pnpm --filter @magnus-flipper-ai/web build",
   "outputDirectory": "apps/web/.next"
 }
-

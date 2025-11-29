@@ -9,6 +9,12 @@
     "./*": "./src/*"
   },
   "files": ["src"],
-  "dependencies": {}
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
 }
-
