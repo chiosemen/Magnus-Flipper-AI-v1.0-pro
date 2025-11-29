@@ -1,6 +1,16 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error("Missing DATABASE_URL environment variable for Prisma");
+}
+
+const prismaAdapter = new PrismaPg({ connectionString: databaseUrl });
 
 export const prisma = new PrismaClient({
+  adapter: prismaAdapter,
   log: process.env.NODE_ENV === "development" ? ["query", "info"] : [],
 });
 
