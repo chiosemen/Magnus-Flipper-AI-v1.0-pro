@@ -6,8 +6,9 @@ const MARKETPLACES = [
   { id: "FB_MARKETPLACE", label: "Facebook" },
   { id: "OFFERUP", label: "OfferUp" },
   { id: "CRAIGSLIST", label: "Craigslist" },
-  { id: "GUMTREE", label: "Gumtree" },
+  { id: "VINTED", label: "Vinted" },
   { id: "EBAY", label: "eBay" },
+  { id: "GUMTREE", label: "Gumtree" },
 ];
 
 export function MarketplaceToggle({ value, onChange }: { value?: string; onChange: (val: string | null) => void }) {

@@ -5,8 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpRight } from "lucide-react";
 import type { Listing } from "@magnus-flipper-ai/core";
+import { getMarketplaceColor, getMarketplaceLogo } from "@/lib/ui/marketplace-ui";
 
 export function ResultCard({ item }: { item: Listing }) {
+  const marketplaceClass = getMarketplaceColor(item.site || "");
+  const logo = getMarketplaceLogo(item.site || "");
+
   return (
     <Link href={`/listings/${item.id}`}>
       <Card
@@ -22,7 +26,8 @@ export function ResultCard({ item }: { item: Listing }) {
             {item.description || "New match found"}
           </p>
           <div className="flex items-center justify-between pt-2">
-            <Badge variant="outline" className="capitalize">
+            <Badge variant="outline" className={`capitalize ${marketplaceClass}`}>
+              {logo}
               {item.site?.toLowerCase() || "marketplace"}
             </Badge>
             <span className="font-semibold text-indigo-400">

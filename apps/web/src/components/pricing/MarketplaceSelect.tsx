@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 
-const OPTIONS = ["Facebook Marketplace", "Craigslist", "OfferUp", "Kijiji"];
+const OPTIONS = ["Facebook Marketplace", "Craigslist", "OfferUp", "Vinted", "eBay", "Gumtree"];
 
 type MarketplaceSelectProps = {
   value: string[];

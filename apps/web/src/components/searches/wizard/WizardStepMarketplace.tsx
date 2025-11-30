@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const MARKETPLACES = ["Facebook Marketplace", "Craigslist", "Gumtree", "OfferUp", "Kijiji"];
+const MARKETPLACES = ["Facebook Marketplace", "Craigslist", "OfferUp", "Vinted", "eBay", "Gumtree"];
 
 interface WizardStepMarketplaceProps {
   value: string[];
