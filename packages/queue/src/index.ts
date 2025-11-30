@@ -7,6 +7,8 @@ import { MemoryQueue } from './memory';
 import { QueueConfig, QueueStatus, EnqueueOptions } from './types';
 
 export * from './types';
+export * from './marketplace/marketplace.queue';
+export * from './marketplace/marketplace.job';
 
 let queueInstance: UpstashQueue | MemoryQueue | null = null;
 let queueBackend: 'upstash' | 'memory' | 'none' = 'none';

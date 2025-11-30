@@ -26,6 +26,40 @@ export async function crawlMarketplace(
   }
 }
 
+/**
+ * Process a marketplace crawl job from the queue
+ * This is the worker function that processes "marketplace-crawl" jobs
+ */
+export async function processMarketplaceCrawlJob(job: {
+  data: {
+    marketplace: "VINTED" | "EBAY" | "GUMTREE";
+    query: string;
+    options?: { page?: number };
+  };
+}): Promise<ScrapedListing[]> {
+  const { marketplace, query, options } = job.data;
+
+  console.log(`[Crawler:${marketplace}] Starting job for query="${query}"`);
+
+  try {
+    // Build filter from query and options
+    const filter: SearchFilter = {
+      category: query, // Use query as category for now
+      models: query.split(" "), // Split query into model keywords
+    };
+
+    const listings = await crawlMarketplace(marketplace, filter);
+
+    console.log(`[Crawler:${marketplace}] Completed job for query="${query}", found ${listings.length} listings`);
+
+    return listings;
+  } catch (error: any) {
+    console.error(`[Crawler:${marketplace}] Job failed for query="${query}":`, error.message);
+    // Log-only on failure, don't throw (idempotent)
+    return [];
+  }
+}
+
 export * from "./crawlers/vinted";
 export * from "./crawlers/ebay";
 export * from "./crawlers/gumtree";
