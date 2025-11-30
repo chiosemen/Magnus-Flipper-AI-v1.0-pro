@@ -1,0 +1,59 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  resourceGroup: 'MagnusRG'
+  acrName: 'MagnusACR'
+  acrLoginServer: 'MagnusACR.azurecr.io'
+  apiImageName: 'magnus/api'
+  workerImageName: 'magnus/worker'
+  tag: '$(Build.BuildId)'
+
+stages:
+  - stage: Build
+    displayName: Build and push images
+    jobs:
+      - job: BuildAndPush
+        pool:
+          vmImage: 'ubuntu-latest'
+
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: 'AZURE-SC'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az acr login --name $(acrName)
+
+          - bash: |
+              docker build -t $(acrLoginServer)/$(apiImageName):$(tag) ./magnus-mvp/api
+              docker build -t $(acrLoginServer)/$(workerImageName):$(tag) ./magnus-mvp/worker
+              docker push $(acrLoginServer)/$(apiImageName):$(tag)
+              docker push $(acrLoginServer)/$(workerImageName):$(tag)
+            displayName: 'Build and push Docker images'
+
+  - stage: Deploy
+    displayName: Deploy infra with Terraform
+    dependsOn: Build
+    jobs:
+      - job: ApplyTerraform
+        pool:
+          vmImage: 'ubuntu-latest'
+
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: 'AZURE-SC'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd infra
+                terraform init
+                terraform apply \
+                  -auto-approve \
+                  -var "resource_group_name=$(resourceGroup)" \
+                  -var "api_image=$(acrLoginServer)/$(apiImageName):$(tag)" \
+                  -var "worker_image=$(acrLoginServer)/$(workerImageName):$(tag)"
