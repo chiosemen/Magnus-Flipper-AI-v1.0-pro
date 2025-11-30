@@ -3,6 +3,8 @@ import type { ScrapedListing } from "@magnus-flipper-ai/shared";
 import * as VintedCrawler from "./crawlers/vinted";
 import * as EbayCrawler from "./crawlers/ebay";
 import * as GumtreeCrawler from "./crawlers/gumtree";
+import * as CraigslistCrawler from "./crawlers/craigslist";
+import * as OfferUpCrawler from "./crawlers/offerup";
 
 export async function crawlMarketplace(
   marketplace: MarketplaceSite,
@@ -15,12 +17,12 @@ export async function crawlMarketplace(
       return EbayCrawler.crawl(filter);
     case "GUMTREE":
       return GumtreeCrawler.crawl(filter);
+    case "CRAIGSLIST":
+      return CraigslistCrawler.crawl(filter);
+    case "OFFERUP":
+      return OfferUpCrawler.crawl(filter);
     case "FB_MARKETPLACE":
       throw new Error("FB_MARKETPLACE crawler not yet implemented");
-    case "CRAIGSLIST":
-      throw new Error("CRAIGSLIST crawler not yet implemented");
-    case "OFFERUP":
-      throw new Error("OFFERUP crawler not yet implemented");
     default:
       throw new Error(`Unknown marketplace: ${marketplace}`);
   }
@@ -32,7 +34,7 @@ export async function crawlMarketplace(
  */
 export async function processMarketplaceCrawlJob(job: {
   data: {
-    marketplace: "VINTED" | "EBAY" | "GUMTREE";
+    marketplace: "VINTED" | "EBAY" | "GUMTREE" | "CRAIGSLIST" | "OFFERUP";
     query: string;
     options?: { page?: number };
   };
@@ -63,3 +65,5 @@ export async function processMarketplaceCrawlJob(job: {
 export * from "./crawlers/vinted";
 export * from "./crawlers/ebay";
 export * from "./crawlers/gumtree";
+export * from "./crawlers/craigslist";
+export * from "./crawlers/offerup";

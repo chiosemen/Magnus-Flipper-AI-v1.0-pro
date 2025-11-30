@@ -9,5 +9,13 @@
     "./*": "./src/*"
   },
   "files": ["src"],
-  "dependencies": {}
+  "dependencies": {
+    "@magnus-flipper-ai/core": "workspace:*",
+    "@magnus-flipper-ai/shared": "workspace:*",
+    "@magnus-flipper-ai/vinted-crawler": "workspace:*",
+    "@magnus-flipper-ai/ebay-crawler": "workspace:*",
+    "@magnus-flipper-ai/gumtree-crawler": "workspace:*",
+    "@magnus-flipper-ai/craigslist-crawler": "workspace:*",
+    "@magnus-flipper-ai/offerup-crawler": "workspace:*"
+  }
 }
