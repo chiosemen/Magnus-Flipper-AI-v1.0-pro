@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Sparkles,
   Activity,
+  Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +21,7 @@ const navigation = [
   { name: 'Saved Searches', href: '/searches', icon: Search },
   { name: 'Alerts', href: '/alerts', icon: Bell, badge: 3 },
   { name: 'Alerts Radar', href: '/alerts-anomaly', icon: Activity },
+  { name: 'Profit Heatmap', href: '/crawler-profitability', icon: Target },
   { name: 'Billing', href: '/billing', icon: CreditCard },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
