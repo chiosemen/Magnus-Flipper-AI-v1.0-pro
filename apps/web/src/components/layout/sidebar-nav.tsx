@@ -22,10 +22,15 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Saved Searches', href: '/searches', icon: Search },
   { name: 'Alerts', href: '/alerts', icon: Bell, badge: 3 },
+
+  // Your original alert management screens
   { name: 'Alert Rules', href: '/alert-rules', icon: AlertCircle },
   { name: 'Alert Notifications', href: '/alert-notifications', icon: BellRing },
+
+  // Claude’s new features
   { name: 'Alerts Radar', href: '/alerts-anomaly', icon: Activity },
   { name: 'Profit Heatmap', href: '/crawler-profitability', icon: Target },
+
   { name: 'Billing', href: '/billing', icon: CreditCard },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
@@ -51,7 +56,9 @@ export function SidebarNav() {
       {/* Navigation */}
       <nav className="space-y-1 p-4">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+          const isActive =
+            pathname === item.href || pathname?.startsWith(item.href + '/')
+
           return (
             <Link
               key={item.name}
@@ -80,7 +87,7 @@ export function SidebarNav() {
         })}
       </nav>
 
-      {/* Footer - System Status */}
+      {/* Footer */}
       <div className="absolute bottom-0 left-0 right-0 border-t border-border/50 p-4">
         <div className="rounded-lg bg-muted/50 p-3">
           <p className="text-xs font-medium text-foreground">System Status</p>
@@ -89,7 +96,9 @@ export function SidebarNav() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
             </div>
-            <span className="text-xs text-muted-foreground">All Systems Operational</span>
+            <span className="text-xs text-muted-foreground">
+              All Systems Operational
+            </span>
           </div>
         </div>
       </div>

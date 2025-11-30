@@ -1,65 +1,29 @@
-import type { SearchFilter, MarketplaceSite } from "@magnus-flipper-ai/core";
-import type { ScrapedListing } from "@magnus-flipper-ai/shared";
-import * as VintedCrawler from "./crawlers/vinted";
-import * as EbayCrawler from "./crawlers/ebay";
-import * as GumtreeCrawler from "./crawlers/gumtree";
+import { crawlVinted } from './crawlers/vinted'
+import { crawlEbay } from './crawlers/ebay'
+import { crawlGumtree } from './crawlers/gumtree'
+import { crawlCraigslist } from './crawlers/craigslist'
+import { crawlOfferup } from './crawlers/offerup'
 
-export async function crawlMarketplace(
-  marketplace: MarketplaceSite,
-  filter: SearchFilter
-): Promise<ScrapedListing[]> {
+export async function runCrawler(job: any) {
+  const { marketplace, payload } = job.data
+
   switch (marketplace) {
-    case "VINTED":
-      return VintedCrawler.crawl(filter);
-    case "EBAY":
-      return EbayCrawler.crawl(filter);
-    case "GUMTREE":
-      return GumtreeCrawler.crawl(filter);
-    case "FB_MARKETPLACE":
-      throw new Error("FB_MARKETPLACE crawler not yet implemented");
-    case "CRAIGSLIST":
-      throw new Error("CRAIGSLIST crawler not yet implemented");
-    case "OFFERUP":
-      throw new Error("OFFERUP crawler not yet implemented");
+    case 'vinted':
+      return crawlVinted(payload)
+
+    case 'ebay':
+      return crawlEbay(payload)
+
+    case 'gumtree':
+      return crawlGumtree(payload)
+
+    case 'craigslist':
+      return crawlCraigslist(payload)
+
+    case 'offerup':
+      return crawlOfferup(payload)
+
     default:
-      throw new Error(`Unknown marketplace: ${marketplace}`);
+      throw new Error(`Unsupported marketplace: ${marketplace}`)
   }
 }
-
-/**
- * Process a marketplace crawl job from the queue
- * This is the worker function that processes "marketplace-crawl" jobs
- */
-export async function processMarketplaceCrawlJob(job: {
-  data: {
-    marketplace: "VINTED" | "EBAY" | "GUMTREE";
-    query: string;
-    options?: { page?: number };
-  };
-}): Promise<ScrapedListing[]> {
-  const { marketplace, query, options } = job.data;
-
-  console.log(`[Crawler:${marketplace}] Starting job for query="${query}"`);
-
-  try {
-    // Build filter from query and options
-    const filter: SearchFilter = {
-      category: query, // Use query as category for now
-      models: query.split(" "), // Split query into model keywords
-    };
-
-    const listings = await crawlMarketplace(marketplace, filter);
-
-    console.log(`[Crawler:${marketplace}] Completed job for query="${query}", found ${listings.length} listings`);
-
-    return listings;
-  } catch (error: any) {
-    console.error(`[Crawler:${marketplace}] Job failed for query="${query}":`, error.message);
-    // Log-only on failure, don't throw (idempotent)
-    return [];
-  }
-}
-
-export * from "./crawlers/vinted";
-export * from "./crawlers/ebay";
-export * from "./crawlers/gumtree";
