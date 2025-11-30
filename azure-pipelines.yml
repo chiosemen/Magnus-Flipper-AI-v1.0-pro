@@ -20,14 +20,19 @@ stages:
           vmImage: 'ubuntu-latest'
 
         steps:
+<<<<<<< HEAD
           # 🔥 REQUIRED FOR WORKLOAD IDENTITY FEDERATION (WIF)
           - task: AzureCLI@2
             displayName: 'Login to Azure via service connection'
+=======
+          - task: AzureCLI@2
+>>>>>>> 6196d78 (feat: add worker runtimes, Dockerfiles, Azure pipelines, Terraform infra)
             inputs:
               azureSubscription: 'AZURE-SC'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
+<<<<<<< HEAD
                 echo "Logged into Azure via WIF"
 
           # 🔥 Use az acr login (works after WIF login)
@@ -36,6 +41,10 @@ stages:
             displayName: 'ACR Login'
 
           # 🔥 Build + Push Images
+=======
+                az acr login --name $(acrName)
+
+>>>>>>> 6196d78 (feat: add worker runtimes, Dockerfiles, Azure pipelines, Terraform infra)
           - bash: |
               docker build -t $(acrLoginServer)/$(apiImageName):$(tag) ./magnus-mvp/api
               docker build -t $(acrLoginServer)/$(workerImageName):$(tag) ./magnus-mvp/worker
@@ -52,14 +61,19 @@ stages:
           vmImage: 'ubuntu-latest'
 
         steps:
+<<<<<<< HEAD
           # 🔥 MUST LOGIN AGAIN IN DEPLOY STAGE FOR WIF
           - task: AzureCLI@2
             displayName: 'Login to Azure for Terraform'
+=======
+          - task: AzureCLI@2
+>>>>>>> 6196d78 (feat: add worker runtimes, Dockerfiles, Azure pipelines, Terraform infra)
             inputs:
               azureSubscription: 'AZURE-SC'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
+<<<<<<< HEAD
                 echo "Azure login OK (Terraform stage)"
 
           - bash: |
@@ -71,3 +85,12 @@ stages:
                 -var "api_image=$(acrLoginServer)/$(apiImageName):$(tag)" \
                 -var "worker_image=$(acrLoginServer)/$(workerImageName):$(tag)"
             displayName: 'Terraform Apply'
+=======
+                cd infra
+                terraform init
+                terraform apply \
+                  -auto-approve \
+                  -var "resource_group_name=$(resourceGroup)" \
+                  -var "api_image=$(acrLoginServer)/$(apiImageName):$(tag)" \
+                  -var "worker_image=$(acrLoginServer)/$(workerImageName):$(tag)"
+>>>>>>> 6196d78 (feat: add worker runtimes, Dockerfiles, Azure pipelines, Terraform infra)
