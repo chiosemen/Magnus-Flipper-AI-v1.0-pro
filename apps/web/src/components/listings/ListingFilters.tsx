@@ -5,6 +5,7 @@ import { PriceSlider } from "./PriceSlider";
 import { RadiusSelector } from "./RadiusSelector";
 import { ConditionSelector } from "./ConditionSelector";
 import { ModelQuickSelect } from "./ModelQuickSelect";
+import { SortOptions } from "./SortOptions";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { CATEGORIES, MANUFACTURERS_BY_CATEGORY } from "@magnus-flipper-ai/ui-config";
@@ -86,6 +87,20 @@ export function ListingFilters({ filters, onChange }: any) {
       <ConditionSelector
         value={filters.condition}
         onChange={(v: string | null) => onChange({ condition: v || undefined })}
+      />
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Location</label>
+        <Input
+          placeholder="City or ZIP code"
+          value={filters.location || ""}
+          onChange={(e) => onChange({ location: e.target.value })}
+        />
+      </div>
+
+      <SortOptions
+        value={filters.sortBy}
+        onChange={(sortBy: string) => onChange({ sortBy })}
       />
 
       <ModelQuickSelect
