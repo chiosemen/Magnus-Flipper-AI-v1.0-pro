@@ -3,7 +3,7 @@
  * Used by both web and mobile clients, API, and workers
  */
 
-export type MarketplaceSite = "CRAIGSLIST" | "FB_MARKETPLACE" | "OFFERUP" | "VINTED";
+export type MarketplaceSite = "CRAIGSLIST" | "FB_MARKETPLACE" | "OFFERUP" | "VINTED" | "EBAY" | "GUMTREE";
 
 export type Condition = "NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "POOR";
 
