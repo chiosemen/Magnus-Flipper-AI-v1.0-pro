@@ -2,6 +2,7 @@ export * from "./sync";
 
 import { processMarketplaceCrawlJob } from "@magnus-flipper-ai/worker-crawler";
 import { upsertListings } from "./sync/upsert";
+import { processAlertsForListings } from "./alert-processor";
 import type { MarketplaceCrawlJobData } from "@magnus-flipper-ai/queue";
 
 /**
@@ -10,7 +11,7 @@ import type { MarketplaceCrawlJobData } from "@magnus-flipper-ai/queue";
  */
 export async function processAndSyncMarketplaceCrawl(
   job: { data: MarketplaceCrawlJobData }
-): Promise<{ success: boolean; listingsCount: number }> {
+): Promise<{ success: boolean; listingsCount: number; alertsTriggered: number }> {
   console.log(
     `[WorkerAnalyzer] Processing marketplace crawl job for ${job.data.marketplace}`
   );
@@ -30,9 +31,17 @@ export async function processAndSyncMarketplaceCrawl(
       console.log(`[WorkerAnalyzer] No listings to sync (empty result)`);
     }
 
+    // Step 3: Process alerts for scraped listings
+    if (scrapedListings.length > 0) {
+      console.log(`[WorkerAnalyzer] Processing alerts for scraped listings`);
+      await processAlertsForListings(job.data.marketplace, scrapedListings);
+      console.log(`[WorkerAnalyzer] Alert processing completed`);
+    }
+
     return {
       success: true,
       listingsCount: scrapedListings.length,
+      alertsTriggered: 0, // TODO: Return actual count from processAlertsForListings
     };
   } catch (error: any) {
     console.error(`[WorkerAnalyzer] Job processing failed:`, error.message);
@@ -40,6 +49,7 @@ export async function processAndSyncMarketplaceCrawl(
     return {
       success: false,
       listingsCount: 0,
+      alertsTriggered: 0,
     };
   }
 }

@@ -12,6 +12,8 @@ import {
   Sparkles,
   Activity,
   Target,
+  BellRing,
+  AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +22,8 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Saved Searches', href: '/searches', icon: Search },
   { name: 'Alerts', href: '/alerts', icon: Bell, badge: 3 },
+  { name: 'Alert Rules', href: '/alert-rules', icon: AlertCircle },
+  { name: 'Alert Notifications', href: '/alert-notifications', icon: BellRing },
   { name: 'Alerts Radar', href: '/alerts-anomaly', icon: Activity },
   { name: 'Profit Heatmap', href: '/crawler-profitability', icon: Target },
   { name: 'Billing', href: '/billing', icon: CreditCard },
