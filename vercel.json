@@ -1,8 +1,111 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "framework": "nextjs",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd apps/web && pnpm build",
+  "devCommand": "cd apps/web && pnpm dev",
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm install && pnpm generate && pnpm --filter @magnus-flipper-ai/web build",
-  "outputDirectory": "apps/web/.next"
+  "framework": null,
+  "outputDirectory": "apps/web/.next",
+  "builds": [
+    {
+      "src": "apps/web/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/web/$1"
+    }
+  ],
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe-publishable-key",
+    "NEXT_PUBLIC_ENV": "production",
+    "NEXT_PUBLIC_APP_URL": "https://flipperagents.com"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
+      "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
+      "SUPABASE_JWT_SECRET": "@supabase-jwt-secret",
+      "STRIPE_SECRET_KEY": "@stripe-secret-key",
+      "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe-publishable-key",
+      "STRIPE_WEBHOOK_SECRET": "@stripe-webhook-secret",
+      "STRIPE_PRO_PRICE": "@stripe-pro-price",
+      "STRIPE_AGENCY_PRICE": "@stripe-agency-price",
+      "NODE_ENV": "production"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.stripe.com; frame-src https://js.stripe.com;"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/webhooks/stripe",
+      "destination": "/api/webhooks/stripe"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/dashboard",
+      "permanent": true
+    }
+  ],
+  "crons": [],
+  "functions": {
+    "apps/web/app/api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    },
+    "apps/web/app/api/stripe/webhook/route.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
 }

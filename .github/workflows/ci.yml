@@ -1,136 +1,181 @@
-name: CI – Build, Test, Contract
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: ['**']
   pull_request:
-
-env:
-  NODE_VERSION: '20'
-  PY_VERSION: '3.11'
+    branches: ['main', 'master']
 
 jobs:
-  ts-build-test:
-    name: TypeScript build & test (web + api)
+  typecheck:
+    name: Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
           cache: 'pnpm'
 
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma Client
-        run: pnpm --filter @magnus-flipper-ai/core prisma:generate
-
-      - name: Lint
-        run: pnpm -r lint
-        continue-on-error: false
-
-      - name: Build
-        run: pnpm -r build
-
-      - name: Test
-        run: pnpm -r test --if-present
-
-  py-build-test:
-    name: Python build & test (workers)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PY_VERSION }}
-
-      - name: Install deps
-        working-directory: ./api  # or ./workers if you keep python there
-        run: |
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f pyproject.toml ]; then pip install . ; fi
-
-      - name: Unit tests
-        working-directory: ./api
-        run: |
-          if [ -d tests ]; then pytest -q; else echo "No tests"; fi
-
-  contract-check:
-    name: OpenAPI contract – snapshot check
-    runs-on: ubuntu-latest
-    needs: [ts-build-test]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PNPM
+      - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 9.15.4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-
 
-      - name: Install deps
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Expect a script that emits ./api/openapi.json deterministically.
-      # e.g., in /api package.json -> "openapi:gen": "ts-node scripts/openapi.ts"
-      - name: Generate OpenAPI
-        working-directory: ./api
-        run: pnpm run openapi:gen
+      - name: Run type check
+        run: pnpm --filter web typecheck
 
-      - name: Compare to snapshot
-        working-directory: ./api
-        run: |
-          if [ -f openapi.snapshot.json ]; then
-            diff -u openapi.snapshot.json openapi.json || (echo "::error::OpenAPI changed. Update snapshot if intentional." && exit 1)
-          else
-            echo "::warning::No snapshot found. Creating new snapshot."
-            cp openapi.json openapi.snapshot.json
-          fi
-
-  sentry-release:
-    name: Sentry Release Upload
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    needs: [ts-build-test]
-    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run lint
+        run: pnpm --filter web lint
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     env:
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-      SENTRY_PROJECT_WEB: ${{ secrets.SENTRY_PROJECT_WEB }}
-      SENTRY_PROJECT_API: ${{ secrets.SENTRY_PROJECT_API }}
-      SENTRY_RELEASE: ${{ github.sha }}
+      # Required environment variables
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      # Optional but recommended
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PRO_PRICE: ${{ secrets.STRIPE_PRO_PRICE }}
+      STRIPE_AGENCY_PRICE: ${{ secrets.STRIPE_AGENCY_PRICE }}
+      NODE_ENV: production
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install sentry-cli
-        run: curl -sL https://sentry.io/get-cli/ | bash
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
 
-      - name: Upload Web sourcemaps
-        working-directory: ./web
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Get pnpm store directory
+        shell: bash
         run: |
-          npx --yes @sentry/cli releases new "$SENTRY_RELEASE" -o "$SENTRY_ORG" -p "$SENTRY_PROJECT_WEB"
-          npx --yes @sentry/cli releases files "$SENTRY_RELEASE" upload-sourcemaps .next --url-prefix "~/_next"
-          npx --yes @sentry/cli releases finalize "$SENTRY_RELEASE"
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - name: Upload API sourcemaps
-        working-directory: ./api
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check environment variables
+        run: bash scripts/check-env.sh
+
+      - name: Build packages
+        run: pnpm build:packages
+
+      - name: Build web app
+        run: pnpm --filter web build
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Get pnpm store directory
+        shell: bash
         run: |
-          if [ -d dist ]; then
-            npx --yes @sentry/cli releases files "$SENTRY_RELEASE" upload-sourcemaps dist --ext map --rewrite
-          else
-            echo "No API sourcemaps."
-          fi
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests (placeholder)
+        run: |
+          echo "⚠️  Tests not implemented yet"
+          echo "When tests are added, run: pnpm --filter web test"

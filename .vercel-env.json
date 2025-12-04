@@ -1,0 +1,75 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": {
+      "value": "https://your-project-id.supabase.co",
+      "target": ["production", "preview", "development"],
+      "type": "encrypted"
+    },
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": {
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key-here",
+      "target": ["production", "preview", "development"],
+      "type": "encrypted"
+    },
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": {
+      "value": "pk_live_your_publishable_key_here",
+      "target": ["production", "preview"],
+      "type": "encrypted"
+    },
+    "NEXT_PUBLIC_APP_URL": {
+      "value": "https://your-domain.com",
+      "target": ["production"],
+      "type": "encrypted"
+    },
+    "NEXT_PUBLIC_SITE_URL": {
+      "value": "https://your-domain.com",
+      "target": ["production"],
+      "type": "encrypted"
+    },
+    "NEXT_PUBLIC_API_URL": {
+      "value": "https://api.your-domain.com",
+      "target": ["production"],
+      "type": "encrypted"
+    }
+  },
+  "build": {
+    "env": {
+      "SUPABASE_SERVICE_ROLE_KEY": {
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-service-role-key-here",
+        "target": ["production", "preview"],
+        "type": "encrypted"
+      },
+      "SUPABASE_JWT_SECRET": {
+        "value": "your-jwt-secret-here",
+        "target": ["production", "preview"],
+        "type": "encrypted"
+      },
+      "STRIPE_SECRET_KEY": {
+        "value": "sk_live_your_secret_key_here",
+        "target": ["production", "preview"],
+        "type": "encrypted"
+      },
+      "STRIPE_WEBHOOK_SECRET": {
+        "value": "whsec_your_webhook_secret_here",
+        "target": ["production", "preview"],
+        "type": "encrypted"
+      },
+      "STRIPE_PRO_PRICE": {
+        "value": "price_your_pro_price_id_here",
+        "target": ["production", "preview"],
+        "type": "encrypted"
+      },
+      "STRIPE_AGENCY_PRICE": {
+        "value": "price_your_agency_price_id_here",
+        "target": ["production", "preview"],
+        "type": "encrypted"
+      },
+      "NODE_ENV": {
+        "value": "production",
+        "target": ["production", "preview"],
+        "type": "system"
+      }
+    }
+  }
+}
+

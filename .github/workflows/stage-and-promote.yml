@@ -1,0 +1,577 @@
+name: Phase 12G — Stage & Promote Workers
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/worker-scraper/**"
+      - "apps/worker-tracker/**"
+      - "apps/worker-autosell/**"
+      - "packages/**"
+      - ".github/workflows/stage-and-promote.yml"
+  workflow_dispatch:
+    inputs:
+      promote_to_prod:
+        description: 'Promote staging to production'
+        required: false
+        default: 'false'
+        type: boolean
+      rollback_tag:
+        description: 'Rollback to specific image tag (e.g., prod-123)'
+        required: false
+        type: string
+
+env:
+  NODE_VERSION: "20"
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_ACR_NAME }}.azurecr.io
+  AZURE_CONTAINERAPPS_ENV_STAGING: ${{ secrets.AZURE_CONTAINERAPPS_ENV_STAGING }}
+  AZURE_CONTAINERAPPS_ENV_PROD: ${{ secrets.AZURE_CONTAINERAPPS_ENV_PROD }}
+  SCRAPER_APP: worker-scraper
+  TRACKER_APP: worker-tracker
+  AUTOSELL_APP: worker-autosell
+
+jobs:
+  deploy-staging:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.promote_to_prod == 'false' && github.event.inputs.rollback_tag == '')
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- Azure authentication ---
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set Azure Subscription
+        run: |
+          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+      # --- ACR login ---
+      - name: Azure Container Registry Login
+        run: |
+          az acr login --name "${{ secrets.AZURE_ACR_NAME }}"
+
+      # --- Node.js + pnpm setup ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install pnpm
+        run: corepack prepare pnpm@latest --activate
+
+      # --- Build ---
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages and workers
+        run: |
+          pnpm --filter scraper-sync build
+          pnpm --filter shipping-engine build
+          pnpm --filter profit-engine build
+          pnpm --filter worker-scraper build
+          pnpm --filter worker-tracker build
+          pnpm --filter worker-autosell build
+
+      # --- Build and tag Docker images ---
+      - name: Build Docker images
+        run: |
+          TAG="staging-${{ github.run_number }}"
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          
+          echo "Building images with tag $TAG ..."
+          
+          docker build \
+            --platform linux/amd64 \
+            -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}:$TAG \
+            -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}:latest \
+            -f apps/worker-scraper/Dockerfile .
+          
+          docker build \
+            --platform linux/amd64 \
+            -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}:$TAG \
+            -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}:latest \
+            -f apps/worker-tracker/Dockerfile .
+          
+          docker build \
+            --platform linux/amd64 \
+            -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}:$TAG \
+            -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}:latest \
+            -f apps/worker-autosell/Dockerfile .
+
+      # --- Push images to ACR ---
+      - name: Push images to ACR
+        run: |
+          TAG="${{ env.IMAGE_TAG }}"
+          
+          echo "Pushing images with tag $TAG ..."
+          
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}:$TAG
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}:$TAG
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}:$TAG
+          
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}:latest
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}:latest
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}:latest
+
+      # --- Get image digests ---
+      - name: Capture image digests
+        id: digests
+        run: |
+          TAG="${{ env.IMAGE_TAG }}"
+          ACR="${{ secrets.AZURE_ACR_NAME }}"
+          
+          SCRAPER_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${SCRAPER_APP}:$TAG \
+            --query digest -o tsv)
+          
+          TRACKER_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${TRACKER_APP}:$TAG \
+            --query digest -o tsv)
+          
+          AUTOSELL_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${AUTOSELL_APP}:$TAG \
+            --query digest -o tsv)
+          
+          echo "scraper_digest=$SCRAPER_DIGEST" >> $GITHUB_OUTPUT
+          echo "tracker_digest=$TRACKER_DIGEST" >> $GITHUB_OUTPUT
+          echo "autosell_digest=$AUTOSELL_DIGEST" >> $GITHUB_OUTPUT
+          
+          echo "Image digests captured:"
+          echo "  scraper: $SCRAPER_DIGEST"
+          echo "  tracker: $TRACKER_DIGEST"
+          echo "  autosell: $AUTOSELL_DIGEST"
+
+      # --- Sync Supabase secrets to staging ---
+      - name: Sync Supabase secrets to staging
+        run: |
+          SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
+          SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+          SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          
+          for APP in "${SCRAPER_APP}" "${TRACKER_APP}" "${AUTOSELL_APP}"; do
+            echo "Setting secrets for $APP (staging)..."
+            az containerapp secret set \
+              --name "$APP" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+              --environment "${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" \
+              --secrets \
+                supabase-url="$SUPABASE_URL" \
+                supabase-service-role-key="$SUPABASE_SERVICE_ROLE_KEY" \
+                supabase-anon-key="$SUPABASE_ANON_KEY" || true
+          done
+
+      # --- Deploy to staging Container Apps ---
+      - name: Deploy to staging Container Apps
+        run: |
+          TAG="${{ env.IMAGE_TAG }}"
+          SCRAPER_DIGEST="${{ steps.digests.outputs.scraper_digest }}"
+          TRACKER_DIGEST="${{ steps.digests.outputs.tracker_digest }}"
+          AUTOSELL_DIGEST="${{ steps.digests.outputs.autosell_digest }}"
+          
+          # Deploy scraper
+          echo "Deploying $SCRAPER_APP to staging..."
+          az containerapp update \
+            --name "$SCRAPER_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}@${SCRAPER_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=staging \
+              LOG_LEVEL=info
+          
+          # Deploy tracker
+          echo "Deploying $TRACKER_APP to staging..."
+          az containerapp update \
+            --name "$TRACKER_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}@${TRACKER_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=staging \
+              LOG_LEVEL=info
+          
+          # Deploy autosell
+          echo "Deploying $AUTOSELL_APP to staging..."
+          az containerapp update \
+            --name "$AUTOSELL_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}@${AUTOSELL_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=staging \
+              LOG_LEVEL=info
+
+      # --- Verify staging deployment ---
+      - name: Verify staging deployment
+        run: |
+          az containerapp list \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" \
+            --query "[?contains(name, 'worker')].{Name:name, Status:properties.provisioningState, Running:properties.runningStatus, Image:properties.template.containers[0].image}" \
+            --output table
+
+  promote-to-production:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.promote_to_prod == 'true'
+    runs-on: ubuntu-latest
+    name: Promote Staging to Production
+    needs: []
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- Azure authentication ---
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set Azure Subscription
+        run: |
+          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+      # --- Get latest staging image tags ---
+      - name: Get latest staging image tags
+        id: staging_images
+        run: |
+          ACR="${{ secrets.AZURE_ACR_NAME }}"
+          
+          # Get latest staging tag for each worker
+          SCRAPER_TAG=$(az acr repository show-tags \
+            --name $ACR \
+            --repository ${SCRAPER_APP} \
+            --orderby time_desc \
+            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+          
+          TRACKER_TAG=$(az acr repository show-tags \
+            --name $ACR \
+            --repository ${TRACKER_APP} \
+            --orderby time_desc \
+            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+          
+          AUTOSELL_TAG=$(az acr repository show-tags \
+            --name $ACR \
+            --repository ${AUTOSELL_APP} \
+            --orderby time_desc \
+            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+          
+          echo "scraper_tag=$SCRAPER_TAG" >> $GITHUB_OUTPUT
+          echo "tracker_tag=$TRACKER_TAG" >> $GITHUB_OUTPUT
+          echo "autosell_tag=$AUTOSELL_TAG" >> $GITHUB_OUTPUT
+          
+          echo "Latest staging tags:"
+          echo "  scraper: $SCRAPER_TAG"
+          echo "  tracker: $TRACKER_TAG"
+          echo "  autosell: $AUTOSELL_TAG"
+
+      # --- Tag staging images as production ---
+      - name: Tag images as production
+        run: |
+          ACR="${{ secrets.AZURE_ACR_NAME }}"
+          PROD_TAG="prod-${{ github.run_number }}"
+          
+          SCRAPER_STAGING="${{ steps.staging_images.outputs.scraper_tag }}"
+          TRACKER_STAGING="${{ steps.staging_images.outputs.tracker_tag }}"
+          AUTOSELL_STAGING="${{ steps.staging_images.outputs.autosell_tag }}"
+          
+          echo "Tagging images as $PROD_TAG ..."
+          
+          # Import staging images as production tags (no rebuild)
+          az acr import \
+            --name $ACR \
+            --source ${SCRAPER_APP}:$SCRAPER_STAGING \
+            --image ${SCRAPER_APP}:$PROD_TAG || \
+          az acr repository show-tags --name $ACR --repository ${SCRAPER_APP} --query "[?name=='$PROD_TAG'].name" -o tsv | grep -q "$PROD_TAG" && echo "Tag exists" || \
+          docker pull ${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}:$SCRAPER_STAGING && \
+          docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}:$SCRAPER_STAGING ${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}:$PROD_TAG && \
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}:$PROD_TAG
+          
+          az acr import \
+            --name $ACR \
+            --source ${TRACKER_APP}:$TRACKER_STAGING \
+            --image ${TRACKER_APP}:$PROD_TAG || \
+          az acr repository show-tags --name $ACR --repository ${TRACKER_APP} --query "[?name=='$PROD_TAG'].name" -o tsv | grep -q "$PROD_TAG" && echo "Tag exists" || \
+          docker pull ${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}:$TRACKER_STAGING && \
+          docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}:$TRACKER_STAGING ${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}:$PROD_TAG && \
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}:$PROD_TAG
+          
+          az acr import \
+            --name $ACR \
+            --source ${AUTOSELL_APP}:$AUTOSELL_STAGING \
+            --image ${AUTOSELL_APP}:$PROD_TAG || \
+          az acr repository show-tags --name $ACR --repository ${AUTOSELL_APP} --query "[?name=='$PROD_TAG'].name" -o tsv | grep -q "$PROD_TAG" && echo "Tag exists" || \
+          docker pull ${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}:$AUTOSELL_STAGING && \
+          docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}:$AUTOSELL_STAGING ${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}:$PROD_TAG && \
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}:$PROD_TAG
+          
+          # Also tag as latest
+          az acr import \
+            --name $ACR \
+            --source ${SCRAPER_APP}:$PROD_TAG \
+            --image ${SCRAPER_APP}:latest || true
+          az acr import \
+            --name $ACR \
+            --source ${TRACKER_APP}:$PROD_TAG \
+            --image ${TRACKER_APP}:latest || true
+          az acr import \
+            --name $ACR \
+            --source ${AUTOSELL_APP}:$PROD_TAG \
+            --image ${AUTOSELL_APP}:latest || true
+
+      # --- Get production image digests ---
+      - name: Get production image digests
+        id: prod_digests
+        run: |
+          ACR="${{ secrets.AZURE_ACR_NAME }}"
+          PROD_TAG="prod-${{ github.run_number }}"
+          
+          SCRAPER_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${SCRAPER_APP}:$PROD_TAG \
+            --query digest -o tsv)
+          
+          TRACKER_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${TRACKER_APP}:$PROD_TAG \
+            --query digest -o tsv)
+          
+          AUTOSELL_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${AUTOSELL_APP}:$PROD_TAG \
+            --query digest -o tsv)
+          
+          echo "scraper_digest=$SCRAPER_DIGEST" >> $GITHUB_OUTPUT
+          echo "tracker_digest=$TRACKER_DIGEST" >> $GITHUB_OUTPUT
+          echo "autosell_digest=$AUTOSELL_DIGEST" >> $GITHUB_OUTPUT
+          
+          echo "Production image digests:"
+          echo "  scraper: $SCRAPER_DIGEST"
+          echo "  tracker: $TRACKER_DIGEST"
+          echo "  autosell: $AUTOSELL_DIGEST"
+
+      # --- Sync Supabase secrets to production ---
+      - name: Sync Supabase secrets to production
+        run: |
+          SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
+          SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+          SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          
+          for APP in "${SCRAPER_APP}" "${TRACKER_APP}" "${AUTOSELL_APP}"; do
+            echo "Setting secrets for $APP (production)..."
+            az containerapp secret set \
+              --name "$APP" \
+              --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+              --environment "${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" \
+              --secrets \
+                supabase-url="$SUPABASE_URL" \
+                supabase-service-role-key="$SUPABASE_SERVICE_ROLE_KEY" \
+                supabase-anon-key="$SUPABASE_ANON_KEY" || true
+          done
+
+      # --- Deploy to production Container Apps ---
+      - name: Deploy to production Container Apps
+        run: |
+          SCRAPER_DIGEST="${{ steps.prod_digests.outputs.scraper_digest }}"
+          TRACKER_DIGEST="${{ steps.prod_digests.outputs.tracker_digest }}"
+          AUTOSELL_DIGEST="${{ steps.prod_digests.outputs.autosell_digest }}"
+          
+          # Deploy scraper
+          echo "Deploying $SCRAPER_APP to production..."
+          az containerapp update \
+            --name "$SCRAPER_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}@${SCRAPER_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=production \
+              LOG_LEVEL=info
+          
+          # Deploy tracker
+          echo "Deploying $TRACKER_APP to production..."
+          az containerapp update \
+            --name "$TRACKER_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}@${TRACKER_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=production \
+              LOG_LEVEL=info
+          
+          # Deploy autosell
+          echo "Deploying $AUTOSELL_APP to production..."
+          az containerapp update \
+            --name "$AUTOSELL_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}@${AUTOSELL_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=production \
+              LOG_LEVEL=info
+
+      # --- Verify production deployment ---
+      - name: Verify production deployment
+        run: |
+          az containerapp list \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" \
+            --query "[?contains(name, 'worker')].{Name:name, Status:properties.provisioningState, Running:properties.runningStatus, Image:properties.template.containers[0].image}" \
+            --output table
+
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.rollback_tag != ''
+    runs-on: ubuntu-latest
+    name: Rollback Workers
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- Azure authentication ---
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set Azure Subscription
+        run: |
+          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+      # --- Get image digest for rollback tag ---
+      - name: Get rollback image digests
+        id: rollback_digests
+        run: |
+          ACR="${{ secrets.AZURE_ACR_NAME }}"
+          ROLLBACK_TAG="${{ github.event.inputs.rollback_tag }}"
+          
+          echo "Rolling back to tag: $ROLLBACK_TAG"
+          
+          SCRAPER_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${SCRAPER_APP}:$ROLLBACK_TAG \
+            --query digest -o tsv)
+          
+          TRACKER_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${TRACKER_APP}:$ROLLBACK_TAG \
+            --query digest -o tsv)
+          
+          AUTOSELL_DIGEST=$(az acr repository show \
+            --name $ACR \
+            --image ${AUTOSELL_APP}:$ROLLBACK_TAG \
+            --query digest -o tsv)
+          
+          echo "scraper_digest=$SCRAPER_DIGEST" >> $GITHUB_OUTPUT
+          echo "tracker_digest=$TRACKER_DIGEST" >> $GITHUB_OUTPUT
+          echo "autosell_digest=$AUTOSELL_DIGEST" >> $GITHUB_OUTPUT
+          
+          echo "Rollback image digests:"
+          echo "  scraper: $SCRAPER_DIGEST"
+          echo "  tracker: $TRACKER_DIGEST"
+          echo "  autosell: $AUTOSELL_DIGEST"
+
+      # --- Determine environment (staging or prod) ---
+      - name: Determine rollback environment
+        id: env
+        run: |
+          ROLLBACK_TAG="${{ github.event.inputs.rollback_tag }}"
+          if [[ "$ROLLBACK_TAG" == prod-* ]]; then
+            echo "environment=${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" >> $GITHUB_OUTPUT
+            echo "node_env=production" >> $GITHUB_OUTPUT
+          else
+            echo "environment=${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" >> $GITHUB_OUTPUT
+            echo "node_env=staging" >> $GITHUB_OUTPUT
+          fi
+
+      # --- Rollback Container Apps ---
+      - name: Rollback Container Apps
+        run: |
+          SCRAPER_DIGEST="${{ steps.rollback_digests.outputs.scraper_digest }}"
+          TRACKER_DIGEST="${{ steps.rollback_digests.outputs.tracker_digest }}"
+          AUTOSELL_DIGEST="${{ steps.rollback_digests.outputs.autosell_digest }}"
+          ENV="${{ steps.env.outputs.environment }}"
+          NODE_ENV="${{ steps.env.outputs.node_env }}"
+          
+          # Rollback scraper
+          echo "Rolling back $SCRAPER_APP to ${{ github.event.inputs.rollback_tag }}..."
+          az containerapp update \
+            --name "$SCRAPER_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "$ENV" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}@${SCRAPER_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=$NODE_ENV \
+              LOG_LEVEL=info
+          
+          # Rollback tracker
+          echo "Rolling back $TRACKER_APP to ${{ github.event.inputs.rollback_tag }}..."
+          az containerapp update \
+            --name "$TRACKER_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "$ENV" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}@${TRACKER_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=$NODE_ENV \
+              LOG_LEVEL=info
+          
+          # Rollback autosell
+          echo "Rolling back $AUTOSELL_APP to ${{ github.event.inputs.rollback_tag }}..."
+          az containerapp update \
+            --name "$AUTOSELL_APP" \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "$ENV" \
+            --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}@${AUTOSELL_DIGEST}" \
+            --set-env-vars \
+              SUPABASE_URL=secretref:supabase-url \
+              SUPABASE_SERVICE_ROLE_KEY=secretref:supabase-service-role-key \
+              SUPABASE_ANON_KEY=secretref:supabase-anon-key \
+              NODE_ENV=$NODE_ENV \
+              LOG_LEVEL=info
+
+      # --- Verify rollback ---
+      - name: Verify rollback
+        run: |
+          ENV="${{ steps.env.outputs.environment }}"
+          az containerapp list \
+            --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
+            --environment "$ENV" \
+            --query "[?contains(name, 'worker')].{Name:name, Status:properties.provisioningState, Running:properties.runningStatus, Image:properties.template.containers[0].image}" \
+            --output table
+

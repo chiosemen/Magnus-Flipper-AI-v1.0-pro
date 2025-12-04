@@ -1,0 +1,37 @@
+{
+  "name": "@magnus-flipper-ai/shipping-engine",
+  "version": "1.0.0",
+  "description": "Automated shipping label generation and fulfillment workflow system",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./tracking/trackingManager": "./dist/tracking/trackingManager.js",
+    "./label/labelGenerator": "./dist/label/labelGenerator.js",
+    "./schemas/ShippingRequest": "./dist/schemas/ShippingRequest.js",
+    "./carrier/selectCarrier": "./dist/carrier/selectCarrier.js",
+    "./carrier/rateCalculator": "./dist/carrier/rateCalculator.js",
+    "./label/labelStorage": "./dist/label/labelStorage.js",
+    "./workflow/fulfillmentOrchestrator": "./dist/workflow/fulfillmentOrchestrator.js",
+    "./workflow/packagingAdvisor": "./dist/workflow/packagingAdvisor.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["shipping", "fulfillment", "logistics", "labels"],
+  "author": "Magnus Flipper AI",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
+    "@supabase/storage-js": "^2.7.1",
+    "axios": "^1.13.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "typescript": "^5.7.3"
+  }
+}

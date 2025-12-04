@@ -39,7 +39,6 @@ stages:
           - bash: |
               docker build -t $(acrLoginServer)/$(apiImageName):$(tag) ./magnus-mvp/api
               docker build -t $(acrLoginServer)/$(workerImageName):$(tag) ./magnus-mvp/worker
-
               docker push $(acrLoginServer)/$(apiImageName):$(tag)
               docker push $(acrLoginServer)/$(workerImageName):$(tag)
             displayName: 'Build and push Docker images'
@@ -68,5 +67,7 @@ stages:
               terraform init
               terraform apply \
                 -auto-approve \
-                -var "resource_group_name=$(resourceGroup)"
+                -var "resource_group_name=$(resourceGroup)" \
+                -var "api_image=$(acrLoginServer)/$(apiImageName):$(tag)" \
+                -var "worker_image=$(acrLoginServer)/$(workerImageName):$(tag)"
             displayName: 'Terraform Apply'

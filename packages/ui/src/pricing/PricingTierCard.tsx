@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { BadgeMostPopular } from "./BadgeMostPopular";
-import { FeatureRow } from "./FeatureRow";
+import { BadgeMostPopular } from "./BadgeMostPopular.js";
+import { FeatureRow } from "./FeatureRow.js";
 
 interface PricingTierCardProps {
   name: string;

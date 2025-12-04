@@ -1,33 +1,64 @@
+# Node
 node_modules
-.next
-build
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json
+
+# Turbo
+.turbo
+
+# Logs
+logs
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Builds
 dist
+build
+.next
 .expo
 .expo-shared
+
+# Env
+.env
+.env.*
+!.env.example
+
+# OS / Editor
+.DS_Store
+*.swp
+.idea
+.vscode
+
+# Build cache
+.vercel
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Database
 *.sqlite
-.env
-.env.local
-.env.*
-.DS_Store
-.vscode/
-.idea/
-.vercel
 
-# Turbo build cache
-.turbo
-
-# Build logs
-*.log
-
-# Temporary patches
-*.patch
-
+# Test artifacts
 tests/screenshots/
 tests/videos/
+coverage/
+
+# Infrastructure
 .terraform/
 .terraform.lock.hcl
-.env*.local
+
+# Temporary
+*.patch
+
+# Old backups (for cleanup)
+apps/web.old
+apps/mobile.old

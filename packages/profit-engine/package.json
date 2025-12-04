@@ -1,0 +1,36 @@
+{
+  "name": "@magnus-flipper-ai/profit-engine",
+  "version": "1.0.0",
+  "description": "Auto-sell detection and profit ledger tracking system",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./autosell/saleDetector": "./dist/autosell/saleDetector.js",
+    "./autosell/finalizeSale": "./dist/autosell/finalizeSale.js",
+    "./autosell/crossPlatformLock": "./dist/autosell/crossPlatformLock.js",
+    "./ledger/feeModel": "./dist/ledger/feeModel.js",
+    "./ledger/profitLedger": "./dist/ledger/profitLedger.js",
+    "./ledger/evCorrector": "./dist/ledger/evCorrector.js",
+    "./ledger/portfolioEngine": "./dist/ledger/portfolioEngine.js",
+    "./schemas/SaleEvent": "./dist/schemas/SaleEvent.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["profit", "ledger", "analytics", "roi"],
+  "author": "Magnus Flipper AI",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
+    "axios": "^1.13.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "typescript": "^5.7.3"
+  }
+}

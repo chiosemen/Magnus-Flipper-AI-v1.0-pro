@@ -1,35 +1,48 @@
-import { View, Text, Pressable, Image } from "react-native";
-import { Listing } from "@/lib/api";
+import { View, Text, Pressable } from 'react-native';
+import { Link } from 'expo-router';
+import type { Listing } from '@magnus-flipper-ai/core';
+import { PhosphorIcon } from './PhosphorIcon';
 
-type ListingCardProps = {
-  item: Listing;
-  onPress?: () => void;
-};
+interface Props {
+  listing: Listing;
+}
 
-export function ListingCard({ item, onPress }: ListingCardProps) {
+export function ListingCard({ listing }: Props) {
+  const timeAgo = listing.postedAt
+    ? Math.max(1, Math.round((Date.now() - new Date(listing.postedAt).getTime()) / 60000))
+    : null;
+
+  const siteIcon =
+    listing.site === 'FB_MARKETPLACE'
+      ? 'facebook-logo'
+      : listing.site === 'CRAIGSLIST'
+      ? 'globe-hemisphere-west'
+      : listing.site === 'OFFERUP'
+      ? 'tag'
+      : 'radar';
+
   return (
-    <Pressable
-      onPress={onPress}
-      className="mb-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-4"
-    >
-      <View className="flex-row gap-3">
-        <View className="h-16 w-16 items-center justify-center rounded-xl bg-slate-800">
-          {item.imageUrl ? (
-            <Image source={{ uri: item.imageUrl }} className="h-16 w-16 rounded-xl" />
-          ) : (
-            <Text className="text-xs text-slate-400">Image</Text>
-          )}
-        </View>
-        <View className="flex-1">
-          <Text className="text-base font-semibold text-white" numberOfLines={2}>
-            {item.title}
+    <Link href={`/listing/${listing.id}`} asChild>
+      <Pressable className="rounded-xl border border-slate/50 bg-surface p-3">
+        <View className="aspect-video w-full rounded-lg bg-gradient-to-br from-accent/20 to-primary/10" />
+        <View className="mt-2 flex-row items-center justify-between">
+          <Text className="flex-1 text-base font-semibold text-white" numberOfLines={2}>
+            {listing.title}
           </Text>
-          <Text className="text-sm text-cyan-200">${item.price}</Text>
-          <Text className="text-xs text-slate-400">
-            {item.site || "Marketplace"} • {item.location || "Unknown"}
-          </Text>
+          <PhosphorIcon name={siteIcon} size={18} color="#5CE0E6" />
         </View>
-      </View>
-    </Pressable>
+        <Text className="text-sm text-gray-400 capitalize">
+          {listing.city || listing.region || 'Unknown'} {timeAgo ? `• ${timeAgo}m ago` : ''}
+        </Text>
+        <View className="mt-2 flex-row items-center justify-between">
+          <Text className="font-mono text-lg text-white">${listing.price}</Text>
+          {listing.condition ? (
+            <Text className="rounded-full bg-primary/20 px-3 py-1 text-xs uppercase text-primary">
+              {listing.condition}
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
+    </Link>
   );
 }

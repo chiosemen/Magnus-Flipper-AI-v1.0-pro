@@ -1,31 +1,46 @@
-"use client";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { useStore } from '@/lib/store';
 
-import { useEffect, useState, useCallback } from "react";
-import { api, Alert, AlertStats } from "../lib/api";
+export function useAlerts(params?: {
+  limit?: number;
+  offset?: number;
+  status?: 'pending' | 'sent' | 'failed';
+}) {
+  const setAlerts = useStore((state) => state.setAlerts);
 
-export function useAlerts() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [stats, setStats] = useState<AlertStats | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  return useQuery({
+    queryKey: ['alerts', params],
+    queryFn: async () => {
+      const data = await api.getAlerts(params);
+      setAlerts(data);
+      return data;
+    },
+  });
+}
 
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [alertsRes, statsRes] = await Promise.all([api.alerts.recent(), api.alerts.stats()]);
-      setAlerts(alertsRes);
-      setStats(statsRes);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load alerts");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+export function useMarkAlertAsRead() {
+  const queryClient = useQueryClient();
+  const markAsRead = useStore((state) => state.markAlertAsRead);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  return useMutation({
+    mutationFn: (id: string) => api.markAlertAsRead(id),
+    onSuccess: (_, id) => {
+      markAsRead(id);
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    },
+  });
+}
 
-  return { alerts, stats, loading, error, refresh };
+export function useDeleteAlert() {
+  const queryClient = useQueryClient();
+  const removeAlert = useStore((state) => state.removeAlert);
+
+  return useMutation({
+    mutationFn: (id: string) => api.deleteAlert(id),
+    onSuccess: (_, id) => {
+      removeAlert(id);
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    },
+  });
 }
