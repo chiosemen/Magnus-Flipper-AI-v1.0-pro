@@ -97,6 +97,7 @@ jobs:
 
       # --- Get Docker image digests ---
       - name: Get Docker image digests
+        id: digests
         if: steps.bump.outputs.version
         run: |
           # Azure login
