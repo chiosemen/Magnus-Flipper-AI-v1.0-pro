@@ -7,8 +7,8 @@ import { NextResponse } from "next/server";
 import type { SupabaseStatusResponse } from "@magnus-flipper-ai/core";
 import { createMockSupabaseStatus } from "@magnus-flipper-ai/core";
 
-// TODO: Replace with real Supabase health check
-const USE_MOCK_DATA = process.env.NODE_ENV === "development";
+// Fallback to mocks if explicitly set
+const USE_MOCK_DATA = process.env.USE_MOCK_MONITORING === "true";
 
 export async function GET() {
   try {
