@@ -1,8 +1,21 @@
 #!/bin/bash
 # Setup Azure Monitor alert rules for worker Container Apps
 # Idempotent: can be run multiple times safely
+#
+# Usage:
+#   ./setup-alerts.sh              # Normal execution
+#   ./setup-alerts.sh --dry-run    # Dry run mode (echo commands only)
+#   DRY_RUN=1 ./setup-alerts.sh    # Alternative dry run mode
 
 set -e
+
+# Check for dry-run mode
+DRY_RUN=false
+if [ "$1" = "--dry-run" ] || [ "$2" = "--dry-run" ] || [ -n "${DRY_RUN:-}" ]; then
+  DRY_RUN=true
+  echo "🔍 DRY RUN MODE - No changes will be made"
+  echo ""
+fi
 
 RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-magnus-rg}"
 LAW_NAME="${AZURE_LOG_ANALYTICS_WORKSPACE:-magnus-log-analytics}"
@@ -14,28 +27,38 @@ echo "Resource Group: $RESOURCE_GROUP"
 echo "Log Analytics Workspace: $LAW_NAME"
 echo ""
 
-# Check if logged in
-if ! az account show &>/dev/null; then
-  echo "❌ ERROR: Not logged into Azure. Run 'az login' first."
-  exit 1
+# Check if logged in (skip in dry-run mode)
+if [ "$DRY_RUN" = false ]; then
+  if ! az account show &>/dev/null; then
+    echo "❌ ERROR: Not logged into Azure. Run 'az login' first."
+    exit 1
+  fi
+else
+  echo "🔍 DRY RUN: Skipping Azure login check"
 fi
 
 # Step 1: Get Log Analytics Workspace ID
-LAW_ID=$(az monitor log-analytics workspace show \
-  --resource-group "$RESOURCE_GROUP" \
-  --workspace-name "$LAW_NAME" \
-  --query id -o tsv 2>/dev/null) || LAW_ID=""
+if [ "$DRY_RUN" = false ]; then
+  LAW_ID=$(az monitor log-analytics workspace show \
+    --resource-group "$RESOURCE_GROUP" \
+    --workspace-name "$LAW_NAME" \
+    --query id -o tsv 2>/dev/null) || LAW_ID=""
 
-if [ -z "$LAW_ID" ]; then
-  echo "❌ ERROR: Log Analytics Workspace '$LAW_NAME' not found."
-  echo "   Run infra/monitoring/setup-diagnostics.sh first."
-  exit 1
+  if [ -z "$LAW_ID" ]; then
+    echo "❌ ERROR: Log Analytics Workspace '$LAW_NAME' not found."
+    echo "   Run infra/monitoring/setup-diagnostics.sh first."
+    exit 1
+  fi
+
+  LAW_WORKSPACE_ID=$(az monitor log-analytics workspace show \
+    --resource-group "$RESOURCE_GROUP" \
+    --workspace-name "$LAW_NAME" \
+    --query customerId -o tsv)
+else
+  echo "🔍 DRY RUN: Would query Log Analytics Workspace: $LAW_NAME"
+  LAW_ID="/subscriptions/SUB_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/$LAW_NAME"
+  LAW_WORKSPACE_ID="DRY_RUN_WORKSPACE_ID"
 fi
-
-LAW_WORKSPACE_ID=$(az monitor log-analytics workspace show \
-  --resource-group "$RESOURCE_GROUP" \
-  --workspace-name "$LAW_NAME" \
-  --query customerId -o tsv)
 
 echo "✅ Log Analytics Workspace: $LAW_NAME (ID: $LAW_WORKSPACE_ID)"
 echo ""
@@ -43,30 +66,35 @@ echo ""
 # Step 2: Create or get Action Group
 echo "2. Creating/verifying Action Group..."
 
-if [ -z "$ACTION_GROUP_EMAIL" ]; then
-  echo "   ⚠️  WARNING: AZURE_ALERT_EMAIL not set."
-  echo "   Creating Action Group without email (you can add later in portal)."
-  ACTION_GROUP_ID=$(az monitor action-group create \
-    --name "$ACTION_GROUP_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --short-name "magnus-alerts" \
-    --query id -o tsv 2>/dev/null) || \
-  ACTION_GROUP_ID=$(az monitor action-group show \
-    --name "$ACTION_GROUP_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --query id -o tsv)
+if [ "$DRY_RUN" = false ]; then
+  if [ -z "$ACTION_GROUP_EMAIL" ]; then
+    echo "   ⚠️  WARNING: AZURE_ALERT_EMAIL not set."
+    echo "   Creating Action Group without email (you can add later in portal)."
+    ACTION_GROUP_ID=$(az monitor action-group create \
+      --name "$ACTION_GROUP_NAME" \
+      --resource-group "$RESOURCE_GROUP" \
+      --short-name "magnus-alerts" \
+      --query id -o tsv 2>/dev/null) || \
+    ACTION_GROUP_ID=$(az monitor action-group show \
+      --name "$ACTION_GROUP_NAME" \
+      --resource-group "$RESOURCE_GROUP" \
+      --query id -o tsv)
+  else
+    echo "   Creating Action Group with email: $ACTION_GROUP_EMAIL"
+    ACTION_GROUP_ID=$(az monitor action-group create \
+      --name "$ACTION_GROUP_NAME" \
+      --resource-group "$RESOURCE_GROUP" \
+      --short-name "magnus-alerts" \
+      --email-receivers name="primary-email" email-address="$ACTION_GROUP_EMAIL" \
+      --query id -o tsv 2>/dev/null) || \
+    ACTION_GROUP_ID=$(az monitor action-group show \
+      --name "$ACTION_GROUP_NAME" \
+      --resource-group "$RESOURCE_GROUP" \
+      --query id -o tsv)
+  fi
 else
-  echo "   Creating Action Group with email: $ACTION_GROUP_EMAIL"
-  ACTION_GROUP_ID=$(az monitor action-group create \
-    --name "$ACTION_GROUP_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --short-name "magnus-alerts" \
-    --email-receivers name="primary-email" email-address="$ACTION_GROUP_EMAIL" \
-    --query id -o tsv 2>/dev/null) || \
-  ACTION_GROUP_ID=$(az monitor action-group show \
-    --name "$ACTION_GROUP_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --query id -o tsv)
+  echo "🔍 DRY RUN: Would create/verify Action Group: $ACTION_GROUP_NAME"
+  ACTION_GROUP_ID="/subscriptions/SUB_ID/resourceGroups/$RESOURCE_GROUP/providers/microsoft.insights/actionGroups/$ACTION_GROUP_NAME"
 fi
 
 echo "   ✅ Action Group: $ACTION_GROUP_NAME (ID: $ACTION_GROUP_ID)"
@@ -128,19 +156,25 @@ create_alert_rule() {
 EOF
 )
   
-  # Check if alert exists
-  if az rest --method GET --uri "$ALERT_RULE_ID?api-version=2021-08-01" &>/dev/null 2>&1; then
-    echo "   Alert exists, updating..."
-    az rest --method PUT \
-      --uri "$ALERT_RULE_ID?api-version=2021-08-01" \
-      --body "$BODY" \
-      --output none 2>/dev/null || echo "   ⚠️  Update failed, may need manual configuration"
+  # Check if alert exists (skip in dry-run)
+  if [ "$DRY_RUN" = false ]; then
+    if az rest --method GET --uri "$ALERT_RULE_ID?api-version=2021-08-01" &>/dev/null 2>&1; then
+      echo "   Alert exists, updating..."
+      az rest --method PUT \
+        --uri "$ALERT_RULE_ID?api-version=2021-08-01" \
+        --body "$BODY" \
+        --output none 2>/dev/null || echo "   ⚠️  Update failed, may need manual configuration"
+    else
+      echo "   Creating new alert..."
+      az rest --method PUT \
+        --uri "$ALERT_RULE_ID?api-version=2021-08-01" \
+        --body "$BODY" \
+        --output none 2>/dev/null || echo "   ⚠️  Creation failed, may need manual configuration"
+    fi
   else
-    echo "   Creating new alert..."
-    az rest --method PUT \
-      --uri "$ALERT_RULE_ID?api-version=2021-08-01" \
-      --body "$BODY" \
-      --output none 2>/dev/null || echo "   ⚠️  Creation failed, may need manual configuration"
+    echo "🔍 DRY RUN: Would create/update alert rule: $ALERT_NAME"
+    echo "   Query: $(echo "$QUERY" | head -1)..."
+    echo "   Threshold: $THRESHOLD"
   fi
   
   echo "   ✅ Alert rule processed: $ALERT_NAME"
