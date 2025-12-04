@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminHeader } from "../components/AdminHeader";
+import { AdminHeader } from "../components/AdminHeader.js";
 import { useState, useEffect } from "react";
 
 interface MarketplaceSetting {

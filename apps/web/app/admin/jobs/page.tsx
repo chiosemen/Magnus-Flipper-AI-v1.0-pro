@@ -1,6 +1,6 @@
-import { AdminHeader } from "../components/AdminHeader";
-import { MetricCard } from "../components/MetricCard";
-import { JobStatusBadge } from "../components/JobStatusBadge";
+import { AdminHeader } from "../components/AdminHeader.js";
+import { MetricCard } from "../components/MetricCard.js";
+import { JobStatusBadge } from "../components/JobStatusBadge.js";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getJobStats } from "@/lib/admin";
 import { logInfo } from "@/lib/observability/logger";

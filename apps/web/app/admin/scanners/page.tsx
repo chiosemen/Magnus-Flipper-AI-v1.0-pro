@@ -1,5 +1,5 @@
-import { AdminHeader } from "../components/AdminHeader";
-import { MetricCard } from "../components/MetricCard";
+import { AdminHeader } from "../components/AdminHeader.js";
+import { MetricCard } from "../components/MetricCard.js";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getTelemetryMetrics, getScannerTelemetry } from "@/lib/admin";
 import { logInfo } from "@/lib/observability/logger";

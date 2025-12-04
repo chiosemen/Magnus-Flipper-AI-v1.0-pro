@@ -26,7 +26,6 @@ const nextConfig = {
     ],
   },
   
-<<<<<<< HEAD
   // Image optimization configuration
   images: {
     domains: [
@@ -57,8 +56,6 @@ const nextConfig = {
     minimumCacheTTL: 60
   },
   
-=======
->>>>>>> ddee1ee (Phase 12A–12F: Full worker rebuild, fixed imports, TS config, pnpm workspaces, Dockerfiles, v3 infra)
   // Security headers
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production';
