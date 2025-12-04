@@ -30,38 +30,40 @@ function buildSeries(
 // ---------- Health Summary Mock ----------
 
 export function createMockHealthSummary(): HealthSummaryResponse {
-  const workers = [
+  const workers: WorkerHealthStatus[] = [
     {
-      worker: "worker-scraper" as WorkerName,
-      status: "healthy" as const,
+      worker: "worker-scraper",
+      status: "healthy",
       lastHeartbeat: minutesAgo(1),
       errorCount15m: 3,
       failureRate: 0.02,
     },
     {
-      worker: "worker-tracker" as WorkerName,
-      status: "degraded" as const,
+      worker: "worker-tracker",
+      status: "degraded",
       lastHeartbeat: minutesAgo(3),
       errorCount15m: 7,
       failureRate: 0.06,
     },
     {
-      worker: "worker-autosell" as WorkerName,
-      status: "healthy" as const,
+      worker: "worker-autosell",
+      status: "healthy",
       lastHeartbeat: minutesAgo(2),
       errorCount15m: 1,
       failureRate: 0.01,
     },
   ];
 
-  const worst = workers.reduce<"healthy" | "degraded" | "unhealthy">(
-    (acc, w) => {
-      if (w.status === "unhealthy") return "unhealthy";
-      if (w.status === "degraded" && acc === "healthy") return "degraded";
-      return acc;
-    },
-    "healthy"
-  );
+  let worst: "healthy" | "degraded" | "unhealthy" = "healthy";
+  for (const w of workers) {
+    if (w.status === "unhealthy") {
+      worst = "unhealthy";
+      break;
+    }
+    if (w.status === "degraded" && worst === "healthy") {
+      worst = "degraded";
+    }
+  }
 
   return {
     overallStatus: worst,
