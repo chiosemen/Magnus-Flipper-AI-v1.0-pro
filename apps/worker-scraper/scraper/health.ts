@@ -3,37 +3,39 @@
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { createHealthCheckHandler } from "@magnus-flipper-ai/core/healthcheck";
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-const healthHandler = createHealthCheckHandler("worker-scraper", supabaseUrl, supabaseKey);
+import { performHealthCheck } from "@magnus-flipper-ai/core/healthcheck.js";
 
 export async function healthCheck(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
-  return new Promise((resolve) => {
-    const res = {
-      writeHead: (status: number, headers: Record<string, string>) => {
-        resolve({
-          status,
-          headers: {
-            'Content-Type': headers['Content-Type'] || 'application/json',
-          },
-        });
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    const health = await performHealthCheck("worker-scraper", supabaseUrl, supabaseKey);
+    
+    return {
+      status: health.healthy ? 200 : 503,
+      headers: {
+        'Content-Type': 'application/json',
       },
-      end: (body: string) => {
-        resolve((prev: any) => ({
-          ...prev,
-          body,
-        }));
-      },
+      body: JSON.stringify(health, null, 2),
     };
-
-    healthHandler(request, res as any);
-  });
+  } catch (error: any) {
+    return {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        healthy: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        worker: "worker-scraper",
+      }),
+    };
+  }
 }
 
 app.http("health", {

@@ -6,7 +6,7 @@
 import { app, InvocationContext, Timer } from "@azure/functions";
 import { createClient } from "@supabase/supabase-js";
 import { ScraperOrchestrator } from "@magnus-flipper-ai/scraper-sync/orchestrator/scraperOrchestrator";
-import { createWorkerLogger, generateCorrelationId } from "@magnus-flipper-ai/core/worker-logger";
+import { createWorkerLogger, generateCorrelationId } from "@magnus-flipper-ai/core/worker-logger.js";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
