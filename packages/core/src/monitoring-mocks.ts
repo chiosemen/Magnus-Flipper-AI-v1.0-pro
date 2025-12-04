@@ -7,6 +7,7 @@ import type {
   SupabaseStatusResponse,
   WorkerName,
   TimeSeriesPoint,
+  WorkerHealthStatus,
 } from "./monitoring-types.js";
 
 function minutesAgo(min: number): string {
