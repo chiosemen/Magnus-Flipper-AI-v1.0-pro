@@ -16,11 +16,5 @@
     }
   },
   "globalDependencies": ["tsconfig.json"],
-  "globalEnv": ["NODE_ENV"],
-  "pipeline": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**", ".next/**"]
-    }
-  }
+  "globalEnv": ["NODE_ENV"]
 }
