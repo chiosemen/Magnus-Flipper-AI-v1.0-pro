@@ -198,6 +198,18 @@ jobs:
           
           echo "✅ Monitoring scripts validation complete"
 
+      # --- Validate scaling scripts (non-blocking) ---
+      - name: Validate scaling scripts
+        continue-on-error: true
+        run: |
+          echo "Validating scaling scripts syntax..."
+          
+          if [ -f "infra/scale/setup-scale-rules.sh" ]; then
+            bash -n infra/scale/setup-scale-rules.sh && echo "✅ setup-scale-rules.sh syntax valid" || echo "⚠️  setup-scale-rules.sh has syntax errors"
+          fi
+          
+          echo "✅ Scaling scripts validation complete"
+
       # --- Summary ---
       - name: Build summary
         run: |

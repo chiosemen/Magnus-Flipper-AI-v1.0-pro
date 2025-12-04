@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "containerAppName": {
+      "type": "string"
+    },
+    "minReplicas": {
+      "type": "int"
+    },
+    "maxReplicas": {
+      "type": "int"
+    },
+    "cpuThreshold": {
+      "type": "string"
+    },
+    "scaleDuration": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('containerAppName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "template": {
+          "scale": {
+            "minReplicas": "[parameters('minReplicas')]",
+            "maxReplicas": "[parameters('maxReplicas')]",
+            "rules": [
+              {
+                "name": "cpu-scale",
+                "azureQueue": null,
+                "custom": null,
+                "http": null,
+                "tcp": null,
+                "cpu": {
+                  "utilization": "[parameters('cpuThreshold')]",
+                  "scaleDownDelay": "[parameters('scaleDuration')]",
+                  "scaleUpDelay": "[parameters('scaleDuration')]"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
+
