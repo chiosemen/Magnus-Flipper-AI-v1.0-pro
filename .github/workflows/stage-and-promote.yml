@@ -260,19 +260,19 @@ jobs:
             --name $ACR \
             --repository ${SCRAPER_APP} \
             --orderby time_desc \
-            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+            -o tsv | grep "^staging-" | head -1)
           
           TRACKER_TAG=$(az acr repository show-tags \
             --name $ACR \
             --repository ${TRACKER_APP} \
             --orderby time_desc \
-            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+            -o tsv | grep "^staging-" | head -1)
           
           AUTOSELL_TAG=$(az acr repository show-tags \
             --name $ACR \
             --repository ${AUTOSELL_APP} \
             --orderby time_desc \
-            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+            -o tsv | grep "^staging-" | head -1)
           
           echo "scraper_tag=$SCRAPER_TAG" >> $GITHUB_OUTPUT
           echo "tracker_tag=$TRACKER_TAG" >> $GITHUB_OUTPUT
