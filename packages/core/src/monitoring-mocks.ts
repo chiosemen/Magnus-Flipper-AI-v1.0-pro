@@ -56,9 +56,8 @@ export function createMockHealthSummary(): HealthSummaryResponse {
 
   const worst = workers.reduce<"healthy" | "degraded" | "unhealthy">(
     (acc, w) => {
-      const status = w.status;
-      if (status === "unhealthy") return "unhealthy";
-      if (status === "degraded" && acc === "healthy") return "degraded";
+      if (w.status === "unhealthy") return "unhealthy";
+      if (w.status === "degraded" && acc === "healthy") return "degraded";
       return acc;
     },
     "healthy"
