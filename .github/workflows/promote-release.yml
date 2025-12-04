@@ -1,0 +1,238 @@
+name: Promote Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.4.0)'
+        required: true
+        type: string
+      skip_production:
+        description: 'Skip production deployment (dry-run)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: "20"
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AZURE_ACR_NAME: ${{ secrets.AZURE_ACR_NAME }}
+  AZURE_CONTAINERAPPS_ENV_PROD: ${{ secrets.AZURE_CONTAINERAPPS_ENV_PROD }}
+
+jobs:
+  promote-release:
+    runs-on: ubuntu-latest
+    name: Promote Release to Production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # --- Azure authentication ---
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Azure Container Registry Login
+        run: az acr login --name "${{ env.AZURE_ACR_NAME }}"
+
+      # --- Extract version number ---
+      - name: Extract version number
+        id: version
+        run: |
+          VERSION="${{ inputs.version }}"
+          # Remove 'v' prefix if present
+          VERSION_NUMBER=${VERSION#v}
+          echo "version_number=$VERSION_NUMBER" >> $GITHUB_OUTPUT
+          echo "tag_prefix=prod-$VERSION_NUMBER" >> $GITHUB_OUTPUT
+
+      # --- Get staging image digests ---
+      - name: Get staging image digests
+        id: staging_digests
+        run: |
+          ACR_NAME="${{ env.AZURE_ACR_NAME }}"
+          
+          # Get latest staging tags
+          SCRAPER_TAG=$(az acr repository show-tags \
+            --name "$ACR_NAME" \
+            --repository worker-scraper \
+            --orderby time_desc \
+            -o tsv | grep "^staging-" | head -1) || echo ""
+          
+          TRACKER_TAG=$(az acr repository show-tags \
+            --name "$ACR_NAME" \
+            --repository worker-tracker \
+            --orderby time_desc \
+            -o tsv | grep "^staging-" | head -1) || echo ""
+          
+          AUTOSELL_TAG=$(az acr repository show-tags \
+            --name "$ACR_NAME" \
+            --repository worker-autosell \
+            --orderby time_desc \
+            -o tsv | grep "^staging-" | head -1) || echo ""
+          
+          if [ -z "$SCRAPER_TAG" ] || [ -z "$TRACKER_TAG" ] || [ -z "$AUTOSELL_TAG" ]; then
+            echo "❌ ERROR: Could not find staging tags"
+            exit 1
+          fi
+          
+          # Get digests for staging tags
+          SCRAPER_DIGEST=$(az acr repository show \
+            --name "$ACR_NAME" \
+            --image "worker-scraper:$SCRAPER_TAG" \
+            --query digest -o tsv) || echo ""
+          
+          TRACKER_DIGEST=$(az acr repository show \
+            --name "$ACR_NAME" \
+            --image "worker-tracker:$TRACKER_TAG" \
+            --query digest -o tsv) || echo ""
+          
+          AUTOSELL_DIGEST=$(az acr repository show \
+            --name "$ACR_NAME" \
+            --image "worker-autosell:$AUTOSELL_TAG" \
+            --query digest -o tsv) || echo ""
+          
+          echo "scraper_tag=$SCRAPER_TAG" >> $GITHUB_OUTPUT
+          echo "tracker_tag=$TRACKER_TAG" >> $GITHUB_OUTPUT
+          echo "autosell_tag=$AUTOSELL_TAG" >> $GITHUB_OUTPUT
+          echo "scraper_digest=$SCRAPER_DIGEST" >> $GITHUB_OUTPUT
+          echo "tracker_digest=$TRACKER_DIGEST" >> $GITHUB_OUTPUT
+          echo "autosell_digest=$AUTOSELL_DIGEST" >> $GITHUB_OUTPUT
+
+      # --- Tag images with production version ---
+      - name: Tag images with production version
+        run: |
+          ACR_NAME="${{ env.AZURE_ACR_NAME }}"
+          PROD_TAG="${{ steps.version.outputs.tag_prefix }}"
+          
+          # Pull staging images
+          docker pull "$ACR_NAME.azurecr.io/worker-scraper:${{ steps.staging_digests.outputs.scraper_tag }}"
+          docker pull "$ACR_NAME.azurecr.io/worker-tracker:${{ steps.staging_digests.outputs.tracker_tag }}"
+          docker pull "$ACR_NAME.azurecr.io/worker-autosell:${{ steps.staging_digests.outputs.autosell_tag }}"
+          
+          # Tag with production version
+          docker tag "$ACR_NAME.azurecr.io/worker-scraper:${{ steps.staging_digests.outputs.scraper_tag }}" \
+            "$ACR_NAME.azurecr.io/worker-scraper:$PROD_TAG"
+          docker tag "$ACR_NAME.azurecr.io/worker-tracker:${{ steps.staging_digests.outputs.tracker_tag }}" \
+            "$ACR_NAME.azurecr.io/worker-tracker:$PROD_TAG"
+          docker tag "$ACR_NAME.azurecr.io/worker-autosell:${{ steps.staging_digests.outputs.autosell_tag }}" \
+            "$ACR_NAME.azurecr.io/worker-autosell:$PROD_TAG"
+          
+          # Push production tags
+          docker push "$ACR_NAME.azurecr.io/worker-scraper:$PROD_TAG"
+          docker push "$ACR_NAME.azurecr.io/worker-tracker:$PROD_TAG"
+          docker push "$ACR_NAME.azurecr.io/worker-autosell:$PROD_TAG"
+          
+          echo "✅ Tagged and pushed images with $PROD_TAG"
+
+      # --- Deploy to production ---
+      - name: Deploy to production
+        if: inputs.skip_production == false
+        run: |
+          ACR_NAME="${{ env.AZURE_ACR_NAME }}"
+          PROD_TAG="${{ steps.version.outputs.tag_prefix }}"
+          RESOURCE_GROUP="${{ env.AZURE_RESOURCE_GROUP }}"
+          ENV_PROD="${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}"
+          
+          # Get digest for production tag
+          SCRAPER_DIGEST=$(az acr repository show \
+            --name "$ACR_NAME" \
+            --image "worker-scraper:$PROD_TAG" \
+            --query digest -o tsv)
+          
+          TRACKER_DIGEST=$(az acr repository show \
+            --name "$ACR_NAME" \
+            --image "worker-tracker:$PROD_TAG" \
+            --query digest -o tsv)
+          
+          AUTOSELL_DIGEST=$(az acr repository show \
+            --name "$ACR_NAME" \
+            --image "worker-autosell:$PROD_TAG" \
+            --query digest -o tsv)
+          
+          # Update Container Apps with digest-pinned images
+          az containerapp update \
+            --name worker-scraper \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_NAME.azurecr.io/worker-scraper@$SCRAPER_DIGEST" \
+            --environment "$ENV_PROD" || echo "⚠️  Failed to update worker-scraper"
+          
+          az containerapp update \
+            --name worker-tracker \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_NAME.azurecr.io/worker-tracker@$TRACKER_DIGEST" \
+            --environment "$ENV_PROD" || echo "⚠️  Failed to update worker-tracker"
+          
+          az containerapp update \
+            --name worker-autosell \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_NAME.azurecr.io/worker-autosell@$AUTOSELL_DIGEST" \
+            --environment "$ENV_PROD" || echo "⚠️  Failed to update worker-autosell"
+          
+          echo "✅ Deployed to production"
+
+      # --- Update GitHub Release with deployment info ---
+      - name: Update GitHub Release
+        if: inputs.skip_production == false
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = '${{ inputs.version }}';
+            const scraperDigest = '${{ steps.staging_digests.outputs.scraper_digest }}';
+            const trackerDigest = '${{ steps.staging_digests.outputs.tracker_digest }}';
+            const autosellDigest = '${{ steps.staging_digests.outputs.autosell_digest }}';
+            const prodTag = '${{ steps.version.outputs.tag_prefix }}';
+            
+            // Get release by tag
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const release = releases.find(r => r.tag_name === version);
+            
+            if (release) {
+              const deploymentNote = `
+              
+              ### Production Deployment
+              
+              **Deployed**: ${new Date().toISOString()}
+              
+              **Image Tags**: \`${prodTag}\`
+              
+              **Image Digests**:
+              - worker-scraper: \`${scraperDigest}\`
+              - worker-tracker: \`${trackerDigest}\`
+              - worker-autosell: \`${autosellDigest}\`
+              `;
+              
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+                body: release.body + deploymentNote,
+              });
+            }
+
+      # --- Summary ---
+      - name: Promotion summary
+        run: |
+          echo "## ✅ Release ${{ inputs.version }} Promoted to Production" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Production Tag**: ${{ steps.version.outputs.tag_prefix }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scraper Digest**: \`${{ steps.staging_digests.outputs.scraper_digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tracker Digest**: \`${{ steps.staging_digests.outputs.tracker_digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Autosell Digest**: \`${{ steps.staging_digests.outputs.autosell_digest }}\`" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.skip_production }}" == "true" ]; then
+            echo "- **Status**: Dry-run (skipped production deployment)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Status**: Deployed to production" >> $GITHUB_STEP_SUMMARY
+          fi
+
