@@ -58,9 +58,10 @@ export function createMockHealthSummary(): HealthSummaryResponse {
     (acc, w) => {
       if (w.status === "unhealthy") return "unhealthy";
       if (w.status === "degraded" && acc === "healthy") return "degraded";
+      if (w.status === "unhealthy") return "unhealthy";
       return acc;
     },
-    "healthy"
+    "healthy" as "healthy" | "degraded" | "unhealthy"
   );
 
   return {
