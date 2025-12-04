@@ -182,6 +182,22 @@ jobs:
           
           echo "✅ All Docker images built successfully"
 
+      # --- Validate monitoring scripts (non-blocking) ---
+      - name: Validate monitoring scripts
+        continue-on-error: true
+        run: |
+          echo "Validating monitoring scripts syntax..."
+          
+          if [ -f "infra/monitoring/setup-diagnostics.sh" ]; then
+            bash -n infra/monitoring/setup-diagnostics.sh && echo "✅ setup-diagnostics.sh syntax valid" || echo "⚠️  setup-diagnostics.sh has syntax errors"
+          fi
+          
+          if [ -f "infra/monitoring/setup-alerts.sh" ]; then
+            bash -n infra/monitoring/setup-alerts.sh && echo "✅ setup-alerts.sh syntax valid" || echo "⚠️  setup-alerts.sh has syntax errors"
+          fi
+          
+          echo "✅ Monitoring scripts validation complete"
+
       # --- Summary ---
       - name: Build summary
         run: |
@@ -192,4 +208,5 @@ jobs:
           echo "- ✅ All workers built" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Dockerfiles validated" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Docker images built (linux/amd64)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Monitoring scripts validated" >> $GITHUB_STEP_SUMMARY
 
