@@ -26,6 +26,36 @@ const nextConfig = {
     ],
   },
   
+  // Image optimization configuration
+  images: {
+    domains: [
+      "images.craigslist.org",
+      "i.ebayimg.com",
+      "images.vinted.net",
+      "scontent.xx.fbcdn.net"
+    ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.craigslist.org"
+      },
+      {
+        protocol: "https",
+        hostname: "*.ebayimg.com"
+      },
+      {
+        protocol: "https",
+        hostname: "*.vinted.net"
+      },
+      {
+        protocol: "https",
+        hostname: "*.fbcdn.net"
+      }
+    ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60
+  },
+  
   // Security headers
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production';
