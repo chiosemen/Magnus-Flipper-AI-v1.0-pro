@@ -6,6 +6,7 @@
 import { app, InvocationContext, Timer } from "@azure/functions";
 import { createClient } from "@supabase/supabase-js";
 import { batchTrackShipments } from "@magnus-flipper-ai/shipping-engine/tracking/trackingManager";
+import { createWorkerLogger, generateCorrelationId } from "@magnus-flipper-ai/core/worker-logger";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -16,7 +17,12 @@ export async function trackerTimer(
   context: InvocationContext
 ): Promise<void> {
   const startTime = new Date();
-  context.log(`Shipment Tracker worker started at ${startTime.toISOString()}`);
+  const correlationId = generateCorrelationId();
+  const logger = createWorkerLogger("worker-tracker", correlationId);
+  
+  logger.info("Shipment Tracker worker started", {
+    startTime: startTime.toISOString(),
+  });
 
   try {
     // Step 1: Get all active shipments that need tracking updates
@@ -27,16 +33,16 @@ export async function trackerTimer(
       .order("created_at", { ascending: false });
 
     if (error) {
-      context.error("Error fetching active labels:", error);
+      logger.error("Error fetching active labels", error);
       throw error;
     }
 
     if (!activeLabels || activeLabels.length === 0) {
-      context.log("No active shipments to track.");
+      logger.info("No active shipments to track");
       return;
     }
 
-    context.log(`Tracking ${activeLabels.length} active shipments...`);
+    logger.info("Tracking active shipments", { count: activeLabels.length });
 
     // Step 2: Batch track all shipments
     const trackingRequests = activeLabels.map((label) => ({
@@ -77,9 +83,18 @@ export async function trackerTimer(
       }
     }
 
-    context.log(
-      `Tracking update complete: ${updated} updated, ${delivered} delivered, ${exceptions} exceptions`
-    );
+    const durationMs = Date.now() - startTime.getTime();
+    
+    logger.info("Tracking update complete", {
+      updated,
+      delivered,
+      exceptions,
+      total: activeLabels.length,
+      durationMs,
+    });
+    
+    // Log metrics
+    logger.metric("jobs_processed_total", activeLabels.length);
 
     // Store worker execution log
     await supabase.from("worker_logs").insert({
@@ -92,7 +107,9 @@ export async function trackerTimer(
       shipments_exception: exceptions,
     });
   } catch (error: any) {
-    context.error("Shipment Tracker worker error:", error);
+    logger.error("Shipment Tracker worker error", error, {
+      durationMs: Date.now() - startTime.getTime(),
+    });
     throw error;
   }
 }
@@ -101,3 +118,6 @@ app.timer("trackerTimer", {
   schedule: "0 */10 * * * *",
   handler: trackerTimer,
 });
+
+// Import health check handler
+import "./health.js";

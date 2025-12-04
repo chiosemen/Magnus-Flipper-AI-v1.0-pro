@@ -87,6 +87,36 @@ jobs:
           pnpm --filter worker-tracker build
           pnpm --filter worker-autosell build
 
+      # --- Validate Logging Usage ---
+      - name: Validate structured logging
+        run: |
+          echo "Validating structured logging usage..."
+          
+          ERRORS=0
+          for WORKER in worker-scraper worker-tracker worker-autosell; do
+            WORKER_DIR="apps/$WORKER"
+            MAIN_FILE=$(find "$WORKER_DIR" -name "index.ts" -path "*/scraper/*" -o -name "index.ts" -path "*/tracker/*" -o -name "index.ts" -path "*/autosell/*" | head -1)
+            
+            if [ -z "$MAIN_FILE" ]; then
+              echo "⚠️  WARNING: Could not find main file for $WORKER"
+              continue
+            fi
+            
+            # Check for structured logger import
+            if ! grep -q "createWorkerLogger\|@magnus-flipper-ai/core/worker-logger" "$MAIN_FILE"; then
+              echo "⚠️  WARNING: $WORKER may not be using structured logger"
+            else
+              echo "✅ $WORKER uses structured logger"
+            fi
+            
+            # Check for direct console usage (warn only)
+            if grep -E "console\.(log|error|warn|info)" "$MAIN_FILE" > /dev/null; then
+              echo "⚠️  WARNING: $WORKER may have direct console usage (prefer structured logger)"
+            fi
+          done
+          
+          echo "✅ Logging validation complete"
+
       # --- Validate Dockerfiles ---
       - name: Validate Dockerfiles
         run: |
@@ -108,6 +138,11 @@ jobs:
             # Check for linux/amd64 compatibility (alpine base)
             if ! grep -E "FROM node.*alpine" "$DOCKERFILE" > /dev/null; then
               echo "⚠️  WARNING: $DOCKERFILE may not be optimized (consider using alpine base)"
+            fi
+            
+            # Check for health check
+            if ! grep -q "HEALTHCHECK" "$DOCKERFILE"; then
+              echo "⚠️  WARNING: $DOCKERFILE missing HEALTHCHECK"
             fi
             
             echo "✅ $DOCKERFILE is valid"
