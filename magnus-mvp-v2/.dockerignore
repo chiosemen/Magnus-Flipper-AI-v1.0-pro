@@ -1,6 +1,0 @@
-node_modules
-.next
-.terraform
-terraform.tfstate
-*.log
-.env

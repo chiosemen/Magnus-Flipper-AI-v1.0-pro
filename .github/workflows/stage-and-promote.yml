@@ -62,7 +62,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
 
       - name: Enable Corepack
         run: corepack enable
@@ -187,7 +186,6 @@ jobs:
           az containerapp update \
             --name "$SCRAPER_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}@${SCRAPER_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \
@@ -201,7 +199,6 @@ jobs:
           az containerapp update \
             --name "$TRACKER_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}@${TRACKER_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \
@@ -215,7 +212,6 @@ jobs:
           az containerapp update \
             --name "$AUTOSELL_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_STAGING }}" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}@${AUTOSELL_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \
@@ -253,6 +249,11 @@ jobs:
         run: |
           az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
+      # --- ACR login ---
+      - name: Azure Container Registry Login
+        run: |
+          az acr login --name "${{ secrets.AZURE_ACR_NAME }}"
+
       # --- Get latest staging image tags ---
       - name: Get latest staging image tags
         id: staging_images
@@ -264,19 +265,19 @@ jobs:
             --name $ACR \
             --repository ${SCRAPER_APP} \
             --orderby time_desc \
-            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+            -o tsv | grep "^staging-" | head -1)
           
           TRACKER_TAG=$(az acr repository show-tags \
             --name $ACR \
             --repository ${TRACKER_APP} \
             --orderby time_desc \
-            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+            -o tsv | grep "^staging-" | head -1)
           
           AUTOSELL_TAG=$(az acr repository show-tags \
             --name $ACR \
             --repository ${AUTOSELL_APP} \
             --orderby time_desc \
-            --query "[?starts_with(name, 'staging-')].name" -o tsv | head -1)
+            -o tsv | grep "^staging-" | head -1)
           
           echo "scraper_tag=$SCRAPER_TAG" >> $GITHUB_OUTPUT
           echo "tracker_tag=$TRACKER_TAG" >> $GITHUB_OUTPUT
@@ -403,7 +404,6 @@ jobs:
           az containerapp update \
             --name "$SCRAPER_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}@${SCRAPER_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \
@@ -417,7 +417,6 @@ jobs:
           az containerapp update \
             --name "$TRACKER_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}@${TRACKER_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \
@@ -431,7 +430,6 @@ jobs:
           az containerapp update \
             --name "$AUTOSELL_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "${{ env.AZURE_CONTAINERAPPS_ENV_PROD }}" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}@${AUTOSELL_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \
@@ -528,7 +526,6 @@ jobs:
           az containerapp update \
             --name "$SCRAPER_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "$ENV" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${SCRAPER_APP}@${SCRAPER_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \
@@ -542,7 +539,6 @@ jobs:
           az containerapp update \
             --name "$TRACKER_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "$ENV" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${TRACKER_APP}@${TRACKER_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \
@@ -556,7 +552,6 @@ jobs:
           az containerapp update \
             --name "$AUTOSELL_APP" \
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
-            --environment "$ENV" \
             --image "${{ env.AZURE_CONTAINER_REGISTRY }}/${AUTOSELL_APP}@${AUTOSELL_DIGEST}" \
             --set-env-vars \
               SUPABASE_URL=secretref:supabase-url \

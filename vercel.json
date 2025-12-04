@@ -107,5 +107,36 @@
       "memory": 1024,
       "maxDuration": 60
     }
+<<<<<<< HEAD
+=======
+  },
+  "images": {
+    "domains": [
+      "images.craigslist.org",
+      "i.ebayimg.com",
+      "images.vinted.net",
+      "scontent.xx.fbcdn.net"
+    ],
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "**.craigslist.org"
+      },
+      {
+        "protocol": "https",
+        "hostname": "**.ebayimg.com"
+      },
+      {
+        "protocol": "https",
+        "hostname": "**.vinted.net"
+      },
+      {
+        "protocol": "https",
+        "hostname": "**.fbcdn.net"
+      }
+    ],
+    "formats": ["image/avif", "image/webp"],
+    "minimumCacheTTL": 60
+>>>>>>> ddee1ee (Phase 12A–12F: Full worker rebuild, fixed imports, TS config, pnpm workspaces, Dockerfiles, v3 infra)
   }
 }
