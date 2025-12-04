@@ -30,23 +30,30 @@ update_scaling() {
   echo "     CPU Threshold: ${CPU_THRESHOLD}%"
   echo "     Scale Duration: ${SCALE_DURATION}s"
   
-  # Check if Container App exists
-  if ! az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
-    echo "   ⚠️  WARNING: Container App '$APP_NAME' not found, skipping..."
-    return
+  # Check if Container App exists (skip in dry-run)
+  if [ "$DRY_RUN" = false ]; then
+    if ! az containerapp show --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+      echo "   ⚠️  WARNING: Container App '$APP_NAME' not found, skipping..."
+      return
+    fi
+    
+    # Update replica limits
+    echo "   Setting replica limits..."
+    az containerapp update \
+      --name "$APP_NAME" \
+      --resource-group "$RESOURCE_GROUP" \
+      --min-replicas "$MIN_REPLICAS" \
+      --max-replicas "$MAX_REPLICAS" \
+      --output none
+    
+    echo "   ✅ Replica limits updated for $APP_NAME"
+    echo "   ⚠️  Note: CPU scale rules must be configured via ARM template (see blueprint)"
+  else
+    echo "🔍 DRY RUN: Would update $APP_NAME"
+    echo "   Min Replicas: $MIN_REPLICAS"
+    echo "   Max Replicas: $MAX_REPLICAS"
+    echo "   Command: az containerapp update --name $APP_NAME --resource-group $RESOURCE_GROUP --min-replicas $MIN_REPLICAS --max-replicas $MAX_REPLICAS"
   fi
-  
-  # Update replica limits
-  az containerapp update \
-    --name "$APP_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --min-replicas "$MIN_REPLICAS" \
-    --max-replicas "$MAX_REPLICAS" \
-    --output none
-  
-  # Note: CPU-based scale rules require ARM template or portal configuration
-  # The replica limits are set above, but scale rules need to be configured separately
-  # See PHASE_12S_SCALING_BLUEPRINT.md for manual configuration steps
   
   echo "   ✅ Scaling configured for $APP_NAME"
 }
