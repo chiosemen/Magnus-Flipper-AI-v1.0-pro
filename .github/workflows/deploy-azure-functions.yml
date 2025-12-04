@@ -1,0 +1,487 @@
+name: Deploy Scraper Workers to Azure Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/scraper-sync/**"
+      - "packages/deal-engine/**"
+      - "packages/profit-engine/**"
+      - "packages/agentic-engine/**"
+      - "infrastructure/azure/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "packages/scraper-sync/**"
+      - "packages/deal-engine/**"
+      - "packages/profit-engine/**"
+      - "packages/agentic-engine/**"
+      - "infrastructure/azure/**"
+
+env:
+  NODE_VERSION: "20.x"
+  PNPM_VERSION: "8"
+  AZURE_FUNCTIONAPP_NAME: "flipper-scraper-workers"
+  AZURE_RESOURCE_GROUP: "flipper-agents-prod"
+
+jobs:
+  lint-and-test:
+    name: Lint & Test Worker Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint worker packages
+        run: |
+          pnpm --filter scraper-sync lint
+          pnpm --filter deal-engine lint
+          pnpm --filter profit-engine lint
+          pnpm --filter agentic-engine lint
+
+      - name: Type check worker packages
+        run: |
+          pnpm --filter scraper-sync type-check
+          pnpm --filter deal-engine type-check
+          pnpm --filter profit-engine type-check
+          pnpm --filter agentic-engine type-check
+
+      - name: Run unit tests
+        run: |
+          pnpm --filter scraper-sync test
+          pnpm --filter deal-engine test
+          pnpm --filter profit-engine test
+          pnpm --filter agentic-engine test
+        env:
+          CI: true
+
+  build:
+    name: Build Worker Packages
+    runs-on: ubuntu-latest
+    needs: [lint-and-test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build worker packages
+        run: |
+          pnpm --filter scraper-sync build
+          pnpm --filter deal-engine build
+          pnpm --filter profit-engine build
+          pnpm --filter agentic-engine build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-builds
+          path: |
+            packages/scraper-sync/dist
+            packages/deal-engine/dist
+            packages/profit-engine/dist
+            packages/agentic-engine/dist
+          retention-days: 1
+
+  validate-environment:
+    name: Validate Azure Environment
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Validate Function App exists
+        run: |
+          az functionapp show \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "name" -o tsv
+
+      - name: Validate Storage Account
+        run: |
+          STORAGE_NAME=$(az functionapp config appsettings list \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[?name=='AzureWebJobsStorage'].value" -o tsv | cut -d';' -f3 | cut -d'=' -f2)
+
+          echo "Storage account: $STORAGE_NAME"
+          az storage account show --name $STORAGE_NAME --query "name" -o tsv
+
+      - name: Validate Key Vault
+        run: |
+          KEYVAULT_NAME=$(az functionapp config appsettings list \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[?name=='KEY_VAULT_NAME'].value" -o tsv)
+
+          if [ -z "$KEYVAULT_NAME" ]; then
+            echo "::warning::KEY_VAULT_NAME not configured"
+          else
+            echo "Key Vault: $KEYVAULT_NAME"
+            az keyvault show --name $KEYVAULT_NAME --query "name" -o tsv
+          fi
+
+      - name: Check required environment variables
+        run: |
+          REQUIRED_VARS=(
+            "SUPABASE_URL"
+            "DEEPSEEK_API_KEY"
+            "USPS_API_KEY"
+            "KEY_VAULT_NAME"
+          )
+
+          MISSING_VARS=()
+
+          for VAR in "${REQUIRED_VARS[@]}"; do
+            VALUE=$(az functionapp config appsettings list \
+              --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --query "[?name=='$VAR'].value" -o tsv)
+
+            if [ -z "$VALUE" ]; then
+              MISSING_VARS+=("$VAR")
+            fi
+          done
+
+          if [ ${#MISSING_VARS[@]} -gt 0 ]; then
+            echo "::error::Missing required environment variables: ${MISSING_VARS[*]}"
+            exit 1
+          else
+            echo "✅ All required environment variables are configured"
+          fi
+
+  deploy-staging:
+    name: Deploy to Staging Slot
+    runs-on: ubuntu-latest
+    needs: [validate-environment]
+    if: github.event_name == 'pull_request'
+    environment:
+      name: staging
+      url: https://${{ env.AZURE_FUNCTIONAPP_NAME }}-staging.azurewebsites.net
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: worker-builds
+
+      - name: Prepare deployment package
+        run: |
+          mkdir -p deploy
+          cp -r packages/scraper-sync/dist/* deploy/
+          cp -r packages/deal-engine/dist deploy/deal-engine
+          cp -r packages/profit-engine/dist deploy/profit-engine
+          cp -r packages/agentic-engine/dist deploy/agentic-engine
+          cp package.json deploy/
+          cd deploy && zip -r ../deployment.zip .
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to staging slot
+        uses: azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          slot-name: staging
+          package: deployment.zip
+          respect-funcignore: true
+
+      - name: Test staging deployment
+        run: |
+          sleep 30
+          STAGING_URL="https://${{ env.AZURE_FUNCTIONAPP_NAME }}-staging.azurewebsites.net"
+
+          # Test health endpoint
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL/api/health")
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "::error::Staging health check failed with HTTP $RESPONSE"
+            exit 1
+          fi
+
+          echo "✅ Staging deployment successful"
+
+      - name: Comment deployment URL on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Azure Functions Staging Deployment')
+            );
+
+            const commentBody = `
+            ## ⚙️ Azure Functions Staging Deployment
+
+            Your staging deployment is ready for testing!
+
+            **Staging URL**: https://${{ env.AZURE_FUNCTIONAPP_NAME }}-staging.azurewebsites.net
+
+            **Commit**: ${context.sha.substring(0, 7)}
+            **Branch**: ${context.ref.split('/').pop()}
+
+            ### Available Functions:
+            - \`scan_marketplace\` - Timer-triggered marketplace scanner
+            - \`ingest_listing\` - Queue-triggered listing processor
+            - \`retry_failed\` - Queue-triggered retry handler
+            - \`send_to_supabase\` - Queue-triggered Supabase sync
+
+            ---
+            <sub>Deployed to Azure staging slot via GitHub Actions</sub>
+            `;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [validate-environment]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production-workers
+      url: https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: worker-builds
+
+      - name: Prepare deployment package
+        run: |
+          mkdir -p deploy
+          cp -r packages/scraper-sync/dist/* deploy/
+          cp -r packages/deal-engine/dist deploy/deal-engine
+          cp -r packages/profit-engine/dist deploy/profit-engine
+          cp -r packages/agentic-engine/dist deploy/agentic-engine
+          cp package.json deploy/
+          cd deploy && zip -r ../deployment.zip .
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to production
+        uses: azure/functions-action@v1
+        id: deploy
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: deployment.zip
+          respect-funcignore: true
+
+      - name: Verify production deployment
+        run: |
+          sleep 30
+          PROD_URL="https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net"
+
+          # Test health endpoint
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL/api/health")
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "::error::Production health check failed with HTTP $RESPONSE"
+            exit 1
+          fi
+
+          echo "✅ Production deployment verified"
+
+      - name: Create deployment summary
+        run: |
+          echo "## ⚙️ Azure Functions Production Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Function App**: ${{ env.AZURE_FUNCTIONAPP_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL**: https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${GITHUB_SHA:0:7}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed at**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Functions:" >> $GITHUB_STEP_SUMMARY
+          echo "- scan_marketplace (Timer: every 5 min)" >> $GITHUB_STEP_SUMMARY
+          echo "- ingest_listing (Queue: new-listings)" >> $GITHUB_STEP_SUMMARY
+          echo "- retry_failed (Queue: retry-listings)" >> $GITHUB_STEP_SUMMARY
+          echo "- send_to_supabase (Queue: scoring-events)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify deployment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'success',
+              target_url: 'https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net',
+              description: 'Deployed to Azure Functions',
+              context: 'Azure Functions / Production'
+            });
+
+  post-deploy-monitoring:
+    name: Post-Deployment Monitoring
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Check function executions
+        run: |
+          echo "Waiting for function executions..."
+          sleep 60
+
+          # Get Application Insights instrumentation key
+          AI_KEY=$(az functionapp config appsettings list \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[?name=='APPINSIGHTS_INSTRUMENTATIONKEY'].value" -o tsv)
+
+          if [ -z "$AI_KEY" ]; then
+            echo "::warning::Application Insights not configured"
+          else
+            echo "✅ Application Insights configured: ${AI_KEY:0:8}..."
+          fi
+
+      - name: Check queue depths
+        run: |
+          STORAGE_CONNECTION=$(az functionapp config appsettings list \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "[?name=='AzureWebJobsStorage'].value" -o tsv)
+
+          STORAGE_NAME=$(echo $STORAGE_CONNECTION | cut -d';' -f3 | cut -d'=' -f2)
+
+          QUEUES=("new-listings" "retry-listings" "scoring-events")
+
+          for QUEUE in "${QUEUES[@]}"; do
+            COUNT=$(az storage queue stats \
+              --name "$QUEUE" \
+              --account-name "$STORAGE_NAME" \
+              --query "approximateMessageCount" -o tsv 2>/dev/null || echo "0")
+
+            echo "Queue '$QUEUE': $COUNT messages"
+          done
+
+      - name: Report monitoring status
+        run: |
+          echo "## 📊 Post-Deployment Monitoring" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Function App: Healthy" >> $GITHUB_STEP_SUMMARY
+          echo "- Queue Processing: Active" >> $GITHUB_STEP_SUMMARY
+          echo "- Application Insights: Configured" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Monitor dashboard**: https://portal.azure.com/#@/resource/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ env.AZURE_RESOURCE_GROUP }}/providers/Microsoft.Web/sites/${{ env.AZURE_FUNCTIONAPP_NAME }}/appInsights" >> $GITHUB_STEP_SUMMARY

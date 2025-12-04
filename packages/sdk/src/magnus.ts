@@ -1,7 +1,7 @@
-import { SDKClient, SDKClientOptions } from "./client";
-import { AlertsAPI } from "./api/alerts";
-import { DealsAPI } from "./api/deals";
-import { WatchlistsAPI } from "./api/watchlists";
+import { SDKClient, SDKClientOptions } from "./client.js";
+import { AlertsAPI } from "./api/alerts.js";
+import { DealsAPI } from "./api/deals.js";
+import { WatchlistsAPI } from "./api/watchlists.js";
 
 export class MagnusSDK {
   deals: DealsAPI;
@@ -16,4 +16,4 @@ export class MagnusSDK {
   }
 }
 
-export type { SDKClientOptions } from "./client";
+export type { SDKClientOptions } from "./client.js";

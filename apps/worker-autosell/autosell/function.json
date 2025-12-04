@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "name": "autoSellTimer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 */3 * * * *"
+    }
+  ],
+  "scriptFile": "../dist/autosell/index.js"
+}

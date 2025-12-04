@@ -1,0 +1,118 @@
+name: Deploy Workers to Azure Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/worker/**'
+      - 'infra/azure/**'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_NAME: 'magnus-flipper-workers'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'apps/worker'
+  NODE_VERSION: '20'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Azure Functions
+    runs-on: ubuntu-latest
+    environment:
+      name: production-workers
+      url: https://magnus-flipper-workers.azurewebsites.net
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build worker application
+        run: |
+          pnpm --filter magnus-worker build
+          echo "Worker build completed"
+
+      - name: Prepare deployment package
+        run: |
+          cd apps/worker
+          mkdir -p deployment
+          cp -r dist package.json node_modules deployment/
+          cd deployment
+          zip -r ../worker-package.zip .
+          cd ..
+          rm -rf deployment
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: apps/worker/worker-package.zip
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+      - name: Update Function App Settings
+        run: |
+          az functionapp config appsettings set \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --settings \
+              SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+              SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              WORKER_HEARTBEAT_INTERVAL="60000" \
+              AZURE_WORKER_ID="azure-worker-prod-001" \
+              NODE_ENV="production"
+
+      - name: Verify deployment
+        run: |
+          echo "Deployment completed successfully"
+          echo "Function App: https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net"
+
+  deploy-infrastructure:
+    name: Deploy Azure Infrastructure
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment:
+      name: production-infra
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep Template
+        run: |
+          az deployment group create \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --template-file infra/azure/function-app.bicep \
+            --parameters \
+              functionAppName=${{ env.AZURE_FUNCTIONAPP_NAME }} \
+              location="${{ secrets.AZURE_LOCATION }}" \
+              storageAccountName="${{ secrets.AZURE_STORAGE_ACCOUNT }}"
+
+      - name: Verify infrastructure
+        run: |
+          az functionapp show \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}

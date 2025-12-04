@@ -1,3 +1,3 @@
-export * from "./deals";
-export * from "./alerts";
-export * from "./watchlists";
+export * from "./deals.js";
+export * from "./alerts.js";
+export * from "./watchlists.js";

@@ -1,552 +1,311 @@
-# Magnus Flipper AI - Deployment Runbook
+# Production Deployment Guide
 
-## Table of Contents
-1. [Pre-Deployment Checklist](#pre-deployment-checklist)
-2. [Environment Setup](#environment-setup)
-3. [Database Migration](#database-migration)
-4. [Deployment Steps](#deployment-steps)
-5. [Post-Deployment Verification](#post-deployment-verification)
-6. [Rollback Procedure](#rollback-procedure)
-7. [Monitoring & Alerts](#monitoring--alerts)
-8. [Incident Response](#incident-response)
+## Overview
 
----
+This document outlines the production deployment setup for Magnus Flipper AI across all platforms:
+- **Vercel** - Web application
+- **Supabase** - Backend & database
+- **Stripe** - Billing & subscriptions
+- **EAS** - Mobile app builds
 
-## Pre-Deployment Checklist
+## Environment Variables
 
-**Before deploying to production, ensure:**
+### Supabase Configuration
 
-- [ ] All tests pass (`pnpm test`)
-- [ ] Smoke tests pass locally (`pnpm test:smoke`)
-- [ ] Environment variables configured (see `.env.example`)
-- [ ] Database migrations reviewed and tested
-- [ ] Supabase project provisioned
-- [ ] Redis instance available (for rate limiting)
-- [ ] Sentry project configured (optional)
-- [ ] GitHub Container Registry credentials set up
-- [ ] Deployment target (Leap/Vercel) configured
+All Supabase environment variables follow the official format:
 
----
-
-## Environment Setup
-
-### Required Environment Variables
-
-**Production API (.env):**
 ```bash
-# Application
+# Public (client-side)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Server-side only
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_JWT_SECRET=your-jwt-secret
+```
+
+**Usage:**
+- `NEXT_PUBLIC_SUPABASE_URL` - Used in client and server components
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Used in client and server components
+- `SUPABASE_SERVICE_ROLE_KEY` - Used only in server-side code (webhooks, admin operations)
+- `SUPABASE_JWT_SECRET` - Used for JWT verification (if needed)
+
+### Stripe Configuration
+
+```bash
+# Server-side
+STRIPE_SECRET_KEY=sk_live_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+STRIPE_PRO_PRICE=price_xxx
+STRIPE_AGENCY_PRICE=price_xxx
+
+# Client-side (optional, for price display)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxx
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_xxx
+NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID=price_xxx
+```
+
+**Usage:**
+- `STRIPE_SECRET_KEY` - Server-side Stripe API calls
+- `STRIPE_WEBHOOK_SECRET` - Webhook signature verification
+- `STRIPE_PRO_PRICE` - Pro tier price ID (server-side)
+- `STRIPE_AGENCY_PRICE` - Agency tier price ID (server-side)
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Client-side Stripe.js initialization
+- `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` - Client-side price display (optional)
+- `NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID` - Client-side price display (optional)
+
+### Application Configuration
+
+```bash
+NEXT_PUBLIC_APP_URL=https://your-domain.com
 NODE_ENV=production
-PORT=4000
-LOG_LEVEL=info
-
-# Database (REQUIRED)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE=sbp_xxxxxxxxxxxxx
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-# Rate Limiting (RECOMMENDED)
-REDIS_URL=redis://your-redis-host:6379
-RATE_LIMIT_WINDOW_MS=60000
-RATE_LIMIT_MAX_REQUESTS=100
-
-# Monitoring (OPTIONAL)
-SENTRY_DSN=https://xxx@sentry.io/xxx
-SENTRY_ENV=production
 ```
 
-### Validate Configuration
+## Vercel Deployment
 
-```bash
-# Test locally first
-cp .env.example .env
-# Edit .env with your values
-pnpm dev
+### Build Configuration
 
-# Check health endpoints
-curl http://localhost:4000/health
-curl http://localhost:4000/health/readiness
-curl http://localhost:4000/metrics
+The `vercel.json` is configured with:
+
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/web/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/web/$1"
+    }
+  ]
+}
 ```
 
----
+### Build Command
 
-## Database Migration
+Vercel uses: `cd apps/web && pnpm build`
 
-### 1. Apply Base Schema
+This automatically:
+1. Installs dependencies via `pnpm install`
+2. Builds packages (if needed)
+3. Builds the Next.js application
 
-```bash
-# Connect to Supabase SQL editor or use psql
-psql -h db.your-project.supabase.co \
-     -U postgres \
-     -d postgres \
-     -f db/schema.sql
+### Environment Variables Setup
+
+1. Go to Vercel Dashboard → Project Settings → Environment Variables
+2. Add all variables from the "Environment Variables" section above
+3. Use Vercel's `@` syntax for secrets (e.g., `@supabase-url`)
+
+### Webhook Configuration
+
+The Stripe webhook route is configured with:
+- `maxDuration: 60` - Extended timeout for webhook processing
+- `runtime: 'nodejs'` - Node.js runtime (not edge)
+
+**Vercel Webhook Setup:**
+1. In Stripe Dashboard → Webhooks → Add endpoint
+2. URL: `https://your-domain.com/api/stripe/webhook`
+3. Select events: `customer.subscription.*`, `invoice.*`, `checkout.session.completed`
+4. Copy webhook signing secret to `STRIPE_WEBHOOK_SECRET`
+
+## Supabase Integration
+
+### Client Usage
+
+All server components use `createServerClient()` from `@/lib/supabase`:
+
+```typescript
+import { createServerClient } from "@/lib/supabase";
+
+const supabase = await createServerClient();
+const { data: { user } } = await supabase.auth.getUser();
 ```
 
-### 2. Apply Migrations
+### Service Role Usage
 
-```bash
-psql -h db.your-project.supabase.co \
-     -U postgres \
-     -d postgres \
-     -f db/migrations/001_add_deals_alerts_watchlists.sql
+Service role key is only used in:
+- Webhook handlers (Stripe webhook route)
+- Admin operations requiring elevated permissions
+
+**Pattern:**
+```typescript
+// Only in webhook routes or admin operations
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 ```
 
-### 3. Verify Tables Created
+## Stripe Integration
 
-```sql
--- In Supabase SQL editor
-SELECT table_name FROM information_schema.tables
-WHERE table_schema = 'public';
+### API Routes
 
--- Expected tables:
--- profiles, flips, wins, deals, alerts, watchlists
+All Stripe API routes use wrapper functions from `@/lib/stripe`:
+
+- `createCheckoutSession()` - Create checkout sessions
+- `createPortalSession()` - Create billing portal sessions
+- `getPriceIdForTier()` - Get price ID for subscription tier
+- `createOrRetrieveCustomer()` - Customer management
+
+### Webhook Handler
+
+The webhook route (`/api/stripe/webhook`) handles:
+- `checkout.session.completed` - New subscriptions
+- `customer.subscription.updated` - Subscription changes
+- `customer.subscription.deleted` - Cancellations
+- `invoice.payment_succeeded` - Successful payments
+- `invoice.payment_failed` - Failed payments
+
+## Mobile / EAS Configuration
+
+### app.config.js
+
+The mobile app configuration includes:
+
+```javascript
+extra: {
+  apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://api.magnusflipper.com',
+  supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+  supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+  stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+}
 ```
 
-### 4. Seed Sample Data (Optional)
-
-```bash
-cd api
-pnpm seed --count=100
-```
-
----
-
-## Deployment Steps
-
-### Option A: Deploy to Leap (Backend API)
-
-#### 1. Build Docker Image
-
-```bash
-cd api
-docker build -t ghcr.io/your-org/magnus-api:latest .
-docker build -t ghcr.io/your-org/magnus-api:$(git rev-parse --short HEAD) .
-```
-
-#### 2. Push to GitHub Container Registry
-
-```bash
-echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
-docker push ghcr.io/your-org/magnus-api:latest
-docker push ghcr.io/your-org/magnus-api:$(git rev-parse --short HEAD)
-```
-
-#### 3. Deploy via Leap Script
-
-```bash
-cd ../infra/scripts
-./leap_deploy.sh
-```
-
-#### 4. Set Environment Variables on Leap
-
-```bash
-# Via Leap dashboard or CLI
-leap env set SUPABASE_URL="https://..."
-leap env set SUPABASE_SERVICE_ROLE="sbp_..."
-leap env set REDIS_URL="redis://..."
-leap env set NODE_ENV="production"
-```
-
----
-
-### Option B: Deploy to Vercel (Frontend + API)
-
-#### 1. Install Vercel CLI
-
-```bash
-npm install -g vercel
-```
-
-#### 2. Deploy Web Frontend
-
-```bash
-cd web
-vercel --prod
-```
-
-#### 3. Set Environment Variables
-
-Via Vercel dashboard:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_API_URL`
-
----
-
-### Option C: Docker Compose (Self-Hosted)
-
-#### 1. Configure Production Compose
-
-Edit `infra/docker-compose.prod.yml` with your environment variables.
-
-#### 2. Deploy Stack
-
-```bash
-docker compose -f infra/docker-compose.prod.yml up -d
-```
-
-#### 3. Verify Services
-
-```bash
-docker compose -f infra/docker-compose.prod.yml ps
-docker compose -f infra/docker-compose.prod.yml logs api
-```
-
----
-
-## Post-Deployment Verification
-
-### 1. Run Smoke Tests
-
-```bash
-API_URL=https://your-production-api.com pnpm test:smoke
-```
-
-### 2. Manual Health Checks
-
-```bash
-# Basic health
-curl https://your-api.com/health
-
-# Readiness (includes DB check)
-curl https://your-api.com/health/readiness
-
-# Detailed status
-curl https://your-api.com/health/status
-
-# Metrics
-curl https://your-api.com/metrics
-```
-
-### 3. Test Critical Endpoints
-
-```bash
-# Get deals
-curl https://your-api.com/api/deals
-
-# Test rate limiting
-for i in {1..105}; do curl -s https://your-api.com/api/deals > /dev/null && echo "Request $i: OK" || echo "Request $i: FAILED"; done
-
-# Test authentication
-curl -X POST https://your-api.com/api/alerts \
-  -H "Content-Type: application/json" \
-  -d '{"deal_id":"test","channel":"email"}'
-# Should return 401 Unauthorized
-```
-
-### 4. Check Logs
-
-```bash
-# Docker
-docker logs magnus-api --tail=100 -f
-
-# Leap
-leap logs api --tail=100 -f
-
-# Vercel
-vercel logs
-```
-
-### 5. Verify Metrics in Grafana
-
-1. Open Grafana dashboard: `http://your-grafana:3001`
-2. Check "Magnus Flipper Ops v3" dashboard
-3. Verify metrics are populating:
-   - Request rate
-   - Error rate (should be < 1%)
-   - P95 latency (should be < 200ms)
-   - Active connections
-
----
-
-## Rollback Procedure
-
-### If Deployment Fails
-
-#### Quick Rollback (Docker)
-
-```bash
-# Rollback to previous image
-docker pull ghcr.io/your-org/magnus-api:previous-sha
-docker stop magnus-api
-docker run -d --name magnus-api \
-  --env-file .env \
-  -p 4000:4000 \
-  ghcr.io/your-org/magnus-api:previous-sha
-```
-
-#### Leap Rollback
-
-```bash
-leap deploy rollback api
-```
-
-#### Vercel Rollback
-
-Via Vercel dashboard:
-1. Go to Deployments
-2. Find previous working deployment
-3. Click "Promote to Production"
-
----
-
-### If Database Migration Fails
-
-```bash
-# Connect to Supabase
-psql -h db.your-project.supabase.co -U postgres
-
-# Check current state
-\dt
-
-# Rollback migration (if needed)
--- Create rollback script for each migration
--- Example: DROP TABLE IF EXISTS deals;
-```
-
-**⚠️ WARNING:** Always backup database before migrations!
-
----
-
-## Monitoring & Alerts
-
-### Prometheus Scrape Config
-
-Already configured in `infra/prometheus/prometheus.yml`:
-
-```yaml
-scrape_configs:
-  - job_name: 'magnus-api'
-    scrape_interval: 5s
-    static_configs:
-      - targets: ['api:4000']
-```
-
-### Grafana Alerts
-
-Configure in `infra/grafana/provisioning/alerting/rules.yml`:
-
-```yaml
-groups:
-  - name: magnus-api-alerts
-    interval: 1m
-    rules:
-      - alert: HighErrorRate
-        expr: rate(http_errors_total[5m]) > 0.05
-        for: 2m
-        annotations:
-          summary: "High error rate detected"
-
-      - alert: HighLatency
-        expr: histogram_quantile(0.95, http_request_duration_seconds) > 0.5
-        for: 5m
-        annotations:
-          summary: "P95 latency above 500ms"
-
-      - alert: APIDown
-        expr: up{job="magnus-api"} == 0
-        for: 1m
-        annotations:
-          summary: "API is down"
-```
-
-### Log Aggregation (Optional)
-
-**With Loki:**
-
-```bash
-# Add to docker-compose.prod.yml
-loki:
-  image: grafana/loki:latest
-  ports:
-    - "3100:3100"
-```
-
-**Configure API to send logs:**
-
-```bash
-# Install pino-loki
-pnpm add pino-loki
-
-# Add to logger.ts
-transport: {
-  target: 'pino-loki',
-  options: {
-    host: 'http://loki:3100'
+### eas.json
+
+Production build profile:
+
+```json
+{
+  "production": {
+    "android": { "buildType": "app-bundle" },
+    "ios": { "buildType": "release" }
   }
 }
 ```
 
----
+### EAS Secrets
 
-## Incident Response
-
-### Critical Issues
-
-#### API Returns 500 Errors
-
-1. **Check logs:**
-   ```bash
-   docker logs magnus-api --tail=500 | grep -i error
-   ```
-
-2. **Check database connectivity:**
-   ```bash
-   curl https://your-api.com/health/readiness
-   ```
-
-3. **Common causes:**
-   - Database connection failed → Check `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE`
-   - Redis connection failed → Verify `REDIS_URL`
-   - Out of memory → Increase container resources
-
-#### API Not Responding
-
-1. **Check service health:**
-   ```bash
-   curl https://your-api.com/health
-   ```
-
-2. **Check container status:**
-   ```bash
-   docker ps | grep magnus-api
-   docker inspect magnus-api
-   ```
-
-3. **Restart service:**
-   ```bash
-   docker restart magnus-api
-   # or
-   leap restart api
-   ```
-
-#### High Latency
-
-1. **Check Grafana dashboard** for P95 latency spike
-2. **Check database performance:**
-   - Supabase dashboard → Performance tab
-   - Look for slow queries
-3. **Check active connections:**
-   ```bash
-   curl https://your-api.com/metrics | grep active_connections
-   ```
-4. **Scale horizontally** if needed
-
-#### Rate Limit Issues
-
-1. **Check Redis connection:**
-   ```bash
-   redis-cli -h your-redis-host ping
-   ```
-
-2. **Adjust limits** if legitimate traffic:
-   ```bash
-   # Update environment variables
-   RATE_LIMIT_MAX_REQUESTS=200
-   ```
-
-3. **Investigate if attack:**
-   - Check logs for repeated IPs
-   - Consider adding IP blocklist
-
----
-
-## Maintenance Windows
-
-### Planned Downtime
-
-1. **Announce in advance** (Discord, status page)
-2. **Schedule during low-traffic hours**
-3. **Enable maintenance mode:**
-   ```bash
-   # Add to nginx/load balancer
-   return 503 "Scheduled maintenance in progress";
-   ```
-
-### Database Backups
-
-**Supabase handles automated backups**, but you can also:
+Set the following secrets in EAS:
 
 ```bash
-# Manual backup
-pg_dump -h db.your-project.supabase.co \
-        -U postgres \
-        -F c \
-        -f backup_$(date +%Y%m%d).dump \
-        postgres
+eas secret:create --scope project --name EXPO_PUBLIC_API_URL --value https://api.magnusflipper.com
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value https://your-project.supabase.co
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value your-anon-key
+eas secret:create --scope project --name EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY --value pk_live_xxx
 ```
 
----
+## Production Safety Checks
 
-## Deployment Checklist
+### ✅ Completed
 
-**Pre-Deploy:**
-- [ ] Tests pass
-- [ ] Changelog updated
-- [ ] Database migrations reviewed
-- [ ] Environment variables verified
-- [ ] Rollback plan ready
+- [x] Admin pages protected by middleware
+- [x] Subscription gating logic implemented
+- [x] All Stripe keys from environment variables
+- [x] All Supabase clients use correct patterns
+- [x] Console.log disabled in production (via logger utility)
+- [x] No hardcoded API keys
+- [x] Webhook route configured for production
 
-**Deploy:**
-- [ ] Build & push Docker image
-- [ ] Apply database migrations
-- [ ] Deploy to production
-- [ ] Set environment variables
+### Console Logging
 
-**Post-Deploy:**
-- [ ] Smoke tests pass
-- [ ] Health checks green
-- [ ] Metrics showing in Grafana
-- [ ] Error rate < 1%
-- [ ] Latency < 200ms
-- [ ] Logs streaming correctly
+Production-safe logging is available via `@/lib/utils/logger`:
 
-**Cleanup:**
-- [ ] Update documentation
-- [ ] Notify team of deployment
-- [ ] Monitor for 24 hours
-- [ ] Remove old Docker images
+```typescript
+import { logger } from "@/lib/utils/logger";
 
----
+logger.log("This won't appear in production");
+logger.error("This will always appear");
+```
 
-## Support Contacts
+### Middleware Protection
 
-- **Infrastructure:** [Your DevOps Team]
-- **Database:** Supabase Support
-- **Monitoring:** Grafana/Prometheus docs
-- **On-Call:** [Your On-Call Schedule]
+All protected routes are behind middleware:
+- `/dashboard/*` - Requires PRO tier or admin
+- `/admin/*` - Requires ADMIN tier or admin role
 
----
+### Subscription Gating
 
-## Useful Commands
+Subscription checks use:
+- `getTierFromPriceId()` - Get tier from Stripe price ID
+- `isActiveSubscription()` - Check if subscription is active
+- `TIER_HIERARCHY` - Enforce tier hierarchy
+
+## Build Process
+
+### Local Build
 
 ```bash
-# Quick health check
-curl -s https://your-api.com/health/status | jq
+# Build packages first
+pnpm build:packages
 
-# Watch logs in real-time
-docker logs -f magnus-api
-
-# Check resource usage
-docker stats magnus-api
-
-# Force pull latest image
-docker pull ghcr.io/your-org/magnus-api:latest
-
-# Restart with zero downtime (behind load balancer)
-docker-compose up -d --no-deps --build api
-
-# Backup database
-pnpm seed --clear  # Clear test data first
-pg_dump ... # Backup production
-
-# Test rate limiting
-ab -n 1000 -c 10 https://your-api.com/api/deals
+# Build web app
+pnpm --filter web build
 ```
 
----
+### Vercel Build
 
-**Last Updated:** 2025-11-08
-**Version:** 1.0.0
-**Maintainer:** Magnus Flipper Team
+Vercel automatically:
+1. Runs `pnpm install`
+2. Runs build command: `cd apps/web && pnpm build`
+3. Deploys `.next` output
+
+### EAS Build
+
+```bash
+# Production build
+eas build --profile production --platform android
+eas build --profile production --platform ios
+```
+
+## Verification Checklist
+
+Before deploying to production:
+
+- [ ] All environment variables set in Vercel
+- [ ] Stripe webhook endpoint configured
+- [ ] Supabase RLS policies configured
+- [ ] Admin pages accessible only to admins
+- [ ] Subscription tiers working correctly
+- [ ] Build passes: `pnpm build:web`
+- [ ] Type check passes: `pnpm --filter web typecheck`
+- [ ] No console.log in production code
+- [ ] All API routes use wrapper functions
+- [ ] Mobile app config has correct API URLs
+
+## Troubleshooting
+
+### Build Fails
+
+If build fails with module resolution errors:
+1. Ensure packages are built: `pnpm build:packages`
+2. Check `transpilePackages` in `next.config.mjs`
+3. Verify all dependencies are in `package.json`
+
+### Webhook Not Working
+
+1. Verify `STRIPE_WEBHOOK_SECRET` is set correctly
+2. Check webhook URL in Stripe dashboard matches deployment
+3. Verify webhook events are selected in Stripe
+4. Check Vercel function logs for errors
+
+### Supabase Connection Issues
+
+1. Verify `NEXT_PUBLIC_SUPABASE_URL` is correct
+2. Check `NEXT_PUBLIC_SUPABASE_ANON_KEY` is valid
+3. Ensure RLS policies allow access
+4. Check Supabase project is active
+
+## Support
+
+For deployment issues, check:
+- Vercel deployment logs
+- Stripe webhook logs
+- Supabase logs
+- Application error logs

@@ -1,0 +1,65 @@
+# Azure Container App Configuration for worker-tracker
+apiVersion: 2023-05-01
+kind: containerApp
+name: worker-tracker
+location: eastus
+properties:
+  managedEnvironmentId: /subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.App/managedEnvironments/{env-name}
+  configuration:
+    ingress:
+      external: false
+      targetPort: 8080
+      transport: http
+      allowInsecure: false
+    registries:
+      - server: {registry}.azurecr.io
+        identity: system
+    secrets:
+      - name: supabase-url
+        value: {supabase-url}
+      - name: supabase-service-role-key
+        value: {supabase-service-role-key}
+  template:
+    containers:
+      - name: worker-tracker
+        image: {registry}.azurecr.io/worker-tracker:latest
+        env:
+          - name: NODE_ENV
+            value: production
+          - name: SUPABASE_URL
+            secretRef: supabase-url
+          - name: SUPABASE_SERVICE_ROLE_KEY
+            secretRef: supabase-service-role-key
+          - name: WORKER_ID
+            value: worker-tracker-001
+          - name: WORKER_HEARTBEAT_INTERVAL
+            value: "60000"
+        resources:
+          cpu: 0.5
+          memory: 1.0Gi
+        probes:
+          - type: liveness
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          - type: readiness
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+    scale:
+      minReplicas: 1
+      maxReplicas: 3
+      rules:
+        - name: http-rule
+          http:
+            metadata:
+              concurrentRequests: "10"
+

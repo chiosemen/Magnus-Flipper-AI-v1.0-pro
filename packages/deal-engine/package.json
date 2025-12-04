@@ -1,0 +1,37 @@
+{
+  "name": "@magnus-flipper-ai/deal-engine",
+  "version": "1.0.0",
+  "description": "AI-powered deal classification and scoring engine",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./config": "./dist/config.js",
+    "./types/Listing": "./dist/types/Listing.js",
+    "./types/DealScore": "./dist/types/DealScore.js",
+    "./scoring/baseScore": "./dist/scoring/baseScore.js",
+    "./scoring/deepseekClassifier": "./dist/scoring/deepseekClassifier.js",
+    "./scoring/openaiClassifier": "./dist/scoring/openaiClassifier.js",
+    "./calibrator/calibrate": "./dist/calibrator/calibrate.js",
+    "./calibrator/bayesian": "./dist/calibrator/bayesian.js",
+    "./calibrator/llmConsensus": "./dist/calibrator/llmConsensus.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["ai", "deals", "classification", "scoring"],
+  "author": "Magnus Flipper AI",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
+    "axios": "^1.13.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "typescript": "^5.7.3"
+  }
+}

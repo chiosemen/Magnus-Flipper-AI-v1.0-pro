@@ -1,6 +1,6 @@
 // Correct clean exports for Magnus Core
-export * from "./logger";
-export * from "./env";
-export * from "./search";
-export * from "./plans";
-export * from "./db";
+export * from "./logger.js";
+export * from "./env.js";
+export * from "./search.js";
+export * from "./plans.js";
+export * from "./db.js";

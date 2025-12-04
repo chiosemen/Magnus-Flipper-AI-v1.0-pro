@@ -2,8 +2,8 @@
  * Factory function for creating Magnus SDK client
  * Compatible with mobile app expectations
  */
-import { MagnusSDK } from "./magnus";
-import { SDKClientOptions } from "./client";
+import { MagnusSDK } from "./magnus.js";
+import { SDKClientOptions } from "./client.js";
 
 export interface CreateMagnusClientOptions {
   baseUrl?: string;
