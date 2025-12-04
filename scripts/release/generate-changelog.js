@@ -60,8 +60,18 @@ function getCommitsSinceLastTag() {
 
 // Parse commit message
 function parseCommit(commitLine) {
-  const [hash, subject, ...bodyParts] = commitLine.split('|');
-  const body = bodyParts.join('|');
+  if (!commitLine || !commitLine.trim()) {
+    return null;
+  }
+  
+  const parts = commitLine.split('|');
+  const hash = parts[0] || '';
+  const subject = parts[1] || '';
+  const body = parts.slice(2).join('|') || '';
+  
+  if (!subject) {
+    return null;
+  }
   
   // Match conventional commit format: type(scope): description
   const match = subject.match(/^(\w+)(?:\(([^)]+)\))?:\s*(.+)$/);
@@ -138,7 +148,7 @@ function main() {
   console.log(`Generating changelog for version ${version}...`);
   
   const commits = getCommitsSinceLastTag();
-  const parsedCommits = commits.map(parseCommit);
+  const parsedCommits = commits.map(parseCommit).filter(Boolean);
   const grouped = groupCommits(parsedCommits);
   
   const entry = generateChangelogEntry(version, date, grouped);
