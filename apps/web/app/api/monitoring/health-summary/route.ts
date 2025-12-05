@@ -10,7 +10,7 @@ import type {
   WorkerName,
 } from "@magnus-flipper-ai/core";
 import { createMockHealthSummary } from "@magnus-flipper-ai/core";
-import { queryLogs, tableToObjects } from "@/lib/logAnalyticsClient";
+import { queryLogs, tableToObjects } from "../../../lib/logAnalyticsClient";
 
 // Fallback to mocks if explicitly set or if Azure is not configured
 const USE_MOCK_DATA =
@@ -67,7 +67,7 @@ export async function GET() {
     const rows = tableToObjects(tables[0]);
 
     // Map KQL results to WorkerHealthStatus
-    const workers: WorkerHealthStatus[] = rows.map((row) => {
+    const workers: WorkerHealthStatus[] = rows.map((row: Record<string, unknown>) => {
       const worker = String(row.worker || "") as WorkerName;
       const status = String(row.status || "healthy") as
         | "healthy"
@@ -111,7 +111,7 @@ export async function GET() {
     console.error("Error fetching health summary:", error);
 
     // Fallback to mocks on error if in development
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV !== "production") {
       console.warn("Falling back to mock data due to error");
       const mockData = createMockHealthSummary();
       return NextResponse.json(mockData);

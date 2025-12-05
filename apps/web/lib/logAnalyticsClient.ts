@@ -54,19 +54,19 @@ export async function queryLogs(
     throw new Error("AZURE_MONITOR_WORKSPACE_ID is not set");
   }
 
-  const result: LogsQueryResult = await logsClient.queryWorkspace(
-    workspaceId,
-    kql,
-    {
-      timespan,
-    }
-  );
+  const result = await logsClient.queryWorkspace(workspaceId, kql, {
+    timespan: { duration: timespan },
+  });
 
-  if (!result.tables || result.tables.length === 0) {
-    return [];
+  // Handle both LogsQueryResult and LogsQueryPartialResult
+  if (result.status === "Partial" || result.status === "Success") {
+    if (!result.tables || result.tables.length === 0) {
+      return [];
+    }
+    return result.tables;
   }
 
-  return result.tables;
+  return [];
 }
 
 /**
@@ -75,11 +75,14 @@ export async function queryLogs(
  * @returns Array of objects with column names as keys
  */
 export function tableToObjects(table: LogsTable): Record<string, unknown>[] {
-  const columns = table.columns.map((c) => c.name);
+  const columns = table.columnDescriptors.map((c) => c.name);
   return table.rows.map((row) => {
     const obj: Record<string, unknown> = {};
     row.forEach((value, idx) => {
-      obj[columns[idx]] = value;
+      const colName = columns[idx];
+      if (colName) {
+        obj[colName] = value;
+      }
     });
     return obj;
   });

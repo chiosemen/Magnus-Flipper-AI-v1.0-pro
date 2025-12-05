@@ -10,7 +10,7 @@ import type {
   WorkerName,
 } from "@magnus-flipper-ai/core";
 import { createMockSystemLoad } from "@magnus-flipper-ai/core";
-import { queryLogs, tableToObjects } from "@/lib/logAnalyticsClient";
+import { queryLogs, tableToObjects } from "../../../lib/logAnalyticsClient";
 
 // Fallback to mocks if explicitly set or if Azure is not configured
 const USE_MOCK_DATA =
@@ -66,7 +66,7 @@ export async function GET() {
 
     // Map KQL results to WorkerScaleStatus
     const workers: WorkerScaleStatus[] = rows
-      .map((row) => {
+      .map((row: Record<string, unknown>) => {
         const appName = String(row.AppName || "");
         const worker = appName as WorkerName;
 
@@ -93,7 +93,7 @@ export async function GET() {
           memoryAverage,
         };
       })
-      .filter((w): w is WorkerScaleStatus => w !== null);
+      .filter((w: WorkerScaleStatus | null): w is WorkerScaleStatus => w !== null);
 
     const response: SystemLoadResponse = {
       workers,
@@ -105,7 +105,7 @@ export async function GET() {
     console.error("Error fetching system load:", error);
 
     // Fallback to mocks on error if in development
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV !== "production") {
       console.warn("Falling back to mock data due to error");
       const mockData = createMockSystemLoad();
       return NextResponse.json(mockData);
