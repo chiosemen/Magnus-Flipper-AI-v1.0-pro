@@ -5,6 +5,7 @@ import {
   LogsQueryClient,
   LogsQueryResult,
   LogsTable,
+  LogsQueryResultStatus,
 } from "@azure/monitor-query";
 
 const workspaceId = process.env.AZURE_MONITOR_WORKSPACE_ID;
