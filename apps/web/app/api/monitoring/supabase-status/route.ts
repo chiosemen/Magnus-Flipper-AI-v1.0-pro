@@ -21,8 +21,8 @@ export async function GET() {
     const startTime = Date.now();
     
     try {
-      const { createServerClient } = await import("@/lib/supabase/server");
-      const supabase = await createServerClient();
+      const { createSupabaseServer } = await import("@/lib/supabase/server");
+      const supabase = await createSupabaseServer();
       
       // Simple health check query
       const { error } = await supabase

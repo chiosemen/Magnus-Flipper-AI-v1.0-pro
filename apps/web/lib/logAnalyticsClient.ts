@@ -57,15 +57,19 @@ export async function queryLogs(
   }
 
   const result = await logsClient.queryWorkspace(workspaceId, kql, {
-    timespan: { duration: timespan },
+    duration: timespan,
   });
 
   // Handle both LogsQueryResult and LogsQueryPartialResult
-  if (result.status === "Partial" || result.status === "Success") {
-    if (!result.tables || result.tables.length === 0) {
+  if (
+    result.status === LogsQueryResultStatus.Success ||
+    result.status === LogsQueryResultStatus.PartialFailure
+  ) {
+    const tables = "tables" in result ? result.tables : result.partialTables || [];
+    if (tables.length === 0) {
       return [];
     }
-    return result.tables;
+    return tables;
   }
 
   return [];

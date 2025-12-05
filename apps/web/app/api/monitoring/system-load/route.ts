@@ -91,7 +91,7 @@ export async function GET() {
           currentReplicas,
           cpuAverage,
           memoryAverage,
-        };
+        } as WorkerScaleStatus;
       })
       .filter((w): w is WorkerScaleStatus => w !== null);
 
