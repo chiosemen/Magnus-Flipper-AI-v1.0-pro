@@ -10,7 +10,7 @@ import type {
   WorkerName,
 } from "@magnus-flipper-ai/core";
 import { createMockSystemLoad } from "@magnus-flipper-ai/core";
-import { queryLogs, tableToObjects } from "../../../lib/logAnalyticsClient";
+import { queryLogs, tableToObjects } from "@/lib/logAnalyticsClient";
 
 // Fallback to mocks if explicitly set or if Azure is not configured
 const USE_MOCK_DATA =
