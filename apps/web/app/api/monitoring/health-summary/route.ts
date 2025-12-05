@@ -111,7 +111,8 @@ export async function GET() {
     console.error("Error fetching health summary:", error);
 
     // Fallback to mocks on error if in development
-    if (process.env.NODE_ENV !== "production") {
+    const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+    if (isDevelopment) {
       console.warn("Falling back to mock data due to error");
       const mockData = createMockHealthSummary();
       return NextResponse.json(mockData);

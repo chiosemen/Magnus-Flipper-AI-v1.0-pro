@@ -93,7 +93,7 @@ export async function GET() {
           memoryAverage,
         };
       })
-      .filter((w: WorkerScaleStatus | null): w is WorkerScaleStatus => w !== null);
+      .filter((w): w is WorkerScaleStatus => w !== null);
 
     const response: SystemLoadResponse = {
       workers,
@@ -105,7 +105,8 @@ export async function GET() {
     console.error("Error fetching system load:", error);
 
     // Fallback to mocks on error if in development
-    if (process.env.NODE_ENV !== "production") {
+    const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+    if (isDevelopment) {
       console.warn("Falling back to mock data due to error");
       const mockData = createMockSystemLoad();
       return NextResponse.json(mockData);

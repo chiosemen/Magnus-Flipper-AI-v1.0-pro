@@ -33,7 +33,9 @@ const logsClient = new LogsQueryClient(credential);
 
 export type TimeRange =
   | "PT15M"
+  | "PT30M"
   | "PT1H"
+  | "PT2H"
   | "PT6H"
   | "PT24H"
   | "P1D"
