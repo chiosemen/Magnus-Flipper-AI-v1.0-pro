@@ -8,7 +8,6 @@ import { createClient } from "@supabase/supabase-js";
 import { detectSales } from "@magnus-flipper-ai/profit-engine/autosell/saleDetector";
 import { finalizeSale } from "@magnus-flipper-ai/profit-engine/autosell/finalizeSale";
 import { lockListingAcrossPlatforms } from "@magnus-flipper-ai/profit-engine/autosell/crossPlatformLock";
-import { createWorkerLogger, generateCorrelationId } from "@magnus-flipper-ai/core/worker-logger.js";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -19,42 +18,34 @@ export async function autoSellTimer(
   context: InvocationContext
 ): Promise<void> {
   const startTime = new Date();
-  const correlationId = generateCorrelationId();
-  const logger = createWorkerLogger("worker-autosell", correlationId);
-  
-  logger.info("Auto-Sell worker started", {
-    startTime: startTime.toISOString(),
-  });
+  context.log(`Auto-Sell worker started at ${startTime.toISOString()}`);
 
   try {
     // Step 1: Detect new sales across all marketplaces
-    logger.info("Detecting sales across marketplaces");
+    context.log("Detecting sales across marketplaces...");
     const saleEvents = await detectSales();
 
     if (saleEvents.length === 0) {
-      logger.info("No new sales detected");
+      context.log("No new sales detected.");
       return;
     }
 
-    logger.info("Detected new sales", { count: saleEvents.length });
+    context.log(`Detected ${saleEvents.length} new sales`);
 
     // Step 2: Process each sale
     const results = [];
     for (const saleEvent of saleEvents) {
       try {
-        logger.info("Processing sale", {
-          saleId: saleEvent.id,
-          marketplace: saleEvent.marketplace,
-        });
+        context.log(
+          `Processing sale ${saleEvent.id} from ${saleEvent.marketplace}...`
+        );
 
         // Finalize the sale (calculate P&L, create ledger entries)
         const finalizationResult = await finalizeSale(saleEvent);
 
         if (!finalizationResult.success) {
-          logger.error(
-            `Failed to finalize sale ${saleEvent.id}`,
-            new Error(finalizationResult.error || 'Unknown error'),
-            { saleId: saleEvent.id }
+          context.error(
+            `Failed to finalize sale ${saleEvent.id}: ${finalizationResult.error}`
           );
           results.push({
             saleId: saleEvent.id,
@@ -73,16 +64,9 @@ export async function autoSellTimer(
           saleEvent.id
         );
 
-        logger.info("Sale processed successfully", {
-          saleId: saleEvent.id,
-          netProfit: finalizedSale.netProfit,
-          lockedListings: lockResult.totalLocked,
-        });
-        
-        // Log metric
-        logger.metric("autosells_executed_total", 1, {
-          marketplace: saleEvent.marketplace,
-        });
+        context.log(
+          `Sale ${saleEvent.id} processed successfully. Locked ${lockResult.totalLocked} listings.`
+        );
 
         results.push({
           saleId: saleEvent.id,
@@ -91,9 +75,7 @@ export async function autoSellTimer(
           lockedListings: lockResult.totalLocked,
         });
       } catch (error: any) {
-        logger.error(`Error processing sale ${saleEvent.id}`, error, {
-          saleId: saleEvent.id,
-        });
+        context.error(`Error processing sale ${saleEvent.id}:`, error);
         results.push({
           saleId: saleEvent.id,
           success: false,
@@ -105,18 +87,8 @@ export async function autoSellTimer(
     // Step 3: Log summary
     const successful = results.filter((r) => r.success).length;
     const failed = results.filter((r) => !r.success).length;
-    const durationMs = Date.now() - startTime.getTime();
 
-    logger.info("Auto-Sell summary", {
-      successful,
-      failed,
-      total: saleEvents.length,
-      durationMs,
-    });
-    
-    // Log metrics
-    logger.metric("jobs_processed_total", saleEvents.length);
-    logger.metric("jobs_failed_total", failed);
+    context.log(`Auto-Sell summary: ${successful} succeeded, ${failed} failed`);
 
     // Store worker execution log
     await supabase.from("worker_logs").insert({
@@ -129,9 +101,7 @@ export async function autoSellTimer(
       results: results,
     });
   } catch (error: any) {
-    logger.error("Auto-Sell worker error", error, {
-      durationMs: Date.now() - startTime.getTime(),
-    });
+    context.error("Auto-Sell worker error:", error);
     throw error;
   }
 }
@@ -140,6 +110,3 @@ app.timer("autoSellTimer", {
   schedule: "0 */3 * * * *",
   handler: autoSellTimer,
 });
-
-// Import health check handler
-import "./health.js";

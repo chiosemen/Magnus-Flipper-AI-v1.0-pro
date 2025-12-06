@@ -87,36 +87,6 @@ jobs:
           pnpm --filter worker-tracker build
           pnpm --filter worker-autosell build
 
-      # --- Validate Logging Usage ---
-      - name: Validate structured logging
-        run: |
-          echo "Validating structured logging usage..."
-          
-          ERRORS=0
-          for WORKER in worker-scraper worker-tracker worker-autosell; do
-            WORKER_DIR="apps/$WORKER"
-            MAIN_FILE=$(find "$WORKER_DIR" -name "index.ts" -path "*/scraper/*" -o -name "index.ts" -path "*/tracker/*" -o -name "index.ts" -path "*/autosell/*" | head -1)
-            
-            if [ -z "$MAIN_FILE" ]; then
-              echo "⚠️  WARNING: Could not find main file for $WORKER"
-              continue
-            fi
-            
-            # Check for structured logger import
-            if ! grep -q "createWorkerLogger\|@magnus-flipper-ai/core/worker-logger" "$MAIN_FILE"; then
-              echo "⚠️  WARNING: $WORKER may not be using structured logger"
-            else
-              echo "✅ $WORKER uses structured logger"
-            fi
-            
-            # Check for direct console usage (warn only)
-            if grep -E "console\.(log|error|warn|info)" "$MAIN_FILE" > /dev/null; then
-              echo "⚠️  WARNING: $WORKER may have direct console usage (prefer structured logger)"
-            fi
-          done
-          
-          echo "✅ Logging validation complete"
-
       # --- Validate Dockerfiles ---
       - name: Validate Dockerfiles
         run: |
@@ -138,11 +108,6 @@ jobs:
             # Check for linux/amd64 compatibility (alpine base)
             if ! grep -E "FROM node.*alpine" "$DOCKERFILE" > /dev/null; then
               echo "⚠️  WARNING: $DOCKERFILE may not be optimized (consider using alpine base)"
-            fi
-            
-            # Check for health check
-            if ! grep -q "HEALTHCHECK" "$DOCKERFILE"; then
-              echo "⚠️  WARNING: $DOCKERFILE missing HEALTHCHECK"
             fi
             
             echo "✅ $DOCKERFILE is valid"
@@ -182,34 +147,6 @@ jobs:
           
           echo "✅ All Docker images built successfully"
 
-      # --- Validate monitoring scripts (non-blocking) ---
-      - name: Validate monitoring scripts
-        continue-on-error: true
-        run: |
-          echo "Validating monitoring scripts syntax..."
-          
-          if [ -f "infra/monitoring/setup-diagnostics.sh" ]; then
-            bash -n infra/monitoring/setup-diagnostics.sh && echo "✅ setup-diagnostics.sh syntax valid" || echo "⚠️  setup-diagnostics.sh has syntax errors"
-          fi
-          
-          if [ -f "infra/monitoring/setup-alerts.sh" ]; then
-            bash -n infra/monitoring/setup-alerts.sh && echo "✅ setup-alerts.sh syntax valid" || echo "⚠️  setup-alerts.sh has syntax errors"
-          fi
-          
-          echo "✅ Monitoring scripts validation complete"
-
-      # --- Validate scaling scripts (non-blocking) ---
-      - name: Validate scaling scripts
-        continue-on-error: true
-        run: |
-          echo "Validating scaling scripts syntax..."
-          
-          if [ -f "infra/scale/setup-scale-rules.sh" ]; then
-            bash -n infra/scale/setup-scale-rules.sh && echo "✅ setup-scale-rules.sh syntax valid" || echo "⚠️  setup-scale-rules.sh has syntax errors"
-          fi
-          
-          echo "✅ Scaling scripts validation complete"
-
       # --- Summary ---
       - name: Build summary
         run: |
@@ -220,5 +157,4 @@ jobs:
           echo "- ✅ All workers built" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Dockerfiles validated" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Docker images built (linux/amd64)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Monitoring scripts validated" >> $GITHUB_STEP_SUMMARY
 

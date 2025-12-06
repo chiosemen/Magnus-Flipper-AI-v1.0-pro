@@ -6,7 +6,6 @@
 import { app, InvocationContext, Timer } from "@azure/functions";
 import { createClient } from "@supabase/supabase-js";
 import { ScraperOrchestrator } from "@magnus-flipper-ai/scraper-sync/orchestrator/scraperOrchestrator";
-import { createWorkerLogger, generateCorrelationId } from "@magnus-flipper-ai/core/worker-logger.js";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -17,12 +16,7 @@ export async function scraperTimer(
   context: InvocationContext
 ): Promise<void> {
   const startTime = Date.now();
-  const correlationId = generateCorrelationId();
-  const logger = createWorkerLogger("worker-scraper", correlationId);
-  
-  logger.info("Marketplace Scraper worker started", {
-    startTime: new Date(startTime).toISOString(),
-  });
+  context.log(`Marketplace Scraper worker started at ${new Date().toISOString()}`);
 
   try {
     // Initialize orchestrator
@@ -35,11 +29,11 @@ export async function scraperTimer(
       .eq("enabled", true);
 
     if (!configs || configs.length === 0) {
-      logger.warn("No enabled scraper configs found");
+      context.log("No enabled scraper configs found");
       return;
     }
 
-    logger.info("Found enabled scraper configs", { count: configs.length });
+    context.log(`Found ${configs.length} enabled scraper configs`);
 
     // Group configs by marketplace
     const configsByMarketplace = new Map<string, any[]>();
@@ -54,7 +48,7 @@ export async function scraperTimer(
     const results = [];
     for (const [marketplace, marketplaceConfigs] of configsByMarketplace.entries()) {
       try {
-        logger.info("Starting scraper for marketplace", { marketplace });
+        context.log(`Starting scraper for ${marketplace}...`);
 
         // Merge all search queries from all user configs for this marketplace
         const allQueries = new Set<string>();
@@ -83,37 +77,21 @@ export async function scraperTimer(
         const result = await orchestrator.runScraper(marketplace, aggregatedConfig);
         results.push(result);
 
-        logger.info("Marketplace scraper completed", {
-          marketplace,
-          totalScraped: result.total_scraped,
-          durationMs: result.duration_ms,
-          success: result.success,
-        });
-        
-        // Log metric
-        logger.metric("scrapes_per_minute", result.total_scraped, { marketplace });
+        context.log(
+          `${marketplace} scraper completed: ${result.total_scraped} items in ${result.duration_ms}ms`
+        );
       } catch (error: any) {
-        logger.error(`Error running ${marketplace} scraper`, error, { marketplace });
+        context.error(`Error running ${marketplace} scraper:`, error);
       }
     }
 
     // Log summary
     const totalScraped = results.reduce((sum, r) => sum + r.total_scraped, 0);
     const successful = results.filter((r) => r.success).length;
-    const failed = results.length - successful;
-    const durationMs = Date.now() - startTime;
 
-    logger.info("Scraper worker completed", {
-      successful,
-      failed,
-      total: results.length,
-      totalScraped,
-      durationMs,
-    });
-    
-    // Log metrics
-    logger.metric("jobs_processed_total", results.length);
-    logger.metric("jobs_failed_total", failed);
+    context.log(
+      `Scraper worker completed: ${successful}/${results.length} successful, ${totalScraped} items total`
+    );
 
     // Store worker execution log
     await supabase.from("worker_logs").insert({
@@ -126,9 +104,7 @@ export async function scraperTimer(
       results: results,
     });
   } catch (error: any) {
-    logger.error("Scraper worker error", error, {
-      durationMs: Date.now() - startTime,
-    });
+    context.error("Scraper worker error:", error);
     throw error;
   }
 }
@@ -137,6 +113,3 @@ app.timer("scraperTimer", {
   schedule: "0 0 */6 * * *", // Every 6 hours
   handler: scraperTimer,
 });
-
-// Import health check handler
-import "./health.js";

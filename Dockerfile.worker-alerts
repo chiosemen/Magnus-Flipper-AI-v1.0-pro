@@ -1,6 +1,6 @@
 <<<<<<< HEAD
-# Multi-stage Dockerfile for Magnus Flipper AI API
-# Optimized for Azure Container Apps deployment with pnpm monorepo
+# Multi-stage Dockerfile for Magnus Flipper AI Alerts Worker
+# Optimized for Azure Container Apps Jobs with pnpm monorepo
 
 FROM node:20-alpine AS base
 ENV PNPM_HOME="/pnpm"
@@ -14,7 +14,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/core/package.json ./packages/core/
 COPY packages/queue/package.json ./packages/queue/
 COPY packages/shared/package.json ./packages/shared/
-COPY apps/api/package.json ./apps/api/
+COPY packages/notifications/package.json ./packages/notifications/
+COPY apps/worker-alerts/package.json ./apps/worker-alerts/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod=false
 
 # Stage 2: Build the application
@@ -26,9 +27,10 @@ COPY . .
 RUN pnpm --filter @magnus-flipper-ai/core build
 RUN pnpm --filter @magnus-flipper-ai/queue build
 RUN pnpm --filter @magnus-flipper-ai/shared build
+RUN pnpm --filter @magnus-flipper-ai/notifications build
 
-# Build API
-RUN pnpm --filter api build
+# Build worker-alerts
+RUN pnpm --filter worker-alerts build
 
 # Stage 3: Production image
 FROM base AS runner
@@ -39,14 +41,16 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs
 
 # Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=nodejs:nodejs /app/apps/api/package.json ./apps/api/
+COPY --from=builder --chown=nodejs:nodejs /app/apps/worker-alerts/dist ./apps/worker-alerts/dist
+COPY --from=builder --chown=nodejs:nodejs /app/apps/worker-alerts/package.json ./apps/worker-alerts/
 COPY --from=builder --chown=nodejs:nodejs /app/packages/core/dist ./packages/core/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/core/package.json ./packages/core/
 COPY --from=builder --chown=nodejs:nodejs /app/packages/queue/dist ./packages/queue/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/queue/package.json ./packages/queue/
 COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/package.json ./packages/shared/
+COPY --from=builder --chown=nodejs:nodejs /app/packages/notifications/dist ./packages/notifications/dist
+COPY --from=builder --chown=nodejs:nodejs /app/packages/notifications/package.json ./packages/notifications/
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
 COPY --from=builder --chown=nodejs:nodejs /app/pnpm-lock.yaml ./
 COPY --from=builder --chown=nodejs:nodejs /app/pnpm-workspace.yaml ./
@@ -56,13 +60,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 USER nodejs
 
-EXPOSE 4000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:4000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-CMD ["node", "apps/api/dist/index.js"]
+# For saved search job (runs as Container Apps Job)
+CMD ["node", "apps/worker-alerts/dist/savedSearchJob.js"]
 =======
 # syntax=docker/dockerfile:1
 
@@ -88,14 +87,14 @@ COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY packages/core/package.json ./packages/core/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/queue/package.json ./packages/queue/
-COPY packages/api/package.json ./packages/api/
-COPY apps/api/package.json ./apps/api/
+COPY packages/notifications/package.json ./packages/notifications/
+COPY apps/worker-alerts/package.json ./apps/worker-alerts/
 
 # Install all deps (frozen lockfile for reproducibility)
 RUN pnpm install --frozen-lockfile --prod=false
 
 #########################
-# Build packages & API  #
+# Build packages & worker #
 #########################
 FROM deps AS build
 
@@ -103,17 +102,17 @@ FROM deps AS build
 COPY packages/core ./packages/core
 COPY packages/shared ./packages/shared
 COPY packages/queue ./packages/queue
-COPY packages/api ./packages/api
-COPY apps/api ./apps/api
+COPY packages/notifications ./packages/notifications
+COPY apps/worker-alerts ./apps/worker-alerts
 
 # Build shared packages first
 RUN pnpm --filter @magnus-flipper-ai/core build
 RUN pnpm --filter @magnus-flipper-ai/shared build
 RUN pnpm --filter @magnus-flipper-ai/queue build
+RUN pnpm --filter @magnus-flipper-ai/notifications build
 
-# Build API packages
-RUN pnpm --filter @magnus-flipper-ai/api build
-RUN pnpm --filter api build
+# Build worker
+RUN pnpm --filter worker-alerts build
 
 #########################
 # Production runtime    #
@@ -133,15 +132,15 @@ COPY --from=deps /app/packages ./packages
 COPY --from=build /app/packages/core/dist ./packages/core/dist
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/packages/queue/dist ./packages/queue/dist
-COPY --from=build /app/packages/api/dist ./packages/api/dist
-COPY --from=build /app/apps/api/dist ./apps/api/dist
+COPY --from=build /app/packages/notifications/dist ./packages/notifications/dist
+COPY --from=build /app/apps/worker-alerts/dist ./apps/worker-alerts/dist
 
 # Copy package.json files for runtime
 COPY --from=build /app/packages/core/package.json ./packages/core/
 COPY --from=build /app/packages/shared/package.json ./packages/shared/
 COPY --from=build /app/packages/queue/package.json ./packages/queue/
-COPY --from=build /app/packages/api/package.json ./packages/api/
-COPY --from=build /app/apps/api/package.json ./apps/api/
+COPY --from=build /app/packages/notifications/package.json ./packages/notifications/
+COPY --from=build /app/apps/worker-alerts/package.json ./apps/worker-alerts/
 COPY --from=build /app/package.json ./
 COPY --from=build /app/pnpm-workspace.yaml ./
 
@@ -150,23 +149,14 @@ RUN corepack enable && pnpm install --prod --frozen-lockfile --offline || pnpm i
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 apiuser
-USER apiuser
+    adduser --system --uid 1001 workeruser
+USER workeruser
 
-# Expose API port
-EXPOSE 4000
-
-# Environment variable for port (can be overridden)
-ENV PORT=4000
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD \
-  node -e "fetch('http://localhost:${PORT}/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" || \
-  wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
+# No port to expose; it's a worker/job that runs then exits
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the API (try apps/api first, fallback to packages/api)
-CMD ["sh", "-c", "node apps/api/dist/index.js || node packages/api/dist/server.js"]
+# Start the worker
+CMD ["node", "apps/worker-alerts/dist/index.js"]
 >>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)

@@ -12,7 +12,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@magnus-flipper-ai/core": "workspace:*",
     "@azure/functions": "^4.5.1",
     "@magnus-flipper-ai/shipping-engine": "workspace:*",
     "@supabase/supabase-js": "^2.86.0"

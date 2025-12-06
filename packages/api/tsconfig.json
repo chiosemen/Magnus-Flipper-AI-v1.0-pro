@@ -13,7 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
   "include": ["src", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist"]

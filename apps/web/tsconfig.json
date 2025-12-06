@@ -25,19 +25,19 @@
     ],
     "paths": {
       "@/*": [
-        "./*"
+        "./src/*"
       ],
       "@/lib/*": [
-        "./lib/*"
+        "./src/lib/*"
       ],
       "@/types/*": [
-        "./types/*"
+        "./src/types/*"
       ],
       "@/components/*": [
-        "./components/*"
+        "./src/components/*"
       ],
       "@/providers/*": [
-        "./providers/*"
+        "./src/providers/*"
       ]
     }
   },
