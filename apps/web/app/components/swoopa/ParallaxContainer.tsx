@@ -1,13 +1,14 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, ReactNode } from "react";
+import { useRef } from "react";
+import React from "react";
 
-interface ParallaxContainerProps {
-  children: ReactNode;
+type ParallaxContainerProps = {
   speed?: number;
   className?: string;
-}
+  children: React.ReactNode;
+};
 
 export function ParallaxContainer({
   children,
@@ -24,7 +25,7 @@ export function ParallaxContainer({
 
   return (
     <motion.div ref={ref} style={{ y }} className={className}>
-      {children}
+      <>{children}</>
     </motion.div>
   );
 }

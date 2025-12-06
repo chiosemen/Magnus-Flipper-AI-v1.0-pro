@@ -1,13 +1,14 @@
 "use client";
 
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { ReactNode, useRef } from "react";
+import { useRef } from "react";
+import React from "react";
 
-interface Tilt3DProps {
-  children: ReactNode;
+type Tilt3DProps = {
   className?: string;
   intensity?: number;
-}
+  children: React.ReactNode;
+};
 
 export function Tilt3D({
   children,
@@ -54,7 +55,7 @@ export function Tilt3D({
       }}
       className={className}
     >
-      {children}
+      <>{children}</>
     </motion.div>
   );
 }

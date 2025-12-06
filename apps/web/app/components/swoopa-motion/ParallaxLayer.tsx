@@ -1,14 +1,15 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, ReactNode } from "react";
+import { useRef } from "react";
+import React from "react";
 
-interface ParallaxLayerProps {
-  children: ReactNode;
+type ParallaxLayerProps = {
   speed?: number;
-  className?: string;
   offset?: ["start end" | "end start", "start end" | "end start"];
-}
+  className?: string;
+  children: React.ReactNode;
+};
 
 export function ParallaxLayer({
   children,
@@ -31,7 +32,7 @@ export function ParallaxLayer({
       style={{ y, opacity }}
       className={className}
     >
-      {children}
+      <>{children}</>
     </motion.div>
   );
 }

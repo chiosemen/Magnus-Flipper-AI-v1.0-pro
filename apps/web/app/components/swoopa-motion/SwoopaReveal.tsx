@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import React from "react";
 
-interface SwoopaRevealProps {
-  children: ReactNode;
+type SwoopaRevealProps = {
   delay?: number;
   className?: string;
-}
+  children: React.ReactNode;
+};
 
 export function SwoopaReveal({
   children,
@@ -26,7 +26,7 @@ export function SwoopaReveal({
       }}
       className={className}
     >
-      {children}
+      <>{children}</>
     </motion.div>
   );
 }
