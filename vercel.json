@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "pnpm turbo run build --filter=web",
+  "rootDirectory": "apps/web",
+  "buildCommand": "corepack enable && corepack prepare pnpm@8.15.4 --activate && pnpm install && pnpm build",
   "installCommand": "corepack enable && corepack prepare pnpm@8.15.4 --activate && pnpm install",
-  "outputDirectory": "apps/web/.next",
+  "outputDirectory": ".next",
   "framework": "nextjs"
 }

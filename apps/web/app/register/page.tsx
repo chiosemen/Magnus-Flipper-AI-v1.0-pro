@@ -1,42 +1,105 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { FloatingParticles } from "../components/swoopa-motion/FloatingParticles";
+import { SwoopaAIOrb } from "../components/swoopa-ultra/SwoopaAIOrb";
+import { LiquidMetalButton } from "../components/swoopa-ultra/LiquidMetalButton";
+import { NeonCard } from "../components/swoopa-ultra/NeonCard";
 
 export default function RegisterPage() {
+  const [isTyping, setIsTyping] = useState(false);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-950 to-black text-white flex items-center justify-center px-6">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-950 via-purple-950/40 via-blue-950/30 to-black text-white flex items-center justify-center px-6 relative overflow-hidden">
+      {/* Dark Nebula Background */}
+      <FloatingParticles layerCount={4} particlesPerLayer={15} speed={0.15} color="rgba(59, 130, 246, 0.2)" />
+
+      {/* Nebula Gradient Layers */}
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-neutral-900/50 p-10 rounded-2xl border border-neutral-700 backdrop-blur-xl"
+        className="absolute inset-0 bg-gradient-radial from-blue-900/30 via-cyan-900/20 to-transparent"
+        animate={{
+          opacity: [0.3, 0.5, 0.3],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="absolute inset-0 bg-gradient-radial from-purple-900/20 via-transparent to-blue-900/20"
+        animate={{
+          opacity: [0.2, 0.4, 0.2],
+          scale: [1, 1.2, 1],
+        }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      {/* AI Guardian Orb */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 opacity-30 pointer-events-none">
+        <SwoopaAIOrb size={400} particleCount={30} />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="w-full max-w-md relative z-10"
       >
-        <h1 className="text-4xl font-bold mb-2">Create your account</h1>
-        <p className="text-neutral-400 mb-8">
-          Start flipping with real-time AI power.
-        </p>
-        <form className="flex flex-col gap-5">
-          <input
-            type="email"
-            placeholder="Email"
-            className="bg-black border border-neutral-700 p-4 rounded-xl"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="bg-black border border-neutral-700 p-4 rounded-xl"
-          />
-          <button className="bg-white text-black py-4 rounded-xl font-semibold hover:bg-neutral-200 transition">
-            Create Account
-          </button>
-        </form>
-        <p className="text-neutral-400 mt-8 text-center">
-          Already have an account?{" "}
-          <a href="/login" className="text-white font-semibold hover:underline">
-            Sign in
-          </a>
-        </p>
+        <NeonCard
+          className="p-10"
+          glowColor="rgba(59, 130, 246, 0.5)"
+          hover={false}
+        >
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            Create your account
+          </h1>
+          <p className="text-neutral-300 mb-8">
+            Start flipping with real-time AI power.
+          </p>
+          <form className="flex flex-col gap-5">
+            <motion.input
+              type="email"
+              placeholder="Email"
+              className="bg-black/50 border border-blue-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition"
+              whileHover={{ scale: 1.02 }}
+              whileFocus={{ scale: 1.02 }}
+              onFocus={() => setIsTyping(true)}
+              onBlur={() => setIsTyping(false)}
+              animate={isTyping ? { boxShadow: "0 0 20px rgba(59, 130, 246, 0.5)" } : {}}
+            />
+            <motion.input
+              type="password"
+              placeholder="Password"
+              className="bg-black/50 border border-blue-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition"
+              whileHover={{ scale: 1.02 }}
+              whileFocus={{ scale: 1.02 }}
+              onFocus={() => setIsTyping(true)}
+              onBlur={() => setIsTyping(false)}
+              animate={isTyping ? { boxShadow: "0 0 20px rgba(147, 51, 234, 0.5)" } : {}}
+            />
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <LiquidMetalButton variant="primary" className="w-full">
+                Create Account
+              </LiquidMetalButton>
+            </motion.div>
+          </form>
+          <p className="text-neutral-300 mt-8 text-center">
+            Already have an account?{" "}
+            <a
+              href="/login"
+              className="text-cyan-400 font-semibold hover:text-cyan-300 hover:underline transition"
+            >
+              Sign in
+            </a>
+          </p>
+        </NeonCard>
       </motion.div>
     </div>
   );
 }
-
