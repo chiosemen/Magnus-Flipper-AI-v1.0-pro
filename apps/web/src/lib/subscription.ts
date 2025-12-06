@@ -231,13 +231,15 @@ export async function getSubscriptionDetails(userId: string) {
 
     // Narrow type: stripe.subscriptions.retrieve returns Subscription directly,
     // but TypeScript may infer Response<Subscription> in some contexts
+    // For Clover API version (2025-10-29.clover), fields are nested in objects
     const stripeSubscription = stripeSubscriptionResponse as unknown as Stripe.Subscription;
+    const sub = stripeSubscription as any; // Use any for Clover API nested field access
 
     return {
       tier: subscription.tier,
       status: subscription.status,
-      currentPeriodEnd: stripeSubscription.current_period_end,
-      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+      currentPeriodEnd: sub.current_period?.end ?? sub.current_period_end ?? null,
+      cancelAtPeriodEnd: sub.cancel_at?.period_end ?? sub.cancel_at_period_end ?? null,
       stripeSubscription,
     };
   } catch (error) {

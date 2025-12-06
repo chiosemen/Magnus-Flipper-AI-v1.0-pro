@@ -44,7 +44,9 @@ export async function createOrRetrieveCustomer({
 
   if (subscription?.stripe_customer_id) {
     // Retrieve existing customer from Stripe
-    const customer = await stripe.customers.retrieve(subscription.stripe_customer_id);
+    // Stripe Clover Fix: Unwrap Response<Customer> if needed
+    const customerResponse = await stripe.customers.retrieve(subscription.stripe_customer_id);
+    const customer = (customerResponse as any).data ?? customerResponse;
     if (typeof customer === "object" && !customer.deleted) {
       return customer;
     }

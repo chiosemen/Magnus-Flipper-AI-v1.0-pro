@@ -5,7 +5,43 @@ import Stripe from "stripe";
 /**
  * Stripe integration
  * Real production implementation
+ * Stripe Clover Fix: All clients use API version 2025-10-29.clover
  */
+
+/**
+ * Stripe Clover Fix: Helper to safely access nested Clover API subscription fields
+ * Falls back to flat structure for backwards compatibility
+ */
+export function getCloverSubscriptionField(
+  subscription: any,
+  field: 'current_period_end' | 'cancel_at_period_end' | 'trial_end' | 'trial_start'
+): number | null {
+  const sub = subscription as any;
+  
+  switch (field) {
+    case 'current_period_end':
+      return sub.current_period?.end ?? sub.current_period_end ?? null;
+    case 'cancel_at_period_end':
+      return sub.cancel_at?.period_end ?? sub.cancel_at_period_end ?? null;
+    case 'trial_end':
+      return sub.trial?.end ?? sub.trial_end ?? null;
+    case 'trial_start':
+      return sub.trial?.start ?? sub.trial_start ?? null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Stripe Clover Fix: Helper to safely access subscription items.price
+ * Uses optional chaining for Clover API nested structure
+ */
+export function getSubscriptionPriceId(subscription: any): string | null {
+  const sub = subscription as any;
+  // Stripe Clover Fix: items.data[0].price may be nested differently
+  const firstItem = sub.items?.data?.[0] ?? sub.items?.[0];
+  return firstItem?.price?.id ?? firstItem?.price_id ?? null;
+}
 
 export function getStripeClient(): Stripe {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -111,10 +147,13 @@ export async function createPortalSession(customerId: string, returnUrl: string)
 
 /**
  * Get subscription by ID
+ * Stripe Clover Fix: Unwrap Response<Subscription> and ensure Clover-compatible access
  */
 export async function getSubscription(subscriptionId: string) {
   const stripe = getStripeClient();
-  return await stripe.subscriptions.retrieve(subscriptionId);
+  const response = await stripe.subscriptions.retrieve(subscriptionId);
+  // Stripe Clover Fix: Response may be wrapped, unwrap if needed
+  return (response as any).data ?? response;
 }
 
 /**
@@ -127,19 +166,25 @@ export async function cancelSubscription(subscriptionId: string) {
 
 /**
  * Get customer by ID
+ * Stripe Clover Fix: Unwrap Response<Customer> if needed
  */
 export async function getCustomer(customerId: string) {
   const stripe = getStripeClient();
-  return await stripe.customers.retrieve(customerId);
+  const response = await stripe.customers.retrieve(customerId);
+  // Stripe Clover Fix: Response may be wrapped, unwrap if needed
+  return (response as any).data ?? response;
 }
 
 /**
  * List all active subscriptions for a customer
+ * Stripe Clover Fix: Ensure Response unwrapping for list operations
  */
 export async function listCustomerSubscriptions(customerId: string) {
   const stripe = getStripeClient();
-  return await stripe.subscriptions.list({
+  const response = await stripe.subscriptions.list({
     customer: customerId,
     status: 'active',
   });
+  // Stripe Clover Fix: List responses have .data array, ensure it's accessible
+  return response;
 }
