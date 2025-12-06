@@ -22,7 +22,8 @@ export default function MarketplacesPage() {
 
   const fetchMarketplaces = async () => {
     try {
-      const response = await fetch("/api/admin/marketplaces");
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      const response = await fetch(`${apiBase}/api/admin/marketplaces`);
       const data = await response.json();
       setMarketplaces(data);
     } catch (error) {
@@ -34,7 +35,8 @@ export default function MarketplacesPage() {
 
   const handleToggle = async (marketplace: string, enabled: boolean) => {
     try {
-      await fetch("/api/admin/marketplaces/toggle", {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      await fetch(`${apiBase}/api/admin/marketplaces/toggle`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ marketplace, enabled }),

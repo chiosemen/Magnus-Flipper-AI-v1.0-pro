@@ -1,6 +1,6 @@
 import { createSupabaseServer } from "./supabase/server";
 import { SubscriptionTier } from "@/types/subscription";
-import { STRIPE_CONFIG } from "./stripe";
+import { getStripeConfig } from "./stripe";
 
 interface UserSubscription {
   id: string;
@@ -32,11 +32,12 @@ export async function getUserSubscription(
 }
 
 export function getTierFromPriceId(priceId: string): SubscriptionTier {
-  if (priceId === STRIPE_CONFIG.PRICE_PRO) {
+  const config = getStripeConfig();
+  if (priceId === config.PRICE_PRO) {
     return SubscriptionTier.PRO;
   }
 
-  if (priceId === STRIPE_CONFIG.PRICE_AGENCY) {
+  if (priceId === config.PRICE_AGENCY) {
     return SubscriptionTier.AGENCY;
   }
 

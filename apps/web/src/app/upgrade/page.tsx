@@ -12,7 +12,8 @@ export default function UpgradePage() {
     setSelectedTier(tier);
 
     try {
-      const response = await fetch("/api/stripe/checkout", {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      const response = await fetch(`${apiBase}/api/stripe/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tier }),
@@ -36,7 +37,8 @@ export default function UpgradePage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/stripe/portal", {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+      const response = await fetch(`${apiBase}/api/stripe/portal`, {
         method: "POST",
       });
 
