@@ -17,6 +17,7 @@
   },
   "build": {
     "env": {
+      "NODE_ENV": "development",
       "NEXT_PUBLIC_SUPABASE_URL": "process.env.NEXT_PUBLIC_SUPABASE_URL",
       "NEXT_PUBLIC_SUPABASE_ANON_KEY": "process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY",
       "NEXT_PUBLIC_API_BASE_URL": "process.env.NEXT_PUBLIC_API_BASE_URL",
@@ -26,8 +27,7 @@
       "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
       "STRIPE_WEBHOOK_SECRET": "process.env.STRIPE_WEBHOOK_SECRET",
       "STRIPE_PRO_PRICE": "process.env.STRIPE_PRO_PRICE",
-      "STRIPE_AGENCY_PRICE": "process.env.STRIPE_AGENCY_PRICE",
-      "NODE_ENV": "production"
+      "STRIPE_AGENCY_PRICE": "process.env.STRIPE_AGENCY_PRICE"
     }
   },
   "headers": [
