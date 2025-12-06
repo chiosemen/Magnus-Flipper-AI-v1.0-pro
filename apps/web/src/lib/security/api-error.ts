@@ -8,7 +8,9 @@ import { logError } from '@/lib/observability/logger';
 import { getCorrelationIdFromRequest } from '@/lib/observability/correlation';
 import { applySecurityHeaders } from './headers';
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+function isDevelopment() {
+  return process.env.NODE_ENV === 'development';
+}
 
 /**
  * Safe error response
@@ -29,7 +31,7 @@ export function createSafeErrorResponse(
   });
   
   // In development, show more details
-  if (isDevelopment) {
+  if (isDevelopment()) {
     return NextResponse.json(
       {
         error: 'Internal Server Error',

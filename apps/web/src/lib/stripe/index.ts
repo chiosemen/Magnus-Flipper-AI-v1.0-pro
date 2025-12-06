@@ -7,14 +7,30 @@ import Stripe from "stripe";
  * Real production implementation
  */
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn("STRIPE_SECRET_KEY not set - Stripe functionality will be limited");
+export function getStripeClient(): Stripe {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY is required");
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2024-04-10",
+  });
 }
 
-export const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY || "",
-  { apiVersion: "2024-04-10" }
-);
+function getEnvVar(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+
+export function getStripeConfig() {
+  return {
+    PRICE_PRO: getEnvVar("STRIPE_PRICE_PRO"),
+    PRICE_AGENCY: getEnvVar("STRIPE_PRICE_AGENCY"),
+    WEBHOOK_SECRET: getEnvVar("STRIPE_WEBHOOK_SECRET"),
+  };
+}
 
 import { SubscriptionTier } from "@/types/subscription";
 
@@ -75,6 +91,7 @@ export async function createCheckoutSession(params: {
     sessionParams.customer = customerId;
   }
 
+  const stripe = getStripeClient();
   const session = await stripe.checkout.sessions.create(sessionParams);
   return session;
 }
@@ -83,6 +100,7 @@ export async function createCheckoutSession(params: {
  * Create a billing portal session for managing subscriptions
  */
 export async function createPortalSession(customerId: string, returnUrl: string) {
+  const stripe = getStripeClient();
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,
@@ -95,6 +113,7 @@ export async function createPortalSession(customerId: string, returnUrl: string)
  * Get subscription by ID
  */
 export async function getSubscription(subscriptionId: string) {
+  const stripe = getStripeClient();
   return await stripe.subscriptions.retrieve(subscriptionId);
 }
 
@@ -102,6 +121,7 @@ export async function getSubscription(subscriptionId: string) {
  * Cancel subscription
  */
 export async function cancelSubscription(subscriptionId: string) {
+  const stripe = getStripeClient();
   return await stripe.subscriptions.cancel(subscriptionId);
 }
 
@@ -109,6 +129,7 @@ export async function cancelSubscription(subscriptionId: string) {
  * Get customer by ID
  */
 export async function getCustomer(customerId: string) {
+  const stripe = getStripeClient();
   return await stripe.customers.retrieve(customerId);
 }
 
@@ -116,6 +137,7 @@ export async function getCustomer(customerId: string) {
  * List all active subscriptions for a customer
  */
 export async function listCustomerSubscriptions(customerId: string) {
+  const stripe = getStripeClient();
   return await stripe.subscriptions.list({
     customer: customerId,
     status: 'active',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe, getPriceIdForTier } from "@/lib/stripe";
+import { getStripeClient, getPriceIdForTier } from "@/lib/stripe";
 import { createServerClient } from "@/lib/supabase";
 import { createOrRetrieveCustomer } from "@/lib/stripe/stripe-utils";
 
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Create checkout session
+    const stripe = getStripeClient();
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       mode: "subscription",

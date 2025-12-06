@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { getStripeClient, getStripeConfig } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import { getTierFromPriceId, isActiveSubscription, updateUserSubscriptionTier } from "@/lib/subscription";
 import { SubscriptionTier } from "@/types/subscription";
@@ -9,12 +9,21 @@ import { safeApiRoute } from "@/lib/security/api-error";
 import { applySecurityHeaders } from "@/lib/security/headers";
 
 // Webhook uses service role key since it's called by Stripe, not user session
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!url || !key) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
+  }
+  
+  return createClient(url, key);
+}
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+function getWebhookSecret(): string {
+  const config = getStripeConfig();
+  return config.WEBHOOK_SECRET;
+}
 
 // Webhook route needs longer timeout for processing Stripe events
 export const maxDuration = 60;
@@ -53,6 +62,8 @@ async function handleWebhook(req: NextRequest) {
   let event: Stripe.Event;
 
   try {
+    const stripe = getStripeClient();
+    const webhookSecret = getWebhookSecret();
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err);
@@ -115,6 +126,7 @@ async function handleCustomerCreated(customer: Stripe.Customer) {
   console.log("👤 Customer created:", customer.id);
 
   if (customer.email) {
+    const supabase = getSupabaseServiceClient();
     const { error } = await supabase
       .from("users")
       .update({
@@ -134,10 +146,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customerId = session.customer as string;
   const subscriptionId = session.subscription as string;
 
+  const stripe = getStripeClient();
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const priceId = subscription.items.data[0]?.price.id;
   const tier = getTierFromPriceId(priceId);
 
+  const supabase = getSupabaseServiceClient();
   const { data: user } = await supabase
     .from("users")
     .select("id")
@@ -166,6 +180,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const priceId = subscription.items.data[0]?.price.id;
   const tier = getTierFromPriceId(priceId);
 
+  const stripe = getStripeClient();
   // Get customer to find user
   const customer = await stripe.customers.retrieve(subscription.customer as string);
   const customerEmail = typeof customer === "object" && !customer.deleted ? customer.email : null;
@@ -175,6 +190,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return;
   }
 
+  const supabase = getSupabaseServiceClient();
   // Find user by email
   const { data: user } = await supabase
     .from("users")
@@ -218,6 +234,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log("❌ Subscription deleted:", subscription.id);
 
+  const stripe = getStripeClient();
   // Get customer to find user
   const customer = await stripe.customers.retrieve(subscription.customer as string);
   const customerEmail = typeof customer === "object" && !customer.deleted ? customer.email : null;
@@ -227,6 +244,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     return;
   }
 
+  const supabase = getSupabaseServiceClient();
   // Find user by email
   const { data: user } = await supabase
     .from("users")
@@ -264,6 +282,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   console.log("💰 Invoice paid:", invoice.id);
 
   if (invoice.subscription) {
+    const supabase = getSupabaseServiceClient();
     await supabase
       .from("user_subscriptions")
       .update({
@@ -278,6 +297,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   console.log("⚠️ Invoice payment failed:", invoice.id);
 
   if (invoice.subscription) {
+    const supabase = getSupabaseServiceClient();
     await supabase
       .from("user_subscriptions")
       .update({

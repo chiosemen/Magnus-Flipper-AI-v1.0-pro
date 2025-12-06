@@ -69,7 +69,7 @@ export const TIER_METADATA: Record<SubscriptionTier, SubscriptionMetadata> = {
       searches: -1, // unlimited
       alerts: -1,
     },
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID,
+    stripePriceId: undefined, // Will be set at runtime via getStripePriceId()
   },
   [SubscriptionTier.AGENCY]: {
     name: 'Agency',
@@ -90,7 +90,7 @@ export const TIER_METADATA: Record<SubscriptionTier, SubscriptionMetadata> = {
       teamMembers: 5,
       apiCalls: 100000,
     },
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID,
+    stripePriceId: undefined, // Will be set at runtime via getStripePriceId()
   },
   [SubscriptionTier.ADMIN]: {
     name: 'Admin',

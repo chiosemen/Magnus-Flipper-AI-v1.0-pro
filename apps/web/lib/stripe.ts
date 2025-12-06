@@ -8,19 +8,24 @@ function getEnvVar(key: string): string {
   return value;
 }
 
-export const stripe = new Stripe(getEnvVar("STRIPE_SECRET_KEY"), {
-  apiVersion: "2024-04-10",
-  typescript: true,
-});
+export function getStripeClient(): Stripe {
+  return new Stripe(getEnvVar("STRIPE_SECRET_KEY"), {
+    apiVersion: "2024-04-10",
+    typescript: true,
+  });
+}
 
-export const STRIPE_CONFIG = {
-  PRICE_PRO: getEnvVar("STRIPE_PRICE_PRO"),
-  PRICE_AGENCY: getEnvVar("STRIPE_PRICE_AGENCY"),
-  WEBHOOK_SECRET: getEnvVar("STRIPE_WEBHOOK_SECRET"),
-};
+export function getStripeConfig() {
+  return {
+    PRICE_PRO: getEnvVar("STRIPE_PRICE_PRO"),
+    PRICE_AGENCY: getEnvVar("STRIPE_PRICE_AGENCY"),
+    WEBHOOK_SECRET: getEnvVar("STRIPE_WEBHOOK_SECRET"),
+  };
+}
 
 export function getPriceIdForTier(tier: "PRO" | "AGENCY"): string {
-  if (tier === "PRO") return STRIPE_CONFIG.PRICE_PRO;
-  if (tier === "AGENCY") return STRIPE_CONFIG.PRICE_AGENCY;
+  const config = getStripeConfig();
+  if (tier === "PRO") return config.PRICE_PRO;
+  if (tier === "AGENCY") return config.PRICE_AGENCY;
   throw new Error(`Invalid tier: ${tier}`);
 }

@@ -13,11 +13,17 @@ import { withTrace, logError } from "@/lib/observability/logger";
 import { createTraceContext } from "@/lib/observability/correlation";
 import { recordLatency } from "@/lib/observability/metrics";
 
-// Reuse monitor instance (singleton pattern)
-const monitor = new ScraperMonitor(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+// Lazy initialization of monitor instance
+let monitor: ScraperMonitor | null = null;
+
+function getMonitor(): ScraperMonitor {
+  if (!monitor) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+    monitor = new ScraperMonitor(url, key);
+  }
+  return monitor;
+}
 
 const fetchScannersInternal = cache(async () => {
   const context = await createTraceContext({ module: "admin/scanners" });
@@ -26,7 +32,8 @@ const fetchScannersInternal = cache(async () => {
     const start = performance.now();
     
     // Get all health metrics from the scraper-sync package
-    const healthMetrics = await monitor.getAllHealthMetrics();
+    const monitorInstance = getMonitor();
+    const healthMetrics = await monitorInstance.getAllHealthMetrics();
     
     // PERFORMANCE: Record wrapper execution latency
     const duration = performance.now() - start;
@@ -61,7 +68,8 @@ const getScannerMetricsInternal = cache(async () => {
     const start = performance.now();
     
     // Get all health metrics from the scraper-sync package
-    const healthMetrics = await monitor.getAllHealthMetrics();
+    const monitorInstance = getMonitor();
+    const healthMetrics = await monitorInstance.getAllHealthMetrics();
     
     // PERFORMANCE: Record wrapper execution latency
     const duration = performance.now() - start;
@@ -112,7 +120,8 @@ const getScannerTelemetryInternal = cache(async () => {
     const start = performance.now();
     
     // Get recent logs from scraper-sync package
-    const recentLogs = await monitor.getRecentLogs(undefined, 50);
+    const monitorInstance = getMonitor();
+    const recentLogs = await monitorInstance.getRecentLogs(undefined, 50);
     
     // PERFORMANCE: Record wrapper execution latency
     const duration = performance.now() - start;

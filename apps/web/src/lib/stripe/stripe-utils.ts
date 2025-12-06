@@ -1,6 +1,6 @@
 // apps/web/src/lib/stripe/stripe-utils.ts
 
-import { stripe } from './index';
+import { getStripeClient } from './index';
 
 export async function createOrRetrieveCustomer({
   email,
@@ -9,6 +9,8 @@ export async function createOrRetrieveCustomer({
   email: string;
   userId: string;
 }) {
+  const stripe = getStripeClient();
+  
   // Check if customer exists
   const customers = await stripe.customers.list({
     email,
@@ -41,6 +43,7 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }) {
+  const stripe = getStripeClient();
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',

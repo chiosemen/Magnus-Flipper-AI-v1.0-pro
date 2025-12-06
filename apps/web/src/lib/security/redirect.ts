@@ -15,7 +15,9 @@ const ALLOWED_REDIRECT_DOMAINS = [
 ];
 
 // Check if domain is in development
-const isDevelopment = process.env.NODE_ENV === 'development';
+function isDevelopment() {
+  return process.env.NODE_ENV === 'development';
+}
 
 /**
  * Check if a redirect URL is safe
@@ -40,7 +42,7 @@ export function isSafeRedirect(url: string | null | undefined): {
     const hostname = parsed.hostname.toLowerCase();
     
     // In development, allow localhost
-    if (isDevelopment) {
+    if (isDevelopment()) {
       if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
         return { safe: true, sanitized };
       }

@@ -3,11 +3,13 @@
  * Disables console.log in production, keeps console.error for debugging
  */
 
-const isProduction = process.env.NODE_ENV === 'production';
+function isProduction() {
+  return process.env.NODE_ENV === 'production';
+}
 
 export const logger = {
   log: (...args: any[]) => {
-    if (!isProduction) {
+    if (!isProduction()) {
       console.log(...args);
     }
   },
@@ -16,12 +18,12 @@ export const logger = {
     console.error(...args);
   },
   warn: (...args: any[]) => {
-    if (!isProduction) {
+    if (!isProduction()) {
       console.warn(...args);
     }
   },
   info: (...args: any[]) => {
-    if (!isProduction) {
+    if (!isProduction()) {
       console.info(...args);
     }
   },

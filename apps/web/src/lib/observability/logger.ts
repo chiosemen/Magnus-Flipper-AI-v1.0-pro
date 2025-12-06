@@ -5,8 +5,13 @@
  * MONITORING: Includes error severity levels, category tagging, and telemetry reporting
  */
 
-const isProduction = process.env.NODE_ENV === 'production';
-const isDevelopment = process.env.NODE_ENV === 'development';
+function isProduction() {
+  return process.env.NODE_ENV === 'production';
+}
+
+function isDevelopment() {
+  return process.env.NODE_ENV === 'development';
+}
 
 export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type ErrorCategory = 'api' | 'database' | 'auth' | 'payment' | 'worker' | 'system' | 'unknown';
@@ -72,7 +77,7 @@ function formatLog(level: string, message: string, context: LogContext = {}): st
     logEntry.context = context;
   }
 
-  if (isProduction) {
+  if (isProduction()) {
     // Strict JSON logging for production (single line, no pretty printing)
     return JSON.stringify(logEntry);
   } else {
@@ -129,7 +134,7 @@ export function reportErrorToTelemetryService(
     
     // In production, this would batch and ship to telemetry service
     // For now, log structured JSON that can be ingested later
-    if (isProduction) {
+    if (isProduction()) {
       // Structured JSON for batch ingestion
       console.error(JSON.stringify({
         type: 'error_telemetry',
@@ -186,7 +191,7 @@ export function logError(
 export function logWarn(message: string, context: LogContext = {}): void {
   try {
     const formatted = formatLog('warn', message, context);
-    if (isDevelopment) {
+    if (isDevelopment()) {
       console.warn(formatted);
     } else {
       console.log(formatted);
@@ -201,7 +206,7 @@ export function logWarn(message: string, context: LogContext = {}): void {
  * Log debug message (only in development)
  */
 export function logDebug(message: string, context: LogContext = {}): void {
-  if (!isDevelopment) return;
+  if (!isDevelopment()) return;
   
   try {
     const formatted = formatLog('debug', message, context);

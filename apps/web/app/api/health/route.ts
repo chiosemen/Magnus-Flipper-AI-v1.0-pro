@@ -39,7 +39,8 @@ async function checkSupabaseHealth(): Promise<'ok' | 'degraded' | 'down'> {
  */
 async function checkStripeHealth(): Promise<'ok' | 'degraded' | 'down'> {
   try {
-    const { stripe } = await import('@/lib/stripe');
+    const { getStripeClient } = await import('@/lib/stripe');
+    const stripe = getStripeClient();
     
     // Simple API call to check connectivity
     await stripe.balance.retrieve();

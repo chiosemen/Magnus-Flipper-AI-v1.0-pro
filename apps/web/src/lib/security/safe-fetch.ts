@@ -37,7 +37,9 @@ const ALLOWED_DOMAINS = [
   'js.stripe.com',
 ];
 
-const isProduction = process.env.NODE_ENV === 'production';
+function isProduction() {
+  return process.env.NODE_ENV === 'production';
+}
 
 /**
  * Check if an IP address is in a blocked range
@@ -59,7 +61,7 @@ function isSafeURL(url: string): { safe: boolean; reason?: string } {
     }
     
     // In production, block localhost
-    if (isProduction) {
+    if (isProduction()) {
       const hostname = parsed.hostname.toLowerCase();
       if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
         return { safe: false, reason: 'Localhost blocked in production' };

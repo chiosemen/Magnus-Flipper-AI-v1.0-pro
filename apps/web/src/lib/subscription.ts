@@ -2,7 +2,7 @@
 
 import { SubscriptionTier, TIER_HIERARCHY } from "@/types/subscription";
 import { createServerClient } from "@/lib/supabase";
-import { stripe } from "@/lib/stripe";
+import { getStripeClient } from "@/lib/stripe";
 
 /**
  * Subscription management
@@ -133,6 +133,7 @@ export async function cancelUserSubscription(userId: string) {
 
     if (subscription?.stripe_subscription_id) {
       // Cancel in Stripe
+      const stripe = getStripeClient();
       await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
     }
 
@@ -222,6 +223,7 @@ export async function getSubscriptionDetails(userId: string) {
     }
 
     // Get full details from Stripe
+    const stripe = getStripeClient();
     const stripeSubscription = await stripe.subscriptions.retrieve(
       subscription.stripe_subscription_id
     );

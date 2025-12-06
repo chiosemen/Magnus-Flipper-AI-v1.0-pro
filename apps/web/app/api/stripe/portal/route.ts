@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
 import { createServerClient } from "@/lib/supabase";
 import { createPortalSession } from "@/lib/stripe";
 
