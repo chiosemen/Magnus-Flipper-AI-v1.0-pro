@@ -3,6 +3,7 @@
 import { SubscriptionTier, TIER_HIERARCHY } from "@/types/subscription";
 import { createServerClient } from "@/lib/supabase";
 import { getStripeClient } from "@/lib/stripe";
+import type Stripe from "stripe";
 
 /**
  * Subscription management
@@ -224,9 +225,13 @@ export async function getSubscriptionDetails(userId: string) {
 
     // Get full details from Stripe
     const stripe = getStripeClient();
-    const stripeSubscription = await stripe.subscriptions.retrieve(
+    const stripeSubscriptionResponse = await stripe.subscriptions.retrieve(
       subscription.stripe_subscription_id
     );
+
+    // Narrow type: stripe.subscriptions.retrieve returns Subscription directly,
+    // but TypeScript may infer Response<Subscription> in some contexts
+    const stripeSubscription = stripeSubscriptionResponse as unknown as Stripe.Subscription;
 
     return {
       tier: subscription.tier,
