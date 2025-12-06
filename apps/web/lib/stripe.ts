@@ -10,7 +10,7 @@ function getEnvVar(key: string): string {
 
 export function getStripeClient(): Stripe {
   return new Stripe(getEnvVar("STRIPE_SECRET_KEY"), {
-    apiVersion: "2024-04-10",
+    apiVersion: "2025-10-29.clover" as any,
     typescript: true,
   });
 }
