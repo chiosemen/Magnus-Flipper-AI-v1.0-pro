@@ -26,6 +26,11 @@ const nextConfig = {
     ],
   },
   
+  // Turbopack root for monorepo (top-level config)
+  turbopack: {
+    root: "../../",
+  },
+  
   // Image optimization configuration
   images: {
     domains: [
