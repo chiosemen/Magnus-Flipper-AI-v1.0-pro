@@ -24,11 +24,10 @@ const nextConfig = {
       '@magnus-flipper-ai/scraper-sync',
       '@magnus-flipper-ai/arb-engine',
     ],
-  },
-  
-  // Turbopack root for monorepo (top-level config)
-  turbopack: {
-    root: "../../",
+    // Turbopack root for monorepo
+    turbopack: {
+      root: "../../",
+    },
   },
   
   // Image optimization configuration
