@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "build": "turbo run build",
+    "prebuild": "pnpm --filter '@magnus-flipper-ai/*' build",
+    "build": "turbo run build --filter=web",
     "build:packages": "pnpm --filter '@magnus-flipper-ai/*' build",
     "build:web": "pnpm build:packages && pnpm --filter web build",
     "lint": "turbo run lint",

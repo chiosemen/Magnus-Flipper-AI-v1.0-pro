@@ -1,3 +1,4 @@
+// @ts-ignore - Prisma client is generated at build time
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -9,6 +10,7 @@ if (!databaseUrl) {
 
 const prismaAdapter = new PrismaPg({ connectionString: databaseUrl });
 
+// @ts-ignore - Prisma client is generated at build time
 export const prisma = new PrismaClient({
   adapter: prismaAdapter,
   log: process.env.NODE_ENV === "development" ? ["query", "info"] : [],
@@ -21,4 +23,5 @@ export const db = prisma;
 export default prisma;
 
 // Export types for convenience
+// @ts-ignore - Prisma client is generated at build time
 export type { PrismaClient } from "@prisma/client";

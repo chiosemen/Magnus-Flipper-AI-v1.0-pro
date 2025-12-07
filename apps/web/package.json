@@ -13,7 +13,14 @@
     "next": "16.0.7",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "framer-motion": "^11.0.0"
+    "framer-motion": "^11.0.0",
+    "@magnus-flipper-ai/core": "workspace:*",
+    "@magnus-flipper-ai/scraper-sync": "workspace:*",
+    "@magnus-flipper-ai/deal-engine": "workspace:*",
+    "@magnus-flipper-ai/profit-engine": "workspace:*",
+    "@magnus-flipper-ai/shipping-engine": "workspace:*",
+    "@magnus-flipper-ai/arb-engine": "workspace:*",
+    "@magnus-flipper-ai/agentic-engine": "workspace:*"
   },
   "packageManager": "pnpm@8.15.4"
 }

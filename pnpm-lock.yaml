@@ -187,6 +187,27 @@ importers:
 
   apps/web:
     dependencies:
+      '@magnus-flipper-ai/agentic-engine':
+        specifier: workspace:*
+        version: link:../../packages/agentic-engine
+      '@magnus-flipper-ai/arb-engine':
+        specifier: workspace:*
+        version: link:../../packages/arb-engine
+      '@magnus-flipper-ai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@magnus-flipper-ai/deal-engine':
+        specifier: workspace:*
+        version: link:../../packages/deal-engine
+      '@magnus-flipper-ai/profit-engine':
+        specifier: workspace:*
+        version: link:../../packages/profit-engine
+      '@magnus-flipper-ai/scraper-sync':
+        specifier: workspace:*
+        version: link:../../packages/scraper-sync
+      '@magnus-flipper-ai/shipping-engine':
+        specifier: workspace:*
+        version: link:../../packages/shipping-engine
       framer-motion:
         specifier: ^11.0.0
         version: 11.18.2(react-dom@18.3.1)(react@18.3.1)
@@ -431,9 +452,15 @@ importers:
         specifier: ^3.22.4
         version: 3.25.76
     devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.25
       prisma:
         specifier: ^7.0.1
         version: 7.1.0(@types/react@18.3.27)(react-dom@18.3.1)(react@18.3.1)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
 
   packages/deal-engine:
     dependencies:
@@ -2496,7 +2523,7 @@ packages:
 
   /@expo/bunyan@4.0.1:
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {node: '>=0.10.0'}
+    engines: {'0': node >=0.10.0}
     dependencies:
       uuid: 8.3.2
     dev: false
