@@ -1,6 +1,6 @@
 import { createServerClient } from './supabase/server';
 import { SubscriptionTier, TIER_HIERARCHY, type MockUser } from '@/types/subscription';
-import { getUserSubscriptionTier } from '@/lib/subscription';
+import { getUserSubscriptionTier } from './subscription';
 import { logWarn, logError } from '@/lib/observability/logger';
 
 /**

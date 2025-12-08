@@ -4,7 +4,7 @@
  */
 
 import { logInfo, logError, logWarn } from './logger';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '../supabase/server';
 
 interface WorkerHeartbeat {
   worker_id: string;

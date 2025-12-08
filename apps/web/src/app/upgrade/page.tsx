@@ -59,6 +59,17 @@ export default function UpgradePage() {
   const proTier = TIER_METADATA[SubscriptionTier.PRO];
   const agencyTier = TIER_METADATA[SubscriptionTier.AGENCY];
 
+  // helper: allow price from metadata without breaking TypeScript
+  const proPrice =
+    (proTier as any).price ??
+    process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE ??
+    "39";
+
+  const agencyPrice =
+    (agencyTier as any).price ??
+    process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE ??
+    "89";
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#ededed] p-8">
       <div className="max-w-6xl mx-auto">
@@ -75,7 +86,7 @@ export default function UpgradePage() {
             <div className="mb-6">
               <div className="text-sm text-blue-400 mb-2">PRO</div>
               <div className="text-5xl font-bold mb-1">
-                £{proTier.price}
+                £{proPrice}
                 <span className="text-lg text-[#a0a0a0] font-normal">/month</span>
               </div>
               <div className="text-sm text-[#a0a0a0]">
@@ -112,7 +123,7 @@ export default function UpgradePage() {
             <div className="mb-6">
               <div className="text-sm text-purple-400 mb-2">AGENCY</div>
               <div className="text-5xl font-bold mb-1">
-                £{agencyTier.price}
+                £{agencyPrice}
                 <span className="text-lg text-[#a0a0a0] font-normal">/month</span>
               </div>
               <div className="text-sm text-[#a0a0a0]">
