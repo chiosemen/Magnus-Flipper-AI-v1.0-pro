@@ -1,7 +1,24 @@
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   // Ensure dynamic rendering (NO static export)
   output: undefined, // explicitly not 'export'
+
+  // Turbopack configuration for monorepo
+  experimental: {
+    turbo: {
+      root: __dirname,
+    },
+    // Ensure dynamic routes work correctly
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
 
   // Transpile monorepo packages
   transpilePackages: [
@@ -12,14 +29,6 @@ const nextConfig = {
     "@magnus-flipper-ai/scraper-sync",
     "@magnus-flipper-ai/arb-engine",
   ],
-
-  // Disable static optimization for marketing pages
-  experimental: {
-    // Ensure dynamic routes work correctly
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-  },
 
   // Image optimization (required for dynamic)
   images: {
