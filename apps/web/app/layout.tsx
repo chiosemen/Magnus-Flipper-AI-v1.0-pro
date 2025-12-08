@@ -1,20 +1,41 @@
 "use client";
 
 import "./globals.css";
-
 import { ReactNode } from "react";
+import { Toaster } from "@swoopa/components/ui/toaster";
+import { Toaster as Sonner } from "@swoopa/components/ui/sonner";
+import { TooltipProvider } from "@swoopa/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <title>Magnus Flipper – AI Marketplace Intelligence</title>
+        <meta name="description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
+        <meta property="og:title" content="Magnus Flipper – AI Marketplace Intelligence" />
+        <meta property="og:description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Magnus Flipper – AI Marketplace Intelligence" />
+        <meta name="twitter:description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
+      </head>
       <body 
         style={{ 
           position: "relative", 
           overflowX: "hidden",
-          backgroundColor: "#000"
+          backgroundColor: "#0A0A0A"
         }}
       >
-        {children}
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            {children}
+          </TooltipProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );
