@@ -1,17 +1,8 @@
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  experimental: {
-    // no dynamicIO here
-  },
+  experimental: {},
   turbopack: {
-    // use absolute root for monorepo
-    root: resolve(__dirname, '../..'),
+    root: "../../",
   },
   transpilePackages: [
     "@magnus-flipper-ai/core",
