@@ -1,11 +1,21 @@
-// Next.js 16 compatible proxy file
-// Replaces deprecated middleware.ts
+import { NextResponse } from "next/server";
+
+import type { NextRequest } from "next/server";
 
 export const config = {
-  matcher: []
+  matcher: ["/admin/:path*"],
 };
 
-export default function proxy() {
-  // No middleware required. Routing is handled by App Router.
+export default function proxy(req: NextRequest) {
+  try {
+    const session = req.cookies.get("session");
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    return NextResponse.next();
+  } catch (err) {
+    console.error("Proxy middleware error:", err);
+    return NextResponse.next();
+  }
 }
 
