@@ -1,14 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-
-  "framework": "nextjs",
-  "buildCommand": "pnpm build",
-  "outputDirectory": ".next",
-  "devCommand": "pnpm dev",
-
-  "cleanUrls": true,
-  "trailingSlash": false,
-
   "headers": [
     {
       "source": "/(.*)",
@@ -18,5 +9,7 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }
-  ]
+  ],
+  "cleanUrls": true,
+  "framework": "nextjs"
 }
