@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering - admin routes use cookies/auth
+export const dynamic = "force-dynamic";
+
 import { AdminHeader } from "../components/AdminHeader";
 import { useState, useEffect } from "react";
 

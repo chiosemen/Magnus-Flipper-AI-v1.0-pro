@@ -7,8 +7,8 @@ import { getCorrelationId } from "@/lib/observability/correlation";
 import { recordLatency } from "@/lib/observability/metrics";
 import { Suspense } from "react";
 
-// PERFORMANCE: ISR - Revalidate every 60 seconds
-export const revalidate = 60;
+// Force dynamic rendering - admin routes use cookies/auth
+export const dynamic = "force-dynamic";
 
 export default async function AdminOverviewPage() {
   await requireAdmin();
