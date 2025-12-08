@@ -62,3 +62,4 @@ coverage/
 # Old backups (for cleanup)
 apps/web.old
 apps/mobile.old
+.env*.local

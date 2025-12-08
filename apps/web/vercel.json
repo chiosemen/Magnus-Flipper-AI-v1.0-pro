@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "corepack enable && corepack prepare pnpm@8.15.4 --activate && pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
   "headers": [
     {
       "source": "/(.*)",
@@ -10,6 +14,5 @@
       ]
     }
   ],
-  "cleanUrls": true,
-  "framework": "nextjs"
+  "cleanUrls": true
 }
