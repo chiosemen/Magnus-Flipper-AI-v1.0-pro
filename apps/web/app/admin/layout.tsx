@@ -1,7 +1,6 @@
-// Manus Fix v2 hardening:
-// Ensure the entire /admin subtree is treated as dynamic,
-// never statically generated or cached.
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const preferredRegion = "auto";
 export const fetchCache = "force-no-store";
 export const revalidate = 0;
 

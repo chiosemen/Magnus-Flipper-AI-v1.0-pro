@@ -1,6 +1,6 @@
-// Manus Fix v2:
-// /admin/jobs performs dynamic checks; prevent static render.
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const preferredRegion = "auto";
 export const fetchCache = "force-no-store";
 export const revalidate = 0;
 

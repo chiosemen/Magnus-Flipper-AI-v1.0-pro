@@ -25,18 +25,23 @@
     ],
     "paths": {
       "@/*": [
+        "./app/*",
         "./src/*"
       ],
       "@/lib/*": [
+        "./lib/*",
         "./src/lib/*"
       ],
       "@/types/*": [
+        "./types/*",
         "./src/types/*"
       ],
       "@/components/*": [
+        "./app/components/*",
         "./src/components/*"
       ],
       "@/providers/*": [
+        "./providers/*",
         "./src/providers/*"
       ]
     }

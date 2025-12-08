@@ -1,16 +1,7 @@
 "use client";
 
-// Manus Fix v2 (critical route):
-// This route is the one still logging "Dynamic server usage"
-// in Vercel builds. We force fully dynamic + no cache.
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
-// Remove any previous `export const revalidate = 60` or
-// similar to avoid conflicting route config.
-
-// existing imports remain below
+// Note: Client components cannot have route segment config exports.
+// The admin layout handles dynamic rendering for this route.
 
 import { AdminHeader } from "../components/AdminHeader";
 import { useState, useEffect } from "react";
