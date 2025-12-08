@@ -1,4 +1,6 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import "../marketing-swoopa/marketing.css";
 import { ReactNode } from "react";
@@ -22,9 +24,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="twitter:title" content="Magnus Flipper – AI Marketplace Intelligence" />
         <meta name="twitter:description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
       </head>
-      <body 
-        style={{ 
-          position: "relative", 
+      <body
+        style={{
+          position: "relative",
           overflowX: "hidden",
           backgroundColor: "#0A0A0A"
         }}
