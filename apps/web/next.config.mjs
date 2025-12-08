@@ -20,10 +20,6 @@ const nextConfig = {
       '@magnus-flipper-ai/scraper-sync',
       '@magnus-flipper-ai/arb-engine',
     ],
-    // Turbopack root for monorepo
-    turbopack: {
-      root: "../../",
-    },
   },
 };
 
