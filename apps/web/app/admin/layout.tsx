@@ -1,7 +1,3 @@
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
 import { requireAdmin } from "@/lib/admin";
 import { AdminSidebar } from "./components/AdminSidebar";
 
