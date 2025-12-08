@@ -1,10 +1,9 @@
 "use client";
 
+// Force dynamic rendering - admin routes use cookies/auth
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 export const revalidate = 0;
-
-
 
 import { AdminHeader } from "../components/AdminHeader";
 import { useState, useEffect } from "react";
