@@ -1,7 +1,14 @@
 {
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "version": 2,
+  "builds": [
+    {
+      "src": "next.config.mjs",
+      "use": "@vercel/next"
+    }
+  ],
+  "framework": "nextjs",
   "installCommand": "npm install --legacy-peer-deps",
-  "outputDirectory": ".next",
-  "framework": "nextjs"
+  "buildCommand": "npm run build",
+  "outputDirectory": "public"
 }
-}
+
