@@ -1,6 +1,6 @@
 /**
  * Marketplace Profiles
- * Client-safe marketplace configuration for Magnus Flipper AI
+ * Centralized marketplace configuration for Magnus Flipper AI
  */
 
 export interface MarketplaceProfile {
@@ -9,7 +9,7 @@ export interface MarketplaceProfile {
   icon?: string;
   tagline: string;
   refresh: string;
-  marketplaceId: string;
+  marketplaceId: string; // For API/proxy integration
 }
 
 export const MARKETPLACE_PROFILES: MarketplaceProfile[] = [

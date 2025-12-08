@@ -1,4 +1,4 @@
-import { Button } from "@swoopa/components/ui/button";
+import { Button } from "../../components/ui/button";
 import { Monitor } from "lucide-react";
 
 export const MMAgentCTA = () => {

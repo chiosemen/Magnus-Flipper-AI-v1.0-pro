@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Zap } from "lucide-react";
-import { marketplaces } from "@swoopa/data/marketplaces";
-import LiveDealsGrid from "@swoopa/components/LiveDealsGrid";
-import Header from "@swoopa/components/Header";
-import Footer from "@swoopa/components/Footer";
+import { MARKETPLACE_PROFILES } from "../../../marketing-swoopa/data/marketplaces";
+import LiveDealsGrid from "../../../marketing-swoopa/components/LiveDealsGrid";
+import Header from "../../../marketing-swoopa/components/Header";
+import Footer from "../../../marketing-swoopa/components/Footer";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,16 +17,16 @@ export async function generateMetadata({
   params,
 }: MarketplacePageProps) {
   const { slug } = await params;
-  const marketplace = marketplaces.find((m) => m.slug === slug);
+  const marketplace = MARKETPLACE_PROFILES.find((m) => m.slug === slug);
 
   if (!marketplace) {
     return {
-      title: "Marketplace Not Found – Magnus Flipper",
+      title: "Marketplace Not Found – Magnus Flipper AI",
     };
   }
 
   return {
-    title: `${marketplace.name} – Live Deals | Magnus Flipper`,
+    title: `${marketplace.name} – Live Deals | Magnus Flipper AI`,
     description: `${marketplace.tagline}. Real-time deal intelligence for ${marketplace.name}.`,
   };
 }
@@ -35,7 +35,7 @@ export default async function MarketplaceDetailPage({
   params,
 }: MarketplacePageProps) {
   const { slug } = await params;
-  const marketplace = marketplaces.find((m) => m.slug === slug);
+  const marketplace = MARKETPLACE_PROFILES.find((m) => m.slug === slug);
 
   if (!marketplace) {
     notFound();

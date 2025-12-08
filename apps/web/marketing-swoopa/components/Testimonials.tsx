@@ -2,7 +2,7 @@
 
 import { Star } from "lucide-react";
 import { motion } from "framer-motion";
-import { testimonials } from "@swoopa/data/testimonials";
+import { testimonials } from "../data/testimonials";
 
 const Testimonials = () => {
   return (

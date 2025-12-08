@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { LiveDeal } from "@swoopa/lib/api";
+import type { LiveDeal } from "../../../../marketing-swoopa/lib/api";
 
 // Mock data generator
 function generateMockDeals(marketplace?: string): LiveDeal[] {

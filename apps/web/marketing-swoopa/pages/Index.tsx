@@ -1,17 +1,17 @@
 "use client";
 
-import Header from "@swoopa/components/Header";
-import Hero from "@swoopa/components/Hero";
-import Logos from "@swoopa/components/Logos";
-import AnimatedStats from "@swoopa/components/AnimatedStats";
-import Features from "@swoopa/components/Features";
-import MarketplaceGrid from "@swoopa/components/MarketplaceGrid";
-import HowItWorks from "@swoopa/components/HowItWorks";
-import Pricing from "@swoopa/components/Pricing";
-import Testimonials from "@swoopa/components/Testimonials";
-import CTA from "@swoopa/components/CTA";
-import Footer from "@swoopa/components/Footer";
-import SEOHead from "@swoopa/components/SEOHead";
+import Header from "../components/Header";
+import Hero from "../components/Hero";
+import Logos from "../components/Logos";
+import AnimatedStats from "../components/AnimatedStats";
+import Features from "../components/Features";
+import MarketplaceGrid from "../components/MarketplaceGrid";
+import HowItWorks from "../components/HowItWorks";
+import Pricing from "../components/Pricing";
+import Testimonials from "../components/Testimonials";
+import CTA from "../components/CTA";
+import Footer from "../components/Footer";
+import SEOHead from "../components/SEOHead";
 
 const Index = () => {
   return (

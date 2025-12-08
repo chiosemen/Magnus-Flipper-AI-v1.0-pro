@@ -1,10 +1,11 @@
 "use client";
 
 import "./globals.css";
+import "./marketing.css";
 import { ReactNode } from "react";
-import { Toaster } from "@swoopa/components/ui/toaster";
-import { Toaster as Sonner } from "@swoopa/components/ui/sonner";
-import { TooltipProvider } from "@swoopa/components/ui/tooltip";
+import { Toaster } from "../marketing-swoopa/components/ui/toaster";
+import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
+import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();

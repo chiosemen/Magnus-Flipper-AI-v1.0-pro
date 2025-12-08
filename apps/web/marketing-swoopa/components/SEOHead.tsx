@@ -9,7 +9,7 @@ export default function SEOHead() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": "Magnus Flipper",
+            "name": "Magnus Flipper AI",
             "applicationCategory": "BusinessApplication",
             "description": "Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI.",
             "offers": {
@@ -31,7 +31,7 @@ export default function SEOHead() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
-            "name": "Magnus Flipper",
+            "name": "Magnus Flipper AI",
             "description": "AI Marketplace Intelligence platform for real-time deal scanning and alerts",
             "url": "https://magnusflipper.com",
           }),

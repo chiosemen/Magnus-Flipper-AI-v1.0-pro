@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import { Button } from "@swoopa/components/ui/button";
-import { Card, CardContent } from "@swoopa/components/ui/card";
-import { Badge } from "@swoopa/components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 
 interface PricingTier {
   name: string;

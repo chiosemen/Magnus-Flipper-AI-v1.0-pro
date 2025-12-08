@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ExternalLink, TrendingUp, MapPin } from "lucide-react";
-import type { LiveDeal } from "@swoopa/lib/api";
-import { fetchLiveDeals } from "@swoopa/lib/api";
-import { Card, CardContent } from "@swoopa/components/ui/card";
-import { Button } from "@swoopa/components/ui/button";
-import { cn } from "@swoopa/lib/utils";
+import type { LiveDeal } from "../lib/api";
+import { fetchLiveDeals } from "../lib/api";
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { cn } from "../lib/utils";
 
 type LiveDealsGridProps = {
   marketplaceSlug?: string;

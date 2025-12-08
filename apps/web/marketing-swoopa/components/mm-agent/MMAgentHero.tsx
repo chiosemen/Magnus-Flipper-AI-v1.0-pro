@@ -1,4 +1,4 @@
-import { Button } from "@swoopa/components/ui/button";
+import { Button } from "../../components/ui/button";
 import { Search, RefreshCw, ChevronDown, Filter } from "lucide-react";
 
 export const MMAgentHero = () => {

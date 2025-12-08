@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { Button } from "@swoopa/components/ui/button";
+import { Button } from "../components/ui/button";
 import { Check, Play, Smartphone, Zap, TrendingUp, BarChart3 } from "lucide-react";
 import Image from "next/image";
 

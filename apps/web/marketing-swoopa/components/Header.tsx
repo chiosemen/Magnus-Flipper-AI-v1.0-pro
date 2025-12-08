@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Zap } from "lucide-react";
-import { Button } from "@swoopa/components/ui/button";
+import { Button } from "../components/ui/button";
 
 const Header = () => {
   return (
@@ -19,7 +19,7 @@ const Header = () => {
           </Link>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-2">
             <Link href="/" className="px-4 py-2 text-sm font-medium text-white bg-[#121212] rounded-full transition-colors">
               HOME
             </Link>

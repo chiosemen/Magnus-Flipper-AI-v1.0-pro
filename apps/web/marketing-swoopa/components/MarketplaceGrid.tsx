@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { Card, CardContent } from "@swoopa/components/ui/card";
-import { marketplaces } from "@swoopa/data/marketplaces";
+import { Card, CardContent } from "../components/ui/card";
+import { MARKETPLACE_PROFILES } from "../data/marketplaces";
 
 const MarketplaceGrid = () => {
   return (
@@ -32,7 +32,7 @@ const MarketplaceGrid = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 max-w-full overflow-hidden">
-        {marketplaces.map((mkt, idx) => (
+        {MARKETPLACE_PROFILES.map((mkt, idx) => (
           <motion.div
             key={mkt.slug}
             initial={{ opacity: 0, y: 18 }}

@@ -11,7 +11,7 @@ const Footer = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <Zap className="w-6 h-6 text-[#00E5FF]" />
-            <span className="font-heading text-lg font-extrabold text-white tracking-tight">Magnus Flipper</span>
+            <span className="font-heading text-lg font-extrabold text-white tracking-tight">Magnus Flipper AI</span>
           </Link>
 
           {/* Links */}
@@ -24,7 +24,7 @@ const Footer = () => {
 
           {/* Copyright */}
           <p className="text-sm text-white/70 font-medium">
-            © 2024 Magnus Flipper. All rights reserved.
+            © 2024 Magnus Flipper AI. All rights reserved.
           </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React from "react";
-import SwoopaLanding from "@swoopa/pages/Index";
+import MagnusLanding from "../marketing-swoopa/pages/Index";
 
 export default function HomePage() {
-  return <SwoopaLanding />;
+  return <MagnusLanding />;
 }

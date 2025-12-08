@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { marketplaces } from "@swoopa/data/marketplaces";
-import MarketplaceGrid from "@swoopa/components/MarketplaceGrid";
-import Header from "@swoopa/components/Header";
-import Footer from "@swoopa/components/Footer";
+import { MARKETPLACE_PROFILES } from "../../marketing-swoopa/data/marketplaces";
+import MarketplaceGrid from "../../marketing-swoopa/components/MarketplaceGrid";
+import Header from "../../marketing-swoopa/components/Header";
+import Footer from "../../marketing-swoopa/components/Footer";
 
 export const metadata = {
   title: "Marketplaces – Magnus Flipper",
@@ -35,7 +35,7 @@ export default function MarketplacesPage() {
                 All Marketplaces
               </h1>
               <p className="text-white/80 text-lg sm:text-xl mb-8 max-w-2xl mx-auto font-medium">
-                Magnus Flipper monitors {marketplaces.length} marketplaces in
+                Magnus Flipper AI monitors {MARKETPLACE_PROFILES.length} marketplaces in
                 real-time. Click any marketplace to see live deals and
                 opportunities.
               </p>

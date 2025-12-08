@@ -4,3 +4,4 @@ export * from "./env.js";
 export * from "./search.js";
 export * from "./plans.js";
 export * from "./db.js";
+export * from "./marketplaces.js";

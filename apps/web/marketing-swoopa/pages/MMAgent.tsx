@@ -1,12 +1,12 @@
-import { MMAgentHeader } from "@swoopa/components/mm-agent/MMAgentHeader";
-import { MMAgentHero } from "@swoopa/components/mm-agent/MMAgentHero";
-import { MMAgentObjectives } from "@swoopa/components/mm-agent/MMAgentObjectives";
-import { MMAgentFeatures } from "@swoopa/components/mm-agent/MMAgentFeatures";
-import { MMAgentProcess } from "@swoopa/components/mm-agent/MMAgentProcess";
-import { MMAgentPricing } from "@swoopa/components/mm-agent/MMAgentPricing";
-import { MMAgentTestimonials } from "@swoopa/components/mm-agent/MMAgentTestimonials";
-import { MMAgentCTA } from "@swoopa/components/mm-agent/MMAgentCTA";
-import { MMAgentFooter } from "@swoopa/components/mm-agent/MMAgentFooter";
+import { MMAgentHeader } from "../components/mm-agent/MMAgentHeader";
+import { MMAgentHero } from "../components/mm-agent/MMAgentHero";
+import { MMAgentObjectives } from "../components/mm-agent/MMAgentObjectives";
+import { MMAgentFeatures } from "../components/mm-agent/MMAgentFeatures";
+import { MMAgentProcess } from "../components/mm-agent/MMAgentProcess";
+import { MMAgentPricing } from "../components/mm-agent/MMAgentPricing";
+import { MMAgentTestimonials } from "../components/mm-agent/MMAgentTestimonials";
+import { MMAgentCTA } from "../components/mm-agent/MMAgentCTA";
+import { MMAgentFooter } from "../components/mm-agent/MMAgentFooter";
 
 const MMAgent = () => {
   return (
