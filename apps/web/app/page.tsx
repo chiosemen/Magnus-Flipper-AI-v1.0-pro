@@ -1,9 +1,9 @@
 "use client";
 
-import IndexPage from "@swoopa/pages/Index";
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+import IndexPage from "../marketing-swoopa/pages/Index";
 
 export default function Home() {
   return <IndexPage />;

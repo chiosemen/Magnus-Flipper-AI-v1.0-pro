@@ -1,5 +1,6 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+  turbopack: { root: __dirname },
   transpilePackages: [
     "@magnus-flipper-ai/agentic-engine",
     "@magnus-flipper-ai/deal-engine",
