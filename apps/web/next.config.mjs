@@ -1,6 +1,9 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  turbopack: { root: __dirname },
+  turbopack: {
+    // Critical fix — prevents the apps/web/apps/web bug
+    root: "../../"
+  },
   transpilePackages: [
     "@magnus-flipper-ai/agentic-engine",
     "@magnus-flipper-ai/deal-engine",
@@ -9,6 +12,9 @@ const nextConfig = {
     "@magnus-flipper-ai/scraper-sync",
     "@magnus-flipper-ai/arb-engine",
   ],
+  experimental: {
+    dynamicIO: true
+  }
 };
 
 export default nextConfig;
