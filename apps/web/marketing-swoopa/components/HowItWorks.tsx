@@ -1,3 +1,5 @@
+"use client";
+
 import { Search, Bell, MessageCircle } from "lucide-react";
 
 const HowItWorks = () => {

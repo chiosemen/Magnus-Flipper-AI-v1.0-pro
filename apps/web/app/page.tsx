@@ -1,6 +1,10 @@
-import React from "react";
-import MagnusLanding from "../marketing-swoopa/pages/Index";
+"use client";
 
-export default function HomePage() {
-  return <MagnusLanding />;
+import IndexPage from "@swoopa/pages/Index";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default function Home() {
+  return <IndexPage />;
 }
