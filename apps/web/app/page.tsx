@@ -19,12 +19,18 @@ const marketplaces = ["Amazon", "eBay", "Facebook", "Gumtree", "Vinted", "Craigs
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen w-full bg-black text-white relative overflow-hidden">
+    <main 
+      className="min-h-screen w-full bg-black text-white relative overflow-hidden"
+      style={{ position: "relative", zIndex: 10 }}
+    >
       {/* Multi-layer Floating Particles */}
       <FloatingParticles layerCount={3} particlesPerLayer={25} speed={0.3} />
 
       {/* Sticky Navbar */}
-      <div className="fixed top-0 left-0 w-full bg-black/90 backdrop-blur-2xl z-50 border-b border-purple-500/30">
+      <div 
+        className="fixed top-0 left-0 w-full bg-black/90 backdrop-blur-2xl border-b border-purple-500/30"
+        style={{ zIndex: 50 }}
+      >
         <nav className="max-w-6xl mx-auto flex items-center justify-between py-4 px-6">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
