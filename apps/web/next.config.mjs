@@ -1,6 +1,14 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  turbopack: { root: __dirname },
+  turbopack: {
+    // IMPORTANT: This stops the "apps/web/apps/web" bug
+    root: "../../",
+  },
+
+  experimental: {
+    dynamicIO: true,
+  },
+
   transpilePackages: [
     "@magnus-flipper-ai/agentic-engine",
     "@magnus-flipper-ai/deal-engine",

@@ -1,15 +1,22 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+
+  "buildCommand": "cd apps/web && pnpm build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "apps/web/.next",
+
+  "framework": "nextjs",
+  "cleanUrls": true,
+  "trailingSlash": false,
+
   "redirects": [
     {
-      "source": "/(.*)",
-      "destination": "/$1",
-      "statusCode": 308
+      "source": "/",
+      "destination": "/",
+      "permanent": true
     }
   ],
-  "projects": [
-    {
-      "src": "apps/web",
-      "use": "@vercel/next"
-    }
-  ]
+
+  "regions": ["iad1"]
 }
