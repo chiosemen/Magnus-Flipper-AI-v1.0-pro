@@ -1,4 +1,11 @@
+export const dynamic = "force-dynamic";
+
+export const fetchCache = "force-no-store";
+
+export const revalidate = 0;
+
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,8 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0, minHeight: "100vh" }}>
-        {children}
+      <body className="bg-black text-slate-50">
+        <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>Loading...</div>}>
+          {children}
+        </Suspense>
       </body>
     </html>
   );
