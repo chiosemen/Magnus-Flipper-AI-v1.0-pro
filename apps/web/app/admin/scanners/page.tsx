@@ -8,6 +8,8 @@ import { recordLatency } from "@/lib/observability/metrics";
 
 // Force dynamic rendering - admin routes use cookies/auth
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export default async function ScannersPage() {
   await requireAdmin();
