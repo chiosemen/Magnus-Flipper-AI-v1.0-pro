@@ -1,3 +1,14 @@
+// Manus Fix v2:
+// Admin index uses cookies/auth, so we force dynamic.
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
+
+// If manus-fix v1 already added these, keep only a single
+// set of exports.
+
+// existing imports remain below
+
 import { AdminHeader } from "./components/AdminHeader";
 import { MetricCard } from "./components/MetricCard";
 import { requireAdmin } from "@/lib/admin/auth";
@@ -6,11 +17,6 @@ import { logInfo } from "@/lib/observability/logger";
 import { getCorrelationId } from "@/lib/observability/correlation";
 import { recordLatency } from "@/lib/observability/metrics";
 import { Suspense } from "react";
-
-// Force dynamic rendering - admin routes use cookies/auth
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
 
 export default async function AdminOverviewPage() {
   await requireAdmin();

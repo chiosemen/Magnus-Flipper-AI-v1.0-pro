@@ -1,10 +1,18 @@
-import { requireAdmin } from "@/lib/admin";
-import { AdminSidebar } from "./components/AdminSidebar";
-
-// Force dynamic rendering - admin routes use cookies/auth
+// Manus Fix v2 hardening:
+// Ensure the entire /admin subtree is treated as dynamic,
+// never statically generated or cached.
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 export const revalidate = 0;
+
+// NOTE: If these exports are already present in this file
+// from manus-fix v1, keep only ONE copy of each to avoid
+// duplicate identifier errors.
+
+// existing imports remain below
+
+import { requireAdmin } from "@/lib/admin";
+import { AdminSidebar } from "./components/AdminSidebar";
 
 export default async function AdminLayout({
   children,

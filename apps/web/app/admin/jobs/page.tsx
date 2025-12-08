@@ -1,3 +1,14 @@
+// Manus Fix v2:
+// /admin/jobs performs dynamic checks; prevent static render.
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
+
+// Remove any previous `export const revalidate = ...` that
+// conflicts with this.
+
+// existing imports remain below
+
 import { AdminHeader } from "../components/AdminHeader";
 import { MetricCard } from "../components/MetricCard";
 import { JobStatusBadge } from "../components/JobStatusBadge";
@@ -6,11 +17,6 @@ import { getJobStats } from "@/lib/admin";
 import { logInfo } from "@/lib/observability/logger";
 import { getCorrelationId } from "@/lib/observability/correlation";
 import { recordLatency } from "@/lib/observability/metrics";
-
-// Force dynamic rendering - admin routes use cookies/auth
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
 
 export default async function JobsPage() {
   await requireAdmin();

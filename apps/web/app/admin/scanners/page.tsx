@@ -1,3 +1,13 @@
+// Manus Fix v2:
+// /admin/scanners also touches cookies/auth, so force dynamic.
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
+
+// Remove any previous `export const revalidate = ...` here.
+
+// existing imports remain below
+
 import { AdminHeader } from "../components/AdminHeader";
 import { MetricCard } from "../components/MetricCard";
 import { requireAdmin } from "@/lib/admin/auth";
@@ -5,11 +15,6 @@ import { getTelemetryMetrics, getScannerTelemetry } from "@/lib/admin";
 import { logInfo } from "@/lib/observability/logger";
 import { getCorrelationId } from "@/lib/observability/correlation";
 import { recordLatency } from "@/lib/observability/metrics";
-
-// Force dynamic rendering - admin routes use cookies/auth
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
 
 export default async function ScannersPage() {
   await requireAdmin();
