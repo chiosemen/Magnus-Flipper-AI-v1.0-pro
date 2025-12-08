@@ -1,12 +1,3 @@
-// Manus Fix v2: force the entire app tree to be dynamic so
-// any cookies/auth usage under /admin cannot trigger static
-// rendering errors or blank screens.
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
-// existing imports remain below
-
 import type { Metadata } from "next";
 import "./globals.css";
 
