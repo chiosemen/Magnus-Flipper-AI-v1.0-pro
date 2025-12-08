@@ -1,3 +1,5 @@
+"use client";
+
 const Logos = () => {
   const logos = [
     { name: "kijiji", display: "kijiji" },
