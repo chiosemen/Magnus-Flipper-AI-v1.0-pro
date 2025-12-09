@@ -1,0 +1,6 @@
+{
+  "name": "PrismaBuildSurgeonV4",
+  "description": "Prisma Build Mode v4: Safety snapshot, Prisma verification, hardened Dockerfiles (Debian), Buildx setup, worker build/push, Terraform apply, frontend sanity, and comprehensive final report.",
+  "run_on_save": false,
+  "entry": "node tools/prisma_build_surgeon_v4.js"
+}

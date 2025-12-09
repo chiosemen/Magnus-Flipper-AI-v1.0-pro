@@ -2,8 +2,14 @@
 // Database: PostgreSQL (Supabase)
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/client"
+  binaryTargets = ["native", "linux-musl", "linux-x64-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "../../docs/db/erd.svg"
 }
 
 datasource db {
@@ -105,4 +111,49 @@ model Subscription {
   @@map("subscriptions")
   @@index([userId])
   @@index([stripeId])
+}
+
+// ScrapeRun model - tracks marketplace scraping outcomes for observability
+model ScrapeRun {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Marketplace + user context
+  marketplace   String
+  userId        String?
+  savedSearchId String?
+  tier          String?
+
+  // Outcome
+  success       Boolean
+  durationMs    Int?
+
+  // Error info (if any)
+  errorCode     String?
+  errorMessage  String?
+
+  @@index([marketplace, createdAt])
+  @@index([userId, createdAt])
+  @@index([success, createdAt])
+  @@map("scrape_runs")
+}
+
+// MarketplaceControl model - admin controls for per-marketplace behavior
+model MarketplaceControl {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // marketplace identifier (e.g. "ebay", "amazon", "facebook")
+  marketplace    String   @unique
+
+  // if false: worker should NOT run scrapes for this marketplace
+  enabled        Boolean  @default(true)
+
+  // soft cap for how many jobs can be running IN PARALLEL
+  // for this marketplace per worker instance
+  maxConcurrency Int      @default(5)
+
+  @@map("marketplace_controls")
 }

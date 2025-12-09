@@ -26,12 +26,14 @@
    20260003 | 20260003 | 20260003   
    20260004 | 20260004 | 20260004   
    20260005 | 20260005 | 20260005   
+   20260006 | 20260006 | 20260006   
+   20260007 | 20260007 | 2025-12-09 ⭐
 ```
 
 **Verdict**:
-- ✅ **Local == Remote** — All 11 migrations match
+- ✅ **Local == Remote** — All 13 migrations match
 - ✅ **No pending migrations** — All migrations applied
-- ✅ **Latest migration**: `20260000_00_saved_searches.sql` (and all subsequent)
+- ✅ **Latest migration**: `20260007_00_marketplace_controls_and_scrape_runs.sql` (applied 2025-12-09)
 - ✅ **Remote database up to date**
 
 **MIGRATION STATUS**: ✅ **PASS**
@@ -42,7 +44,7 @@
 
 ### ✅ **PASS** — All Required Tables Exist
 
-**Required Tables** (11 total):
+**Required Tables** (15 total):
 1. ✅ `sale_events` — Defined in `0012_profit_engine_tables.sql`
 2. ✅ `sold_items` — Defined in `0012_profit_engine_tables.sql`
 3. ✅ `ledger_entries` — Defined in `0012_profit_engine_tables.sql`
@@ -51,9 +53,13 @@
 6. ✅ `portfolio_snapshots` — Defined in `0012_profit_engine_tables.sql`
 7. ✅ `platform_lock_events` — Defined in `0012_profit_engine_tables.sql`
 8. ✅ `marketplace_credentials` — Defined in `0012_profit_engine_tables.sql`
-9. ✅ `saved_searches` — Defined in `20260000_00_saved_searches.sql`
-10. ✅ `marketplace_listings` — Defined in `20260001_01_marketplace_listings.sql`
-11. ✅ `price_history` — Defined in `20260001_01_marketplace_listings.sql`
+9. ✅ `users` — Defined in `0016_launch_infra_pack.sql`
+10. ✅ `saved_searches` — Defined in `20260000_00_saved_searches.sql`
+11. ✅ `marketplace_listings` — Defined in `20260001_01_marketplace_listings.sql`
+12. ✅ `price_history` — Defined in `20260001_01_marketplace_listings.sql`
+13. ✅ `alerts` — Defined in `20260005_alert_system.sql`
+14. ✅ **`scrape_runs`** — Defined in `20260007_00_marketplace_controls_and_scrape_runs.sql` ⭐ NEW
+15. ✅ **`marketplace_controls`** — Defined in `20260007_00_marketplace_controls_and_scrape_runs.sql` ⭐ NEW
 
 **Foreign Key Validation**:
 - ✅ `price_history.listing_id` → `marketplace_listings.id` (valid)
@@ -62,9 +68,10 @@
 - ✅ All profit engine tables reference `inventory(id)` (valid)
 
 **TABLE CHECK SUMMARY**:
-- ✅ **All 11 required tables exist**
+- ✅ **All 15 required tables exist**
 - ✅ **All foreign keys valid** (based on migration definitions)
 - ✅ **No broken references** (dependencies satisfied)
+- ✅ **Migration 20260007 verified** (scrape_runs, marketplace_controls tables confirmed)
 
 **TABLE VALIDATION**: ✅ **PASS**
 

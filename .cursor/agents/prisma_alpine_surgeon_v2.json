@@ -1,0 +1,6 @@
+{
+  "name": "PrismaAlpineSurgeonV2",
+  "description": "Detect Prisma 7.1.x Alpine failures, recommend or auto-apply fixes, and integrate with Terraform Apply Orchestrator.",
+  "run_on_save": false,
+  "entry": "node tools/prisma_alpine_surgeon.js"
+}

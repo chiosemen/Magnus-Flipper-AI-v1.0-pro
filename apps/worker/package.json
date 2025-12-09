@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
+    "@magnus-flipper-ai/core": "workspace:*",
+    "@magnus-flipper-ai/rate-limiter": "workspace:*",
+    "@magnus-flipper-ai/marketplace-config": "workspace:*",
     "axios": "^1.7.7",
     "cheerio": "^1.0.0",
     "dotenv": "^16.4.5"

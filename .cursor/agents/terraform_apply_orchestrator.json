@@ -1,0 +1,6 @@
+{
+  "name": "TerraformApplyOrchestrator",
+  "description": "Runs terraform init/validate/plan/apply for the Azure worker stack and then performs live health checks on the deployed Container Apps.",
+  "run_on_save": false,
+  "entry": "node tools/terraform_apply_orchestrator.js"
+}

@@ -1,0 +1,5 @@
+{
+  "name": "db_drift",
+  "command": "./scripts/db-drift-check.sh",
+  "description": "Detects drift between Prisma schema and Supabase DB."
+}

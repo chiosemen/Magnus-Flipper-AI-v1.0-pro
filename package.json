@@ -26,20 +26,21 @@
     "spec:check": "ts-node scripts/validate-imports.ts",
     "deploy:check": "bash scripts/deploy-check.sh",
     "release:check": "pnpm lint && pnpm test && pnpm build",
-    "secrets:gate": "node scripts/deploy/secrets-integrity-gate.mjs"
+    "secrets:gate": "node scripts/deploy/secrets-integrity-gate.mjs",
+    "migrate:supabase": "bash scripts/run-supabase-migrations.sh"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "autoprefixer": "^10.4.18",
     "postcss": "^8.4.35",
-    "prisma": "^7.0.1",
+    "prisma": "7.0.1",
     "tailwindcss": "^3.4.15",
     "ts-node-dev": "^2.0.0",
     "turbo": "^2.0.0",
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "@prisma/client": "^7.0.1",
+    "@prisma/client": "7.0.1",
     "bullmq": "^5",
     "framer-motion": "^11.0.0",
     "libsodium-wrappers": "^0.7.15",
