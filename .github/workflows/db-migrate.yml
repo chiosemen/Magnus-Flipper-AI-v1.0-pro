@@ -1,0 +1,103 @@
+name: DB Migrations (Staging → Production)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/migrations/**"
+      - "packages/core/prisma/**"
+
+jobs:
+  db-migrate:
+    name: Apply DB Migrations via Staging First
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+      SUPABASE_PROD_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+    steps:
+      # --------------------------------------------------
+      # 1. Checkout Repo
+      # --------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------
+      # 2. Setup Node & PNPM (for Prisma & ERD)
+      # --------------------------------------------------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install workspace deps
+        run: pnpm install
+
+      # --------------------------------------------------
+      # 3. Drift Check BEFORE Migrations (against PROD)
+      # --------------------------------------------------
+      - name: Drift Check (Prisma vs Production DB)
+        run: |
+          echo "Running drift check against production..."
+          ./scripts/db-drift-check.sh > drift_before.sql || true
+          echo "--- DRIFT (BEFORE) BEGIN ---"
+          cat drift_before.sql
+          echo "--- DRIFT (BEFORE) END ---"
+
+      # --------------------------------------------------
+      # 4. Apply Migrations to STAGING
+      # --------------------------------------------------
+      - name: Apply migrations to STAGING
+        env:
+          SUPABASE_STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        run: |
+          if [ -z "${SUPABASE_STAGING_DB_URL}" ]; then
+            echo "❌ SUPABASE_STAGING_DB_URL not set. Aborting."
+            exit 1
+          fi
+          ./scripts/db-migrate-staging.sh
+
+      # --------------------------------------------------
+      # 5. Apply Migrations to PRODUCTION (only if staging succeeded)
+      # --------------------------------------------------
+      - name: Apply migrations to PRODUCTION
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_PROD_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          ./scripts/db-migrate-prod.sh
+
+      # --------------------------------------------------
+      # 6. Drift Check AFTER Migrations (against PROD)
+      # --------------------------------------------------
+      - name: Drift Check (After Migrations)
+        run: |
+          echo "Running drift check after migrations..."
+          ./scripts/db-drift-check.sh > drift_after.sql || true
+          echo "--- DRIFT (AFTER) BEGIN ---"
+          cat drift_after.sql
+          echo "--- DRIFT (AFTER) END ---"
+
+      # --------------------------------------------------
+      # 7. Generate ERD
+      # --------------------------------------------------
+      - name: Generate ERD
+        run: pnpm --filter @magnus-flipper-ai/core db:erd || true
+
+      # --------------------------------------------------
+      # 8. Upload ERD & Drift Artifacts
+      # --------------------------------------------------
+      - name: Upload ERD & Drift
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-migration-artifacts
+          path: |
+            docs/db/erd.svg
+            drift_before.sql
+            drift_after.sql
+          if-no-files-found: warn

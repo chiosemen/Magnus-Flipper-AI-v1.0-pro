@@ -1,0 +1,20 @@
+{
+  "name": "supabase_migrate_staging",
+  "command": "./scripts/db-migrate-staging.sh",
+  "description": "Apply pending Supabase migrations to the STAGING database using run-supabase-migrations.sh with SUPABASE_STAGING_DB_URL",
+  "env": [
+    "SUPABASE_STAGING_DB_URL"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "reason": {
+        "type": "string",
+        "description": "Why we are applying migrations to staging (for logging / safety)."
+      }
+    },
+    "required": [
+      "reason"
+    ]
+  }
+}

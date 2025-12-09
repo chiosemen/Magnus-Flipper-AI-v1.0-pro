@@ -1,0 +1,21 @@
+{
+  "name": "supabase_migrate_prod",
+  "command": "./scripts/db-migrate-prod.sh",
+  "description": "Apply pending Supabase migrations to the PRODUCTION database using run-supabase-migrations.sh with SUPABASE_DB_URL",
+  "env": [
+    "SUPABASE_DB_URL",
+    "SUPABASE_PROD_DB_URL"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "reason": {
+        "type": "string",
+        "description": "Why we are applying migrations to production (for logging / safety)."
+      }
+    },
+    "required": [
+      "reason"
+    ]
+  }
+}
