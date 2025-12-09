@@ -5,9 +5,6 @@ import MarketplaceGrid from "../../marketing-swoopa/components/MarketplaceGrid";
 import Header from "../../marketing-swoopa/components/Header";
 import Footer from "../../marketing-swoopa/components/Footer";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 export const metadata = {
   title: "Marketplaces – Magnus Flipper",
   description:

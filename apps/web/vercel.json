@@ -1,14 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "next.config.mjs",
-      "use": "@vercel/next"
-    }
-  ],
   "framework": "nextjs",
-  "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "npm run build",
-  "outputDirectory": "public"
+  "installCommand": "corepack enable && corepack prepare pnpm@9.12.0 --activate && pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm build",
+  "outputDirectory": ".next"
 }
-

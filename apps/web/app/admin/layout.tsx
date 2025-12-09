@@ -1,13 +1,3 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const preferredRegion = "auto";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
-// NOTE: If these exports are already present in this file
-// from manus-fix v1, keep only ONE copy of each to avoid
-// duplicate identifier errors.
-
 // existing imports remain below
 
 import { requireAdmin } from "@/lib/admin";

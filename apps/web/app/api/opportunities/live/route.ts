@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { LiveDeal } from "../../../../marketing-swoopa/lib/api";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 // Mock data generator
 function generateMockDeals(marketplace?: string): LiveDeal[] {
   const marketplaces = [

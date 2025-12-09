@@ -6,9 +6,6 @@ import LiveDealsGrid from "../../../marketing-swoopa/components/LiveDealsGrid";
 import Header from "../../../marketing-swoopa/components/Header";
 import Footer from "../../../marketing-swoopa/components/Footer";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 type MarketplacePageProps = {
   params: Promise<{ slug: string }>;
 };

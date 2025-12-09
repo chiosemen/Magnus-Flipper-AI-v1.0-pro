@@ -1,11 +1,3 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-export const preferredRegion = "auto";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
-// Remove any previous `export const revalidate = ...` here.
-
 // existing imports remain below
 
 import { AdminHeader } from "../components/AdminHeader";
