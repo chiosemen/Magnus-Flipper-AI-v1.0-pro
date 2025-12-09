@@ -1,5 +1,6 @@
 "use client";
 
+import "./globals.css";
 import "../marketing-swoopa/marketing.css";
 import { ReactNode } from "react";
 import { Toaster } from "../marketing-swoopa/components/ui/toaster";
