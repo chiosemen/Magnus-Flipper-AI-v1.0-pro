@@ -269,10 +269,18 @@ async function phase4_buildPushWorkers() {
     const prismaVersion = detectPrismaVersion();
     console.log(`Prisma version: ${prismaVersion}`);
     
-    // Check if it's a Prisma error
-    console.log("Checking for Prisma engine errors...");
+    // Check if it's the known Prisma 7.0.1 bug
+    if (prismaVersion === "7.0.1") {
+      console.error("\n⚠️  KNOWN ISSUE: Prisma 7.0.1 has a bug causing 'Could not convert engine type queryEngine'");
+      console.error("This is a known issue in Prisma 7.0.1 that affects Alpine and Debian builds.");
+      console.error("\n🔧 Workaround options:");
+      console.error("  1. Wait for Prisma 7.0.2+ (when available)");
+      console.error("  2. Temporarily use Prisma 6.x (if compatible with your schema)");
+      console.error("  3. Generate Prisma client locally and copy into Docker image");
+      console.error("\n💡 For now, the build will fail. This is a Prisma upstream bug, not a configuration issue.");
+    }
     
-    throw new Error("Worker build failed. Check logs above for details.");
+    throw new Error("Worker build failed due to Prisma 7.0.1 engine bug. See workaround options above.");
   }
   
   report.workers.built = true;

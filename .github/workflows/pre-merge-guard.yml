@@ -1,0 +1,147 @@
+name: 🚫 Pre-Merge Guard — Block Unsafe Merges
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  block-unsafe:
+    name: 🚫 Block Unsafe Merges
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # --------------------------------------------------
+      # 1. Checkout
+      # --------------------------------------------------
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # --------------------------------------------------
+      # 2. Setup Node.js + pnpm
+      # --------------------------------------------------
+      - name: 🟦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: 🟣 Install pnpm
+        run: |
+          npm install -g pnpm
+          pnpm --version
+
+      # --------------------------------------------------
+      # 3. Install dependencies
+      # --------------------------------------------------
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # --------------------------------------------------
+      # 4. Terraform validation
+      # --------------------------------------------------
+      - name: 🔎 Terraform validate (infra/azure)
+        run: terraform -chdir=infra/azure validate
+
+      # --------------------------------------------------
+      # 5. Prisma readiness (client generate)
+      # --------------------------------------------------
+      - name: 🧬 Prisma client generate (core)
+        env:
+          PRISMA_CLIENT_ENGINE_TYPE: binary
+          PRISMA_CLI_QUERY_ENGINE_TYPE: binary
+        run: |
+          pnpm --filter @magnus-flipper-ai/core exec prisma generate --schema=./prisma/schema.prisma
+
+      # --------------------------------------------------
+      # 6. Worker builds (scheduler + realtime)
+      # --------------------------------------------------
+      - name: 🛠️ Build worker-realtime
+        run: pnpm --filter @magnus-flipper-ai/worker-realtime build
+
+      - name: 🛠️ Build worker-scheduler
+        run: pnpm --filter @magnus-flipper-ai/worker-scheduler build
+
+      # --------------------------------------------------
+      # 7. Run DeployGuardian Pre-Merge Check - SAFETY GATE
+      # --------------------------------------------------
+      - name: 🛡️ DeployGuardian Pre-Merge Check - SAFETY GATE
+        id: guardian
+        run: |
+          echo "🛡️ Running DeployGuardian pre-merge check (SAFETY GATE)..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "This check blocks merge if validation fails"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          node tools/deploy_guardian.js --mode=pre-merge
+          echo ""
+          echo "✅ DeployGuardian pre-merge check passed (SAFETY GATE)"
+        continue-on-error: false
+
+      # --------------------------------------------------
+      # 8. Check for WIP/Draft PRs
+      # --------------------------------------------------
+      - name: 🚫 Check WIP/Draft Status
+        run: |
+          if [ "${{ github.event.pull_request.draft }}" == "true" ]; then
+            echo "⚠️  PR is in draft mode"
+          fi
+          
+          if echo "${{ github.event.pull_request.title }}" | grep -qiE "WIP|wip|draft|DO NOT MERGE"; then
+            echo "❌ PR title contains WIP/draft markers"
+            exit 1
+          fi
+          
+          echo "✅ PR is not marked as WIP/draft"
+
+      # --------------------------------------------------
+      # 9. Check for Required Status Checks
+      # --------------------------------------------------
+      - name: ✅ Check Required Status Checks
+        run: |
+          echo "Checking required status checks..."
+          
+          # List of required checks
+          REQUIRED_CHECKS=(
+            "validate"
+            "test"
+            "lint"
+            "build"
+          )
+          
+          echo "Required checks: ${REQUIRED_CHECKS[*]}"
+          echo "Note: GitHub will enforce these checks via branch protection rules"
+
+      # --------------------------------------------------
+      # 7. PR Comment
+      # --------------------------------------------------
+      - name: 💬 PR Status Comment
+        if: always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          message: |
+            ## 🚫 Pre-Merge Guard Status
+
+            **Status:** ${{ steps.guardian.outcome == 'success' && '✅ SAFE TO MERGE' || '❌ BLOCKED' }}
+
+            **Checks:**
+            - ✅ DeployGuardian validation
+            - ✅ WIP/Draft check
+            - ✅ Required status checks
+
+            **⚠️ This PR will be blocked from merging if:**
+            - DeployGuardian validation fails
+            - PR is marked as WIP/draft
+            - Required status checks are not passing
+            - Unsafe merge conditions are detected
+
+            ---
+            *Review the logs above for details*

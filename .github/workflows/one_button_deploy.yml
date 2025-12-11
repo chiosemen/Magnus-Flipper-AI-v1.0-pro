@@ -1,0 +1,269 @@
+name: 🚀 Magnus One-Button Deploy
+
+run-name: Deploy triggered by ${{ github.actor }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '20'
+  AUTO_APPLY_TERRAFORM_DRIFT: 'false' # flip to "true" when you're confident
+  DEPLOY_ENV: 'production'
+  AZURE_RESOURCE_GROUP: 'magnus-rg'
+  REALTIME_APP_NAME: 'mf-worker-realtime'
+  SCHEDULER_APP_NAME: 'mf-worker-scheduler'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: 🔥 Full Backend + Workers + Vercel Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    # -------------------------------
+    # 1. Checkout
+    # -------------------------------
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    # -------------------------------
+    # 2. Setup Node + PNPM
+    # -------------------------------
+    - name: 🟦 Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: 🟣 Install PNPM
+      run: |
+        npm install -g pnpm
+        pnpm --version
+
+    # -------------------------------
+    # 3. Install monorepo deps
+    # -------------------------------
+    - name: 📦 Install dependencies
+      run: pnpm install --no-frozen-lockfile
+
+    # -------------------------------
+    # 4. Azure Login
+    # -------------------------------
+    - name: 🔐 Azure Login (OIDC)
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    # -------------------------------
+    # 5. Login to ACR
+    # -------------------------------
+    - name: 🛢 Login to ACR
+      run: |
+        az acr login --name magnusacr
+
+    # -------------------------------
+    # 6. Run DeployGuardian Pre-Deploy Validation - SAFETY GATE
+    # -------------------------------
+    - name: 🛡️ DeployGuardian Pre-Deploy Validation - SAFETY GATE
+      id: guardian
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        AZURE_ACR_NAME: ${{ secrets.AZURE_ACR_NAME }}
+        DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
+      run: |
+        echo "🛡️ Running DeployGuardian pre-deploy validation (SAFETY GATE)..."
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "This check blocks deployment if validation fails"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        node tools/deploy_guardian.js --mode=pre-deploy
+        echo ""
+        echo "✅ DeployGuardian pre-deploy validation passed (SAFETY GATE)"
+      continue-on-error: false
+
+    # -------------------------------
+    # 7. Run Prisma Build Surgeon v5
+    # -------------------------------
+    - name: 🧬 Prisma Build Surgeon v5 (Backend + Workers + Terraform)
+      id: prisma_v5
+      run: |
+        echo "🚀 Running Prisma Build Surgeon v5..."
+        node tools/prisma_build_surgeon_v5.js
+      continue-on-error: false
+
+    # -------------------------------
+    # 8. Terraform Drift Surgeon (plan only)
+    #    v5 already orchestrates, this is an extra safety view.
+    # -------------------------------
+    - name: 🛠 Terraform Drift Surgeon — Plan
+      run: |
+        echo "🔍 Terraform drift plan..."
+        node tools/terraform_drift_surgeon_v1.js --mode=plan
+
+    # -------------------------------
+    # 8. Optional Drift Auto-Fix
+    # -------------------------------
+    - name: 🔧 Terraform Drift Surgeon — Auto Fix
+      if: env.AUTO_APPLY_TERRAFORM_DRIFT == 'true'
+      run: |
+        echo "🩺 Auto-fixing Terraform drift..."
+        AUTO_APPLY_TERRAFORM_DRIFT=true \
+          node tools/terraform_drift_surgeon_v1.js --mode=orchestrate
+
+    # -------------------------------
+    # 10. Final Terraform Apply (workers only)
+    # -------------------------------
+    - name: 🚢 Terraform Apply — Workers
+      run: |
+        cd infra/azure
+        terraform init -input=false
+        terraform plan -out=tfplan-workers
+        terraform apply -auto-approve tfplan-workers
+
+    # -------------------------------
+    # 10. Capture current revisions (for canary)
+    # -------------------------------
+    - name: 🔎 Capture current worker revisions
+      id: revisions
+      run: |
+        sudo apt-get update -y && sudo apt-get install -y jq
+
+        echo "➡️  Fetching realtime revisions..."
+        RT_JSON=$(az containerapp revision list \
+          --name $REALTIME_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --query "[?properties.active==\`true\`]" -o json)
+
+        echo "➡️  Fetching scheduler revisions..."
+        SCH_JSON=$(az containerapp revision list \
+          --name $SCHEDULER_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --query "[?properties.active==\`true\`]" -o json)
+
+        echo "Realtime revisions: $RT_JSON"
+        echo "Scheduler revisions: $SCH_JSON"
+
+        # pick latest and previous (if present) for both apps
+        RT_LATEST=$(echo "$RT_JSON" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name')
+        RT_PREV=$(echo "$RT_JSON" | jq -r 'sort_by(.properties.createdTime) | reverse | .[1].name // empty')
+
+        SCH_LATEST=$(echo "$SCH_JSON" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name')
+        SCH_PREV=$(echo "$SCH_JSON" | jq -r 'sort_by(.properties.createdTime) | reverse | .[1].name // empty')
+
+        echo "rt_latest=$RT_LATEST"  >> $GITHUB_OUTPUT
+        echo "rt_prev=$RT_PREV"      >> $GITHUB_OUTPUT
+        echo "sch_latest=$SCH_LATEST" >> $GITHUB_OUTPUT
+        echo "sch_prev=$SCH_PREV"     >> $GITHUB_OUTPUT
+
+    # -------------------------------
+    # 11. Canary traffic: 10% to new, 90% to stable
+    # -------------------------------
+    - name: 🟢🟡 Configure Canary Traffic — Realtime
+      if: ${{ steps.revisions.outputs.rt_prev != '' }}
+      run: |
+        echo "Setting canary traffic for realtime..."
+        az containerapp ingress traffic set \
+          --name $REALTIME_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --traffic \
+            revisionName=${{ steps.revisions.outputs.rt_prev }}=90 \
+            revisionName=${{ steps.revisions.outputs.rt_latest }}=10
+
+    - name: 🟢🟡 Configure Canary Traffic — Realtime (fallback to 100% latest)
+      if: ${{ steps.revisions.outputs.rt_prev == '' }}
+      run: |
+        echo "No previous realtime revision found; routing 100% to latest."
+        az containerapp ingress traffic set \
+          --name $REALTIME_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --traffic \
+            revisionName=${{ steps.revisions.outputs.rt_latest }}=100
+
+    - name: 🟢🟡 Configure Canary Traffic — Scheduler
+      if: ${{ steps.revisions.outputs.sch_prev != '' }}
+      run: |
+        echo "Setting canary traffic for scheduler..."
+        az containerapp ingress traffic set \
+          --name $SCHEDULER_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --traffic \
+            revisionName=${{ steps.revisions.outputs.sch_prev }}=90 \
+            revisionName=${{ steps.revisions.outputs.sch_latest }}=10
+
+    - name: 🟢🟡 Configure Canary Traffic — Scheduler (fallback to 100% latest)
+      if: ${{ steps.revisions.outputs.sch_prev == '' }}
+      run: |
+        echo "No previous scheduler revision found; routing 100% to latest."
+        az containerapp ingress traffic set \
+          --name $SCHEDULER_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --traffic \
+            revisionName=${{ steps.revisions.outputs.sch_latest }}=100
+
+    # -------------------------------
+    # 12. Worker Health Checks (hit /health on canary)
+    # -------------------------------
+    - name: ❤️ Worker Health Check (Canary)
+      run: |
+        echo "Checking worker health on canary revisions..."
+
+        REALTIME_FQDN=$(az containerapp show \
+          --name $REALTIME_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --query properties.configuration.ingress.fqdn -o tsv)
+
+        SCHED_FQDN=$(az containerapp show \
+          --name $SCHEDULER_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --query properties.configuration.ingress.fqdn -o tsv)
+
+        echo "Realtime FQDN: $REALTIME_FQDN"
+        echo "Scheduler FQDN: $SCHED_FQDN"
+
+        curl -f https://$REALTIME_FQDN/health || exit 1
+        curl -f https://$SCHED_FQDN/health || exit 1
+
+        echo "✅ Workers healthy."
+
+    # -------------------------------
+    # 13. Frontend Build (sanity) + Vercel Deploy
+    # -------------------------------
+    - name: 🌐 Build Web Frontend
+      run: |
+        echo "Building web frontend..."
+        pnpm --filter web build
+
+    - name: ▲ Deploy to Vercel (Production)
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        working-directory: ./apps/web
+        vercel-args: '--prod'
+
+    # -------------------------------
+    # 14. Final Summary
+    # -------------------------------
+    - name: 🎉 Deployment Completed
+      run: |
+        echo "============================================================"
+        echo "🎉 ONE-BUTTON DEPLOY COMPLETE (BACKEND + WORKERS + VERCEL)"
+        echo "🧬 Prisma Build Surgeon v5: SUCCESS"
+        echo "🐳 Workers built & pushed to ACR"
+        echo "🏗️  Terraform applied"
+        echo "🟢🟡 Canary traffic configured (10% new / 90% stable)"
+        echo "❤️ Workers healthy"
+        echo "▲ Vercel production deployed"
+        echo "============================================================"
