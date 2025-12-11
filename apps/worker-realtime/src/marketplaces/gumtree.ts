@@ -1,15 +1,19 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import type { Listing } from "./craigslist";
+import { getMarketplaceProfile } from '@magnus-flipper-ai/marketplace-config';
+import { getFingerprintHeaders } from '../utils/fingerprintHelper';
 
 export async function scrapeListings(query: string = "electronics"): Promise<Listing[]> {
   try {
+    // Get fingerprint with rotation and mutation
+    const profile = getMarketplaceProfile('gumtree');
+    const headers = getFingerprintHeaders('gumtree', profile);
+
     const response = await axios.get(
       `https://www.gumtree.com/search?search_category=all&q=${encodeURIComponent(query)}`,
       {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; MagnusFlipper/1.0)",
-        },
+        headers,
         timeout: 10000,
       }
     );
@@ -17,7 +21,7 @@ export async function scrapeListings(query: string = "electronics"): Promise<Lis
     const $ = cheerio.load(response.data);
     const listings: Listing[] = [];
 
-    $(".listing-link").each((_, element) => {
+  $(".listing-link").each((_: unknown, element: any) => {
       const $el = $(element);
       const title = $el.find(".listing-title").text().trim();
       const priceText = $el.find(".listing-price").text().trim();
