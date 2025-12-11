@@ -1,6 +1,7 @@
 "use client";
 
 import "./globals.css";
+import "../theme/theme.css";
 import "../marketing-swoopa/marketing.css";
 import { ReactNode } from "react";
 import { Toaster } from "../marketing-swoopa/components/ui/toaster";
@@ -12,7 +13,7 @@ const queryClient = new QueryClient();
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <head>
         <title>Magnus Flipper – AI Marketplace Intelligence</title>
         <meta name="description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
@@ -26,8 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body 
         style={{ 
           position: "relative", 
-          overflowX: "hidden",
-          backgroundColor: "#0A0A0A"
+          overflowX: "hidden"
         }}
       >
         <QueryClientProvider client={queryClient}>

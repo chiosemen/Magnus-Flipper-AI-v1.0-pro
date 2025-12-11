@@ -2,10 +2,11 @@ import { useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, SectionList, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { FlashList } from '@shopify/flash-list';
-import { ListingCard } from '@/components/ListingCard';
-import { useListingsFeed } from '@/hooks/useListings';
+import { OptimizedFeedList } from '@/components/OptimizedFeedList';
+import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useSavedSearches } from '@/hooks/useSavedSearches';
+import { useNetworkStatus } from '@/lib/offline';
+import { useRouter } from 'expo-router';
 import {
   CATEGORIES,
   getManufacturersForCategory,
@@ -65,6 +66,7 @@ function CategorySheet({
 }
 
 export default function HomeFeed() {
+  const router = useRouter();
   const [category, setCategory] = useState<string>();
   const [manufacturer, setManufacturer] = useState<string>();
   const [models, setModels] = useState<string[]>([]);
@@ -77,17 +79,21 @@ export default function HomeFeed() {
   const filterSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['45%'], []);
   const savedSearches = useSavedSearches();
+  const { isOffline } = useNetworkStatus();
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useListingsFeed({
-    category,
-    manufacturer,
-    models: models.join(','),
-    minPrice,
-    radius,
-    conditions: conditions.join(','),
+  const {
+    listings,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    hasNewDeals,
+    isLoading,
+  } = useOptimizedFeed({
+    onNewDeal: (listing) => {
+      router.push(`/listing/${listing.id}`);
+    },
+    enableNotifications: true,
   });
-
-  const listings = (data?.pages || []).flatMap((p: any) => p?.listings || []) as Listing[];
 
   const openManufacturer = () => bottomSheetRef.current?.present();
   const itemProp = ['re', 'nderItem'].join('');
@@ -98,10 +104,20 @@ export default function HomeFeed() {
       <View className="flex-1 bg-background px-4 pt-12">
         <View className="mb-4 flex-row items-center justify-between">
           <View>
-            <Text className="text-xs uppercase text-gray-400">Live feed</Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-xs uppercase text-gray-400">Live feed</Text>
+              {isOffline && (
+                <Text className="text-xs uppercase text-yellow-500">Offline</Text>
+              )}
+              {hasNewDeals && (
+                <Text className="text-xs uppercase text-primary">New deals!</Text>
+              )}
+            </View>
             <Text className="text-3xl font-bold text-white">Deals near you</Text>
             <Text className="text-gray-400">
-              Infinite scroll feed via /api/listings/feed
+              {isOffline
+                ? 'Showing cached listings'
+                : 'Infinite scroll feed via /api/listings/feed'}
             </Text>
           </View>
           <View className="flex-row gap-2">
@@ -115,25 +131,14 @@ export default function HomeFeed() {
           </View>
         </View>
 
-        <FlashList
-          data={listings}
+        <OptimizedFeedList
+          listings={listings}
           numColumns={2}
-          keyExtractor={(item) => item.id}
-          {...{
-            [itemProp]: ({ item }: { item: Listing }) => (
-              <View className="w-1/2 p-1">
-                <ListingCard listing={item} />
-              </View>
-            ),
-          }}
           estimatedItemSize={280}
           onEndReached={() => hasNextPage && fetchNextPage()}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <Text className="py-4 text-center text-gray-400">Loading more...</Text>
-            ) : null
-          }
+          isFetchingNextPage={isFetchingNextPage}
+          isLoading={isLoading}
         />
 
         <BottomSheetModal ref={bottomSheetRef} snapPoints={snapPoints} enablePanDownToClose>
