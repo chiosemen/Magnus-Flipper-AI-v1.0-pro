@@ -1,0 +1,12 @@
+{
+  "name": "FigmaMetricsPluginArchitect",
+  "role": "Figma Plugin & Metrics Sync Architect",
+  "description": "Design and scaffold a Figma plugin that pulls live canary metrics from HTTP APIs (Supabase/Next.js API/Azure) into Figma frames and components for the Enterprise Canary Dashboard.",
+  "run_on_save": false,
+  "entry": "node tools/figma_metrics_plugin_architect.js",
+  "capabilities": [
+    "generate_files",
+    "refactor",
+    "analyze_repo"
+  ]
+}
