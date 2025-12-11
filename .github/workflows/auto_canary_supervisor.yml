@@ -1,0 +1,161 @@
+name: 🛰️ Auto-Canary Supervisor
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Worker to supervise (mf-worker-realtime or mf-worker-scheduler)'
+        required: true
+        default: 'mf-worker-realtime'
+
+env:
+  AZURE_RESOURCE_GROUP: 'magnus-rg'
+  CHECK_DURATION_SECONDS: 300        # 5 minutes
+  CHECK_INTERVAL_SECONDS: 15         # poll every 15s
+  ERROR_THRESHOLD: 3                 # allow 3 failures max
+  HEALTH_PATH: '/health'
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+jobs:
+  supervise:
+    name: 🛰️ Auto-Monitor Canary & Promote or Rollback
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🔐 Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: 📦 Install dependencies (jq)
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y jq
+
+    - name: 🔎 Resolve revision information
+      id: revision
+      run: |
+        APP="${{ github.event.inputs.app_name }}"
+
+        echo "🔍 Fetching active revisions..."
+
+        ACTIVE=$(az containerapp revision list \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --name "$APP" --query "[?properties.active==\`true\`]" -o json)
+
+        LATEST=$(echo "$ACTIVE" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name')
+        PREVIOUS=$(echo "$ACTIVE" | jq -r 'sort_by(.properties.createdTime) | .[-2].name')
+
+        echo "latest_revision=$LATEST" >> $GITHUB_OUTPUT
+        echo "previous_revision=$PREVIOUS" >> $GITHUB_OUTPUT
+
+        echo "🟦 Canary revision: $LATEST"
+        echo "🟩 Stable revision: $PREVIOUS"
+
+    - name: 🌐 Resolve FQDN
+      id: fqdn
+      run: |
+        APP="${{ github.event.inputs.app_name }}"
+        FQDN=$(az containerapp show \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --name "$APP" \
+          --query properties.configuration.ingress.fqdn -o tsv)
+
+        echo "fqdn=$FQDN" >> $GITHUB_OUTPUT
+        echo "🌍 FQDN: $FQDN"
+
+    - name: 🛰️ Start Canary Monitoring Loop
+      id: monitor
+      run: |
+        APP="${{ github.event.inputs.app_name }}"
+        FQDN="${{ steps.fqdn.outputs.fqdn }}"
+        LATEST="${{ steps.revision.outputs.latest_revision }}"
+        ERRORS=0
+        START=$(date +%s)
+
+        echo "🚀 Beginning 5-minute canary supervision..."
+
+        while true; do
+          NOW=$(date +%s)
+          ELAPSED=$((NOW - START))
+
+          if [ $ELAPSED -ge $CHECK_DURATION_SECONDS ]; then
+            echo "⏱️ Canary evaluation window complete."
+            break
+          fi
+
+          echo "🔎 Checking health at https://$FQDN${HEALTH_PATH}"
+
+          if curl -fsS "https://$FQDN${HEALTH_PATH}" > /dev/null; then
+            echo "💚 Healthy response"
+          else
+            ERRORS=$((ERRORS + 1))
+            echo "❌ Health check failure ($ERRORS/${ERROR_THRESHOLD})"
+          fi
+
+          if [ $ERRORS -ge $ERROR_THRESHOLD ]; then
+            echo "🛑 Too many failures — canary unhealthy."
+            echo "result=fail" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          sleep $CHECK_INTERVAL_SECONDS
+        done
+
+        echo "result=pass" >> $GITHUB_OUTPUT
+        echo "🎉 Canary remained healthy for the entire evaluation period."
+
+    - name: 🧪 Collect Canary Logs (Diagnostics)
+      if: always()
+      run: |
+        APP="${{ github.event.inputs.app_name }}"
+        LATEST="${{ steps.revision.outputs.latest_revision }}"
+
+        echo "📜 Collecting logs for revision: $LATEST"
+
+        az containerapp revision show \
+          --name "$APP" \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --revision "$LATEST" -o json > canary_revision.json
+
+        az containerapp logs show \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --name "$APP" \
+          --revision "$LATEST" \
+          --format json > canary_logs.json || echo "[]" > canary_logs.json
+
+    - name: 📎 Upload Canary Logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: canary-diagnostics-${{ github.event.inputs.app_name }}
+        path: |
+          canary_revision.json
+          canary_logs.json
+
+    - name: 🟢 Auto-Promote if Healthy
+      if: steps.monitor.outputs.result == 'pass'
+      uses: benc-uk/workflow-dispatch@v1
+      with:
+        workflow: promote_canary.yml
+        ref: main
+        inputs: |
+          app_name=${{ github.event.inputs.app_name }}
+
+    - name: 🔴 Auto-Rollback if Unhealthy
+      if: steps.monitor.outputs.result == 'fail'
+      uses: benc-uk/workflow-dispatch@v1
+      with:
+        workflow: worker_rollback.yml
+        ref: main
+        inputs: |
+          app_name=${{ github.event.inputs.app_name }}

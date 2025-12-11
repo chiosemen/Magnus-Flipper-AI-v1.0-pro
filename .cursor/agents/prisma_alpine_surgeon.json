@@ -1,0 +1,6 @@
+{
+  "name": "Prisma Alpine Surgeon",
+  "description": "Fixes Prisma engine compatibility on Alpine by patching Dockerfiles, Prisma schema, and package.json. Applies glibc compat, engine overrides, binaryTargets, and pnpm lockfile adjustments. Rebuilds workers and reports status.",
+  "run_on_save": false,
+  "entry": "node tools/prisma_alpine_surgeon.js"
+}

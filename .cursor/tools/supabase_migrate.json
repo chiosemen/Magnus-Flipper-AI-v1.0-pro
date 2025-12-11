@@ -1,0 +1,5 @@
+{
+  "name": "supabase_migrate",
+  "command": "scripts/run-supabase-migrations.sh",
+  "description": "Applies all pending migrations to Supabase using SUPABASE_DB_URL."
+}

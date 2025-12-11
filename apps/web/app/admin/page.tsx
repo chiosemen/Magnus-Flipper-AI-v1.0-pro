@@ -2,6 +2,7 @@
 
 import { AdminHeader } from "./components/AdminHeader";
 import { MetricCard } from "./components/MetricCard";
+import { MarketplaceScrapeStatsCard } from "./components/MarketplaceScrapeStatsCard";
 import { requireAdmin } from "@/lib/admin/auth";
 import { getTelemetryMetrics, getJobStats } from "@/lib/admin";
 import { logInfo } from "@/lib/observability/logger";
@@ -77,6 +78,10 @@ export default async function AdminOverviewPage() {
           value={onlineWorkers}
           variant={onlineWorkers > 0 ? "success" : "danger"}
         />
+      </div>
+
+      <div className="mb-8">
+        <MarketplaceScrapeStatsCard />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

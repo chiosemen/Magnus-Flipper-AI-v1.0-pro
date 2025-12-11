@@ -1,0 +1,18 @@
+{
+  "name": "EnvAuditorV1",
+  "role": "Environment Integrity Inspector",
+  "description": "Scans the entire Magnus Flipper AI monorepo for missing variables, incorrect encodings, placement errors (client vs server), and platform mismatches. Produces a full diagnostic report + remediation commands.",
+  "entrypoint": "tools/env_auditor_v1.js",
+  "capabilities": [
+    "read_repo",
+    "run_scripts",
+    "generate_reports"
+  ],
+  "prompts": {
+    "initial": [
+      "Begin full environment audit.",
+      "Scan for: missing vars, unencoded passwords, incorrect SUPABASE URLs, misplaced SERVICE_ROLE keys, Vercel vs Azure violations.",
+      "Output: ENV_AUDIT_REPORT.md + FIX_COMMANDS.sh"
+    ]
+  }
+}

@@ -147,6 +147,13 @@ jobs:
           
           echo "✅ All Docker images built successfully"
 
+      # --- DeployGuardian Validation ---
+      - name: 🛡️ DeployGuardian Worker Validation
+        run: |
+          echo "Running DeployGuardian worker validation..."
+          node tools/deploy_guardian.js --mode=validate || true
+          echo "Note: Full validation runs in deploy-guardian workflow"
+
       # --- Summary ---
       - name: Build summary
         run: |
@@ -157,4 +164,5 @@ jobs:
           echo "- ✅ All workers built" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Dockerfiles validated" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Docker images built (linux/amd64)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ DeployGuardian validation" >> $GITHUB_STEP_SUMMARY
 

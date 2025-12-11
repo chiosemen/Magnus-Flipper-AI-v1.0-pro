@@ -29,6 +29,10 @@ build
 .env.*
 !.env.example
 
+# Env vault (real secrets)
+secrets/env.vault.local.json
+ENV_SYNC_COMMANDS.sh
+
 # OS / Editor
 .DS_Store
 *.swp
@@ -46,6 +50,7 @@ __pycache__/
 
 # Database
 *.sqlite
+db_backups/
 
 # Test artifacts
 tests/screenshots/

@@ -1,0 +1,17 @@
+{
+  "name": "@magnus-flipper-ai/rate-limiter",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.1",
+    "@magnus-flipper-ai/marketplace-config": "workspace:*"
+  }
+}

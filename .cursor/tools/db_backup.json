@@ -1,0 +1,5 @@
+{
+  "name": "db_backup",
+  "command": "./scripts/db-backup.sh",
+  "description": "Creates a timestamped Supabase SQL backup using SUPABASE_DB_URL."
+}

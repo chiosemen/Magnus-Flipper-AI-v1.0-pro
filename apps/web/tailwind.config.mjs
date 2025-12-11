@@ -1,0 +1,135 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ['class', '[data-theme="dark"]'],
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./marketing-swoopa/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // shadcn compatibility
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        // Brand Identity Pack
+        success: {
+          DEFAULT: "var(--success)",
+          50: "var(--success-50)",
+          100: "var(--success-100)",
+          200: "var(--success-200)",
+          300: "var(--success-300)",
+          400: "var(--success-400)",
+          500: "var(--success-500)",
+          600: "var(--success-600)",
+          700: "var(--success-700)",
+          800: "var(--success-800)",
+          900: "var(--success-900)",
+        },
+        // Surface colors
+        surface: "var(--surface)",
+        // Text colors
+        text: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
+          inverse: "var(--text-inverse)",
+        },
+      },
+      spacing: {
+        0: "var(--spacing-0)",
+        1: "var(--spacing-1)",
+        2: "var(--spacing-2)",
+        3: "var(--spacing-3)",
+        4: "var(--spacing-4)",
+        5: "var(--spacing-5)",
+        6: "var(--spacing-6)",
+        8: "var(--spacing-8)",
+        10: "var(--spacing-10)",
+        12: "var(--spacing-12)",
+        16: "var(--spacing-16)",
+        20: "var(--spacing-20)",
+        24: "var(--spacing-24)",
+      },
+      borderRadius: {
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        full: "var(--radius-full)",
+        DEFAULT: "var(--radius)",
+      },
+      fontFamily: {
+        heading: ["Satoshi", "Inter", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        mono: ["Geist Mono", "Courier New", "monospace"],
+      },
+      fontSize: {
+        "h1": ["clamp(24px, 5vw, 32px)", { lineHeight: "1.25", letterSpacing: "-0.5px", fontWeight: "700" }],
+        "h2": ["clamp(20px, 4vw, 24px)", { lineHeight: "1.33", letterSpacing: "-0.25px", fontWeight: "600" }],
+        "h3": ["clamp(18px, 3vw, 20px)", { lineHeight: "1.4", letterSpacing: "0px", fontWeight: "600" }],
+        "h4": ["clamp(16px, 2.5vw, 18px)", { lineHeight: "1.33", letterSpacing: "0px", fontWeight: "600" }],
+        "h5": ["16px", { lineHeight: "1.375", letterSpacing: "0px", fontWeight: "600" }],
+        "h6": ["14px", { lineHeight: "1.43", letterSpacing: "0px", fontWeight: "600" }],
+        "body-l": ["clamp(15px, 2vw, 16px)", { lineHeight: "1.5", letterSpacing: "0px", fontWeight: "400" }],
+        "body-m": ["14px", { lineHeight: "1.43", letterSpacing: "0px", fontWeight: "400" }],
+        "body-s": ["12px", { lineHeight: "1.33", letterSpacing: "0px", fontWeight: "400" }],
+        "mono-l": ["clamp(13px, 2vw, 14px)", { lineHeight: "1.43", letterSpacing: "0px", fontWeight: "400" }],
+        "mono-m": ["12px", { lineHeight: "1.67", letterSpacing: "0px", fontWeight: "400" }],
+        "mono-s": ["11px", { lineHeight: "1.45", letterSpacing: "0px", fontWeight: "400" }],
+      },
+      boxShadow: {
+        none: "var(--shadow-none)",
+        "card-hover": "var(--shadow-card-hover)",
+        modal: "var(--shadow-modal)",
+        focus: "var(--shadow-focus)",
+      },
+      transitionDuration: {
+        fast: "150ms",
+        normal: "200ms",
+        slow: "300ms",
+      },
+      screens: {
+        xs: "375px",
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+        "2xl": "1440px",
+      },
+    },
+  },
+  plugins: [],
+};

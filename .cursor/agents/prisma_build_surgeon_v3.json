@@ -1,0 +1,6 @@
+{
+  "name": "PrismaBuildSurgeonV3",
+  "description": "Battle-tested Prisma build pipeline: auto-pin Prisma, Docker cleanup, Debian fallback, rebuild workers, Terraform apply, and health verification.",
+  "run_on_save": false,
+  "entry": "node tools/prisma_build_surgeon_v3.js"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "EnvVaultKeeper",
+  "role": "Env Vault Guardian",
+  "description": "Reads secrets/env.vault.local.json, validates structure, diffs environments, and generates .env files + sync commands for GitHub, Vercel, and Azure.",
+  "entrypoint": "tools/env_vault_keeper.js",
+  "capabilities": [
+    "read_repo",
+    "run_scripts",
+    "generate_reports"
+  ],
+  "prompts": {
+    "initial": [
+      "Load secrets/env.vault.local.json.",
+      "Validate environments: local, staging, production.",
+      "Detect missing keys between envs.",
+      "Generate ENV_VAULT_STATUS.md.",
+      "Generate .env, .env.staging, .env.production at repo root.",
+      "Generate ENV_SYNC_COMMANDS.sh with gh, vercel, and az commands based on production values.",
+      "Do NOT print real secret values in the console; keep them only in files."
+    ]
+  }
+}

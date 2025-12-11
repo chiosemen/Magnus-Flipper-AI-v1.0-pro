@@ -1,0 +1,16 @@
+{
+  "name": "PrismaBuildSurgeonV5",
+  "role": "End-to-end Prisma + Workers + Terraform + Health orchestrator (self-healing)",
+  "description": "Prisma Build Surgeon v5 — Self-Healing Edition: Orchestrates the full deploy pipeline (DB → Workers → Terraform → Health → Frontend) with automatic drift detection and recovery. Calls TerraformDriftSurgeonV1 automatically on Terraform failures.",
+  "run_on_save": false,
+  "entry": "node tools/prisma_build_surgeon_v5.js",
+  "capabilities": [
+    "run_scripts",
+    "read_repo",
+    "generate_reports",
+    "git_operations",
+    "docker_operations",
+    "terraform_operations"
+  ],
+  "initial_prompt": "Prisma Build Surgeon v5 orchestrates the complete deployment pipeline:\n\n1. Safety Snapshot — Creates WIP commit if uncommitted changes exist\n2. Prisma & Env Verification — Validates Prisma version (pins to 7.0.1 if needed), checks schema, verifies environment variables\n3. Docker Hardening & Cleanup — Cleans Docker if disk usage ≥85%, hardens Dockerfiles (Debian base, system deps, --no-frozen-lockfile), ensures Prisma binaryTargets\n4. Build & Push Workers — Executes build-push-workers.sh with self-healing error detection\n5. Terraform Orchestration — Delegates to TerraformDriftSurgeonV1 for drift detection and auto-fix\n6. Worker Health & Auto-Recovery — Checks worker health endpoints, restarts if needed\n7. Frontend Sanity — Runs web build and reports issues\n8. Final Report — Comprehensive status report for all phases\n\nOn Terraform drift/misconfig errors, automatically calls TerraformDriftSurgeonV1 to generate and (optionally) apply drift fixes."
+}

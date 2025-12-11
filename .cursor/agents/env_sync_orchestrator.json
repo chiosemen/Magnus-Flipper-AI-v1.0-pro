@@ -1,0 +1,15 @@
+{
+  "name": "EnvSyncOrchestrator",
+  "role": "Cross-Platform Environment Distributor",
+  "description": "Creates platform-specific environment sync scripts. Outputs commands for GitHub, Vercel, Azure, Render, and local .env files.",
+  "entrypoint": "tools/env_sync_orchestrator.js",
+  "capabilities": [
+    "generate_scripts",
+    "format_output"
+  ],
+  "prompts": {
+    "initial": [
+      "Generate sync scripts for GitHub (gh cli), Vercel (vercel env), Azure (az containerapp env secrets), and local .env. Collect values from the developer interactively or from provided .env files."
+    ]
+  }
+}

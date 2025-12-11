@@ -1,0 +1,82 @@
+name: Azure Workers - Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/worker/**"
+      - "apps/worker-realtime/**"
+      - "apps/worker-scheduler/**"
+      - "packages/**"
+      - ".github/workflows/azure-workers.yml"
+      - "infra/azure/**"
+
+env:
+  AZURE_SUBSCRIPTION_ID: "77e9f8a3-45bb-4d6b-8372-e593edc1848f"
+  AZURE_RESOURCE_GROUP: "magnus-rg"
+  AZURE_CONTAINERAPPS_ENVIRONMENT: "magnus-flipper-env"
+  AZURE_CONTAINER_REGISTRY: "magnusacr"
+
+  WORKER_REALTIME_IMAGE: "magnus-worker-realtime"
+  WORKER_SCHEDULER_IMAGE: "magnus-worker-scheduler"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Azure CLI - Show account
+        run: az account show
+
+      - name: Login to ACR
+        run: |
+          az acr login --name $AZURE_CONTAINER_REGISTRY
+
+      - name: Build worker-realtime image
+        run: |
+          docker build \
+            -f apps/worker-realtime/Dockerfile \
+            -t $AZURE_CONTAINER_REGISTRY.azurecr.io/$WORKER_REALTIME_IMAGE:${{ github.sha }} \
+            .
+
+      - name: Build worker-scheduler image
+        run: |
+          docker build \
+            -f apps/worker-scheduler/Dockerfile \
+            -t $AZURE_CONTAINER_REGISTRY.azurecr.io/$WORKER_SCHEDULER_IMAGE:${{ github.sha }} \
+            .
+
+      - name: Push images
+        run: |
+          docker push $AZURE_CONTAINER_REGISTRY.azurecr.io/$WORKER_REALTIME_IMAGE:${{ github.sha }}
+          docker push $AZURE_CONTAINER_REGISTRY.azurecr.io/$WORKER_SCHEDULER_IMAGE:${{ github.sha }}
+
+      - name: Update Container Apps with new images
+        run: |
+          az containerapp update \
+            -n mf-worker-realtime \
+            -g $AZURE_RESOURCE_GROUP \
+            --image $AZURE_CONTAINER_REGISTRY.azurecr.io/$WORKER_REALTIME_IMAGE:${{ github.sha }}
+
+          az containerapp update \
+            -n mf-worker-scheduler \
+            -g $AZURE_RESOURCE_GROUP \
+            --image $AZURE_CONTAINER_REGISTRY.azurecr.io/$WORKER_SCHEDULER_IMAGE:${{ github.sha }}
+
+

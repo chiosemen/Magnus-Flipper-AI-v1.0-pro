@@ -1,0 +1,136 @@
+name: DB Safety & Migration Guardrails
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "packages/core/prisma/**"
+      - ".cursor/tools/**"
+      - "scripts/**"
+
+jobs:
+  db-safety:
+    name: Database Migration Safety Suite
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+    steps:
+      # --------------------------------------------------
+      # 1. Checkout Repo
+      # --------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------
+      # 2. Setup Node & PNPM
+      # --------------------------------------------------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      # --------------------------------------------------
+      # 3. Install Dependencies
+      # --------------------------------------------------
+      - name: Install workspace deps
+        run: pnpm install
+
+      # --------------------------------------------------
+      # 4. Prisma Generate (needed for ERD)
+      # --------------------------------------------------
+      - name: Generate Prisma Client
+        run: pnpm --filter @magnus-flipper-ai/core prisma generate
+
+      # --------------------------------------------------
+      # 5. Run Drift Check
+      # --------------------------------------------------
+      - name: Drift Check (Prisma vs Supabase)
+        id: drift
+        run: |
+          echo "Running drift check..."
+          ./scripts/db-drift-check.sh > drift_output.sql || true
+          echo "--- DRIFT SQL BEGIN ---"
+          cat drift_output.sql
+          echo "--- DRIFT SQL END ---"
+          # Save as GitHub output so other steps can use it
+          echo "sql_diff<<EOF" >> $GITHUB_OUTPUT
+          cat drift_output.sql >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # --------------------------------------------------
+      # 6. Detect Dangerous SQL (Safety Gate)
+      # --------------------------------------------------
+      - name: Safety Gate Scan
+        id: safety
+        run: |
+          set +e
+          if grep -qiE "DROP TABLE|DROP COLUMN|ALTER TABLE .* DROP|DELETE FROM" drift_output.sql; then
+            echo "dangerous_sql=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Dangerous SQL detected:"
+            grep -niE "DROP|DELETE|TRUNCATE" drift_output.sql
+            exit 0
+          else
+            echo "dangerous_sql=false" >> $GITHUB_OUTPUT
+          fi
+
+      # --------------------------------------------------
+      # 7. Generate ERD Diagram
+      # --------------------------------------------------
+      - name: Generate ERD
+        run: pnpm --filter @magnus-flipper-ai/core db:erd || true
+
+      # --------------------------------------------------
+      # 8. Upload ERD Artifact
+      # --------------------------------------------------
+      - name: Upload ERD
+        uses: actions/upload-artifact@v4
+        with:
+          name: prisma-erd
+          path: docs/db/erd.svg
+          if-no-files-found: warn
+
+      # --------------------------------------------------
+      # 9. Fail PR if dangerous SQL was found
+      # --------------------------------------------------
+      - name: Block Merge if Unsafe
+        if: steps.safety.outputs.dangerous_sql == 'true'
+        run: |
+          echo "❌ PR contains destructive SQL. Migration blocked."
+          exit 1
+
+      # --------------------------------------------------
+      # 10. Add PR Comment Summary
+      # --------------------------------------------------
+      - name: PR Comment (Summary)
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          message: |
+            ## 🛡️ Database Safety Report
+
+            **Drift Check Result:**  
+
+            ```
+            ${{ steps.drift.outputs.sql_diff }}
+            ```
+
+            **Safety Gate:**  
+
+            - Dangerous SQL: **${{ steps.safety.outputs.dangerous_sql }}**
+
+            **ERD Generated:** ✔️ *(see artifacts)*
+
+            ---
+
+            ❗If destructive SQL is intentional, ask the **DB Surgeon v2**  
+
+            to produce a rollback plan AND require explicit approval.

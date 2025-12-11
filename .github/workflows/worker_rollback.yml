@@ -1,0 +1,99 @@
+name: ⏪ Magnus Worker Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Worker app to rollback (mf-worker-realtime or mf-worker-scheduler)'
+        required: true
+        default: 'mf-worker-realtime'
+      target_revision:
+        description: 'Revision name to route 100% traffic to (leave blank to auto-pick previous)'
+        required: false
+
+env:
+  AZURE_RESOURCE_GROUP: 'magnus-rg'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  rollback:
+    name: ⏪ Rollback Worker Traffic
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🔐 Azure Login (OIDC)
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: 🧮 Install jq
+      run: |
+        sudo apt-get update -y && sudo apt-get install -y jq
+
+    - name: 🔎 Determine target revision
+      id: rev
+      run: |
+        APP="${{ github.event.inputs.app_name }}"
+
+        REV_JSON=$(az containerapp revision list \
+          --name "$APP" \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --query "[?properties.active==\`true\`]" -o json)
+
+        echo "Active revisions:"
+        echo "$REV_JSON"
+
+        INPUT_TARGET="${{ github.event.inputs.target_revision }}"
+
+        if [ -n "$INPUT_TARGET" ]; then
+          echo "Using provided revision: $INPUT_TARGET"
+          TARGET="$INPUT_TARGET"
+        else
+          echo "No revision provided; auto-selecting previous stable..."
+          TARGET=$(echo "$REV_JSON" | jq -r 'sort_by(.properties.createdTime) | .[0].name')
+          echo "Auto-selected: $TARGET"
+        fi
+
+        if [ -z "$TARGET" ] || [ "$TARGET" = "null" ]; then
+          echo "❌ Could not determine target revision."
+          exit 1
+        fi
+
+        echo "target=$TARGET" >> $GITHUB_OUTPUT
+
+    - name: ⏪ Route 100% Traffic to Target Revision
+      run: |
+        APP="${{ github.event.inputs.app_name }}"
+        TARGET="${{ steps.rev.outputs.target }}"
+
+        echo "Routing 100% traffic for $APP to revision $TARGET"
+
+        az containerapp ingress traffic set \
+          --name "$APP" \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --traffic revisionName=$TARGET=100
+
+        echo "✅ Rollback complete."
+
+    - name: ❤️ Health Check After Rollback
+      run: |
+        APP="${{ github.event.inputs.app_name }}"
+
+        FQDN=$(az containerapp show \
+          --name "$APP" \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --query properties.configuration.ingress.fqdn -o tsv)
+
+        echo "Checking /health at https://$FQDN/health"
+
+        curl -f https://$FQDN/health || exit 1
+
+        echo "✅ Worker healthy after rollback."

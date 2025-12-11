@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "rootDir": "../..",
+    "baseUrl": ".",
+    "paths": {
+      "@magnus-flipper-ai/core": ["../../packages/core/src/index.ts"],
+      "@magnus-flipper-ai/core/*": ["../../packages/core/src/*"],
+      "@magnus-flipper-ai/rate-limiter": ["../../packages/rate-limiter/src/index.ts"],
+      "@magnus-flipper-ai/rate-limiter/*": ["../../packages/rate-limiter/src/*"],
+      "@magnus-flipper-ai/marketplace-config": ["../../packages/marketplace-config/src/index.ts"],
+      "@magnus-flipper-ai/marketplace-config/*": ["../../packages/marketplace-config/src/*"],
+      "@magnus-flipper-ai/compliance-shield": ["../../packages/compliance-shield/src/index.ts"],
+      "@magnus-flipper-ai/compliance-shield/*": ["../../packages/compliance-shield/src/*"]
+    },
+    "typeRoots": ["./src/types", "../../node_modules/@types"],
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

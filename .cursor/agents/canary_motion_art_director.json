@@ -1,0 +1,11 @@
+{
+  "name": "CanaryMotionArtDirector",
+  "role": "Motion & Interaction Director for Canary Dashboard",
+  "description": "Produces detailed motion/animation specs for canary alerts, ML decisions, and worker health states for the Enterprise Canary Dashboard.",
+  "run_on_save": false,
+  "entry": "node tools/canary_motion_art_director.js",
+  "capabilities": [
+    "generate_files",
+    "analyze_repo"
+  ]
+}

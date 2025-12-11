@@ -1,0 +1,5 @@
+{
+  "name": "db_restore",
+  "command": "./scripts/db-restore.sh",
+  "description": "Restores a backup file. Requires typing RESTORE NOW for confirmation."
+}

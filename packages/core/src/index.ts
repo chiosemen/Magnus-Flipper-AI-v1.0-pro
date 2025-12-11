@@ -5,3 +5,5 @@ export * from "./search.js";
 export * from "./plans.js";
 export * from "./db.js";
 export * from "./marketplaces.js";
+export * from "./services/scrapeRunService.js";
+export * from "./services/marketplaceControlService.js";

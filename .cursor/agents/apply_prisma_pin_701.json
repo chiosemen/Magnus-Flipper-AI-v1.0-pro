@@ -1,0 +1,6 @@
+{
+  "name": "ApplyPrismaPin701",
+  "description": "Pins Prisma + client + adapter-pg to 7.0.1 across the mono-repo.",
+  "run_on_save": false,
+  "entry": "node tools/apply_prisma_pin_701.js"
+}

@@ -11,6 +11,8 @@ import { profilesRouter } from "./routes/profiles.ts";
 import { channelsRouter } from "./routes/channels.ts";
 import { healthRouter } from "./routes/health.ts";
 import { registerTelegramRoutes } from "./routes/telegram.ts";
+import { feedRouter } from "./routes/feed.ts";
+import { realtimeRouter } from "./routes/realtime.ts";
 import { errorHandler } from "./middleware/errorHandler.ts";
 import { metricsMiddleware, register } from "./middleware/metrics.ts";
 import { apiLimiter } from "./middleware/rateLimiter.ts";
@@ -83,6 +85,8 @@ apiV1.use(alertsRouter);
 apiV1.use(watchlistsRouter);
 apiV1.use(profilesRouter);
 apiV1.use(channelsRouter);
+apiV1.use("/search", feedRouter);
+apiV1.use("/search", realtimeRouter);
 registerTelegramRoutes(apiV1);
 app.use("/api/v1", apiV1);
 
@@ -92,6 +96,8 @@ app.use(alertsRouter);
 app.use(watchlistsRouter);
 app.use(profilesRouter);
 app.use(channelsRouter);
+app.use("/api/search", feedRouter);
+app.use("/api/search", realtimeRouter);
 registerTelegramRoutes(app);
 
 // 404 handler
