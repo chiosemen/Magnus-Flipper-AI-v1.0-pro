@@ -2,17 +2,19 @@
 # Build from repo root: docker build -f apps/worker-realtime/Dockerfile .
 # Uses multi-stage build with pnpm workspace support
 
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
 # -------------------------------------------------------
-# Prisma fix for Alpine Linux (musl vs glibc)
+# Prisma fix for Debian (system dependencies)
 # -------------------------------------------------------
-RUN apk add --no-cache curl bash libc6-compat
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    curl \
+  && rm -rf /var/lib/apt/lists/*
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-ENV PRISMA_CLI_QUERY_ENGINE_TYPE=binary
-ENV PRISMA_MIGRATION_ENGINE_BINARY_TARGETS=linux-musl
 # -------------------------------------------------------
 
 # Copy root workspace files (for pnpm workspace resolution)
@@ -57,7 +59,7 @@ RUN pnpm --filter @magnus-flipper-ai/marketplace-config build
 RUN pnpm --filter @magnus-flipper-ai/worker-realtime build
 
 # Production stage
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 

@@ -1,5 +1,7 @@
 import axios from "axios";
 import type { Listing } from "./craigslist";
+import { getMarketplaceProfile } from '@magnus-flipper-ai/marketplace-config';
+import { getFingerprintHeaders } from '../utils/fingerprintHelper';
 
 export async function scrapeListings(query: string = "electronics"): Promise<Listing[]> {
   try {
@@ -10,11 +12,16 @@ export async function scrapeListings(query: string = "electronics"): Promise<Lis
       return generateMockListings(query);
     }
 
+    // Get fingerprint with rotation and mutation
+    const profile = getMarketplaceProfile('ebay');
+    const headers = getFingerprintHeaders('ebay', profile);
+
     const response = await axios.get(
       `https://api.ebay.com/buy/browse/v1/item_summary/search`,
       {
         params: { q: query, limit: 20 },
         headers: {
+          ...headers,
           Authorization: `Bearer ${apiKey}`,
         },
         timeout: 10000,
