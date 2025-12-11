@@ -1,0 +1,22 @@
+{
+  "name": "@magnus-flipper-ai/compliance-shield",
+  "version": "1.0.0",
+  "description": "Compliance Shield v1.0 - Anti-bot evasion, risk scoring, and adaptive throttling guardrails",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./riskScoring": "./dist/riskScoring.js",
+    "./guardrails": "./dist/guardrails.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@magnus-flipper-ai/marketplace-config": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
