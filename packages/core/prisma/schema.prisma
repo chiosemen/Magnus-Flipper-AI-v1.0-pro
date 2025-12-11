@@ -4,7 +4,9 @@
 generator client {
   provider      = "prisma-client-js"
   output        = "../node_modules/.prisma/client"
-  binaryTargets = ["native", "linux-musl", "linux-x64-openssl-3.0.x", "debian-openssl-3.0.x"]
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  // Force binary engine to avoid queryEngine conversion issues in CI
+  engineType    = "binary"
 }
 
 generator erd {

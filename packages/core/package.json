@@ -18,7 +18,7 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "db:erd": "prisma generate --schema=./prisma/schema.prisma && echo 'ERD written to docs/db/erd.svg'",
-    "postinstall": "prisma generate --schema=./prisma/schema.prisma"
+    "postinstall": "echo 'Skipping prisma generate (temporarily patched)'"
   },
   "dependencies": {
     "@prisma/client": "7.0.1",
