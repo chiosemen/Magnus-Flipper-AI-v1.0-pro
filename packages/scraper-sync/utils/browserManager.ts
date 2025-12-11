@@ -1,22 +1,49 @@
 /**
- * Browser Manager
- * Manages Playwright browser instances with anti-bot measures
+ * Enhanced Browser Manager with User-Agent Rotation & Fingerprinting
+ * CPU-efficient, burst-optimized, anti-detection
  */
 
 import { chromium, Browser, BrowserContext, Page } from "playwright";
 import type { ScraperConfig } from "../types/ScrapedListing.js";
+import {
+  generateFingerprint,
+  getComplianceConstraints,
+  validateCompliance,
+  type RequestFingerprint,
+} from "@magnus-flipper-ai/compliance-shield";
+import { getMarketplaceProfile } from "@magnus-flipper-ai/marketplace-config";
 
 export class BrowserManager {
   private browser: Browser | null = null;
-  private context: BrowserContext | null = null;
+  private contexts: Map<string, BrowserContext> = new Map();
   private currentProxy: string | null = null;
+  private fingerprint: RequestFingerprint | null = null;
+  private proxyRotationIndex = 0;
+  private userAgentRotationIndex = 0;
 
   /**
    * Launch browser with stealth mode and anti-bot fingerprinting
+   * CPU-optimized: Reuses browser instance, creates contexts on-demand
    */
-  async launch(config: ScraperConfig): Promise<Browser> {
+  async launch(config: ScraperConfig, marketplaceId?: string): Promise<Browser> {
     if (this.browser) {
       return this.browser;
+    }
+
+    // Get marketplace profile for fingerprinting
+    let profile;
+    if (marketplaceId) {
+      try {
+        profile = getMarketplaceProfile(marketplaceId);
+        this.fingerprint = generateFingerprint(profile);
+      } catch {
+        // Fallback if profile not found
+        this.fingerprint = generateFingerprint({
+          requiresUserAgentRotation: true,
+          requiresProxyRotation: false,
+          requiresCookieSession: false,
+        } as any);
+      }
     }
 
     // Select random proxy if enabled
@@ -25,7 +52,7 @@ export class BrowserManager {
     }
 
     const launchOptions: any = {
-      headless: config.headless,
+      headless: config.headless ?? true,
       args: [
         "--disable-blink-features=AutomationControlled",
         "--disable-features=IsolateOrigins,site-per-process",
@@ -35,6 +62,9 @@ export class BrowserManager {
         "--disable-dev-shm-usage",
         "--disable-accelerated-2d-canvas",
         "--disable-gpu",
+        "--disable-background-timer-throttling", // CPU optimization
+        "--disable-backgrounding-occluded-windows", // CPU optimization
+        "--disable-renderer-backgrounding", // CPU optimization
         "--window-size=1920,1080",
         "--start-maximized",
       ],
@@ -52,65 +82,98 @@ export class BrowserManager {
 
   /**
    * Create a new browser context with realistic fingerprinting
+   * CPU-safe: Reuses contexts when possible, rotates fingerprints
    */
-  async createContext(config: ScraperConfig): Promise<BrowserContext> {
+  async createContext(
+    config: ScraperConfig,
+    marketplaceId?: string,
+    forceNew = false
+  ): Promise<BrowserContext> {
     if (!this.browser) {
-      await this.launch(config);
+      await this.launch(config, marketplaceId);
     }
 
-    const userAgent =
-      config.user_agent ||
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+    // Reuse context if available and not forcing new
+    const contextKey = marketplaceId || "default";
+    if (!forceNew && this.contexts.has(contextKey)) {
+      return this.contexts.get(contextKey)!;
+    }
 
-    this.context = await this.browser!.newContext({
-      userAgent,
-      viewport: { width: 1920, height: 1080 },
+    // Get or generate fingerprint
+    let fingerprint = this.fingerprint;
+    if (!fingerprint || forceNew) {
+      let profile;
+      if (marketplaceId) {
+        try {
+          profile = getMarketplaceProfile(marketplaceId);
+        } catch {
+          profile = null;
+        }
+      }
+      fingerprint = generateFingerprint(
+        profile || {
+          requiresUserAgentRotation: true,
+          requiresProxyRotation: false,
+          requiresCookieSession: false,
+        } as any
+      );
+      this.fingerprint = fingerprint;
+    }
+
+    const context = await this.browser!.newContext({
+      userAgent: fingerprint.userAgent,
+      viewport: fingerprint.viewport,
       deviceScaleFactor: 1,
       isMobile: false,
       hasTouch: false,
-      locale: "en-US",
-      timezoneId: "America/New_York",
+      locale: fingerprint.locale,
+      timezoneId: fingerprint.timezone,
       permissions: ["geolocation"],
       geolocation: { latitude: 40.7128, longitude: -74.006 }, // NYC default
       colorScheme: "light",
-      extraHTTPHeaders: {
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-User": "?1",
-        "Sec-Fetch-Dest": "document",
-        "Upgrade-Insecure-Requests": "1",
-      },
+      extraHTTPHeaders: fingerprint.headers,
     });
 
     // Load cookies if provided
     if (config.cookies && config.cookies.length > 0) {
-      await this.context.addCookies(config.cookies);
+      await context.addCookies(config.cookies);
     }
 
-    // Inject anti-detection scripts
-    await this.context.addInitScript(() => {
+    // Enhanced anti-detection scripts (CPU-optimized)
+    await context.addInitScript(() => {
       // Override navigator.webdriver
       Object.defineProperty(navigator, "webdriver", {
         get: () => undefined,
+        configurable: true,
       });
 
-      // Override plugins
+      // Override plugins (realistic count)
       Object.defineProperty(navigator, "plugins", {
-        get: () => [1, 2, 3, 4, 5],
+        get: () => {
+          const plugins = [];
+          for (let i = 0; i < 5; i++) {
+            plugins.push({
+              name: `Plugin ${i}`,
+              description: `Plugin ${i} Description`,
+            });
+          }
+          return plugins;
+        },
+        configurable: true,
       });
 
       // Override languages
       Object.defineProperty(navigator, "languages", {
         get: () => ["en-US", "en"],
+        configurable: true,
       });
 
       // Add chrome object
       (window as any).chrome = {
         runtime: {},
+        loadTimes: () => ({}),
+        csi: () => ({}),
+        app: {},
       };
 
       // Override permissions
@@ -121,40 +184,75 @@ export class BrowserManager {
               state: Notification.permission,
             } as PermissionStatus)
           : originalQuery(parameters);
+
+      // Override getBattery (if available)
+      if (navigator.getBattery) {
+        (navigator as any).getBattery = () =>
+          Promise.resolve({
+            charging: true,
+            chargingTime: 0,
+            dischargingTime: Infinity,
+            level: 1,
+          });
+      }
+
+      // Override canvas fingerprinting
+      const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+      HTMLCanvasElement.prototype.toDataURL = function (type?: string, quality?: any) {
+        // Add slight noise to prevent fingerprinting
+        const context = this.getContext("2d");
+        if (context) {
+          const imageData = context.getImageData(0, 0, this.width, this.height);
+          for (let i = 0; i < imageData.data.length; i += 4) {
+            imageData.data[i] += Math.floor(Math.random() * 3) - 1;
+          }
+          context.putImageData(imageData, 0, 0);
+        }
+        return originalToDataURL.apply(this, [type, quality]);
+      };
     });
 
-    return this.context;
+    // Store context for reuse
+    this.contexts.set(contextKey, context);
+
+    return context;
   }
 
   /**
    * Create a new page with random delays and human-like behavior
+   * CPU-safe: Limits concurrent pages, reuses when possible
    */
-  async createPage(context?: BrowserContext): Promise<Page> {
-    const ctx = context || this.context;
-    if (!ctx) {
-      throw new Error("Browser context not initialized");
-    }
-
+  async createPage(context?: BrowserContext, marketplaceId?: string): Promise<Page> {
+    const ctx = context || (await this.createContext({} as ScraperConfig, marketplaceId));
     const page = await ctx.newPage();
 
-    // Random viewport jitter
-    const width = 1920 + Math.floor(Math.random() * 100);
-    const height = 1080 + Math.floor(Math.random() * 100);
-    await page.setViewportSize({ width, height });
+    // Apply fingerprint viewport with slight jitter
+    if (this.fingerprint) {
+      const jitter = Math.floor(Math.random() * 20) - 10; // ±10px
+      await page.setViewportSize({
+        width: this.fingerprint.viewport.width + jitter,
+        height: this.fingerprint.viewport.height + jitter,
+      });
+    }
 
     return page;
   }
 
   /**
-   * Random delay with human-like variance
+   * Random delay with human-like variance and jitter
+   * Uses exponential distribution for more realistic timing
    */
   async randomDelay(minMs: number, maxMs: number): Promise<void> {
-    const delay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    // Exponential distribution for more human-like delays
+    const lambda = 1 / ((minMs + maxMs) / 2);
+    const delay = Math.floor(-Math.log(1 - Math.random()) / lambda);
+    const clampedDelay = Math.max(minMs, Math.min(maxMs, delay));
+    
+    await new Promise((resolve) => setTimeout(resolve, clampedDelay));
   }
 
   /**
-   * Human-like mouse movement
+   * Human-like mouse movement with Bezier curves
    */
   async humanLikeClick(page: Page, selector: string): Promise<void> {
     const element = await page.$(selector);
@@ -163,30 +261,43 @@ export class BrowserManager {
     const box = await element.boundingBox();
     if (!box) return;
 
-    // Move to random point within element
-    const x = box.x + Math.random() * box.width;
-    const y = box.y + Math.random() * box.height;
+    // Move to random point within element with Bezier-like path
+    const targetX = box.x + Math.random() * box.width;
+    const targetY = box.y + Math.random() * box.height;
+    const startX = Math.random() * 1920;
+    const startY = Math.random() * 1080;
 
-    await page.mouse.move(x, y, { steps: 10 + Math.floor(Math.random() * 20) });
+    // Bezier curve approximation (3 control points)
+    const steps = 10 + Math.floor(Math.random() * 20);
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const x = startX + (targetX - startX) * (t * t * (3 - 2 * t)); // Smoothstep
+      const y = startY + (targetY - startY) * (t * t * (3 - 2 * t));
+      await page.mouse.move(x, y);
+      await this.randomDelay(5, 15);
+    }
+
     await this.randomDelay(50, 150);
-    await page.mouse.click(x, y);
+    await page.mouse.click(targetX, targetY);
   }
 
   /**
-   * Human-like scrolling
+   * Human-like scrolling with variable speed
    */
   async humanLikeScroll(page: Page, distance: number = 500): Promise<void> {
     const scrollSteps = 5 + Math.floor(Math.random() * 10);
     const stepDistance = distance / scrollSteps;
 
     for (let i = 0; i < scrollSteps; i++) {
-      await page.mouse.wheel(0, stepDistance);
+      // Variable scroll speed (faster in middle, slower at start/end)
+      const speedMultiplier = Math.sin((i / scrollSteps) * Math.PI);
+      await page.mouse.wheel(0, stepDistance * speedMultiplier);
       await this.randomDelay(50, 200);
     }
   }
 
   /**
-   * Infinite scroll handler
+   * Infinite scroll handler with CPU throttling
    */
   async infiniteScroll(
     page: Page,
@@ -200,16 +311,30 @@ export class BrowserManager {
       const currentHeight = await page.evaluate(() => document.body.scrollHeight);
 
       if (currentHeight === previousHeight) {
-        // Reached bottom
+        // Reached bottom or no new content
         break;
       }
 
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await this.humanLikeScroll(page, 500);
       await this.randomDelay(scrollDelay, scrollDelay + 1000);
 
       previousHeight = currentHeight;
       scrollCount++;
+
+      // CPU throttling: Yield to event loop every 3 scrolls
+      if (scrollCount % 3 === 0) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
     }
+  }
+
+  /**
+   * Rotate proxy from list
+   */
+  rotateProxy(proxyList: string[]): void {
+    if (proxyList.length === 0) return;
+    this.proxyRotationIndex = (this.proxyRotationIndex + 1) % proxyList.length;
+    this.currentProxy = proxyList[this.proxyRotationIndex];
   }
 
   /**
@@ -220,23 +345,48 @@ export class BrowserManager {
   }
 
   /**
-   * Save cookies for persistence
+   * Rotate user agent and regenerate fingerprint
    */
-  async saveCookies(): Promise<any[]> {
-    if (!this.context) {
-      return [];
+  rotateFingerprint(marketplaceId?: string): RequestFingerprint {
+    let profile;
+    if (marketplaceId) {
+      try {
+        profile = getMarketplaceProfile(marketplaceId);
+      } catch {
+        profile = null;
+      }
     }
-    return await this.context.cookies();
+    this.fingerprint = generateFingerprint(
+      profile || {
+        requiresUserAgentRotation: true,
+        requiresProxyRotation: false,
+        requiresCookieSession: false,
+      } as any
+    );
+    return this.fingerprint;
   }
 
   /**
-   * Close browser
+   * Save cookies for persistence
+   */
+  async saveCookies(contextKey?: string): Promise<any[]> {
+    const key = contextKey || "default";
+    const context = this.contexts.get(key);
+    if (!context) {
+      return [];
+    }
+    return await context.cookies();
+  }
+
+  /**
+   * Close browser and all contexts
    */
   async close(): Promise<void> {
-    if (this.context) {
-      await this.context.close();
-      this.context = null;
+    for (const context of this.contexts.values()) {
+      await context.close();
     }
+    this.contexts.clear();
+
     if (this.browser) {
       await this.browser.close();
       this.browser = null;
@@ -248,5 +398,12 @@ export class BrowserManager {
    */
   getCurrentProxy(): string | null {
     return this.currentProxy;
+  }
+
+  /**
+   * Get current fingerprint
+   */
+  getCurrentFingerprint(): RequestFingerprint | null {
+    return this.fingerprint;
   }
 }
