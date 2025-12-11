@@ -1,8 +1,14 @@
 import axios from "axios";
 import type { Listing } from "./craigslist";
+import { getMarketplaceProfile } from '@magnus-flipper-ai/marketplace-config';
+import { getFingerprintHeaders } from '../utils/fingerprintHelper';
 
 export async function scrapeListings(query: string = "clothing"): Promise<Listing[]> {
   try {
+    // Get fingerprint with rotation and mutation
+    const profile = getMarketplaceProfile('vinted');
+    const headers = getFingerprintHeaders('vinted', profile);
+
     const response = await axios.get(
       `https://www.vinted.com/api/v2/catalog/items`,
       {
@@ -10,9 +16,7 @@ export async function scrapeListings(query: string = "clothing"): Promise<Listin
           search_text: query,
           per_page: 20,
         },
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; MagnusFlipper/1.0)",
-        },
+        headers,
         timeout: 10000,
       }
     );

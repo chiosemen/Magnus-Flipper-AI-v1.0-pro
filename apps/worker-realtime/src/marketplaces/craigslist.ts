@@ -1,5 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { getMarketplaceProfile } from '@magnus-flipper-ai/marketplace-config';
+import { getFingerprintHeaders } from '../utils/fingerprintHelper';
 
 export interface Listing {
   marketplace: string;
@@ -13,12 +15,14 @@ export interface Listing {
 
 export async function scrapeListings(query: string = "electronics"): Promise<Listing[]> {
   try {
+    // Get fingerprint with rotation and mutation
+    const profile = getMarketplaceProfile('craigslist');
+    const headers = getFingerprintHeaders('craigslist', profile);
+
     const response = await axios.get(
       `https://sfbay.craigslist.org/search/sss?query=${encodeURIComponent(query)}`,
       {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; MagnusFlipper/1.0)",
-        },
+        headers,
         timeout: 10000,
       }
     );
@@ -26,7 +30,7 @@ export async function scrapeListings(query: string = "electronics"): Promise<Lis
     const $ = cheerio.load(response.data);
     const listings: Listing[] = [];
 
-    $(".result-row").each((_, element) => {
+  $(".result-row").each((_: unknown, element: any) => {
       const $el = $(element);
       const title = $el.find(".result-title").text().trim();
       const priceText = $el.find(".result-price").text().trim();
