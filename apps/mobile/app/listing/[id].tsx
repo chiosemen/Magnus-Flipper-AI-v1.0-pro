@@ -1,18 +1,16 @@
-import { ScrollView, Text, View, Pressable, ActivityIndicator } from 'react-native';
+import { ScrollView, Text, View, Pressable } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useListing } from '@/hooks/useListings';
 import { Linking } from 'react-native';
+import { ListingDetailSkeleton } from '@/components/SkeletonLoader';
+import { CachedImage } from '@/lib/imageCache';
 
 export default function ListingDetail() {
   const params = useLocalSearchParams<{ id: string }>();
   const { data, isLoading } = useListing(params.id);
 
   if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator color="#5CE0E6" />
-      </View>
-    );
+    return <ListingDetailSkeleton />;
   }
 
   if (!data) {
@@ -26,12 +24,20 @@ export default function ListingDetail() {
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-12">
       <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} className="w-full">
-        {(data.imageUrls && data.imageUrls.length ? data.imageUrls : ['placeholder']).map((_, idx) => (
-          <View
+        {(data.imageUrls && data.imageUrls.length ? data.imageUrls : []).map((imageUrl, idx) => (
+          <CachedImage
             key={idx}
-            className="mr-3 aspect-video w-80 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/10"
+            uri={imageUrl}
+            width={320}
+            aspectRatio={16 / 9}
+            borderRadius={16}
+            priority="high"
+            className="mr-3"
           />
         ))}
+        {(!data.imageUrls || data.imageUrls.length === 0) && (
+          <View className="mr-3 aspect-video w-80 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/10" />
+        )}
       </ScrollView>
       <Text className="mt-4 text-3xl font-bold text-white">{data.title}</Text>
       <Text className="mt-1 text-gray-400">

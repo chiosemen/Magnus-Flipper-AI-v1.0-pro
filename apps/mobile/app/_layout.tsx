@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -10,21 +10,12 @@ import { OnboardingProvider } from '@/providers/OnboardingProvider';
 import { initializeStripe } from '@/lib/payments';
 import { notifications } from '@/lib/notifications';
 import { env, validateEnv, logEnvConfig } from '@/lib/env';
+import { createOfflineQueryClient, asyncStoragePersister } from '@/lib/offline';
+import { setupDealNotificationChannel } from '@/lib/dealNotifications';
 import '../global.css';
 
-// Create React Query client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60000, // 1 minute
-      retry: 2,
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-});
+// Create offline-enabled React Query client
+const queryClient = createOfflineQueryClient();
 
 export default function RootLayout() {
   useEffect(() => {
@@ -52,12 +43,21 @@ export default function RootLayout() {
       notifications.registerForPushNotifications().catch((error) => {
         console.error('Failed to register push notifications:', error);
       });
+      setupDealNotificationChannel().catch((error) => {
+        console.error('Failed to setup deal notification channel:', error);
+      });
     }
   }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: asyncStoragePersister,
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        }}
+      >
         <AuthProvider>
           <OnboardingProvider>
             <StripeProvider
@@ -123,7 +123,7 @@ export default function RootLayout() {
             </StripeProvider>
           </OnboardingProvider>
         </AuthProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
   );
 }
