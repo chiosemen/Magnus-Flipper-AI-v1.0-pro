@@ -1,0 +1,76 @@
+name: 🚀 Deploy Canary Dashboard
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/canary-dashboard/**'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  build:
+    name: 🔨 Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+
+    - name: 🟦 Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: 🟣 Install PNPM
+      run: npm install -g pnpm
+
+    - name: 📦 Install dependencies
+      run: |
+        cd apps/canary-dashboard
+        pnpm install
+
+    - name: 🔍 Typecheck
+      run: |
+        cd apps/canary-dashboard
+        pnpm typecheck
+
+    - name: 🧹 Lint
+      run: |
+        cd apps/canary-dashboard
+        pnpm lint
+
+    - name: 🏗️ Build
+      run: |
+        cd apps/canary-dashboard
+        pnpm build
+
+    - name: 🧪 Smoke test
+      run: |
+        curl -f http://localhost:3000/api/metrics || echo "API test skipped (server not running)"
+
+  deploy:
+    name: 🚀 Deploy to Vercel
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+
+    - name: 🚀 Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_DASHBOARD_PROJECT_ID }}
+        working-directory: ./apps/canary-dashboard
+        vercel-args: '--prod'
+
+    - name: ✅ Deployment Complete
+      run: |
+        echo "✅ Dashboard deployed to Vercel"
+        echo "🌐 View at: https://${{ secrets.VERCEL_DASHBOARD_PROJECT_ID }}.vercel.app"

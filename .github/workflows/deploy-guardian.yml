@@ -1,0 +1,384 @@
+name: 🛡️ DeployGuardian — CI/CD Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "infra/**"
+      - "packages/core/prisma/**"
+      - "apps/worker-*/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/**"
+      - "tools/deploy_guardian.js"
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/**"
+      - "packages/core/prisma/**"
+      - "apps/worker-*/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20"
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  validate:
+    name: 🛡️ DeployGuardian Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # --------------------------------------------------
+      # 1. Checkout
+      # --------------------------------------------------
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------
+      # 2. Setup Node.js + pnpm
+      # --------------------------------------------------
+      - name: 🟦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 🟣 Install pnpm
+        run: |
+          npm install -g pnpm
+          pnpm --version
+
+      # --------------------------------------------------
+      # 3. Install dependencies
+      # --------------------------------------------------
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # --------------------------------------------------
+      # 4. Setup Terraform
+      # --------------------------------------------------
+      - name: 🏗️ Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+
+      # --------------------------------------------------
+      # 5. Setup Docker (for worker build checks)
+      # --------------------------------------------------
+      - name: 🐳 Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # --------------------------------------------------
+      # 6. Run DeployGuardian Validation
+      # --------------------------------------------------
+      - name: 🛡️ Run DeployGuardian Validation
+        id: guardian
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_ACR_NAME: ${{ secrets.AZURE_ACR_NAME }}
+        run: |
+          node tools/deploy_guardian.js --mode=validate
+        continue-on-error: false
+
+      # --------------------------------------------------
+      # 7. Terraform Validation (Detailed) - SAFETY GATE
+      # --------------------------------------------------
+      - name: 🏗️ Terraform Validate (Detailed) - SAFETY GATE
+        id: terraform_validate
+        run: |
+          echo "🏗️ Running Terraform validation (SAFETY GATE)..."
+          cd infra/azure
+          
+          # Initialize
+          terraform init -input=false || exit 1
+          
+          # Validate syntax
+          terraform validate || exit 1
+          
+          # Check formatting
+          terraform fmt -check || {
+            echo "❌ Terraform files are not formatted correctly"
+            echo "Run: terraform fmt -recursive"
+            exit 1
+          }
+          
+          # Plan (dry-run) to catch errors
+          terraform plan -out=/dev/null || exit 1
+          
+          echo "✅ Terraform validation passed (SAFETY GATE)"
+        continue-on-error: false
+
+      # --------------------------------------------------
+      # 8. Prisma Client Freshness Check - SAFETY GATE
+      # --------------------------------------------------
+      - name: 🧬 Prisma Client Freshness Check - SAFETY GATE
+        id: prisma_freshness
+        run: |
+          echo "🧬 Checking Prisma client freshness (SAFETY GATE)..."
+          cd packages/core/prisma
+          
+          # Validate schema
+          npx prisma validate || exit 1
+          
+          # Format check
+          npx prisma format --schema=./schema.prisma --check || {
+            echo "❌ Prisma schema is not formatted correctly"
+            exit 1
+          }
+          
+          # Force regenerate client to ensure freshness
+          echo "Regenerating Prisma client..."
+          npx prisma generate --schema=./schema.prisma || exit 1
+          
+          # Verify client was generated
+          if [ ! -f "../node_modules/.prisma/client/index.js" ]; then
+            echo "❌ Prisma client generation failed - client file not found"
+            exit 1
+          fi
+          
+          # Check client timestamp vs schema timestamp
+          SCHEMA_TIME=$(stat -c %Y schema.prisma)
+          CLIENT_TIME=$(stat -c %Y ../node_modules/.prisma/client/index.js 2>/dev/null || echo "0")
+          
+          if [ "$CLIENT_TIME" -lt "$SCHEMA_TIME" ]; then
+            echo "❌ Prisma client is stale (schema newer than client)"
+            exit 1
+          fi
+          
+          echo "✅ Prisma client is fresh (SAFETY GATE)"
+        continue-on-error: false
+
+      # --------------------------------------------------
+      # 9. Worker Image Build Validation - SAFETY GATE
+      # --------------------------------------------------
+      - name: 🐳 Worker Image Build Validation - SAFETY GATE
+        id: worker_builds
+        run: |
+          echo "🐳 Validating worker image builds (SAFETY GATE)..."
+          
+          WORKERS=("worker-realtime" "worker-scheduler")
+          FAILED=0
+          
+          for worker in "${WORKERS[@]}"; do
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "Validating $worker..."
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            # Check Dockerfile exists
+            if [ ! -f "apps/$worker/Dockerfile" ]; then
+              echo "❌ Dockerfile not found: apps/$worker/Dockerfile"
+              FAILED=1
+              continue
+            fi
+            
+            # Check for NO-BUILD pattern
+            if grep -E "RUN.*(pnpm build|tsc|npm run build)" "apps/$worker/Dockerfile" > /dev/null; then
+              echo "❌ Dockerfile contains build commands (should use NO-BUILD pattern)"
+              FAILED=1
+              continue
+            fi
+            
+            # Validate TypeScript build
+            echo "Building TypeScript for $worker..."
+            pnpm --filter $worker build || {
+              echo "❌ TypeScript build failed for $worker"
+              FAILED=1
+              continue
+            }
+            
+            # Build Docker image (validation)
+            echo "Building Docker image for $worker..."
+            docker build \
+              --platform linux/amd64 \
+              -t magnus-$worker:test \
+              -f apps/$worker/Dockerfile . || {
+              echo "❌ Docker image build failed for $worker"
+              FAILED=1
+              continue
+            }
+            
+            # Clean up test image
+            docker rmi magnus-$worker:test || true
+            
+            echo "✅ $worker validated successfully"
+          done
+          
+          if [ $FAILED -eq 1 ]; then
+            echo ""
+            echo "❌ Worker image build validation failed (SAFETY GATE)"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All worker image builds validated (SAFETY GATE)"
+        continue-on-error: false
+
+      # --------------------------------------------------
+      # 10. Environment Variables Validation - SAFETY GATE
+      # --------------------------------------------------
+      - name: 🔐 Environment Variables Validation - SAFETY GATE
+        id: env_validation
+        run: |
+          echo "🔐 Validating environment variables (SAFETY GATE)..."
+          
+          # Core required secrets
+          REQUIRED_CORE=(
+            "DATABASE_URL"
+            "SUPABASE_URL"
+            "SUPABASE_ANON_KEY"
+          )
+          
+          # Azure secrets (required for Azure deployment)
+          REQUIRED_AZURE=(
+            "AZURE_CLIENT_ID"
+            "AZURE_TENANT_ID"
+            "AZURE_SUBSCRIPTION_ID"
+            "AZURE_ACR_NAME"
+          )
+          
+          MISSING=()
+          INVALID=()
+          
+          # Check core secrets
+          echo "Checking core environment variables..."
+          for secret in "${REQUIRED_CORE[@]}"; do
+            VALUE="${!secret}"
+            if [ -z "$VALUE" ]; then
+              MISSING+=("$secret")
+            else
+              # Validate format
+              case "$secret" in
+                "DATABASE_URL")
+                  if [[ ! "$VALUE" =~ ^postgresql:// ]]; then
+                    INVALID+=("$secret (should start with postgresql://)")
+                  fi
+                  ;;
+                "SUPABASE_URL")
+                  if [[ ! "$VALUE" =~ ^https:// ]]; then
+                    INVALID+=("$secret (should be HTTPS URL)")
+                  fi
+                  ;;
+              esac
+            fi
+          done
+          
+          # Check Azure secrets
+          echo "Checking Azure environment variables..."
+          for secret in "${REQUIRED_AZURE[@]}"; do
+            VALUE="${!secret}"
+            if [ -z "$VALUE" ]; then
+              MISSING+=("$secret")
+            fi
+          done
+          
+          # Report results
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "❌ Missing required environment variables: ${MISSING[*]}"
+            exit 1
+          fi
+          
+          if [ ${#INVALID[@]} -gt 0 ]; then
+            echo "❌ Invalid environment variable formats: ${INVALID[*]}"
+            exit 1
+          fi
+          
+          echo "✅ All environment variables validated (SAFETY GATE)"
+          echo "   Core: ${#REQUIRED_CORE[@]} variables"
+          echo "   Azure: ${#REQUIRED_AZURE[@]} variables"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_ACR_NAME: ${{ secrets.AZURE_ACR_NAME }}
+
+      # --------------------------------------------------
+      # 11. Unsafe Merge Check
+      # --------------------------------------------------
+      - name: 🚫 Unsafe Merge Check
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Checking for unsafe merge conditions..."
+          
+          # Check for WIP commits
+          LAST_COMMIT=$(git log -1 --pretty=%B)
+          if echo "$LAST_COMMIT" | grep -qiE "WIP|wip|draft"; then
+            echo "❌ WIP commit detected in HEAD"
+            exit 1
+          fi
+          
+          # Check for force push markers
+          RECENT_COMMITS=$(git log --oneline -10)
+          if echo "$RECENT_COMMITS" | grep -qiE "force|reset|rebase"; then
+            echo "⚠️  Force push detected in recent history (warning only)"
+          fi
+          
+          echo "✅ No unsafe merge conditions detected"
+        continue-on-error: false
+
+      # --------------------------------------------------
+      # 12. PR Comment Summary
+      # --------------------------------------------------
+      - name: 💬 PR Comment Summary
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          message: |
+            ## 🛡️ DeployGuardian Validation Report
+
+            **Status:** ${{ steps.guardian.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}
+
+            **Safety Gates:**
+            - 🏗️ Terraform: ${{ steps.terraform_validate.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}
+            - 🧬 Prisma Client Freshness: ${{ steps.prisma_freshness.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}
+            - 🐳 Worker Image Builds: ${{ steps.worker_builds.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}
+            - 🔐 Environment Variables: ${{ steps.env_validation.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}
+            - 🚫 Unsafe Merge: Checked
+
+            **⚠️ All safety gates must pass before merging to `main`**
+
+            **Next Steps:**
+            - If validation failed, review the logs above
+            - Ensure all required secrets are set in repository settings
+            - Fix any Terraform/Prisma/Worker build errors
+            - Remove WIP/draft commits before merging
+
+            ---
+            *This check blocks unsafe merges and deployments*
+
+      # --------------------------------------------------
+      # 13. Summary
+      # --------------------------------------------------
+      - name: 📊 Validation Summary
+        if: always()
+        run: |
+          echo "## 🛡️ DeployGuardian Validation Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Safety Gates:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏗️ Terraform: ${{ steps.terraform_validate.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 🧬 Prisma Client Freshness: ${{ steps.prisma_freshness.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 🐳 Worker Image Builds: ${{ steps.worker_builds.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔐 Environment Variables: ${{ steps.env_validation.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚫 Unsafe Merge: Checked" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Overall Status:** ${{ steps.guardian.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **All safety gates must pass before merging to \`main\`**" >> $GITHUB_STEP_SUMMARY

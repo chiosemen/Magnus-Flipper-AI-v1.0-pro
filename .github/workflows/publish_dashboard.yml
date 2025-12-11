@@ -1,0 +1,127 @@
+name: 📊 Publish Canary Dashboard
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: 
+      - "🤖 ML Canary Analyzer"
+      - "🛰️ Auto-Canary Supervisor"
+    types:
+      - completed
+
+permissions:
+  contents: write
+  id-token: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🔐 Azure Login (for fetching latest data)
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: 📦 Install dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y jq
+
+    - name: 🗂️ Prepare dashboard data
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        mkdir -p dashboard
+        
+        # Try to download latest artifacts from ML Analyzer or Supervisor
+        echo "📥 Downloading latest canary analysis artifacts..."
+        
+        # Get the latest workflow run
+        LATEST_RUN=$(gh run list --workflow="🤖 ML Canary Analyzer" --limit 1 --json databaseId -q '.[0].databaseId' 2>/dev/null || echo "")
+        
+        if [ -n "$LATEST_RUN" ] && [ "$LATEST_RUN" != "null" ]; then
+          echo "Downloading artifacts from ML Analyzer run $LATEST_RUN..."
+          gh run download $LATEST_RUN --dir dashboard --name "ml-canary-analysis-*" 2>/dev/null || echo "No ML artifacts found in latest run"
+        fi
+        
+        # Also try supervisor artifacts
+        SUPERVISOR_RUN=$(gh run list --workflow="🛰️ Auto-Canary Supervisor" --limit 1 --json databaseId -q '.[0].databaseId' 2>/dev/null || echo "")
+        
+        if [ -n "$SUPERVISOR_RUN" ] && [ "$SUPERVISOR_RUN" != "null" ]; then
+          echo "Downloading artifacts from supervisor run $SUPERVISOR_RUN..."
+          gh run download $SUPERVISOR_RUN --dir dashboard --name "canary-diagnostics-*" 2>/dev/null || echo "No supervisor artifacts found"
+        fi
+
+    - name: 🔎 Fetch current revision info
+      run: |
+        APP="mf-worker-realtime"
+        
+        echo "🔍 Fetching current revision information..."
+        
+        ACTIVE=$(az containerapp revision list \
+          --resource-group magnus-rg \
+          --name "$APP" \
+          --query "[?properties.active==\`true\`]" -o json 2>/dev/null || echo "[]")
+        
+        if [ "$ACTIVE" != "[]" ] && [ "$ACTIVE" != "null" ]; then
+          LATEST=$(echo "$ACTIVE" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name // empty')
+          PREVIOUS=$(echo "$ACTIVE" | jq -r 'sort_by(.properties.createdTime) | .[-2].name // empty')
+          
+          # Get traffic weights
+          TRAFFIC=$(az containerapp ingress traffic show \
+            --resource-group magnus-rg \
+            --name "$APP" -o json 2>/dev/null || echo "[]")
+          
+          echo "Latest revision: $LATEST"
+          echo "Previous revision: $PREVIOUS"
+          
+          # Save revision info
+          if [ -n "$LATEST" ] && [ "$LATEST" != "null" ]; then
+            echo "$ACTIVE" | jq ".[] | select(.name == \"$LATEST\")" > dashboard/revision.json || echo "{}" > dashboard/revision.json
+            
+            # Build revisions object
+            CANARY_WEIGHT=$(echo "$TRAFFIC" | jq -r ".[] | select(.revisionName == \"$LATEST\") | .weight // 10" 2>/dev/null || echo "10")
+            STABLE_WEIGHT=$((100 - CANARY_WEIGHT))
+            
+            echo "{\"stable\":\"${PREVIOUS:-}\",\"canary\":\"$LATEST\",\"traffic\":\"${STABLE_WEIGHT}% stable / ${CANARY_WEIGHT}% canary\"}" > dashboard/revisions.json
+          else
+            echo "{}" > dashboard/revision.json
+            echo "{\"stable\":\"-\",\"canary\":\"-\",\"traffic\":\"-\"}" > dashboard/revisions.json
+          fi
+        else
+          echo "{}" > dashboard/revision.json
+          echo "{\"stable\":\"-\",\"canary\":\"-\",\"traffic\":\"-\"}" > dashboard/revisions.json
+        fi
+
+    - name: 🏗️ Build dashboard JSON
+      run: |
+        # Merge revision info if available
+        if [ -f dashboard/revisions.json ]; then
+          # The build script will use this
+          echo "Revision info available"
+        fi
+        
+        # Run the dashboard JSON builder
+        node tools/build_dashboard_json.js
+
+    - name: 📤 Publish to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        branch: gh-pages
+        folder: dashboard
+        clean: true
+        single-commit: true
+
+    - name: ✅ Dashboard Published
+      run: |
+        echo "✅ Dashboard published to GitHub Pages!"
+        echo "🌐 View at: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"

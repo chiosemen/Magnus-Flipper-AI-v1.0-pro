@@ -1,0 +1,14 @@
+{
+  "name": "TerraformDriftSurgeonV1",
+  "role": "Terraform Drift & Module Alignment Specialist",
+  "description": "Runs terraform plan, detects drift and common module/resource conflicts, then generates terraform import / taint / state commands to realign state with Azure. Can optionally auto-apply drift fixes when requested via AUTO_APPLY_TERRAFORM_DRIFT=true.",
+  "run_on_save": false,
+  "entry": "node tools/terraform_drift_surgeon_v1.js",
+  "capabilities": [
+    "run_scripts",
+    "read_repo",
+    "generate_reports",
+    "terraform_operations"
+  ],
+  "initial_prompt": "Terraform Drift Surgeon v1 detects and fixes Terraform state drift:\n\n1. Pre-flight — Runs terraform init and validate\n2. Plan — Runs terraform plan with -detailed-exitcode to detect drift\n3. Drift Parsing — Analyzes plan output for 'already exists', 'must be imported', and 'will be created' patterns\n4. Auto-Fix Logic — Generates TERRAFORM_DRIFT_FIXES.md with import commands. If AUTO_APPLY_TERRAFORM_DRIFT=true, automatically runs terraform import commands\n5. Terraform Apply — (orchestrate mode only) Applies the plan after drift fixes\n\nModes:\n- orchestrate (default): Full pipeline with apply\n- plan: Only detect drift, no apply\n- auto-fix: Apply fixes automatically (gated by env var)\n\nCalled automatically by PrismaBuildSurgeonV5 on Terraform failures, but can also be run standalone."
+}

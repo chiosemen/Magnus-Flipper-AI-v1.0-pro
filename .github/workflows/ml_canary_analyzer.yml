@@ -1,0 +1,200 @@
+name: 🤖 ML Canary Analyzer — Log-Based Canary Decision Engine
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Worker app to analyze'
+        required: true
+        default: 'mf-worker-realtime'
+
+permissions:
+  contents: read
+  id-token: write
+  actions: write
+
+env:
+  AZURE_RESOURCE_GROUP: "magnus-rg"
+  LOG_LINES: 5000
+  MODEL: "gpt-4o"    # or "deepseek-chat" if using DeepSeek API
+
+jobs:
+  analyze:
+    name: 🤖 ML Canary Analyzer
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout repo
+      uses: actions/checkout@v4
+
+    - name: 🔐 Azure login (OIDC)
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: 📦 Install tools
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install jq -y
+
+    - name: 🔎 Get active canary revision + logs
+      id: logs
+      run: |
+        APP="${{ github.event.inputs.app_name }}"
+
+        REVISION=$(az containerapp revision list \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --name "$APP" \
+          --query "[?properties.active==\`true\`] | sort_by(@, &properties.createdTime)[-1].name" \
+          -o tsv)
+
+        echo "🟦 Canary revision: $REVISION"
+
+        az containerapp logs show \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --name "$APP" \
+          --revision "$REVISION" \
+          --format json \
+          --limit $LOG_LINES > canary_logs.json || echo "[]" > canary_logs.json
+
+        echo "revision=$REVISION" >> $GITHUB_OUTPUT
+
+    - name: 🤖 ML Log Analysis
+      id: ml
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      run: |
+        echo "📡 Sending logs to ML model for anomaly detection..."
+
+        # Read logs and prepare for analysis
+        LOG_CONTENT=$(cat canary_logs.json | jq -r '.[] | "\(.timestamp // .time // "") [\(.level // "INFO")] \(.message // .text // .)"' | head -1000)
+        
+        # If no logs, create a minimal payload
+        if [ -z "$LOG_CONTENT" ] || [ "$LOG_CONTENT" = "" ]; then
+          LOG_CONTENT="No logs available for analysis. This may indicate the canary is not running or logs are not being collected."
+        fi
+
+        # Prepare the prompt
+        PROMPT="Analyze these container application logs from a canary deployment. Detect anomalies such as:
+        - Error spikes or new error types
+        - Increased latency or degraded performance
+        - Startup crashes or initialization failures
+        - Memory/CPU warnings
+        - Suppressed exceptions
+        - Missing expected events (absence-of-signal)
+        - Any patterns that suggest the canary is unhealthy
+
+        Classify severity and output a JSON response with:
+        {
+          \"decision\": \"PROMOTE\" | \"ROLLBACK\" | \"DEGRADED\",
+          \"severity\": \"OK\" | \"DEGRADED\" | \"CRITICAL\",
+          \"summary\": \"Brief summary of findings\",
+          \"anomalies\": [\"list of detected anomalies\"],
+          \"confidence\": 0.0-1.0
+        }
+
+        Logs to analyze:
+        $LOG_CONTENT"
+
+        # Use OpenAI API (fallback to DeepSeek if OpenAI key not available)
+        if [ -n "$OPENAI_API_KEY" ] && [ "$OPENAI_API_KEY" != "" ]; then
+          echo "Using OpenAI API..."
+          API_URL="https://api.openai.com/v1/chat/completions"
+          API_KEY="$OPENAI_API_KEY"
+          MODEL_NAME="gpt-4o"
+        elif [ -n "$DEEPSEEK_API_KEY" ] && [ "$DEEPSEEK_API_KEY" != "" ]; then
+          echo "Using DeepSeek API..."
+          API_URL="https://api.deepseek.com/v1/chat/completions"
+          API_KEY="$DEEPSEEK_API_KEY"
+          MODEL_NAME="deepseek-chat"
+        else
+          echo "❌ No API key found. Set OPENAI_API_KEY or DEEPSEEK_API_KEY secret."
+          exit 1
+        fi
+
+        # Make API call
+        RESPONSE=$(curl -s "$API_URL" \
+          -H "Authorization: Bearer $API_KEY" \
+          -H "Content-Type: application/json" \
+          -d "{
+                \"model\": \"$MODEL_NAME\",
+                \"messages\": [
+                  {\"role\": \"system\", \"content\": \"You are an expert SRE anomaly detector. Analyze container logs and detect anomalies. Output strict JSON only with the specified fields.\"},
+                  {\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}
+                ],
+                \"temperature\": 0.0,
+                \"max_tokens\": 1000
+              }")
+
+        echo "$RESPONSE" > ml_result.json
+
+        # Check for API errors
+        if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+          ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error.message // "Unknown API error"')
+          echo "❌ API Error: $ERROR_MSG"
+          echo "decision=DEGRADED" >> $GITHUB_OUTPUT
+          echo "response=$RESPONSE" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Extract decision from response
+        CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "{}"')
+        
+        # Try to parse JSON from content (might be wrapped in markdown)
+        JSON_CONTENT=$(echo "$CONTENT" | grep -oP '\{.*\}' | head -1 || echo "$CONTENT")
+        
+        DECISION=$(echo "$JSON_CONTENT" | jq -r '.decision // "DEGRADED"' 2>/dev/null || echo "DEGRADED")
+        SEVERITY=$(echo "$JSON_CONTENT" | jq -r '.severity // "UNKNOWN"' 2>/dev/null || echo "UNKNOWN")
+        SUMMARY=$(echo "$JSON_CONTENT" | jq -r '.summary // "Analysis completed"' 2>/dev/null || echo "Analysis completed")
+
+        echo "decision=$DECISION" >> $GITHUB_OUTPUT
+        echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
+        echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
+        echo "response=$RESPONSE" >> $GITHUB_OUTPUT
+
+        echo "🤖 ML Decision: $DECISION"
+        echo "📊 Severity: $SEVERITY"
+        echo "📝 Summary: $SUMMARY"
+
+    - name: 📎 Upload ML diagnostics
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ml-canary-analysis-${{ github.event.inputs.app_name }}
+        path: |
+          canary_logs.json
+          ml_result.json
+
+    # ===============================
+    # 🤖 Autonomous PROMOTION decision
+    # ===============================
+    - name: 🟢 Promote Canary (ML says OK)
+      if: steps.ml.outputs.decision == 'PROMOTE'
+      uses: benc-uk/workflow-dispatch@v1
+      with:
+        workflow: promote_canary.yml
+        ref: main
+        inputs: |
+          app_name=${{ github.event.inputs.app_name }}
+
+    # ===============================
+    # 🔴 Autonomous ROLLBACK decision
+    # ===============================
+    - name: 🔴 Rollback Canary (ML says ROLLBACK)
+      if: steps.ml.outputs.decision == 'ROLLBACK'
+      uses: benc-uk/workflow-dispatch@v1
+      with:
+        workflow: worker_rollback.yml
+        ref: main
+        inputs: |
+          app_name=${{ github.event.inputs.app_name }}
+
+    - name: 🟡 Degraded Canary — Notify Humans
+      if: steps.ml.outputs.decision == 'DEGRADED'
+      run: |
+        echo "⚠️ Canary degraded — holding state and requiring human review."
+        echo "No auto-promotion or rollback executed."
+        echo "Review ML analysis in artifacts: ml-canary-analysis-${{ github.event.inputs.app_name }}"
