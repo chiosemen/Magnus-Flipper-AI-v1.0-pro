@@ -1,0 +1,196 @@
+/* Design Tokens — Magnus Flipper AI Brand Identity Pack */
+/* Dark-mode-first, mobile-first design system */
+
+:root {
+  /* ============================================
+     BRAND COLORS
+     ============================================ */
+  --primary: #4FF0E6;
+  --accent: #8A4FFF;
+  --danger: #FF4F4F;
+  --success: #4FF08B;
+  
+  /* Primary shades */
+  --primary-50: #E6FFFD;
+  --primary-100: #B3FFF9;
+  --primary-200: #80FFF5;
+  --primary-300: #4DF0E6;
+  --primary-400: #1AE0D7;
+  --primary-500: #4FF0E6;
+  --primary-600: #3DD0C6;
+  --primary-700: #2BB0A6;
+  --primary-800: #199086;
+  --primary-900: #077066;
+  
+  /* Accent shades */
+  --accent-50: #F3E8FF;
+  --accent-100: #E0C2FF;
+  --accent-200: #CD9CFF;
+  --accent-300: #BA76FF;
+  --accent-400: #A750FF;
+  --accent-500: #8A4FFF;
+  --accent-600: #6D3FCC;
+  --accent-700: #502F99;
+  --accent-800: #331F66;
+  --accent-900: #160F33;
+  
+  /* Danger shades */
+  --danger-50: #FFE6E6;
+  --danger-100: #FFB3B3;
+  --danger-200: #FF8080;
+  --danger-300: #FF4D4D;
+  --danger-400: #FF1A1A;
+  --danger-500: #FF4F4F;
+  --danger-600: #CC3F3F;
+  --danger-700: #992F2F;
+  --danger-800: #661F1F;
+  --danger-900: #330F0F;
+  
+  /* Success shades */
+  --success-50: #E6FFF0;
+  --success-100: #B3FFD1;
+  --success-200: #80FFB2;
+  --success-300: #4DFF93;
+  --success-400: #1AFF74;
+  --success-500: #4FF08B;
+  --success-600: #3FCC6F;
+  --success-700: #2F9953;
+  --success-800: #1F6637;
+  --success-900: #0F331B;
+
+  /* ============================================
+     BACKGROUND COLORS (Dark Theme - Default)
+     ============================================ */
+  --background: #0D1117;
+  --surface: #161B22;
+  --bg-primary: #0D1117;
+  --bg-secondary: #161B22;
+  --bg-tertiary: #1F2937;
+  --bg-subtle: #0F1419;
+  --bg-hover: #1C2128;
+
+  /* ============================================
+     TEXT COLORS (Dark Theme - Default)
+     ============================================ */
+  --text-primary: #E6EDF3;
+  --text-secondary: #9BA7B4;
+  --text-muted: #6E7681;
+  --text-inverse: #0D1117;
+
+  /* ============================================
+     BORDER COLORS (Dark Theme)
+     ============================================ */
+  --border-subtle: #21262D;
+  --border-strong: #30363D;
+  --border-focus: var(--primary);
+
+  /* ============================================
+     SPACING SCALE (Mobile-first)
+     ============================================ */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* Semantic Spacing */
+  --spacing-card-padding: 16px;
+  --spacing-panel-padding: 12px;
+  --spacing-cell-padding: 8px 12px;
+  --spacing-badge-padding: 4px 8px;
+  --spacing-chip-padding: 6px 12px;
+  --spacing-log-line-padding: 4px 0px;
+
+  /* ============================================
+     BORDER RADIUS
+     ============================================ */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ============================================
+     SHADOWS
+     ============================================ */
+  --shadow-none: none;
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --shadow-focus: 0 0 0 2px rgba(79, 240, 230, 0.3);
+
+  /* ============================================
+     TRANSITIONS
+     ============================================ */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* ============================================
+     SHADCN COMPATIBILITY
+     ============================================ */
+  --foreground: var(--text-primary);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-primary);
+  --primary-foreground: var(--text-inverse);
+  --secondary: var(--bg-tertiary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-subtle);
+  --muted-foreground: var(--text-secondary);
+  --accent-foreground: var(--text-primary);
+  --destructive-foreground: var(--text-inverse);
+  --border: var(--border-subtle);
+  --input: var(--bg-tertiary);
+  --ring: var(--primary);
+  --radius: var(--radius-md);
+}
+
+/* Force Dark Mode (default) */
+[data-theme="dark"],
+:root:not([data-theme="light"]) {
+  --background: #0D1117;
+  --surface: #161B22;
+  --bg-primary: #0D1117;
+  --bg-secondary: #161B22;
+  --bg-tertiary: #1F2937;
+  --bg-subtle: #0F1419;
+  --bg-hover: #1C2128;
+
+  --text-primary: #E6EDF3;
+  --text-secondary: #9BA7B4;
+  --text-muted: #6E7681;
+  --text-inverse: #0D1117;
+
+  --border-subtle: #21262D;
+  --border-strong: #30363D;
+  --border-focus: var(--primary);
+}
+
+/* Light Theme Override */
+[data-theme="light"] {
+  --background: #FFFFFF;
+  --surface: #F6F8FA;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F6F8FA;
+  --bg-tertiary: #FFFFFF;
+  --bg-subtle: #F6F8FA;
+  --bg-hover: #F0F3F6;
+
+  --text-primary: #1F2328;
+  --text-secondary: #656D76;
+  --text-muted: #8B949E;
+  --text-inverse: #FFFFFF;
+
+  --border-subtle: #D1D9E0;
+  --border-strong: #B1BAC4;
+  --border-focus: var(--primary);
+}
