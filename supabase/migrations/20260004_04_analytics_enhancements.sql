@@ -102,9 +102,9 @@ CREATE INDEX idx_activity_feed_marketplace ON activity_feed(marketplace);
 CREATE INDEX idx_activity_feed_user_id ON activity_feed(user_id);
 CREATE INDEX idx_activity_feed_created_at ON activity_feed(created_at DESC);
 
--- Add TTL policy: automatically delete records older than 30 days
+-- Note: TTL cleanup is handled by worker-based background task, not via index
+-- The worker task runs periodically to delete records older than 30 days
 -- This keeps the feed table lean for real-time queries
-CREATE INDEX idx_activity_feed_created_at_ttl ON activity_feed(created_at) WHERE created_at < NOW() - INTERVAL '30 days';
 
 COMMENT ON TABLE activity_feed IS 'Real-time activity feed for dashboard updates (30-day retention)';
 COMMENT ON COLUMN activity_feed.activity_type IS 'Type of activity event';

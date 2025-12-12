@@ -18,8 +18,9 @@
 
 DROP INDEX IF EXISTS idx_activity_feed_created_at_ttl;
 
--- Note: TTL cleanup is handled by the cleanup_old_activity_feed() function
--- which is called by scheduled jobs. No index needed for this.
+-- Note: TTL cleanup is handled by worker-based background task (worker-scheduler)
+-- The worker runs periodically to delete records older than 30 days
+-- No index needed for this - standard index on created_at exists for query performance
 
 -- =============================================================================
 -- 2. ENABLE ROW LEVEL SECURITY
