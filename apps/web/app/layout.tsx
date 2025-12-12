@@ -8,12 +8,13 @@ import { Toaster } from "../marketing-swoopa/components/ui/toaster";
 import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
 import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "@magnus-flipper-ai/ui/providers";
 
 const queryClient = new QueryClient();
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" suppressHydrationWarning data-theme="dark">
       <head>
         <title>Magnus Flipper – AI Marketplace Intelligence</title>
         <meta name="description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
@@ -25,18 +26,21 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="twitter:description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
       </head>
       <body 
+        className="font-body antialiased"
         style={{ 
           position: "relative", 
           overflowX: "hidden"
         }}
       >
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            {children}
-          </TooltipProvider>
-        </QueryClientProvider>
+        <ThemeProvider defaultTheme="dark">
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              {children}
+            </TooltipProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

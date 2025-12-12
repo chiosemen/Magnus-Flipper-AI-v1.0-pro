@@ -6,12 +6,20 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./components": "./components/index.ts",
+    "./providers": "./providers/index.ts",
+    "./theme": "./theme/tokens.ts",
+    "./tailwind-preset": "./tailwind-preset.js",
     "./*": "./src/*"
   },
-  "files": ["src"],
+  "files": ["src", "components", "theme", "providers", "tailwind-preset.js"],
   "dependencies": {},
   "peerDependencies": {
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "framer-motion": "^11.0.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.0.0"
   }
 }

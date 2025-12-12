@@ -1,162 +1,88 @@
-<<<<<<< HEAD
-# Multi-stage Dockerfile for Magnus Flipper AI Alerts Worker
-# Optimized for Azure Container Apps Jobs with pnpm monorepo
+# Worker Alerts Dockerfile
+# Build from repo root: docker build -f Dockerfile.worker-alerts -t magnus-worker-alerts:latest .
+# Uses multi-stage build with pnpm workspace support
 
-FROM node:20-alpine AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+FROM node:20-slim AS builder
+
 WORKDIR /app
 
-# Stage 1: Install dependencies
-FROM base AS deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/core/package.json ./packages/core/
-COPY packages/queue/package.json ./packages/queue/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/notifications/package.json ./packages/notifications/
-COPY apps/worker-alerts/package.json ./apps/worker-alerts/
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod=false
+# -------------------------------------------------------
+# Prisma fix for Debian (system dependencies)
+# -------------------------------------------------------
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    curl \
+  && rm -rf /var/lib/apt/lists/*
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+# -------------------------------------------------------
 
-# Stage 2: Build the application
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# Copy root workspace files (for pnpm workspace resolution)
+COPY package.json ./package.json
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
 
-# Build shared packages first
+# Copy worker-alerts source and package.json
+COPY apps/worker-alerts/package.json ./apps/worker-alerts/package.json
+COPY apps/worker-alerts/tsconfig.json ./apps/worker-alerts/tsconfig.json
+COPY apps/worker-alerts/src ./apps/worker-alerts/src
+
+# Copy required workspace packages
+COPY packages/core/package.json ./packages/core/package.json
+COPY packages/core/tsconfig.json ./packages/core/tsconfig.json
+COPY packages/core/src ./packages/core/src
+COPY packages/core/prisma ./packages/core/prisma
+
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Install all dependencies (including dev for build)
+RUN pnpm install --no-frozen-lockfile --ignore-scripts
+
+# Generate Prisma client explicitly
+RUN pnpm --filter @magnus-flipper-ai/core exec -- prisma generate --schema=./prisma/schema.prisma
+
+# Build packages
 RUN pnpm --filter @magnus-flipper-ai/core build
-RUN pnpm --filter @magnus-flipper-ai/queue build
-RUN pnpm --filter @magnus-flipper-ai/shared build
-RUN pnpm --filter @magnus-flipper-ai/notifications build
 
 # Build worker-alerts
-RUN pnpm --filter worker-alerts build
+RUN pnpm --filter @magnus-flipper-ai/worker-alerts build
 
-# Stage 3: Production image
-FROM base AS runner
-ENV NODE_ENV=production
+# Production stage
+FROM node:20-slim
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nodejs
-
-# Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/apps/worker-alerts/dist ./apps/worker-alerts/dist
-COPY --from=builder --chown=nodejs:nodejs /app/apps/worker-alerts/package.json ./apps/worker-alerts/
-COPY --from=builder --chown=nodejs:nodejs /app/packages/core/dist ./packages/core/dist
-COPY --from=builder --chown=nodejs:nodejs /app/packages/core/package.json ./packages/core/
-COPY --from=builder --chown=nodejs:nodejs /app/packages/queue/dist ./packages/queue/dist
-COPY --from=builder --chown=nodejs:nodejs /app/packages/queue/package.json ./packages/queue/
-COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/dist ./packages/shared/dist
-COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/package.json ./packages/shared/
-COPY --from=builder --chown=nodejs:nodejs /app/packages/notifications/dist ./packages/notifications/dist
-COPY --from=builder --chown=nodejs:nodejs /app/packages/notifications/package.json ./packages/notifications/
-COPY --from=builder --chown=nodejs:nodejs /app/package.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/pnpm-lock.yaml ./
-COPY --from=builder --chown=nodejs:nodejs /app/pnpm-workspace.yaml ./
-
-# Install production dependencies only
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod
-
-USER nodejs
-
-# For saved search job (runs as Container Apps Job)
-CMD ["node", "apps/worker-alerts/dist/savedSearchJob.js"]
-=======
-# syntax=docker/dockerfile:1
-
-############################
-# Base image with corepack #
-############################
-FROM node:20-alpine AS base
 WORKDIR /app
+
+# Copy root workspace files
+COPY package.json ./package.json
+COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+
+# Copy built worker-alerts dist from builder stage
+COPY --from=builder /app/apps/worker-alerts/dist ./apps/worker-alerts/dist
+COPY --from=builder /app/apps/worker-alerts/package.json ./apps/worker-alerts/package.json
+
+# Copy built workspace package dists from builder stage
+COPY --from=builder /app/packages/core/dist ./packages/core/dist
+COPY --from=builder /app/packages/core/package.json ./packages/core/package.json
+COPY --from=builder /app/packages/core/prisma ./packages/core/prisma
+
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Install only production dependencies
+RUN pnpm install --prod --frozen-lockfile
+
+# Set working directory to worker for runtime
+WORKDIR /app/apps/worker-alerts
+
+# Expose port for health checks
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })" || exit 1
+
+# Run worker
 ENV NODE_ENV=production
-
-# Enable corepack so pnpm works
-RUN corepack enable
-
-#########################
-# Install dependencies  #
-#########################
-FROM base AS deps
-
-# Copy workspace files
-COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
-
-# Copy all package.json files for proper dependency resolution
-COPY packages/core/package.json ./packages/core/
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/queue/package.json ./packages/queue/
-COPY packages/notifications/package.json ./packages/notifications/
-COPY apps/worker-alerts/package.json ./apps/worker-alerts/
-
-# Install all deps (frozen lockfile for reproducibility)
-RUN pnpm install --frozen-lockfile --prod=false
-
-#########################
-# Build packages & worker #
-#########################
-FROM deps AS build
-
-# Copy source code
-COPY packages/core ./packages/core
-COPY packages/shared ./packages/shared
-COPY packages/queue ./packages/queue
-COPY packages/notifications ./packages/notifications
-COPY apps/worker-alerts ./apps/worker-alerts
-
-# Build shared packages first
-RUN pnpm --filter @magnus-flipper-ai/core build
-RUN pnpm --filter @magnus-flipper-ai/shared build
-RUN pnpm --filter @magnus-flipper-ai/queue build
-RUN pnpm --filter @magnus-flipper-ai/notifications build
-
-# Build worker
-RUN pnpm --filter worker-alerts build
-
-#########################
-# Production runtime    #
-#########################
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
-
-# Copy node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages ./packages
-
-# Copy built files from build stage
-COPY --from=build /app/packages/core/dist ./packages/core/dist
-COPY --from=build /app/packages/shared/dist ./packages/shared/dist
-COPY --from=build /app/packages/queue/dist ./packages/queue/dist
-COPY --from=build /app/packages/notifications/dist ./packages/notifications/dist
-COPY --from=build /app/apps/worker-alerts/dist ./apps/worker-alerts/dist
-
-# Copy package.json files for runtime
-COPY --from=build /app/packages/core/package.json ./packages/core/
-COPY --from=build /app/packages/shared/package.json ./packages/shared/
-COPY --from=build /app/packages/queue/package.json ./packages/queue/
-COPY --from=build /app/packages/notifications/package.json ./packages/notifications/
-COPY --from=build /app/apps/worker-alerts/package.json ./apps/worker-alerts/
-COPY --from=build /app/package.json ./
-COPY --from=build /app/pnpm-workspace.yaml ./
-
-# Re-run install in production mode to ensure proper linking
-RUN corepack enable && pnpm install --prod --frozen-lockfile --offline || pnpm install --prod --frozen-lockfile
-
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 workeruser
-USER workeruser
-
-# No port to expose; it's a worker/job that runs then exits
-
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
-
-# Start the worker
-CMD ["node", "apps/worker-alerts/dist/index.js"]
->>>>>>> d30e962 (feat: Add multi-tier membership system and Azure deployment infrastructure)
+CMD ["node", "dist/index.js"]

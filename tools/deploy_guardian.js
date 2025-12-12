@@ -254,6 +254,7 @@ function validateWorkers() {
   const workers = [
     "worker-realtime",
     "worker-scheduler",
+    "worker-alerts",
   ];
 
   // Check Docker is available

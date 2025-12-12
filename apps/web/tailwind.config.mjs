@@ -1,16 +1,20 @@
+import uiPreset from "../../packages/ui/theme/plugin.mjs";
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class', '[data-theme="dark"]'],
+  presets: [uiPreset],
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
     "./marketing-swoopa/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "../../packages/ui/components/**/*.{js,ts,jsx,tsx}",
+    "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-        // shadcn compatibility
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {
@@ -44,7 +48,6 @@ export default {
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
-        // Brand Identity Pack
         success: {
           DEFAULT: "var(--success)",
           50: "var(--success-50)",
@@ -58,9 +61,13 @@ export default {
           800: "var(--success-800)",
           900: "var(--success-900)",
         },
-        // Surface colors
+        warning: {
+          DEFAULT: "var(--warning)",
+        },
+        info: {
+          DEFAULT: "var(--info)",
+        },
         surface: "var(--surface)",
-        // Text colors
         text: {
           primary: "var(--text-primary)",
           secondary: "var(--text-secondary)",
@@ -132,4 +139,10 @@ export default {
     },
   },
   plugins: [],
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
+  experimental: {
+    optimizeUniversalDefaults: true,
+  },
 };

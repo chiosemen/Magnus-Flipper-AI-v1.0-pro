@@ -14,6 +14,8 @@ This is the central index for all operational runbooks and procedures for Magnus
 | Investigating issues | [Diagnostics](./diagnostics.md) | - |
 | Security incident | [Security Events](./security-events.md) | SEV-1 |
 | Preparing deployment | [Deployment Checklist](./deployment-checklist.md) | - |
+| Production deployment | [Production Deployment](./production-deployment.md) | - |
+| Observability & alerts | [Observability & Alarms](./observability-alarms.md) | - |
 | Understanding system | [Overview](./overview.md) | - |
 | SLO/SLA questions | [SLO/SLA](./slo-sla.md) | - |
 
@@ -199,6 +201,53 @@ This is the central index for all operational runbooks and procedures for Magnus
 - Reporting on service quality
 - Planning improvements
 - Error budget management
+
+---
+
+### 9. [Production Deployment](./production-deployment.md)
+
+**Purpose**: Step-by-step procedures for deploying to production environments.
+
+**Contents**:
+- Pre-deployment checklist
+- Web app deployment (Vercel)
+- API deployment (Azure Container Apps)
+- Worker deployment procedures
+- Mobile app deployment (iOS/Android)
+- Rollback procedures
+- Post-deployment verification
+- Troubleshooting
+
+**When to Use**:
+- Deploying to production
+- Planning releases
+- Verifying deployments
+- Rolling back changes
+- Emergency deployments
+
+---
+
+### 10. [Observability & Alarms](./observability-alarms.md)
+
+**Purpose**: Observability infrastructure, alarm configurations, and alerting procedures.
+
+**Contents**:
+- Observability stack overview
+- Alert rules configuration
+- Monitoring dashboards
+- Alert response procedures
+- Log analysis queries
+- Metrics to monitor
+- SLO targets
+- Alert tuning
+
+**When to Use**:
+- Setting up monitoring
+- Configuring alerts
+- Responding to alerts
+- Analyzing logs
+- Tuning alert thresholds
+- Understanding observability infrastructure
 
 ---
 

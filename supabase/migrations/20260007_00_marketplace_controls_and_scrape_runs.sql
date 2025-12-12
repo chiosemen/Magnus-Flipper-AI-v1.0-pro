@@ -69,35 +69,83 @@ ALTER TABLE marketplace_controls ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for scrape_runs
 -- Service role can read/write all (for workers and admin)
-CREATE POLICY IF NOT EXISTS "Service role can manage scrape_runs"
-  ON scrape_runs
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = current_schema()
+      AND tablename = 'scrape_runs'
+      AND policyname = 'Service role can manage scrape_runs'
+  ) THEN
+    CREATE POLICY "Service role can manage scrape_runs"
+      ON scrape_runs
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END
+$$;
 
 -- Users can read their own scrape runs
-CREATE POLICY IF NOT EXISTS "Users can read own scrape_runs"
-  ON scrape_runs
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = current_schema()
+      AND tablename = 'scrape_runs'
+      AND policyname = 'Users can read own scrape_runs'
+  ) THEN
+    CREATE POLICY "Users can read own scrape_runs"
+      ON scrape_runs
+      FOR SELECT
+      TO authenticated
+      USING (auth.uid() = user_id);
+  END IF;
+END
+$$;
 
 -- RLS Policies for marketplace_controls
 -- Service role can read/write all (for workers and admin)
-CREATE POLICY IF NOT EXISTS "Service role can manage marketplace_controls"
-  ON marketplace_controls
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = current_schema()
+      AND tablename = 'marketplace_controls'
+      AND policyname = 'Service role can manage marketplace_controls'
+  ) THEN
+    CREATE POLICY "Service role can manage marketplace_controls"
+      ON marketplace_controls
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END
+$$;
 
 -- Authenticated users can read marketplace controls (for admin UI)
-CREATE POLICY IF NOT EXISTS "Authenticated users can read marketplace_controls"
-  ON marketplace_controls
-  FOR SELECT
-  TO authenticated
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = current_schema()
+      AND tablename = 'marketplace_controls'
+      AND policyname = 'Authenticated users can read marketplace_controls'
+  ) THEN
+    CREATE POLICY "Authenticated users can read marketplace_controls"
+      ON marketplace_controls
+      FOR SELECT
+      TO authenticated
+      USING (true);
+  END IF;
+END
+$$;
 
 -- =============================================================================
 -- UPDATE TRIGGER FOR updated_at
@@ -136,7 +184,6 @@ COMMENT ON TABLE marketplace_controls IS 'Admin controls for per-marketplace scr
 COMMENT ON COLUMN scrape_runs.marketplace IS 'Marketplace identifier (e.g., "ebay", "facebook", "craigslist")';
 COMMENT ON COLUMN scrape_runs.success IS 'Whether the scrape completed successfully';
 COMMENT ON COLUMN scrape_runs.duration_ms IS 'How long the scrape took in milliseconds';
-COMMENT ON COLUMN scrape_runs.outcome IS 'Outcome type: SUCCESS, RATE_LIMIT, or ERROR';
 
 COMMENT ON COLUMN marketplace_controls.marketplace IS 'Marketplace identifier (must match marketplace names used in scrapers)';
 COMMENT ON COLUMN marketplace_controls.enabled IS 'If false, workers will skip scraping this marketplace';

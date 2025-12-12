@@ -15,6 +15,7 @@ env:
   AZURE_RESOURCE_GROUP: 'magnus-rg'
   REALTIME_APP_NAME: 'mf-worker-realtime'
   SCHEDULER_APP_NAME: 'mf-worker-scheduler'
+  ALERTS_APP_NAME: 'mf-worker-alerts'
 
 permissions:
   id-token: write
@@ -161,10 +162,25 @@ jobs:
         SCH_LATEST=$(echo "$SCH_JSON" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name')
         SCH_PREV=$(echo "$SCH_JSON" | jq -r 'sort_by(.properties.createdTime) | reverse | .[1].name // empty')
 
+        echo "➡️  Fetching alerts revisions..."
+        ALERTS_JSON=$(az containerapp revision list \
+          --name $ALERTS_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --query "[?properties.active==\`true\`]" -o json)
+
+        echo "Realtime revisions: $RT_JSON"
+        echo "Scheduler revisions: $SCH_JSON"
+        echo "Alerts revisions: $ALERTS_JSON"
+
+        ALERTS_LATEST=$(echo "$ALERTS_JSON" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name')
+        ALERTS_PREV=$(echo "$ALERTS_JSON" | jq -r 'sort_by(.properties.createdTime) | reverse | .[1].name // empty')
+
         echo "rt_latest=$RT_LATEST"  >> $GITHUB_OUTPUT
         echo "rt_prev=$RT_PREV"      >> $GITHUB_OUTPUT
         echo "sch_latest=$SCH_LATEST" >> $GITHUB_OUTPUT
         echo "sch_prev=$SCH_PREV"     >> $GITHUB_OUTPUT
+        echo "alerts_latest=$ALERTS_LATEST" >> $GITHUB_OUTPUT
+        echo "alerts_prev=$ALERTS_PREV"     >> $GITHUB_OUTPUT
 
     # -------------------------------
     # 11. Canary traffic: 10% to new, 90% to stable
@@ -228,13 +244,23 @@ jobs:
           --resource-group $AZURE_RESOURCE_GROUP \
           --query properties.configuration.ingress.fqdn -o tsv)
 
+        ALERTS_FQDN=$(az containerapp show \
+          --name $ALERTS_APP_NAME \
+          --resource-group $AZURE_RESOURCE_GROUP \
+          --query properties.configuration.ingress.fqdn -o tsv)
+
         echo "Realtime FQDN: $REALTIME_FQDN"
         echo "Scheduler FQDN: $SCHED_FQDN"
+        echo "Alerts FQDN: $ALERTS_FQDN"
+
+        echo "🔔 Checking worker-alerts health…"
+        curl -f https://$ALERTS_FQDN/health || (echo "❌ worker-alerts failed health check" && exit 1)
+        echo "✅ worker-alerts healthy"
 
         curl -f https://$REALTIME_FQDN/health || exit 1
         curl -f https://$SCHED_FQDN/health || exit 1
 
-        echo "✅ Workers healthy."
+        echo "✅ All workers healthy."
 
     # -------------------------------
     # 13. Frontend Build (sanity) + Vercel Deploy

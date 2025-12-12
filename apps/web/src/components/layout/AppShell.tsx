@@ -6,9 +6,13 @@ interface AppShellProps {
   children: ReactNode;
 }
 
+/**
+ * AppShell - Main application layout wrapper
+ * Uses design tokens from packages/ui/theme/tokens.ts
+ */
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex">
+    <div className="min-h-screen bg-background flex">
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopNav />
