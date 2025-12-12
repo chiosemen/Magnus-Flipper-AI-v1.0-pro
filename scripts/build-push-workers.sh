@@ -44,6 +44,19 @@ echo ""
 echo "5. Pushing magnus-worker-scheduler..."
 docker push "${ACR_LOGIN_SERVER}/magnus-worker-scheduler:latest"
 
+# Build and push worker-alerts
+echo ""
+echo "6. Building magnus-worker-alerts..."
+docker build \
+  --platform linux/amd64 \
+  -f Dockerfile.worker-alerts \
+  -t "${ACR_LOGIN_SERVER}/magnus-worker-alerts:latest" \
+  .
+
+echo ""
+echo "7. Pushing magnus-worker-alerts..."
+docker push "${ACR_LOGIN_SERVER}/magnus-worker-alerts:latest"
+
 echo ""
 echo "=========================================="
 echo "✅ Build and push complete!"
@@ -52,6 +65,7 @@ echo ""
 echo "Images pushed:"
 echo "  - ${ACR_LOGIN_SERVER}/magnus-worker-realtime:latest"
 echo "  - ${ACR_LOGIN_SERVER}/magnus-worker-scheduler:latest"
+echo "  - ${ACR_LOGIN_SERVER}/magnus-worker-alerts:latest"
 echo ""
 echo "Next steps:"
 echo "  1. Verify images: ./scripts/verify-acr-images.sh"

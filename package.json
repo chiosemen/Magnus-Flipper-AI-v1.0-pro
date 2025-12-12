@@ -37,7 +37,17 @@
     "deploy:check": "bash scripts/deploy-check.sh",
     "release:check": "pnpm lint && pnpm test && pnpm build",
     "secrets:gate": "node scripts/deploy/secrets-integrity-gate.mjs",
-    "migrate:supabase": "bash scripts/run-supabase-migrations.sh"
+    "migrate:supabase": "bash scripts/run-supabase-migrations.sh",
+    "figma:sync": "ts-node scripts/figma-sync.ts",
+    "figma:compare": "ts-node scripts/compare-figma-code.ts --report",
+    "figma:fix": "ts-node scripts/compare-figma-code.ts --fix",
+    "layout:audit": "ts-node scripts/layout-auditor.ts",
+    "contract:enforce": "ts-node scripts/component-contract-enforcer.ts",
+    "contract:generate": "ts-node scripts/component-contract-enforcer.ts --generate-contracts",
+    "test:supervise": "ts-node scripts/testing-supervisor.ts --coverage",
+    "test:generate": "ts-node scripts/testing-supervisor.ts --generate",
+    "stress:test": "ts-node scripts/layout-stress-tester.ts",
+    "stress:visual": "ts-node scripts/layout-stress-tester.ts --breakpoints --dark-mode"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

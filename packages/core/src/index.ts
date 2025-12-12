@@ -7,3 +7,7 @@ export * from "./db.js";
 export * from "./marketplaces.js";
 export * from "./services/scrapeRunService.js";
 export * from "./services/marketplaceControlService.js";
+
+// UI Component Contracts (for cross-platform consistency)
+// Note: These are TypeScript types, exported directly
+export * from "../ui-contracts";

@@ -223,7 +223,8 @@ async function phase2_dockerHardening() {
   log("Hardening worker Dockerfiles...", "🔧");
   const dockerfiles = [
     "apps/worker-realtime/Dockerfile",
-    "apps/worker-scheduler/Dockerfile"
+    "apps/worker-scheduler/Dockerfile",
+    "Dockerfile.worker-alerts"
   ];
   
   dockerfiles.forEach(dockerfile => {
@@ -465,7 +466,8 @@ async function phase5_workerHealth() {
   
   const workers = [
     { name: "mf-worker-realtime", key: "realtime" },
-    { name: "mf-worker-scheduler", key: "scheduler" }
+    { name: "mf-worker-scheduler", key: "scheduler" },
+    { name: "mf-worker-alerts", key: "alerts" }
   ];
   
   for (const worker of workers) {

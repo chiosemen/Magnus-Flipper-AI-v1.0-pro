@@ -30,3 +30,8 @@ variable "worker_scheduler_name" {
   default = "mf-worker-scheduler"
 }
 
+variable "worker_alerts_name" {
+  type    = string
+  default = "mf-worker-alerts"
+}
+
