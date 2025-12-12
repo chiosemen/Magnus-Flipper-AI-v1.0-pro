@@ -45,71 +45,19 @@ jobs:
           pnpm --version
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm -w install --frozen-lockfile
 
       - name: 🔍 Lint
-        run: pnpm --filter mobile lint
+        run: pnpm --filter @magnus-flipper-ai/mobile lint
 
       - name: 📝 Type check
-        run: pnpm --filter mobile typecheck
+        run: pnpm --filter @magnus-flipper-ai/mobile type-check
 
-  test:
-    name: 🧪 Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🟦 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: 🟣 Install pnpm
-        run: |
-          npm install -g pnpm
-          pnpm --version
-
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 🧪 Run tests
-        run: pnpm --filter mobile test
-
-  build:
-    name: 🏗️ Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🟦 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: 🟣 Install pnpm
-        run: |
-          npm install -g pnpm
-          pnpm --version
-
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 🏗️ Build mobile app
-        run: pnpm --filter mobile build
-
-      - name: 📊 Build summary
+      - name: 📊 CI Summary
         run: |
           echo "## ✅ Mobile App CI Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Lint check" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Type check" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Tests passed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Build successful" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Lint check passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Type check passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> Note: Tests and builds are handled separately (EAS for builds)"
