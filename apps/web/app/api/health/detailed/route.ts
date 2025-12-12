@@ -51,6 +51,9 @@ export async function GET() {
   let overallStatus: 'ok' | 'degraded' | 'down' = 'ok';
 
   // Check Supabase connectivity
+  // In preview environments, gracefully degrade if credentials are missing
+  const isPreview = process.env.VERCEL_ENV === 'preview' || process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
+  
   if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const supabaseStart = Date.now();
@@ -77,15 +80,27 @@ export async function GET() {
         message: `Supabase connection failed: ${error.message}`,
         connected: false,
       };
-      overallStatus = 'degraded';
+      // In preview, degraded is acceptable; in production, this is a concern
+      overallStatus = isPreview ? 'degraded' : 'degraded';
     }
   } else {
-    checks.supabase = {
-      status: 'degraded',
-      message: 'Supabase credentials not configured',
-      connected: false,
-    };
-    overallStatus = 'degraded';
+    // If Supabase not configured, mark as degraded (acceptable in preview)
+    if (isPreview) {
+      checks.supabase = {
+        status: 'degraded',
+        message: 'Supabase credentials not configured (preview environment)',
+        connected: false,
+      };
+      // Preview environments may not have all credentials - web being up is sufficient
+      overallStatus = 'ok';
+    } else {
+      checks.supabase = {
+        status: 'degraded',
+        message: 'Supabase credentials not configured',
+        connected: false,
+      };
+      overallStatus = 'degraded';
+    }
   }
 
   const response: DetailedHealthResponse = {

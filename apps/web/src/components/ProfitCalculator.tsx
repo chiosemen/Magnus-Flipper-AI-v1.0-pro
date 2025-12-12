@@ -21,7 +21,9 @@ export function ProfitCalculator() {
 
   const grossProfit = sellPriceNum - buyPriceNum;
   const netProfit = grossProfit - feesNum;
-  const margin = buyPriceNum > 0 ? ((netProfit / buyPriceNum) * 100).toFixed(2) : "0.00";
+  // Margin: profit as percentage of sell price (how much profit per unit sold)
+  const margin = sellPriceNum > 0 ? ((netProfit / sellPriceNum) * 100).toFixed(2) : "0.00";
+  // ROI: return on investment as percentage of buy price (how much return on initial investment)
   const roi = buyPriceNum > 0 ? ((netProfit / buyPriceNum) * 100).toFixed(2) : "0.00";
 
   return (

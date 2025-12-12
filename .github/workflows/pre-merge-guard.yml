@@ -62,13 +62,16 @@ jobs:
           pnpm --filter @magnus-flipper-ai/core exec prisma generate --schema=./prisma/schema.prisma
 
       # --------------------------------------------------
-      # 6. Worker builds (scheduler + realtime)
+      # 6. Worker builds (realtime + scheduler + alerts)
       # --------------------------------------------------
       - name: 🛠️ Build worker-realtime
         run: pnpm --filter @magnus-flipper-ai/worker-realtime build
 
       - name: 🛠️ Build worker-scheduler
         run: pnpm --filter @magnus-flipper-ai/worker-scheduler build
+
+      - name: 🛠️ Build worker-alerts
+        run: pnpm --filter worker-alerts build
 
       # --------------------------------------------------
       # 7. Run DeployGuardian Pre-Merge Check - SAFETY GATE

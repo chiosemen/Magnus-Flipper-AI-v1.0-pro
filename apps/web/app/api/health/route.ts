@@ -44,6 +44,9 @@ export async function GET() {
   let overallStatus: 'ok' | 'degraded' | 'down' = 'ok';
 
   // Check Supabase connectivity
+  // In preview environments, gracefully degrade if credentials are missing
+  const isPreview = process.env.VERCEL_ENV === 'preview' || process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
+  
   if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const supabaseStart = Date.now();
@@ -69,12 +72,19 @@ export async function GET() {
       dependencies.supabase = {
         status: 'down',
       };
-      overallStatus = 'degraded'; // Web is up but Supabase is down
+      // In preview, degraded is acceptable; in production, this is a concern
+      overallStatus = isPreview ? 'degraded' : 'degraded';
     }
   } else {
-    // If Supabase not configured, mark as degraded
-    overallStatus = 'degraded';
-    dependencies.supabase.status = 'degraded';
+    // If Supabase not configured, mark as degraded (acceptable in preview)
+    if (isPreview) {
+      // Preview environments may not have all credentials - this is acceptable
+      dependencies.supabase.status = 'degraded';
+      overallStatus = 'ok'; // Web is up, which is sufficient for preview
+    } else {
+      overallStatus = 'degraded';
+      dependencies.supabase.status = 'degraded';
+    }
   }
 
   // Determine overall status
