@@ -1,26 +1,27 @@
-# ⚠️ DISABLED: This workflow has been consolidated into ci-invariant.yml
-# This file is preserved for history but will not run
-# All CI logic has been moved to .github/workflows/ci-invariant.yml
+name: 🛡️ CI Invariant
 
-name: 🚀 CI — Web App (DISABLED)
+# CI Invariant Workflow
+# This is the ONLY CI gate for pull requests
+# All other CI workflows are disabled/archived
+# Enforces: Preflight → Packages → Mobile/Web Validation
 
 on:
   pull_request:
     branches:
       - main
+    # Path filters: Only run when relevant files change
     paths:
-      - "apps/web/**"
-      - "packages/ui/**"
-      - "packages/core/**"
-      - ".github/workflows/ci-web.yml"
-  push:
-    branches:
-      - main
-    paths:
-      - "apps/web/**"
-      - "packages/ui/**"
-      - "packages/core/**"
-      - ".github/workflows/ci-web.yml"
+      - "apps/**"
+      - "packages/**"
+      - ".github/workflows/ci-invariant.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "Dockerfile*"
+      - "scripts/ci-preflight.sh"
+
+# EXPLICITLY DISABLED: push to main
+# CI must NOT run on push to main (only on PRs)
 
 env:
   NODE_VERSION: "20"
@@ -30,12 +31,10 @@ permissions:
   pull-requests: write
 
 jobs:
-  # All jobs disabled - logic moved to ci-invariant.yml
-  lint-and-typecheck:
-    if: false  # DISABLED: Use ci-invariant.yml instead
-    name: 🔍 Lint & Type Check
+  preflight:
+    name: 🛡️ Preflight Guardian
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
 
     steps:
       - name: 📥 Checkout repository
@@ -54,6 +53,87 @@ jobs:
 
       - name: 🛡️ CI Preflight
         run: bash scripts/ci-preflight.sh
+
+  packages:
+    name: 📦 Workspace Packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: preflight
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 🟣 Install pnpm
+        run: |
+          npm install -g pnpm
+          pnpm --version
+
+      - name: 📦 Install dependencies
+        run: pnpm -w install --frozen-lockfile
+
+      - name: 🔨 Build workspace packages
+        run: pnpm build:packages
+
+  mobile:
+    name: 📱 Mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: packages
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 🟣 Install pnpm
+        run: |
+          npm install -g pnpm
+          pnpm --version
+
+      - name: 📦 Install dependencies
+        run: pnpm -w install --frozen-lockfile
+
+      - name: 🔨 Build workspace packages
+        run: pnpm build:packages
+
+      - name: 🔍 Lint
+        run: pnpm --filter @magnus-flipper-ai/mobile lint
+
+      - name: 📝 Type check
+        run: pnpm --filter @magnus-flipper-ai/mobile type-check
+
+  web:
+    name: 🌐 Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: packages
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 🟣 Install pnpm
+        run: |
+          npm install -g pnpm
+          pnpm --version
 
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
@@ -67,78 +147,12 @@ jobs:
       - name: 📝 Type check
         run: pnpm --filter web typecheck
 
-  test:
-    if: false  # DISABLED: Use ci-invariant.yml instead
-    name: 🧪 Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🟦 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: 🟣 Install pnpm
-        run: |
-          npm install -g pnpm
-          pnpm --version
-
-      - name: 🛡️ CI Preflight
-        run: bash scripts/ci-preflight.sh
-
-      - name: 📦 Install dependencies
-        run: pnpm -w install --frozen-lockfile
-
-      - name: 🔨 Build workspace packages
-        run: pnpm build:packages
-
-      - name: 🧪 Run tests
+      - name: 🧪 Test
         run: pnpm --filter web test
 
-  build:
-    if: false  # DISABLED: Use ci-invariant.yml instead
-    name: 🏗️ Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: 🟦 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: 🟣 Install pnpm
-        run: |
-          npm install -g pnpm
-          pnpm --version
-
-      - name: 🛡️ CI Preflight
-        run: bash scripts/ci-preflight.sh
-
-      - name: 📦 Install dependencies
-        run: pnpm -w install --frozen-lockfile
-
-      - name: 🏗️ Build web app
+      - name: 🏗️ Build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key' }}
         run: |
-          pnpm build:web || exit 1
-
-      - name: 📊 Build summary
-        run: |
-          echo "## ✅ Web App CI Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Lint check" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Type check" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Tests passed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Build successful" >> $GITHUB_STEP_SUMMARY
+          pnpm build:web

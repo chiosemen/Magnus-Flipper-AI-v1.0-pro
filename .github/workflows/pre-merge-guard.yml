@@ -1,4 +1,8 @@
-name: 🚫 Pre-Merge Guard — Block Unsafe Merges
+# ⚠️ DISABLED: This workflow has been consolidated into ci-invariant.yml
+# This file is preserved for history but will not run
+# All CI logic has been moved to .github/workflows/ci-invariant.yml
+
+name: 🚫 Pre-Merge Guard — Block Unsafe Merges (DISABLED)
 
 on:
   pull_request:
@@ -11,7 +15,9 @@ permissions:
   pull-requests: write
 
 jobs:
+  # This job is disabled - logic moved to ci-invariant.yml
   block-unsafe:
+    if: false  # DISABLED: Use ci-invariant.yml instead
     name: 🚫 Block Unsafe Merges
     runs-on: ubuntu-latest
     timeout-minutes: 10
