@@ -131,7 +131,7 @@ Classify this anomaly and return ONLY valid JSON:
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = (data as any)?.choices?.[0]?.message?.content;
     if (!content) {
       throw new Error("Empty response from OpenAI");
     }
@@ -210,7 +210,7 @@ Classify this anomaly and return ONLY valid JSON:
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = (data as any)?.choices?.[0]?.message?.content;
     if (!content) {
       throw new Error("Empty response from DeepSeek");
     }
