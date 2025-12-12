@@ -3,7 +3,7 @@
  * Provides theme context throughout the app
  */
 
-import { createContext, useContext, ReactNode, useEffect } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme, darkTheme, lightTheme, type ThemeColors } from '@/lib/theme';
 
@@ -27,20 +27,9 @@ export function ThemeProvider({ children, forceDark }: ThemeProviderProps) {
   const isDark = forceDark !== undefined ? forceDark : systemTheme === darkTheme;
   const theme = isDark ? darkTheme : lightTheme;
 
-  // Apply theme to root component styles
-  useEffect(() => {
-    // Update status bar style based on theme
-    if (isDark) {
-      // Dark theme - light status bar
-      StatusBar.setBarStyle('light-content', true);
-    } else {
-      // Light theme - dark status bar
-      StatusBar.setBarStyle('dark-content', true);
-    }
-  }, [isDark]);
-
   return (
     <ThemeContext.Provider value={{ theme, isDark }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       {children}
     </ThemeContext.Provider>
   );

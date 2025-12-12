@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, SectionList, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { FlashList } from '@shopify/flash-list';
 import { OptimizedFeedList } from '@/components/OptimizedFeedList';
 import { useOptimizedFeed } from '@/hooks/useOptimizedFeed';
 import { useSavedSearches } from '@/hooks/useSavedSearches';
@@ -12,7 +13,6 @@ import {
   getManufacturersForCategory,
   getModelsForManufacturer,
 } from '@magnus-flipper-ai/ui-config';
-import type { Listing } from '@magnus-flipper-ai/core';
 
 function CategorySheet({
   onSelect,
@@ -26,7 +26,6 @@ function CategorySheet({
 
   const open = () => sheetRef.current?.present();
   const close = () => sheetRef.current?.dismiss();
-  const itemProp = ['re', 'nderItem'].join('');
 
   return (
     <>
@@ -43,8 +42,7 @@ function CategorySheet({
             data={CATEGORIES}
             numColumns={2}
             estimatedItemSize={80}
-            {...{
-              [itemProp]: ({ item }) => (
+            renderItem={({ item }: { item: any }) => (
                 <Pressable
                   onPress={() => {
                     onSelect(item.id);
@@ -56,8 +54,7 @@ function CategorySheet({
                   <Ionicons name="apps" size={18} color="#5CE0E6" />
                   <Text className="text-white">{item.label}</Text>
                 </Pressable>
-              ),
-            }}
+              )}
           />
         </View>
       </BottomSheetModal>
@@ -96,8 +93,6 @@ export default function HomeFeed() {
   });
 
   const openManufacturer = () => bottomSheetRef.current?.present();
-  const itemProp = ['re', 'nderItem'].join('');
-  const sectionHeaderProp = ['re', 'nderSectionHeader'].join('');
 
   return (
     <BottomSheetModalProvider>
@@ -152,12 +147,11 @@ export default function HomeFeed() {
               onChangeText={setManufacturerQuery}
             />
             <FlashList
-              data={getManufacturersForCategory(category || '').filter((m) =>
+              data={getManufacturersForCategory(category || '').filter((m: any) =>
                 m.label.toLowerCase().includes(manufacturerQuery.toLowerCase())
               )}
               estimatedItemSize={80}
-              {...{
-                [itemProp]: ({ item }) => (
+              renderItem={({ item }: { item: any }) => (
                   <Pressable
                     className="mb-2 rounded-xl border border-slate/50 bg-surface p-3"
                     onPress={() => {
@@ -168,8 +162,7 @@ export default function HomeFeed() {
                   >
                     <Text className="text-white">{item.label}</Text>
                   </Pressable>
-                ),
-              }}
+                )}
               ListEmptyComponent={
                 <Text className="text-gray-400">Select a category first.</Text>
               }
@@ -181,20 +174,17 @@ export default function HomeFeed() {
           <View className="flex-1 p-4">
             <Text className="mb-3 text-lg font-semibold text-white">Select models</Text>
             <SectionList
-              sections={getModelsForManufacturer(manufacturer || '').map((series) => ({
+              sections={getModelsForManufacturer(manufacturer || '').map((series: any) => ({
                 title: series.series,
                 data: series.models,
               }))}
-              keyExtractor={(item) => item}
-              {...{
-                [sectionHeaderProp]: ({ section }) => (
+              keyExtractor={(item: string) => item}
+              renderSectionHeader={({ section }: { section: any }) => (
                   <Text className="mt-4 text-sm font-semibold text-gray-300">
                     {section.title}
                   </Text>
-                ),
-              }}
-              {...{
-                [itemProp]: ({ item }) => {
+                )}
+              renderItem={({ item }: { item: string }) => {
                   const active = models.includes(item);
                   return (
                     <Pressable
@@ -212,8 +202,7 @@ export default function HomeFeed() {
                       <Text className="text-white">{item}</Text>
                     </Pressable>
                   );
-                },
-              }}
+                }}
               ListEmptyComponent={
                 <Text className="text-gray-400">Choose a manufacturer to view models.</Text>
               }

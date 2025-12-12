@@ -12,7 +12,6 @@ export default function SavedSearchesScreen() {
   const [maxPrice, setMaxPrice] = useState('1500');
 
   const { data, isLoading, create, update, remove } = useSavedSearches();
-  const itemProp = ['re', 'nderItem'].join('');
 
   const handleCreate = async () => {
     await create.mutateAsync({
@@ -45,10 +44,9 @@ export default function SavedSearchesScreen() {
       ) : (
         <FlatList
           data={data || []}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item: any) => item.id}
           contentContainerStyle={{ gap: 12, paddingBottom: 120 }}
-          {...{
-            [itemProp]: ({ item, index }: { item: any; index: number }) => {
+          renderItem={({ item, index }: { item: any; index: number }) => {
               const locked = (data?.length || 0) > 10 && index >= 10;
               return (
                 <View className="rounded-2xl border border-slate/60 bg-surface p-4">
@@ -81,8 +79,7 @@ export default function SavedSearchesScreen() {
                   </View>
                 </View>
               );
-            },
-          }}
+            }}
           ListEmptyComponent={
             <Text className="text-center text-gray-400">No saved searches yet.</Text>
           }
@@ -108,7 +105,7 @@ export default function SavedSearchesScreen() {
 
             <Text className="mt-4 text-gray-300">Category</Text>
             <View className="mt-2 flex-row flex-wrap gap-2">
-              {CATEGORIES.map((cat) => (
+              {CATEGORIES.map((cat: any) => (
                 <Pressable
                   key={cat.id}
                   onPress={() => setCategory(cat.id)}

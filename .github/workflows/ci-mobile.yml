@@ -44,8 +44,14 @@ jobs:
           npm install -g pnpm
           pnpm --version
 
+      - name: 🛡️ CI Preflight
+        run: bash scripts/ci-preflight.sh
+
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
+
+      - name: 🔨 Build workspace packages
+        run: pnpm build:packages
 
       - name: 🔍 Lint
         run: pnpm --filter @magnus-flipper-ai/mobile lint
