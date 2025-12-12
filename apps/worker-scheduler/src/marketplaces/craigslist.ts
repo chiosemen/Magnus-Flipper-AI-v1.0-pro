@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import type { Element } from "domhandler";
 
 export interface Listing {
   marketplace: string;
@@ -26,7 +27,7 @@ export async function scrapeListings(query: string = "electronics"): Promise<Lis
     const $ = cheerio.load(response.data);
     const listings: Listing[] = [];
 
-    $(".result-row").each((_, element) => {
+    $(".result-row").each((_: number, element: Element) => {
       const $el = $(element);
       const title = $el.find(".result-title").text().trim();
       const priceText = $el.find(".result-price").text().trim();

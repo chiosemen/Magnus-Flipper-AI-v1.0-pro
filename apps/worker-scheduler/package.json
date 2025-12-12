@@ -10,14 +10,19 @@
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
     "@magnus-flipper-ai/core": "workspace:*",
-    "@magnus-flipper-ai/rate-limiter": "workspace:*",
     "@magnus-flipper-ai/marketplace-config": "workspace:*",
+    "@magnus-flipper-ai/rate-limiter": "workspace:*",
+    "@supabase/supabase-js": "^2.45.0",
+    "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
+    "@types/cheerio": "^1.0.0",
     "@types/node": "^20.17.9",
+    "@types/react": "^19.2.7",
+    "domhandler": "^5.0.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
