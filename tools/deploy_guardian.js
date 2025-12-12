@@ -82,7 +82,7 @@ const results = {
   terraform: { valid: false, errors: [] },
   prisma: { ready: false, errors: [] },
   workers: { built: false, errors: [] },
-  secrets: { complete: false, missing: [] },
+  secrets: { complete: false, missing: [], errors: [] },
   unsafe: { blocked: false, reasons: [] },
   summary: { passed: false, totalChecks: 0, passedChecks: 0 },
 };

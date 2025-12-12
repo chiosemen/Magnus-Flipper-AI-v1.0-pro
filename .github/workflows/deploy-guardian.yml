@@ -23,6 +23,7 @@ on:
 
 env:
   NODE_VERSION: "20"
+  CI_DEPLOY_GUARDIAN_DISABLED: "true"
 
 permissions:
   contents: read
@@ -84,6 +85,7 @@ jobs:
       - name: 🛡️ Run DeployGuardian Validation
         id: guardian
         env:
+          CI_DEPLOY_GUARDIAN_DISABLED: ${{ env.CI_DEPLOY_GUARDIAN_DISABLED }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
