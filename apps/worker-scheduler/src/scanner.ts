@@ -1,5 +1,4 @@
 import { getMarketplaceSettings } from "./services/supabase";
-import { scanMarketplace, getNextScanDelay } from "./scheduler";
 import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
 import { getCurrentBackoffSeconds } from '@magnus-flipper-ai/rate-limiter';
 
@@ -8,10 +7,10 @@ import { getCurrentBackoffSeconds } from '@magnus-flipper-ai/rate-limiter';
  * Schedules scans based on marketplace risk level and backoff status
  */
 export async function scanMarketplace(marketplaceName: string) {
-  // Import the optimized scheduler from worker-realtime
-  // (In production, this would be a shared package)
-  const { scanMarketplace: optimizedScan } = await import('../scheduler');
-  return optimizedScan(marketplaceName);
+  // TODO: Implement actual marketplace scanning logic
+  // For now, this is a placeholder that will be implemented
+  console.log(`Scanning marketplace: ${marketplaceName}`);
+  return Promise.resolve();
 }
 
 /**
@@ -39,7 +38,7 @@ export async function getNextScanTime(marketplaceName: string): Promise<number> 
     );
 
     // Risk-tier multiplier
-    const riskMultipliers = {
+    const riskMultipliers: Record<string, number> = {
       low: 0.8,
       medium: 1.0,
       high: 1.5,

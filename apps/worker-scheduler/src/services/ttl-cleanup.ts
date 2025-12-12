@@ -32,7 +32,7 @@ export async function runActivityFeedTTL(): Promise<void> {
     try {
       // Use Prisma raw SQL for batched delete
       // PostgreSQL LIMIT in DELETE is supported
-      const result = await prisma.$executeRawUnsafe<number>(
+      const result = await prisma.$executeRawUnsafe(
         `DELETE FROM activity_feed
          WHERE created_at < NOW() - INTERVAL '${TTL_DAYS} days'
          LIMIT ${BATCH_SIZE}`

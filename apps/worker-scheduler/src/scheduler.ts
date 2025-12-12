@@ -25,7 +25,7 @@ export async function runScheduledScan() {
   );
 
   // Sort: low -> medium -> high -> critical
-  const riskOrder = { low: 0, medium: 1, high: 2, critical: 3 };
+  const riskOrder: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
   sortedMarketplaces.sort((a, b) => {
     return (riskOrder[a.riskLevel] || 1) - (riskOrder[b.riskLevel] || 1);
   });

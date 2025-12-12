@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import type { Element } from "domhandler";
 import type { Listing } from "./craigslist";
 
 export async function scrapeListings(query: string = "electronics"): Promise<Listing[]> {
@@ -17,7 +18,7 @@ export async function scrapeListings(query: string = "electronics"): Promise<Lis
     const $ = cheerio.load(response.data);
     const listings: Listing[] = [];
 
-    $(".listing-link").each((_, element) => {
+    $(".listing-link").each((_: number, element: Element) => {
       const $el = $(element);
       const title = $el.find(".listing-title").text().trim();
       const priceText = $el.find(".listing-price").text().trim();
