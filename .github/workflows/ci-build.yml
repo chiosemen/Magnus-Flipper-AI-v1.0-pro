@@ -1,4 +1,8 @@
-name: Phase 12G — CI Build & Test
+# ⚠️ DISABLED: This workflow has been consolidated into ci-invariant.yml
+# This file is preserved for history but will not run
+# All CI logic has been moved to .github/workflows/ci-invariant.yml
+
+name: Phase 12G — CI Build & Test (DISABLED)
 
 on:
   pull_request:
@@ -20,7 +24,9 @@ env:
   AUTOSELL_APP: worker-autosell
 
 jobs:
+  # This job is disabled - logic moved to ci-invariant.yml
   test-and-build:
+    if: false  # DISABLED: Use ci-invariant.yml instead
     runs-on: ubuntu-latest
     name: Test & Build Workers
 

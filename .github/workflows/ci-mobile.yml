@@ -1,4 +1,8 @@
-name: 🚀 CI — Mobile App
+# ⚠️ DISABLED: This workflow has been consolidated into ci-invariant.yml
+# This file is preserved for history but will not run
+# All CI logic has been moved to .github/workflows/ci-invariant.yml
+
+name: 🚀 CI — Mobile App (DISABLED)
 
 on:
   pull_request:
@@ -24,7 +28,9 @@ permissions:
   pull-requests: write
 
 jobs:
+  # This job is disabled - all logic moved to ci-invariant.yml
   lint-and-typecheck:
+    if: false  # DISABLED: Use ci-invariant.yml instead
     name: 🔍 Lint & Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
