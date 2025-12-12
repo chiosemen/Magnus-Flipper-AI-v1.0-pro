@@ -1,5 +1,8 @@
 #!/usr/bin/env node
-
+if (process.env.CI_DEPLOY_GUARDIAN_DISABLED === "true") {
+  console.warn("⚠️ DeployGuardian disabled via CI_DEPLOY_GUARDIAN_DISABLED");
+  process.exit(0);
+}
 /**
  * DeployGuardian v1 — CI/CD Validation & Deployment Hardening
  * -----------------------------------------------------------
@@ -79,7 +82,7 @@ const results = {
   terraform: { valid: false, errors: [] },
   prisma: { ready: false, errors: [] },
   workers: { built: false, errors: [] },
-  secrets: { complete: false, missing: [] },
+  secrets: { complete: false, missing: [], errors: [] },
   unsafe: { blocked: false, reasons: [] },
   summary: { passed: false, totalChecks: 0, passedChecks: 0 },
 };

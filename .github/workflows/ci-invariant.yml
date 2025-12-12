@@ -46,10 +46,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+ chore/ci-invariant-smoke-test
+      - name: 🟣 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest'
+
+      - name: 🟢 Verify pnpm
+        run: pnpm --version
+
       - name: 🟣 Install pnpm
         run: |
           npm install -g pnpm
           pnpm --version
+ main
 
       - name: 🛡️ CI Preflight
         run: bash scripts/ci-preflight.sh
@@ -70,10 +80,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+ chore/ci-invariant-smoke-test
+      - name: 🟣 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest'
+
+      - name: 🟢 Verify pnpm
+        run: pnpm --version
+
       - name: 🟣 Install pnpm
         run: |
           npm install -g pnpm
           pnpm --version
+          main
 
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
@@ -81,7 +101,7 @@ jobs:
       - name: 🔨 Build workspace packages
         run: pnpm build:packages
 
-  mobile:
+    mobile:
     name: 📱 Mobile
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -97,10 +117,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+     chore/ci-invariant-smoke-test
+      - name: 🟣 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest'
+
+      - name: 🟢 Verify pnpm
+        run: pnpm --version
+
       - name: 🟣 Install pnpm
         run: |
           npm install -g pnpm
           pnpm --version
+          main
 
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
@@ -130,10 +160,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+chore/ci-invariant-smoke-test
+      - name: 🟣 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest'
+
+      - name: 🟢 Verify pnpm
+        run: pnpm --version
+=======
       - name: 🟣 Install pnpm
         run: |
           npm install -g pnpm
           pnpm --version
+ main
 
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile

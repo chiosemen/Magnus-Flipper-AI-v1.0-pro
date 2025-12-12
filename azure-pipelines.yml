@@ -1,3 +1,8 @@
+# NOTE: This Azure Pipeline assumes GitHub Actions CI (ci-invariant.yml) has already passed
+# GitHub CI validates: preflight, lint, typecheck, tests, builds
+# This pipeline only handles: Docker builds + Azure deployment
+# No CI validation duplication - GitHub CI is the single source of truth
+
 trigger:
   branches:
     include:
@@ -200,15 +205,20 @@ stages:
 
           # 🔥 Build + Push API Image (using root Dockerfile.api)
           - bash: |
+              set -e
               docker build -f Dockerfile.api -t $(acrLoginServer)/$(apiImageName):$(tag) .
+              docker push $(acrLoginServer)/$(apiImageName):$(tag)
             displayName: 'Build and push API Docker image'
 
           # 🔥 Build + Push Worker Image (using apps/worker/Dockerfile if exists, or create worker build)
           - bash: |
+              set -e
               if [ -f "apps/worker/Dockerfile" ]; then
                 docker build -f apps/worker/Dockerfile -t $(acrLoginServer)/$(workerImageName):$(tag) .
+                docker push $(acrLoginServer)/$(workerImageName):$(tag)
               elif [ -f "Dockerfile.worker-alerts" ]; then
                 docker build -f Dockerfile.worker-alerts -t $(acrLoginServer)/$(workerImageName):$(tag) .
+                docker push $(acrLoginServer)/$(workerImageName):$(tag)
               else
                 echo "No worker Dockerfile found. Skipping worker build."
                 exit 1
