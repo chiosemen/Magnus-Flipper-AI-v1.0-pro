@@ -1,5 +1,8 @@
 #!/usr/bin/env node
-
+if (process.env.CI_DEPLOY_GUARDIAN_DISABLED === "true") {
+  console.warn("⚠️ DeployGuardian disabled via CI_DEPLOY_GUARDIAN_DISABLED");
+  process.exit(0);
+}
 /**
  * DeployGuardian v1 — CI/CD Validation & Deployment Hardening
  * -----------------------------------------------------------
