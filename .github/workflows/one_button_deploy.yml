@@ -172,13 +172,6 @@ jobs:
         echo "Scheduler revisions: $SCH_JSON"
         echo "Alerts revisions: $ALERTS_JSON"
 
-        # pick latest and previous (if present) for all apps
-        RT_LATEST=$(echo "$RT_JSON" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name')
-        RT_PREV=$(echo "$RT_JSON" | jq -r 'sort_by(.properties.createdTime) | reverse | .[1].name // empty')
-
-        SCH_LATEST=$(echo "$SCH_JSON" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name')
-        SCH_PREV=$(echo "$SCH_JSON" | jq -r 'sort_by(.properties.createdTime) | reverse | .[1].name // empty')
-
         ALERTS_LATEST=$(echo "$ALERTS_JSON" | jq -r 'sort_by(.properties.createdTime) | last(.[]).name')
         ALERTS_PREV=$(echo "$ALERTS_JSON" | jq -r 'sort_by(.properties.createdTime) | reverse | .[1].name // empty')
 

@@ -40,7 +40,6 @@ const baseVars = {
   '--radius-lg': radius.lg,
   '--radius-xl': radius.xl,
   '--radius-full': radius.full,
-  // Semantic spacing
   '--card-padding': semanticSpacing.cardPadding,
   '--panel-padding': semanticSpacing.panelPadding,
   '--badge-padding-x': '4px',
@@ -158,7 +157,6 @@ const preset: Config = {
         'mono-l': [typography.monoL.fontSize, { lineHeight: typography.monoL.lineHeight, fontWeight: typography.monoL.fontWeight }],
         'mono-m': [typography.monoM.fontSize, { lineHeight: typography.monoM.lineHeight, fontWeight: typography.monoM.fontWeight }],
         'mono-s': [typography.monoS.fontSize, { lineHeight: typography.monoS.lineHeight, fontWeight: typography.monoS.fontWeight }],
-        // Tailwind scale
         xs: [typography.xs.fontSize, { lineHeight: typography.xs.lineHeight, fontWeight: typography.xs.fontWeight }],
         sm: [typography.sm.fontSize, { lineHeight: typography.sm.lineHeight, fontWeight: typography.sm.fontWeight }],
         base: [typography.base.fontSize, { lineHeight: typography.base.lineHeight, fontWeight: typography.base.fontWeight }],
@@ -187,7 +185,6 @@ const preset: Config = {
         '[data-theme="light"]': { ...baseVars, ...lightVars },
       });
       
-      // Gradient utilities
       addUtilities({
         '.bg-gradient-primary': {
           backgroundImage: gradients.primary,

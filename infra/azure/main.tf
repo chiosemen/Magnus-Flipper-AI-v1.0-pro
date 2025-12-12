@@ -194,4 +194,3 @@ resource "azurerm_container_app" "worker_alerts" {
     type = "SystemAssigned"
   }
 }
-

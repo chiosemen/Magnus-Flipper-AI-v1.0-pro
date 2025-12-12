@@ -30,7 +30,6 @@ output "alerts_worker_fqdn" {
   value       = azurerm_container_app.worker_alerts.latest_revision_fqdn
   description = "Worker Alerts Container App FQDN for health checks"
 }
-
 # Note: log_analytics_workspace_id is not available in azurerm_container_app_environment data source
 # If needed, query the Log Analytics workspace separately using azurerm_log_analytics_workspace data source
 # output "log_analytics_workspace_id" {

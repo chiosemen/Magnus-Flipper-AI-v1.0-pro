@@ -61,7 +61,7 @@ const report = {
   phase2: { docker: { cleaned: false, usage: null }, dockerfiles: { hardened: false }, schema: false },
   phase3: { built: false, pushed: false, errors: [] },
   phase4: { status: "unknown", driftFixed: false },
-  phase5: { realtime: { fqdn: null, healthy: false }, scheduler: { fqdn: null, healthy: false } },
+  phase5: { realtime: { fqdn: null, healthy: false }, scheduler: { fqdn: null, healthy: false }, alerts: { fqdn: null, healthy: false } },
   phase6: { build: false, errors: [] },
   phase7: { completed: false }
 };
@@ -611,6 +611,7 @@ function phase7_finalReport() {
   console.log("\nPhase 5 — Worker Health:");
   console.log(`   Realtime: ${report.phase5.realtime.healthy ? "✅" : "❌"} ${report.phase5.realtime.fqdn || ""}`);
   console.log(`   Scheduler: ${report.phase5.scheduler.healthy ? "✅" : "❌"} ${report.phase5.scheduler.fqdn || ""}`);
+  console.log(`   Alerts: ${report.phase5.alerts.healthy ? "✅" : "❌"} ${report.phase5.alerts.fqdn || ""}`);
   
   // Phase 6
   console.log("\nPhase 6 — Frontend:");
@@ -626,7 +627,8 @@ function phase7_finalReport() {
     report.phase3.built &&
     report.phase4.status === "ok" &&
     report.phase5.realtime.healthy &&
-    report.phase5.scheduler.healthy;
+    report.phase5.scheduler.healthy &&
+    report.phase5.alerts.healthy;
   
   console.log("\n" + "=".repeat(50));
   if (allPhasesOk && report.phase6.build) {

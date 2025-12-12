@@ -34,4 +34,3 @@ variable "worker_alerts_name" {
   type    = string
   default = "mf-worker-alerts"
 }
-
