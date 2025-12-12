@@ -6,7 +6,7 @@
  *  - (tabs)/feed if authenticated and onboarded
  */
 
-import { useEffect } from 'react';
+import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuthContext } from '@/providers/AuthProvider';

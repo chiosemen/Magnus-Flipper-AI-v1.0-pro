@@ -1,6 +1,6 @@
 import { ScrollView, Text, View, Pressable } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useListing } from '@/hooks/useListings';
+import { useListing } from '@/hooks/api/useListing';
 import { Linking } from 'react-native';
 import { ListingDetailSkeleton } from '@/components/SkeletonLoader';
 import { CachedImage } from '@/lib/imageCache';
@@ -24,7 +24,7 @@ export default function ListingDetail() {
   return (
     <ScrollView className="flex-1 bg-background px-4 pt-12">
       <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} className="w-full">
-        {(data.imageUrls && data.imageUrls.length ? data.imageUrls : []).map((imageUrl, idx) => (
+        {(data.imageUrls && data.imageUrls.length ? data.imageUrls : []).map((imageUrl: string, idx: number) => (
           <CachedImage
             key={idx}
             uri={imageUrl}

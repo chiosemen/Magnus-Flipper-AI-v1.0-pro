@@ -8,7 +8,6 @@ export default function AlertsScreen() {
 
   const loading = recent.isLoading;
   const alerts = recent.data || [];
-  const itemProp = ['re', 'nderItem'].join('');
 
   if (loading) {
     return (
@@ -33,10 +32,9 @@ export default function AlertsScreen() {
 
       <FlatList
         data={alerts}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         contentContainerStyle={{ gap: 10, paddingBottom: 120 }}
-        {...{
-          [itemProp]: ({ item }: { item: any }) => (
+        renderItem={({ item }: { item: any }) => (
             <Pressable className="rounded-2xl border border-slate/60 bg-surface p-4">
               <View className="flex-row items-center justify-between">
                 <Text className="text-lg font-semibold text-white" numberOfLines={2}>
@@ -54,8 +52,7 @@ export default function AlertsScreen() {
                 </Link>
               </View>
             </Pressable>
-          ),
-        }}
+          )}
         ListEmptyComponent={
           <View className="py-20 items-center">
             <Ionicons name="notifications-off" size={64} color="#6B7280" />

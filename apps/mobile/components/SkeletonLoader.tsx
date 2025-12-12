@@ -3,12 +3,12 @@
  * Loading placeholders for better UX during data fetching
  */
 
-import { View } from 'react-native';
+import { View, type DimensionValue } from 'react-native';
 import { useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 
 interface SkeletonProps {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   borderRadius?: number;
   className?: string;
@@ -17,7 +17,7 @@ interface SkeletonProps {
 /**
  * Animated skeleton placeholder (enhanced with smoother animations)
  */
-export function Skeleton({ width = '100%', height = 20, borderRadius = 8, className = '' }: SkeletonProps) {
+export function Skeleton({ width = '100%' as DimensionValue, height = 20, borderRadius = 8, className = '' }: SkeletonProps) {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const shimmerValue = useRef(new Animated.Value(0)).current;
 

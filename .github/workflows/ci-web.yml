@@ -46,8 +46,14 @@ jobs:
           npm install -g pnpm
           pnpm --version
 
+      - name: 🛡️ CI Preflight
+        run: bash scripts/ci-preflight.sh
+
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
+
+      - name: 🔨 Build workspace packages
+        run: pnpm build:packages
 
       - name: 🔍 Lint
         run: pnpm --filter web lint
@@ -75,8 +81,14 @@ jobs:
           npm install -g pnpm
           pnpm --version
 
+      - name: 🛡️ CI Preflight
+        run: bash scripts/ci-preflight.sh
+
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
+
+      - name: 🔨 Build workspace packages
+        run: pnpm build:packages
 
       - name: 🧪 Run tests
         run: pnpm --filter web test
@@ -100,6 +112,9 @@ jobs:
         run: |
           npm install -g pnpm
           pnpm --version
+
+      - name: 🛡️ CI Preflight
+        run: bash scripts/ci-preflight.sh
 
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
