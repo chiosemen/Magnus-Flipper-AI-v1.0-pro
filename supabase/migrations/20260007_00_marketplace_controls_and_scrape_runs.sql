@@ -184,7 +184,6 @@ COMMENT ON TABLE marketplace_controls IS 'Admin controls for per-marketplace scr
 COMMENT ON COLUMN scrape_runs.marketplace IS 'Marketplace identifier (e.g., "ebay", "facebook", "craigslist")';
 COMMENT ON COLUMN scrape_runs.success IS 'Whether the scrape completed successfully';
 COMMENT ON COLUMN scrape_runs.duration_ms IS 'How long the scrape took in milliseconds';
-COMMENT ON COLUMN scrape_runs.outcome IS 'Outcome type: SUCCESS, RATE_LIMIT, or ERROR';
 
 COMMENT ON COLUMN marketplace_controls.marketplace IS 'Marketplace identifier (must match marketplace names used in scrapers)';
 COMMENT ON COLUMN marketplace_controls.enabled IS 'If false, workers will skip scraping this marketplace';
