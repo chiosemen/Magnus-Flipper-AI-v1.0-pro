@@ -46,10 +46,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
-      - name: 🟣 Install pnpm
-        run: |
-          npm install -g pnpm
-          pnpm --version
+      - name: 🟣 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest'
+
+      - name: 🟢 Verify pnpm
+        run: pnpm --version
 
       - name: 🛡️ CI Preflight
         run: bash scripts/ci-preflight.sh
@@ -70,10 +73,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
-      - name: 🟣 Install pnpm
-        run: |
-          npm install -g pnpm
-          pnpm --version
+      - name: 🟣 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest'
+
+      - name: 🟢 Verify pnpm
+        run: pnpm --version
 
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
@@ -97,10 +103,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
-      - name: 🟣 Install pnpm
-        run: |
-          npm install -g pnpm
-          pnpm --version
+      - name: 🟣 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest'
+
+      - name: 🟢 Verify pnpm
+        run: pnpm --version
 
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
@@ -130,10 +139,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
-      - name: 🟣 Install pnpm
-        run: |
-          npm install -g pnpm
-          pnpm --version
+      - name: 🟣 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 'latest'
+
+      - name: 🟢 Verify pnpm
+        run: pnpm --version
 
       - name: 📦 Install dependencies
         run: pnpm -w install --frozen-lockfile
