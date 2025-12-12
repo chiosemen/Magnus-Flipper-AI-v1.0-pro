@@ -1,13 +1,16 @@
 import { runScheduledScan } from "./scheduler";
 import { scheduleAllMarketplaces } from "./scanner";
 import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
-import { cleanupActivityFeedTTL } from "./services/ttl-cleanup";
+import { runActivityFeedTTL } from "./services/ttl-cleanup";
 import http from "http";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default
 const TTL_CLEANUP_INTERVAL = parseInt(process.env.TTL_CLEANUP_INTERVAL || "86400000"); // 24 hours default
 const PORT = parseInt(process.env.PORT || "3001");
+
+// Track last TTL cleanup run to prevent over-execution
+let lastTTLCleanup = 0;
 
 // Health check server
 const server = http.createServer((req, res) => {
@@ -67,16 +70,22 @@ async function scheduleScans() {
 /**
  * Run TTL cleanup for activity feed
  * Deletes records older than 30 days in batches
+ * Guarded to prevent over-execution
  */
 async function runTTLCleanup() {
+  const now = Date.now();
+  // Guard: only run if enough time has passed since last run
+  if (now - lastTTLCleanup < TTL_CLEANUP_INTERVAL) {
+    return;
+  }
+
   try {
-    console.log(`[${WORKER_ID}] Starting TTL cleanup...`);
-    const result = await cleanupActivityFeedTTL();
-    console.log(
-      `[${WORKER_ID}] TTL cleanup complete: ${result.deleted} records deleted in ${result.batches} batches (${result.durationMs}ms)`
-    );
+    lastTTLCleanup = now;
+    await runActivityFeedTTL();
   } catch (error) {
     console.error(`[${WORKER_ID}] TTL cleanup error:`, error);
+    // Reset on error to allow retry
+    lastTTLCleanup = 0;
   }
 }
 
