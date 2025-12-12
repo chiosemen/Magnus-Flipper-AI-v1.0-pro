@@ -4,7 +4,9 @@ import api from '@/lib/api'
 export function useListings(params?: Record<string, string | number | undefined>) {
   return useInfiniteQuery({
     queryKey: ['listings', params],
-    queryFn: ({ pageParam, signal }) => api.getListingsFeed({ page: pageParam, pageSize: 20, ...(params || {}) }, signal),
+    // Default parameter ensures v4 compatibility; initialPageParam is v5-only
+    queryFn: ({ pageParam = 1, signal }) => api.getListingsFeed({ page: pageParam, pageSize: 20, ...(params || {}) }, signal),
+    // initialPageParam is required in v5, but default parameter above ensures v4 compatibility
     initialPageParam: 1,
     getNextPageParam: (lastPage: any) => {
       if (!lastPage?.total || !lastPage?.page || !lastPage?.pageSize) return undefined
