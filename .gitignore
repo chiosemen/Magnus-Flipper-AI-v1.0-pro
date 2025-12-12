@@ -68,3 +68,6 @@ coverage/
 apps/web.old
 apps/mobile.old
 .env*.local
+# Supabase local artifacts
+supabase/.branches/
+migration/
