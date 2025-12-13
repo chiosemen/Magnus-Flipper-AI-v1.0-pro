@@ -31,8 +31,7 @@ jobs:
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        # Version will be read from package.json "packageManager" field (pnpm@9.12.0)
 
       - name: Azure Login (OIDC)
         uses: azure/login@v2
