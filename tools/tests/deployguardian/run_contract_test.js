@@ -53,12 +53,8 @@ const schemaPath = path.join(__dirname, "../../deployguardian.contract.schema.js
 const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
 
 // Initialize AJV with Draft 2020-12 support
-// NOTE: Using Ajv2020 from ajv/dist/2020 automatically loads Draft 2020-12 meta-schema
-const ajv = new Ajv({ 
-  allErrors: true, 
-  strict: false,  // Important for evolving contracts
-  validateFormats: true
-});
+// Using Ajv from 'ajv/dist/2020' provides Draft 2020-12 meta-schema
+const ajv = new Ajv({ strict: true });
 addFormats(ajv);
 
 const validateSchema = ajv.compile(schema);
