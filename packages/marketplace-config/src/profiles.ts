@@ -182,3 +182,7 @@ export function getMarketplaceProfile(id: string): MarketplaceProfile {
   }
   return profile;
 }
+
+export function getAllMarketplaceIds(): string[] {
+  return Object.keys(MARKETPLACE_PROFILES);
+}

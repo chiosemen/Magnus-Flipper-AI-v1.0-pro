@@ -19,6 +19,7 @@
     "@magnus-flipper-ai/core": "workspace:*",
     "@magnus-flipper-ai/deal-engine": "workspace:*",
     "@magnus-flipper-ai/profit-engine": "workspace:*",
+    "@magnus-flipper-ai/marketplace-config": "workspace:*",
     "@magnus-flipper-ai/scraper-sync": "workspace:*",
     "@magnus-flipper-ai/shipping-engine": "workspace:*",
     "@magnus-flipper-ai/ui": "workspace:*",
