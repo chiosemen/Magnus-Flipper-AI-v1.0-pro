@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "dev": "turbo run dev --parallel",
-    "prebuild": "pnpm --filter '@magnus-flipper-ai/*' build",
+    "verify:exports": "ts-node tools/verify-workspace-exports.ts",
+    "prebuild": "pnpm verify:exports && pnpm --filter '@magnus-flipper-ai/*' build",
     "build": "turbo run build --filter=web",
     "build:packages": "pnpm --filter '@magnus-flipper-ai/*' build",
     "build:web": "pnpm build:packages && pnpm --filter web build",
@@ -57,6 +58,7 @@
     "postcss": "^8.4.35",
     "prisma": "7.0.1",
     "tailwindcss": "^3.4.15",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "turbo": "^2.0.0",
     "typescript": "^5.6.3"

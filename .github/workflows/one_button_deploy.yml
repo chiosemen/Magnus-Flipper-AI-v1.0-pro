@@ -290,6 +290,12 @@ jobs:
     # -------------------------------
     # 13. Frontend Build (sanity) + Vercel Deploy
     # -------------------------------
+    - name: 🔍 Verify Workspace Exports
+      run: |
+        echo "Verifying workspace package exports..."
+        pnpm verify:exports
+      continue-on-error: false
+
     - name: 🌐 Build Web Frontend
       run: |
         echo "Building web frontend..."
