@@ -5,14 +5,15 @@ generator client {
   provider      = "prisma-client-js"
   output        = "../node_modules/.prisma/client"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
-  // Force binary engine to avoid queryEngine conversion issues in CI
-  engineType    = "binary"
+  // Prisma 7 uses library engine by default (binary is deprecated)
+  // engineType removed for compatibility with Prisma 7.x
 }
 
-generator erd {
-  provider = "prisma-erd-generator"
-  output   = "../../docs/db/erd.svg"
-}
+// Temporarily disabled: prisma-erd-generator is incompatible with Prisma 7.x
+// generator erd {
+//   provider = "prisma-erd-generator"
+//   output   = "../../docs/db/erd.svg"
+// }
 
 datasource db {
   provider = "postgresql"
