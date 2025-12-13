@@ -31,13 +31,12 @@ Error: no schema with key or ref "https://json-schema.org/draft/2020-12/schema"
 ```
 
 **Solution:**
-- Updated `package.json` to include `ajv-draft-2020: ^1.1.0`
 - Modified contract test runner to use `Ajv` from `ajv/dist/2020`
-- This automatically loads the Draft 2020-12 meta-schema
+- This built-in Draft 2020-12 support is included in the main `ajv` package (v8.12.0+)
+- No additional dependencies required
 
 **Files Modified:**
-- `package.json` - Added ajv-draft-2020 dependency
-- `tools/tests/deployguardian/run_contract_test.js` - Use Ajv2020
+- `tools/tests/deployguardian/run_contract_test.js` - Use Ajv2020 from ajv/dist/2020
 
 **Result:** Schema validation now works without meta-schema errors ✅
 

@@ -28,12 +28,11 @@ This sprint transformed DeployGuardian from a basic validation tool into a **con
 **Problem:** `Error: no schema with key or ref "https://json-schema.org/draft/2020-12/schema"`
 
 **Solution:**
-- Added `ajv-draft-2020` dependency
 - Updated contract test runner to use `Ajv` from `ajv/dist/2020`
+- This built-in Draft 2020-12 support is included in the main `ajv` package (v8.12.0+)
 
 **Files:**
-- `package.json` - Added dependency
-- `tools/tests/deployguardian/run_contract_test.js` - Use Ajv2020
+- `tools/tests/deployguardian/run_contract_test.js` - Use Ajv2020 from ajv/dist/2020
 
 **Result:** Schema validation now works reliably ✅
 

@@ -15,7 +15,7 @@
  * 
  * NOTE:
  * DeployGuardian uses JSON Schema Draft 2020-12.
- * ajv-draft-2020 MUST be registered or schema validation will fail.
+ * We use Ajv from 'ajv/dist/2020' which includes Draft 2020-12 support.
  */
 
 const fs = require("fs");
