@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/server";
 import type { EarningsPeriod, EarningsDataPoint } from "@magnus-flipper-ai/core/types/affiliate";
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const period = (searchParams.get("period") || "7d") as EarningsPeriod;
 
-    const supabase = await createServerClient();
+    const supabase = await createSupabaseServer();
 
     // Calculate date range based on period
     const now = new Date();

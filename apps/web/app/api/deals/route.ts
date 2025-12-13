@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
-import { getUser } from "@/lib/supabase/server";
+import { createSupabaseServer, getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -84,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     // For other marketplaces, use deal_scores table
-    const supabase = await createServerClient();
+    const supabase = await createSupabaseServer();
     let query = supabase
       .from("deal_scores")
       .select(

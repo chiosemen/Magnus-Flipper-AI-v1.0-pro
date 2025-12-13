@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/server";
 import type { AffiliateLink } from "@magnus-flipper-ai/core/types/affiliate";
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createServerClient();
+    const supabase = await createSupabaseServer();
 
     // TODO: Replace with real query when affiliate_links table exists
     // For now, return empty array with metrics structure

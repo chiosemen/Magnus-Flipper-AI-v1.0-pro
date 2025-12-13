@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/deals/[id]/route';
-import { getUser, createServerClient } from '@/lib/supabase/server';
+import { getUser, createSupabaseServer } from '@/lib/supabase/server';
 
 vi.mock('@/lib/supabase/server', () => ({
   getUser: vi.fn(),
-  createServerClient: vi.fn(),
+  createSupabaseServer: vi.fn(),
 }));
 
 describe('GET /api/deals/[id]', () => {
@@ -45,7 +45,7 @@ describe('GET /api/deals/[id]', () => {
     };
 
     vi.mocked(getUser).mockResolvedValue(mockUser as any);
-    vi.mocked(createServerClient).mockResolvedValue({
+    vi.mocked(createSupabaseServer).mockResolvedValue({
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
@@ -70,7 +70,7 @@ describe('GET /api/deals/[id]', () => {
   it('returns 404 when deal not found', async () => {
     const mockUser = { id: 'user-123' };
     vi.mocked(getUser).mockResolvedValue(mockUser as any);
-    vi.mocked(createServerClient).mockResolvedValue({
+    vi.mocked(createSupabaseServer).mockResolvedValue({
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({

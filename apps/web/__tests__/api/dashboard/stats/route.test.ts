@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/dashboard/stats/route';
-import { getUser, createServerClient } from '@/lib/supabase/server';
+import { getUser, createSupabaseServer } from '@/lib/supabase/server';
 
 vi.mock('@/lib/supabase/server', () => ({
   getUser: vi.fn(),
-  createServerClient: vi.fn(),
+  createSupabaseServer: vi.fn(),
 }));
 
 describe('GET /api/dashboard/stats', () => {
@@ -35,7 +35,7 @@ describe('GET /api/dashboard/stats', () => {
     ];
 
     vi.mocked(getUser).mockResolvedValue(mockUser as any);
-    vi.mocked(createServerClient).mockResolvedValue({
+    vi.mocked(createSupabaseServer).mockResolvedValue({
       from: vi.fn((table: string) => {
         if (table === 'deal_scores') {
           return {
@@ -69,7 +69,7 @@ describe('GET /api/dashboard/stats', () => {
   it('handles empty data gracefully', async () => {
     const mockUser = { id: 'user-123' };
     vi.mocked(getUser).mockResolvedValue(mockUser as any);
-    vi.mocked(createServerClient).mockResolvedValue({
+    vi.mocked(createSupabaseServer).mockResolvedValue({
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => Promise.resolve({ data: [], error: null })),

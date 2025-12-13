@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/supabase/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import type { VelocityMetrics } from "@magnus-flipper-ai/core/types/scraper";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const marketplace = searchParams.get("marketplace");
     const timeWindow = searchParams.get("timeWindow") || "24h";
 
-    const supabase = await createServerClient();
+    const supabase = await createSupabaseServer();
 
     // Calculate time window
     const now = new Date();

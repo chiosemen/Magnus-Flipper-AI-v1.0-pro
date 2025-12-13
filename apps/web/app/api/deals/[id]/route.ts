@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const supabase = await createServerClient();
+    const supabase = await createSupabaseServer();
 
     // Fetch deal from deal_scores
     const { data, error } = await supabase

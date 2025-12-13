@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
-import { getUser } from "@/lib/supabase/server";
+import { createSupabaseServer, getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -16,7 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createServerClient();
+    const supabase = await createSupabaseServer();
 
     // Fetch user's deal counts
     const { data: dealsData, error: dealsError } = await supabase

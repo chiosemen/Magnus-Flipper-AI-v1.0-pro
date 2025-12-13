@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/deals/route';
-import { getUser, createServerClient } from '@/lib/supabase/server';
+import { getUser, createSupabaseServer } from '@/lib/supabase/server';
 
 vi.mock('@/lib/supabase/server', () => ({
   getUser: vi.fn(),
-  createServerClient: vi.fn(),
+  createSupabaseServer: vi.fn(),
 }));
 
 describe('GET /api/deals', () => {
@@ -46,7 +46,7 @@ describe('GET /api/deals', () => {
     ];
 
     vi.mocked(getUser).mockResolvedValue(mockUser as any);
-    vi.mocked(createServerClient).mockResolvedValue({
+    vi.mocked(createSupabaseServer).mockResolvedValue({
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
@@ -71,7 +71,7 @@ describe('GET /api/deals', () => {
   it('handles pagination parameters', async () => {
     const mockUser = { id: 'user-123' };
     vi.mocked(getUser).mockResolvedValue(mockUser as any);
-    vi.mocked(createServerClient).mockResolvedValue({
+    vi.mocked(createSupabaseServer).mockResolvedValue({
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
@@ -95,7 +95,7 @@ describe('GET /api/deals', () => {
   it('handles errors gracefully', async () => {
     const mockUser = { id: 'user-123' };
     vi.mocked(getUser).mockResolvedValue(mockUser as any);
-    vi.mocked(createServerClient).mockResolvedValue({
+    vi.mocked(createSupabaseServer).mockResolvedValue({
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
