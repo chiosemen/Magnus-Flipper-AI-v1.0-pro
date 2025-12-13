@@ -17,13 +17,74 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createServerClient();
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
     const status = searchParams.get("status") || undefined;
+    const marketplace = searchParams.get("marketplace");
 
-    // Build query for deal_scores
+    // If marketplace is Facebook or Vinted, use listings table directly
+    if (marketplace === "facebook" || marketplace === "vinted") {
+      const { prisma } = await import("@magnus-flipper-ai/core/db");
+      
+      // Get user's active searches for this marketplace to filter listings
+      const searches = await prisma.savedSearch.findMany({
+        where: {
+          userId: user.id,
+          marketplace: marketplace.toLowerCase(),
+          isActive: true,
+        },
+        select: { id: true },
+      });
+
+      const searchIds = searches.map(s => s.id);
+
+      // Get listings for this marketplace that match user's searches
+      const listings = await prisma.listing.findMany({
+        where: {
+          marketplace: marketplace.toLowerCase(),
+          isActive: true,
+          // Filter by search ID in metadata if available
+          // For now, return all listings for this marketplace
+        },
+        orderBy: {
+          lastSeen: "desc",
+        },
+        take: limit,
+        skip: offset,
+      });
+
+      const deals = listings.map((listing) => ({
+        id: listing.id,
+        title: listing.title,
+        marketplace: listing.marketplace,
+        buyPrice: listing.price,
+        sellPrice: null,
+        profit: null,
+        margin: null,
+        status: "active",
+        score: null,
+        confidence: null,
+        description: listing.description,
+        imageUrl: listing.imageUrl,
+        location: listing.location,
+        buyUrl: listing.url,
+        createdAt: listing.firstSeen.toISOString(),
+        updatedAt: listing.lastSeen.toISOString(),
+      }));
+
+      return NextResponse.json({
+        deals,
+        pagination: {
+          limit,
+          offset,
+          hasMore: listings.length === limit,
+        },
+      });
+    }
+
+    // For other marketplaces, use deal_scores table
+    const supabase = await createServerClient();
     let query = supabase
       .from("deal_scores")
       .select(
@@ -46,6 +107,10 @@ export async function GET(request: NextRequest) {
       .order("adjusted_score", { ascending: false })
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
+
+    if (marketplace) {
+      query = query.eq("marketplace", marketplace);
+    }
 
     if (status) {
       // For now, we'll use a simple status filter

@@ -1,0 +1,182 @@
+import { prisma } from '@magnus-flipper-ai/core/db';
+import { getAdapter, isMarketplaceLive } from '@magnus-flipper-ai/marketplaces';
+import { logEvent } from './services/telemetry';
+
+// Import hydrateListing from worker-realtime (or duplicate the logic)
+async function hydrateListing(
+  marketplace: 'facebook' | 'vinted',
+  url: string
+): Promise<{ success: boolean; listingId?: string; error?: string }> {
+  if (!isMarketplaceLive(marketplace)) {
+    return {
+      success: false,
+      error: `Marketplace ${marketplace} is not enabled`,
+    };
+  }
+
+  try {
+    const adapter = getAdapter(marketplace);
+    const listing = await adapter.hydrate(url);
+
+    if (!listing) {
+      return { success: false, error: 'Adapter returned null' };
+    }
+
+    const existing = await prisma.listing.findUnique({
+      where: { externalId: listing.externalId },
+    });
+
+    if (existing) {
+      const updated = await prisma.listing.update({
+        where: { externalId: listing.externalId },
+        data: {
+          title: listing.title,
+          price: listing.price,
+          location: listing.locationText,
+          imageUrl: listing.imageUrl,
+          description: listing.description,
+          lastSeen: listing.lastSeenAt,
+          isActive: listing.status === 'active',
+          metadata: {
+            ...((existing.metadata as any) || {}),
+            ...listing.raw,
+            currency: listing.currency,
+            sellerName: listing.sellerName,
+            status: listing.status,
+            lastHydratedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      return { success: true, listingId: updated.id };
+    } else {
+      const created = await prisma.listing.create({
+        data: {
+          externalId: listing.externalId,
+          marketplace: listing.marketplace,
+          title: listing.title,
+          price: listing.price,
+          location: listing.locationText,
+          imageUrl: listing.imageUrl,
+          description: listing.description,
+          url: listing.url,
+          firstSeen: listing.firstSeenAt,
+          lastSeen: listing.lastSeenAt,
+          isActive: listing.status === 'active',
+          metadata: {
+            ...listing.raw,
+            currency: listing.currency,
+            sellerName: listing.sellerName,
+            status: listing.status,
+            firstHydratedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      return { success: true, listingId: created.id };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Re-hydrate listings that need updating
+ * 
+ * This runs periodically to:
+ * 1. Update prices/availability for existing listings
+ * 2. Re-hydrate listings that failed previously
+ */
+export async function rehydrateListings(
+  marketplace?: 'facebook' | 'vinted',
+  maxAgeMinutes: number = 30
+): Promise<{ processed: number; succeeded: number; failed: number }> {
+  const liveMarketplaces = (process.env.LIVE_MARKETPLACES || '')
+    .split(',')
+    .map(m => m.trim().toLowerCase());
+
+  const marketplacesToProcess = marketplace
+    ? [marketplace.toLowerCase()]
+    : liveMarketplaces;
+
+  let totalProcessed = 0;
+  let totalSucceeded = 0;
+  let totalFailed = 0;
+
+  for (const mp of marketplacesToProcess) {
+    if (!isMarketplaceLive(mp)) {
+      continue;
+    }
+
+    // Get listings that need re-hydration:
+    // 1. Active listings older than maxAgeMinutes
+    // 2. Listings with status 'unknown' (failed hydration)
+    const cutoffTime = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
+
+    const listingsToUpdate = await prisma.listing.findMany({
+      where: {
+        marketplace: mp,
+        OR: [
+          {
+            isActive: true,
+            lastSeen: {
+              lte: cutoffTime,
+            },
+          },
+          {
+            title: 'Pending hydration...',
+          },
+          {
+            // Status unknown (check metadata)
+            metadata: {
+              path: ['status'],
+              equals: 'unknown',
+            },
+          },
+        ],
+      },
+      take: 20, // Process in batches
+      orderBy: {
+        lastSeen: 'asc', // Oldest first
+      },
+    });
+
+    for (const listing of listingsToUpdate) {
+      try {
+        const result = await hydrateListing(
+          mp as 'facebook' | 'vinted',
+          listing.url
+        );
+
+        if (result.success) {
+          totalSucceeded++;
+        } else {
+          totalFailed++;
+        }
+
+        totalProcessed++;
+
+        // Rate limiting: small delay between hydrations
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error: any) {
+        console.error(`Error re-hydrating listing ${listing.id}:`, error);
+        totalFailed++;
+        totalProcessed++;
+      }
+    }
+  }
+
+  if (totalProcessed > 0) {
+    await logEvent('system', 'rehydration_complete', {
+      processed: totalProcessed,
+      succeeded: totalSucceeded,
+      failed: totalFailed,
+    });
+  }
+
+  return {
+    processed: totalProcessed,
+    succeeded: totalSucceeded,
+    failed: totalFailed,
+  };
+}

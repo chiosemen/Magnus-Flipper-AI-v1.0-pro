@@ -13,6 +13,7 @@
     "@magnus-flipper-ai/core": "workspace:*",
     "@magnus-flipper-ai/marketplace-config": "workspace:*",
     "@magnus-flipper-ai/rate-limiter": "workspace:*",
+    "@magnus-flipper-ai/marketplaces": "workspace:*",
     "@supabase/supabase-js": "^2.45.0",
     "axios": "^1.13.2",
     "cheerio": "^1.1.2",

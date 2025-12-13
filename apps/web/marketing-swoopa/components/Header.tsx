@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Zap } from "lucide-react";
 import { Button } from "../components/ui/button";
+import NotificationBell from "@/components/NotificationBell";
 
 const Header = () => {
   return (
@@ -37,15 +38,21 @@ const Header = () => {
             </Link>
           </nav>
 
-          {/* CTA Button */}
-          <Button variant="hero" size="lg" className="hidden sm:flex bg-gradient-to-r from-[#00E5FF] to-[#7B2FFF] hover:from-[#00E5FF]/90 hover:to-[#7B2FFF]/90 text-white font-extrabold shadow-[0_0_40px_rgba(0,229,255,0.4)] hover:shadow-[0_0_60px_rgba(123,47,255,0.5)] transition-all" asChild>
-            <Link href="/register">
-              Get started
-              <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-          </Button>
+          {/* Actions */}
+          <div className="flex items-center gap-4">
+            {/* Notification Bell */}
+            <NotificationBell />
+
+            {/* CTA Button */}
+            <Button variant="hero" size="lg" className="hidden sm:flex bg-gradient-to-r from-[#00E5FF] to-[#7B2FFF] hover:from-[#00E5FF]/90 hover:to-[#7B2FFF]/90 text-white font-extrabold shadow-[0_0_40px_rgba(0,229,255,0.4)] hover:shadow-[0_0_60px_rgba(123,47,255,0.5)] transition-all" asChild>
+              <Link href="/register">
+                Get started
+                <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </Button>
+          </div>
 
           {/* Mobile menu button */}
           <button className="md:hidden p-2 text-white">

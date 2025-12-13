@@ -1,44 +1,19 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Zap } from "lucide-react";
-import { MARKETPLACE_PROFILES } from "../../../marketing-swoopa/data/marketplaces";
-import LiveDealsGrid from "../../../marketing-swoopa/components/LiveDealsGrid";
 import Header from "../../../marketing-swoopa/components/Header";
 import Footer from "../../../marketing-swoopa/components/Footer";
-import MarketplaceStatus from "./MarketplaceStatus";
+import MarketplaceStatus from "../[slug]/MarketplaceStatus";
+import CreateSearchForm from "./CreateSearchForm";
+import VintedDealsList from "./VintedDealsList";
+import SavedSearchesList from "../../../components/SavedSearchesList";
 
-type MarketplacePageProps = {
-  params: Promise<{ slug: string }>;
+export const metadata = {
+  title: "Vinted – Live Deals | Magnus Flipper AI",
+  description: "Real-time deal intelligence for Vinted.",
 };
 
-export async function generateMetadata({
-  params,
-}: MarketplacePageProps) {
-  const { slug } = await params;
-  const marketplace = MARKETPLACE_PROFILES.find((m) => m.slug === slug);
-
-  if (!marketplace) {
-    return {
-      title: "Marketplace Not Found – Magnus Flipper AI",
-    };
-  }
-
-  return {
-    title: `${marketplace.name} – Live Deals | Magnus Flipper AI`,
-    description: `${marketplace.tagline}. Real-time deal intelligence for ${marketplace.name}.`,
-  };
-}
-
-export default async function MarketplaceDetailPage({
-  params,
-}: MarketplacePageProps) {
-  const { slug } = await params;
-  const marketplace = MARKETPLACE_PROFILES.find((m) => m.slug === slug);
-
-  if (!marketplace) {
-    notFound();
-  }
-
+export default async function VintedMarketplacePage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
       <Header />
@@ -64,15 +39,51 @@ export default async function MarketplaceDetailPage({
                 </div>
                 <div>
                   <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-2 tracking-tight">
-                    {marketplace.name}
+                    Vinted
                   </h1>
                   <p className="text-white/80 text-lg font-medium">
-                    {marketplace.tagline}
+                    Real-time deal intelligence for Vinted
                   </p>
                 </div>
               </div>
 
-              <MarketplaceStatus marketplace={marketplace.slug} />
+              <MarketplaceStatus marketplace="vinted" />
+            </div>
+          </div>
+        </section>
+
+        {/* Create Search Section */}
+        <section className="py-12 bg-[#0A0A0A]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mx-auto">
+              <div className="mb-6">
+                <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">
+                  Create Search
+                </h2>
+                <p className="text-white/70 text-sm font-medium">
+                  Set up a search to automatically find matching deals
+                </p>
+              </div>
+              <div className="bg-[#121212] border border-white/10 rounded-xl p-6">
+                <CreateSearchForm />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Saved Searches Section */}
+        <section className="py-12 bg-[#0A0A0A]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-6">
+                <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">
+                  Your Searches
+                </h2>
+                <p className="text-white/70 text-sm font-medium">
+                  Monitor performance and see what's working
+                </p>
+              </div>
+              <SavedSearchesList marketplace="vinted" />
             </div>
           </div>
         </section>
@@ -85,11 +96,11 @@ export default async function MarketplaceDetailPage({
                 Live Deals
               </h2>
               <p className="text-white/70 text-sm font-medium">
-                Real-time opportunities from {marketplace.name}
+                Real-time opportunities from Vinted
               </p>
             </div>
 
-            <LiveDealsGrid marketplaceSlug={slug} limit={18} />
+            <VintedDealsList />
           </div>
         </section>
       </main>

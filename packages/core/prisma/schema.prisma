@@ -42,6 +42,12 @@ model SavedSearch {
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // Performance metrics
+  lastRunAt         DateTime? @map("last_run_at") @db.Timestamptz(6)
+  totalListingsScanned Int    @default(0) @map("total_listings_scanned")
+  totalMatchesFound    Int    @default(0) @map("total_matches_found")
+  totalRuns            Int    @default(0) @map("total_runs")
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   alerts Alert[]

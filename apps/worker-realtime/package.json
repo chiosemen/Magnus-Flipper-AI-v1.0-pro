@@ -15,6 +15,7 @@
     "@magnus-flipper-ai/rate-limiter": "workspace:*",
     "@magnus-flipper-ai/marketplace-config": "workspace:*",
     "@magnus-flipper-ai/compliance-shield": "workspace:*",
+    "@magnus-flipper-ai/marketplaces": "workspace:*",
     "axios": "^1.6.5",
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.4.5"
