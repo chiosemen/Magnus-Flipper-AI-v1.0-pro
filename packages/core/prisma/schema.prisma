@@ -190,3 +190,40 @@ model OperationalAlert {
   @@index([severity, createdAt])
   @@index([category])
 }
+
+// DeployGuardian Runs - persisted validation results for ops dashboard
+// Contract version: 2.1.0+
+model DeployGuardianRun {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Provenance
+  environment String @default("production")
+  mode        String // pre-deploy | deploy | post-deploy
+  status      String // pass | fail
+
+  commitSha String? @map("commit_sha")
+  actor     String?
+  workflow  String?
+  runId     String? @unique @map("run_id")
+  branch    String?
+
+  // Contract metadata (v2.1.0+)
+  contractVersion    String? @map("contract_version")
+  contractSchemaHash String? @map("contract_schema_hash")
+
+  // Summary counts (denormalized for fast filtering)
+  blockers Int @default(0)
+  warnings Int @default(0)
+  infos    Int @default(0)
+
+  // Complete JSON payload (single source of truth)
+  payload Json
+
+  @@map("deploy_guardian_runs")
+  @@index([createdAt(sort: Desc)])
+  @@index([environment, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([commitSha])
+  @@index([contractVersion])
+}

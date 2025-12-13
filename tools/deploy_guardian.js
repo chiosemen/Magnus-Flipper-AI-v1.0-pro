@@ -32,10 +32,24 @@ if (process.env.CI_DEPLOY_GUARDIAN_DISABLED === "true") {
 
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { execSync } = require("child_process");
 
-const CONTRACT_VERSION = "2.0.0";
-const TOOL_VERSION = "2.0.0";
+const CONTRACT_VERSION = "2.1.0";
+const TOOL_VERSION = "2.1.0";
+const SCHEMA_FILE = "deployguardian.contract.schema.json";
+
+// Compute schema hash for drift detection
+function getSchemaHash() {
+  try {
+    const schemaPath = path.join(__dirname, SCHEMA_FILE);
+    const schemaContent = fs.readFileSync(schemaPath, "utf8");
+    return crypto.createHash("sha256").update(schemaContent).digest("hex");
+  } catch (err) {
+    // If schema file not found, return placeholder
+    return "0".repeat(64);
+  }
+}
 
 const MODES = {
   VALIDATE: "validate",
@@ -685,7 +699,12 @@ function generateJSONOutput(startTime, endTime, blockerCount, warningCount, pass
   }
 
   const output = {
-    contractVersion: CONTRACT_VERSION,
+    contract: {
+      name: "deployguardian",
+      version: CONTRACT_VERSION,
+      schema: SCHEMA_FILE,
+      schemaSha256: getSchemaHash()
+    },
     tool: {
       name: "DeployGuardian",
       version: TOOL_VERSION,

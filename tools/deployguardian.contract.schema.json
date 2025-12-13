@@ -4,12 +4,33 @@
   "title": "DeployGuardian v2 Output Contract",
   "description": "Machine-readable output contract for DeployGuardian v2 validation results",
   "type": "object",
-  "required": ["contractVersion", "tool", "context", "verdict", "checks"],
+  "required": ["contract", "tool", "context", "verdict", "checks"],
   "properties": {
-    "contractVersion": {
-      "type": "string",
-      "pattern": "^2\\.0\\.\\d+$",
-      "description": "Semantic version of the contract specification"
+    "contract": {
+      "type": "object",
+      "required": ["name", "version", "schema"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "deployguardian",
+          "description": "Contract name (always deployguardian)"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^2\\.[0-9]+\\.[0-9]+$",
+          "description": "Semantic version of the contract (major.minor.patch)"
+        },
+        "schema": {
+          "type": "string",
+          "description": "Name of the schema file"
+        },
+        "schemaSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA256 hash of the schema file for drift detection"
+        }
+      },
+      "additionalProperties": false
     },
     "tool": {
       "type": "object",

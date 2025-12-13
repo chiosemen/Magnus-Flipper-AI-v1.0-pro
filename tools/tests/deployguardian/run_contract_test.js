@@ -12,11 +12,15 @@
  * 0 - All tests passed
  * 1 - Contract violation
  * 2 - Test runner error
+ * 
+ * NOTE:
+ * DeployGuardian uses JSON Schema Draft 2020-12.
+ * ajv-draft-2020 MUST be registered or schema validation will fail.
  */
 
 const fs = require("fs");
 const path = require("path");
-const Ajv = require("ajv");
+const Ajv = require("ajv/dist/2020");  // Use Ajv2020 for Draft 2020-12
 const addFormats = require("ajv-formats");
 
 // Colors for output
@@ -48,10 +52,79 @@ function info(msg) {
 const schemaPath = path.join(__dirname, "../../deployguardian.contract.schema.json");
 const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
 
-// Initialize AJV with formats
-const ajv = new Ajv({ allErrors: true, strict: false });
+// Initialize AJV with Draft 2020-12 support
+// NOTE: Using Ajv2020 from ajv/dist/2020 automatically loads Draft 2020-12 meta-schema
+const ajv = new Ajv({ 
+  allErrors: true, 
+  strict: false,  // Important for evolving contracts
+  validateFormats: true
+});
 addFormats(ajv);
+
 const validateSchema = ajv.compile(schema);
+
+/**
+ * Compute schema hash
+ */
+function getSchemaHash() {
+  const crypto = require("crypto");
+  const schemaContent = fs.readFileSync(schemaPath, "utf8");
+  return crypto.createHash("sha256").update(schemaContent).digest("hex");
+}
+
+/**
+ * Validate contract version negotiation
+ */
+function validateContractVersion(output) {
+  // Check if contract field exists
+  if (!output.contract) {
+    // Legacy payload without contract field - warn but allow
+    log(`⚠️  Legacy payload detected (no contract field) - inferring as v1.x`, COLORS.yellow);
+    return true;
+  }
+  
+  const { version, schemaSha256 } = output.contract;
+  
+  // Parse version
+  const match = version.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) {
+    error(`CONTRACT VIOLATION: Invalid contract version format: ${version}`);
+    return false;
+  }
+  
+  const [, major, minor] = match;
+  const expectedMajor = "2";
+  
+  // Check major version
+  if (major !== expectedMajor) {
+    error(`CONTRACT VIOLATION: Major version mismatch`);
+    error(`  Expected: ${expectedMajor}.x.x`);
+    error(`  Actual: ${version}`);
+    return false;
+  }
+  
+  // Warn on minor version mismatch (but allow)
+  const expectedMinor = "1";
+  if (minor !== expectedMinor) {
+    log(`⚠️  Minor version mismatch (expected ${expectedMajor}.${expectedMinor}.x, got ${version}) - allowing`, COLORS.yellow);
+  }
+  
+  // Validate schema hash if present
+  if (schemaSha256) {
+    const actualHash = getSchemaHash();
+    if (schemaSha256 !== actualHash) {
+      error(`CONTRACT VIOLATION: Schema hash mismatch`);
+      error(`  Expected: ${actualHash}`);
+      error(`  Actual: ${schemaSha256}`);
+      error(`  This indicates schema drift without version bump`);
+      return false;
+    }
+    success("Schema hash validation passed");
+  }
+  
+  success("Contract version validation passed");
+  return true;
+}
 
 /**
  * Validate JSON output against schema
@@ -257,6 +330,8 @@ function validateOutput(outputPath, fixtureName) {
   
   // Run validations
   console.log();
+  const contractValid = validateContractVersion(output);
+  console.log();
   const schemaValid = validateAgainstSchema(output);
   console.log();
   const verdictValid = validateVerdict(output, expected);
@@ -264,7 +339,7 @@ function validateOutput(outputPath, fixtureName) {
   const checksValid = validateChecks(output, expected);
   console.log();
   
-  const allValid = schemaValid && verdictValid && checksValid;
+  const allValid = contractValid && schemaValid && verdictValid && checksValid;
   
   if (allValid) {
     log("=".repeat(60), COLORS.green);
