@@ -7,19 +7,23 @@
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
-      "default": "./dist/src/index.js"
+      "import": "./dist/src/index.js",
+      "require": "./dist/src/index.js"
     },
     "./components": {
       "types": "./dist/components/index.d.ts",
-      "default": "./dist/components/index.js"
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.js"
     },
     "./providers": {
       "types": "./dist/providers/index.d.ts",
-      "default": "./dist/providers/index.js"
+      "import": "./dist/providers/index.js",
+      "require": "./dist/providers/index.js"
     },
     "./theme": {
       "types": "./dist/theme/tokens.d.ts",
-      "default": "./dist/theme/tokens.js"
+      "import": "./dist/theme/tokens.js",
+      "require": "./dist/theme/tokens.js"
     },
     "./tailwind-preset": "./tailwind-preset.js"
   },
