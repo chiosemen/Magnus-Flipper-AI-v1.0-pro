@@ -36,7 +36,7 @@ const textVariants = cva("", {
 });
 
 export interface TextProps
-  extends React.HTMLAttributes<HTMLElement>,
+  extends Omit<React.HTMLAttributes<HTMLElement>, "color">,
     VariantProps<typeof textVariants> {
   as?: "p" | "span" | "div" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 }
@@ -48,7 +48,7 @@ const Text = React.forwardRef<HTMLElement, TextProps>(
     return (
       <Component
         ref={ref as any}
-        className={cn(textVariants({ variant, color, className }))}
+        className={cn(textVariants({ variant, color: color as "primary" | "secondary" | "muted" | "inverse" | "success" | "warning" | "danger" | "info" | undefined, className }))}
         {...props}
       />
     );

@@ -107,14 +107,14 @@ export function ThemeProvider({
   );
 
   const toggleTheme = React.useCallback(() => {
-    setTheme((current) => {
+    setThemeState((current: Theme): Theme => {
       if (current === "system") {
         const systemTheme = getSystemTheme();
         return systemTheme === "dark" ? "light" : "dark";
       }
       return current === "dark" ? "light" : "dark";
     });
-  }, [setTheme]);
+  }, []);
 
   const value = React.useMemo(
     () => ({

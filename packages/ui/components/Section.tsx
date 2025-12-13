@@ -9,7 +9,7 @@ const Section = React.forwardRef<HTMLElement, SectionProps>(
   ({ className, as: Component = "section", ...props }, ref) => {
     return (
       <Component
-        ref={ref}
+        ref={ref as any}
         className={cn("w-full", className)}
         {...props}
       />

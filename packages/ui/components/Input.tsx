@@ -25,7 +25,7 @@ const inputVariants = cva(
 );
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement>,
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
     VariantProps<typeof inputVariants> {
   /**
    * Error state - shows error styling
@@ -71,7 +71,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             type={type}
             className={cn(
-              inputVariants({ variant: effectiveVariant, size }),
+              inputVariants({ variant: effectiveVariant, size: size as "default" | "sm" | "lg" | undefined }),
               iconLeft && "pl-9",
               iconRight && "pr-9",
               className
@@ -92,7 +92,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         type={type}
-        className={cn(inputVariants({ variant: effectiveVariant, size }), className)}
+        className={cn(inputVariants({ variant: effectiveVariant, size: size as "default" | "sm" | "lg" | undefined }), className)}
         ref={ref}
         aria-invalid={error}
         {...props}
