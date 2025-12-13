@@ -17,7 +17,7 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "db:erd": "prisma generate --schema=./prisma/schema.prisma && echo 'ERD written to docs/db/erd.svg'",
+    "db:erd": "echo 'ERD generation: prisma-erd-generator incompatible with Prisma 7.x. Use dbdiagram.io with schema.prisma or SQL introspection.'",
     "postinstall": "echo 'Skipping prisma generate (temporarily patched)'"
   },
   "dependencies": {
@@ -28,7 +28,6 @@
   },
   "devDependencies": {
     "prisma": "7.0.1",
-    "prisma-erd-generator": "^1.11.1",
     "@types/node": "^20.11.0",
     "typescript": "^5.6.3"
   }
