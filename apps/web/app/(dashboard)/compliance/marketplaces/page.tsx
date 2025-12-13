@@ -1,9 +1,10 @@
-import { AppShell } from "@/src/components/layout/AppShell";
-import { PageHeader } from "@/src/components/layout/PageHeader";
-import { Suspense } from "react";
 "use client";
 
-import { MarketplaceRiskTable } from "@/src/components/compliance/MarketplaceRiskTable";
+import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Suspense } from "react";
+
+import { MarketplaceRiskTable } from "@/components/compliance/MarketplaceRiskTable";
 import { useComplianceRisk } from "@/hooks/useComplianceRisk";
 import { Card } from "@magnus-flipper-ai/ui/components";
 

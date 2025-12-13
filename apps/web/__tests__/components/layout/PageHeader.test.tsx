@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { PageHeader } from '@/src/components/layout/PageHeader';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@magnus-flipper-ai/ui/components/Button';
 
 describe('PageHeader', () => {

@@ -1,7 +1,7 @@
-import { AppShell } from "@/src/components/layout/AppShell";
-import { PageHeader } from "@/src/components/layout/PageHeader";
+import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Suspense } from "react";
-import { ScraperPerformanceDashboard } from "@/src/components/scraper/ScraperPerformanceDashboard";
+import { ScraperPerformanceDashboard } from "@/components/scraper/ScraperPerformanceDashboard";
 import { Card } from "@magnus-flipper-ai/ui/components";
 
 /**

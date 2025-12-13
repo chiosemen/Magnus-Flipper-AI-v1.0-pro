@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@magnus-flipper-ai/ui/components";
-import type { EarningsDataPoint, EarningsPeriod } from "@magnus-flipper-ai/core/types/affiliate";
+import type { EarningsDataPoint, EarningsPeriod } from "@/types/affiliate";
 
 interface EarningsChartProps {
   data: EarningsDataPoint[];

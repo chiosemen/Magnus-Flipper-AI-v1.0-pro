@@ -16,8 +16,10 @@
   "dependencies": {
     "@magnus-flipper-ai/agentic-engine": "workspace:*",
     "@magnus-flipper-ai/arb-engine": "workspace:*",
+    "@magnus-flipper-ai/compliance-shield": "workspace:*",
     "@magnus-flipper-ai/core": "workspace:*",
     "@magnus-flipper-ai/deal-engine": "workspace:*",
+    "@magnus-flipper-ai/feed-engine": "workspace:*",
     "@magnus-flipper-ai/profit-engine": "workspace:*",
     "@magnus-flipper-ai/marketplace-config": "workspace:*",
     "@magnus-flipper-ai/scraper-sync": "workspace:*",

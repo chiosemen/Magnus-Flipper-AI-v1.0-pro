@@ -2,12 +2,21 @@
 
 import { Button } from "@magnus-flipper-ai/ui/components";
 import { Card } from "@magnus-flipper-ai/ui/components";
-import { Input } from "@magnus-flipper-ai/ui/components/Input";
+import { Input } from "@magnus-flipper-ai/ui/components";
 import { useState } from "react";
-import type { AffiliateLink } from "@magnus-flipper-ai/core/types/affiliate";
+interface AffiliateLinkType {
+  id: string;
+  name: string;
+  url: string;
+  fullUrl?: string;
+  clicks: number;
+  conversions: number;
+  revenue: number;
+  status: "active" | "paused" | "inactive";
+}
 
 interface AffiliateLinkTableProps {
-  links: AffiliateLink[];
+  links: AffiliateLinkType[];
   onCopy?: (url: string) => void;
   onEdit?: (id: string) => void;
   onToggleStatus?: (id: string) => void;

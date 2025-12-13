@@ -1,17 +1,17 @@
 "use client";
 
-import { AppShell } from "@/src/components/layout/AppShell";
-import { PageHeader } from "@/src/components/layout/PageHeader";
+import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@magnus-flipper-ai/ui/components";
 import { useState } from "react";
-import { FeedList } from "@/src/components/feed/FeedList";
-import { FeedFilters } from "@/src/components/feed/FeedFilters";
-import { RealtimeIndicator } from "@/src/components/feed/RealtimeIndicator";
+import { FeedList } from "@/components/feed/FeedList";
+import { FeedFilters } from "@/components/feed/FeedFilters";
+import { RealtimeIndicator } from "@/components/feed/RealtimeIndicator";
 import { useFeed } from "@/hooks/useFeed";
 import { useRealtimeFeed } from "@/hooks/useRealtimeFeed";
 import { useInfiniteFeed } from "@/hooks/useFeed";
 import { useMemo } from "react";
-import type { FeedFilters as FeedFiltersType, FeedViewMode } from "@magnus-flipper-ai/core/types/feed";
+import type { FeedFilters as FeedFiltersType, FeedViewMode, FeedResponse } from "@magnus-flipper-ai/core/types/feed";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
 
 /**
@@ -54,7 +54,7 @@ export default function FeedPage() {
       return realtimeListings;
     }
     if (viewMode === "hybrid") {
-      const feedListings = feedData?.pages.flatMap((p) => p.listings) || [];
+      const feedListings = (feedData?.pages || []).flatMap((p: any) => p.listings || []);
       // Merge and deduplicate by ID
       const seen = new Set<string>();
       const merged: AggregatedListing[] = [];
@@ -66,13 +66,13 @@ export default function FeedPage() {
       });
       return merged;
     }
-    return feedData?.pages.flatMap((p) => p.listings) || [];
+    return (feedData?.pages || []).flatMap((p: any) => p.listings || []);
   }, [viewMode, realtimeListings, feedData]);
 
   const handleListingClick = (listing: AggregatedListing) => {
-    if (listing.url) {
-      window.open(listing.url, "_blank", "noopener,noreferrer");
-    }
+    // TODO: Add URL property to AggregatedListing or construct from marketplace + id
+    // For now, this is a placeholder
+    console.log("Listing clicked:", listing.id);
   };
 
   return (

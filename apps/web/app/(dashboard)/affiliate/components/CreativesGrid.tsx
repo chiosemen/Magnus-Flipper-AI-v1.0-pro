@@ -2,7 +2,7 @@
 
 import { Button } from "@magnus-flipper-ai/ui/components";
 import { Card } from "@magnus-flipper-ai/ui/components";
-import type { AffiliateCreative } from "@magnus-flipper-ai/core/types/affiliate";
+import type { AffiliateCreative } from "@/types/affiliate";
 
 interface CreativesGridProps {
   creatives: AffiliateCreative[];
@@ -62,7 +62,7 @@ export function CreativesGrid({
               <div className="flex items-center gap-4 text-body-s text-text-secondary">
                 <span>{creative.clicks} clicks</span>
                 <span>{creative.conversions} conversions</span>
-                <span className="text-success">${creative.revenue.toFixed(2)}</span>
+                <span className="text-success">${creative.revenue?.toFixed(2) || "0.00"}</span>
               </div>
             </div>
 

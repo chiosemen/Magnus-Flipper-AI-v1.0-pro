@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getAllMarketplaceControls,
   upsertMarketplaceControl
-} from '@magnus-flipper-ai/core/services/marketplaceControlService';
+} from '@magnus-flipper-ai/core';
 
 // Optional: enforce admin auth if you have requireAdmin()
 // import { requireAdmin } from '@/lib/auth';

@@ -3,8 +3,8 @@
 import { Button } from "@magnus-flipper-ai/ui/components";
 import { Card } from "@magnus-flipper-ai/ui/components";
 import { useAffiliateLinks } from "@/hooks/useAffiliateLinks";
-import { AffiliateLinkTable } from "../../../components/AffiliateLinkTable";
-import { MetricsSummaryBar } from "../../../components/MetricsSummaryBar";
+import { AffiliateLinkTable } from "@/components/AffiliateLinkTable";
+import { MetricsSummaryBar } from "@/components/MetricsSummaryBar";
 
 /**
  * Affiliate Links Content - Client component that fetches and displays links

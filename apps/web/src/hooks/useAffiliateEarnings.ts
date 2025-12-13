@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { EarningsPeriod, EarningsDataPoint, AffiliateMetrics } from "@magnus-flipper-ai/core/types/affiliate";
+import type { EarningsPeriod, EarningsDataPoint, AffiliateMetrics } from "@/types/affiliate";
 
 interface AffiliateEarningsResponse {
   earningsData: EarningsDataPoint[];

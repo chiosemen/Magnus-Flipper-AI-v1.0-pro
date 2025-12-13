@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card } from "@magnus-flipper-ai/ui/components";
-import { Input } from "@magnus-flipper-ai/ui/components/Input";
+import { Input } from "@magnus-flipper-ai/ui/components";
 import { Button } from "@magnus-flipper-ai/ui/components";
 
 /**

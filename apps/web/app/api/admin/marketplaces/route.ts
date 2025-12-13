@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getAllMarketplaceControls,
   upsertMarketplaceControl
-} from '@magnus-flipper-ai/core/services/marketplaceControlService';
+} from '@magnus-flipper-ai/core';
 import { MARKETPLACE_PROFILES } from '@magnus-flipper-ai/marketplace-config';
 
 export async function GET() {

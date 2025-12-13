@@ -2,7 +2,7 @@
 
 import { Button } from "@magnus-flipper-ai/ui/components";
 import { Card } from "@magnus-flipper-ai/ui/components";
-import { CreativesGrid } from "../../../components/CreativesGrid";
+import { CreativesGrid } from "@/components/CreativesGrid";
 
 /**
  * Affiliate Creatives Content - Displays creatives grid

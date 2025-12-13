@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/server";
-import type { AffiliateOverview } from "@magnus-flipper-ai/core/types/affiliate";
+import type { AffiliateOverview } from "@/types/affiliate";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

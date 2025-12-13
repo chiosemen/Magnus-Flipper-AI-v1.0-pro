@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Button } from "@magnus-flipper-ai/ui/components";
 import { Card } from "@magnus-flipper-ai/ui/components";
 import { useAffiliateEarnings } from "@/hooks/useAffiliateEarnings";
-import { EarningsChart } from "../../../components/EarningsChart";
-import { MetricsSummaryBar } from "../../../components/MetricsSummaryBar";
-import type { EarningsPeriod } from "@magnus-flipper-ai/core/types/affiliate";
+import { EarningsChart } from "@/components/EarningsChart";
+import { MetricsSummaryBar } from "@/components/MetricsSummaryBar";
+import type { EarningsPeriod } from "@/types/affiliate";
 
 /**
  * Affiliate Earnings Content - Client component with period filtering
@@ -88,7 +88,7 @@ export function AffiliateEarningsContent() {
                 ${data.topPerformers.links[0]?.revenue?.toFixed(2) || "0.00"}
               </p>
               <p className="text-body-s text-text-muted">
-                {data.topPerformers.links[0]?.conversions || 0} conversions
+                {data.topPerformers?.links[0]?.conversionRate?.toFixed(2) || "0.00"}% conversion rate
               </p>
             </div>
           </Card>
@@ -100,7 +100,7 @@ export function AffiliateEarningsContent() {
             <div className="space-y-2">
               <p className="text-body-s text-text-secondary">Overall</p>
               <p className="text-h3 font-bold text-primary">
-                {data.metrics?.conversionRate?.toFixed(2) || "0.00"}%
+                {data.metrics?.find(m => m.label === "Conversion Rate")?.value || "0.00"}%
               </p>
             </div>
           </Card>
@@ -112,7 +112,7 @@ export function AffiliateEarningsContent() {
             <div className="space-y-2">
               <p className="text-body-s text-text-secondary">Scheduled</p>
               <p className="text-h3 font-bold text-foreground">
-                ${data.metrics?.pendingPayout?.toFixed(2) || "0.00"}
+${data.metrics?.find(m => m.label === "Pending Payout")?.value || "0.00"}
               </p>
               <p className="text-body-s text-text-muted">Due in 5 days</p>
             </div>

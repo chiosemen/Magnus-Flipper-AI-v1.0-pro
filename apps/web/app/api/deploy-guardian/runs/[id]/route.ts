@@ -4,15 +4,16 @@ import { prisma } from "@magnus-flipper-ai/core";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   if (!requireReadAuth(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const run = await prisma.deployGuardianRun.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         createdAt: true,

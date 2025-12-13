@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { AffiliateLink, AffiliateMetrics } from "@magnus-flipper-ai/core/types/affiliate";
+import type { AffiliateLink, AffiliateMetrics } from "@/types/affiliate";
 
 interface AffiliateLinksResponse {
   links: AffiliateLink[];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { AffiliateOverview } from "@magnus-flipper-ai/core/types/affiliate";
+import type { AffiliateOverview } from "@/types/affiliate";
 
 /**
  * Hook to fetch affiliate overview data

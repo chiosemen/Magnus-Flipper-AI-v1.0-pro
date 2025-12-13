@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { TopNav } from '@/src/components/layout/TopNav';
+import { TopNav } from '@/components/layout/TopNav';
 
 describe('TopNav', () => {
   it('renders title correctly', () => {

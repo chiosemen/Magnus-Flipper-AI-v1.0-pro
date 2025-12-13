@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getMarketplaceScrapeStats
-} from '@magnus-flipper-ai/core/services/scrapeRunService';
+} from '@magnus-flipper-ai/core';
 
 // Optional: basic admin auth guard if you already have one
 // import { requireAdmin } from '@/lib/admin/auth';

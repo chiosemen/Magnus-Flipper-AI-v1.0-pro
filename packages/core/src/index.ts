@@ -8,6 +8,13 @@ export * from "./marketplaces.js";
 export * from "./services/scrapeRunService.js";
 export * from "./services/marketplaceControlService.js";
 
+// Tier management
+export * from "./tiers/tier-config.js";
+export * from "./tiers/tier-service.js";
+
+// Types exports
+export * from "./types/index.js";
+
 // UI Component Contracts (for cross-platform consistency)
 // Note: These are TypeScript types, exported directly
 export * from "../ui-contracts";

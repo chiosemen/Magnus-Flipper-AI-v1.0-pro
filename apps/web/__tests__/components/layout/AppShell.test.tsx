@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { AppShell } from '@/src/components/layout/AppShell';
+import { AppShell } from '@/components/layout/AppShell';
 
 describe('AppShell', () => {
   it('renders children correctly', () => {

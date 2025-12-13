@@ -4,11 +4,28 @@
   "description": "Compliance Shield v1.0 - Anti-bot evasion, risk scoring, and adaptive throttling guardrails",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./riskScoring": "./dist/riskScoring.js",
-    "./guardrails": "./dist/guardrails.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./riskScoring": {
+      "types": "./dist/riskScoring.d.ts",
+      "default": "./dist/riskScoring.js"
+    },
+    "./guardrails": {
+      "types": "./dist/guardrails.d.ts",
+      "default": "./dist/guardrails.js"
+    },
+    "./observability": {
+      "types": "./dist/observability.d.ts",
+      "default": "./dist/observability.js"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"

@@ -50,19 +50,19 @@ export function AffiliateOverviewContent() {
         <Card className="p-6">
           <div className="text-text-secondary text-sm mb-1">Total Earnings</div>
           <div className="text-h2 font-bold text-success">
-            ${overview?.metrics?.totalEarnings?.toFixed(2) || "0.00"}
+${overview?.metrics?.totalEarnings?.value || "0.00"}
           </div>
         </Card>
         <Card className="p-6">
           <div className="text-text-secondary text-sm mb-1">Total Clicks</div>
           <div className="text-h2 font-bold text-foreground">
-            {overview?.metrics?.totalClicks?.toLocaleString() || "0"}
+{overview?.metrics?.totalClicks?.value || "0"}
           </div>
         </Card>
         <Card className="p-6">
           <div className="text-text-secondary text-sm mb-1">Conversion Rate</div>
           <div className="text-h2 font-bold text-primary">
-            {overview?.metrics?.conversionRate?.toFixed(2) || "0.00"}%
+{overview?.metrics?.conversionRate?.value || "0.00"}%
           </div>
         </Card>
         <Card className="p-6">

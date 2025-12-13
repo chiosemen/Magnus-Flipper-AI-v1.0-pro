@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ProfitCalculator } from '@/src/components/ProfitCalculator';
+import { ProfitCalculator } from '@/components/ProfitCalculator';
 
 describe('ProfitCalculator', () => {
   it('renders calculator form', () => {

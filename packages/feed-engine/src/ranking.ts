@@ -60,7 +60,7 @@ export function calculateVelocityScore(listing: ListingForRanking): number {
   }
 
   // Factor 2: First-seen velocity (new listings get bonus)
-  const hoursSinceFirstSeen = (now.getTime() - firstSeen.getTime()) / (1000 * 60 * 60);
+  // Reuse hoursSinceFirstSeen calculated above
   if (hoursSinceFirstSeen < 2) {
     // Brand new listing (first 2 hours) = additional 10% boost
     velocityScore *= 1.1;
