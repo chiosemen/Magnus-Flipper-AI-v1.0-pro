@@ -107,6 +107,17 @@ jobs:
       run: |
         node tools/deployguardian_render_summary.js artifacts/deployguardian.json >> $GITHUB_STEP_SUMMARY
 
+    - name: 📤 Ingest to Dashboard
+      if: always()
+      run: |
+        echo "📤 Ingesting DeployGuardian results to ops dashboard..."
+        curl -sS -X POST "https://www.flipperagents.com/api/deploy-guardian/runs" \
+          -H "Content-Type: application/json" \
+          -H "x-deploy-guardian-token: ${{ secrets.DEPLOY_GUARDIAN_INGEST_TOKEN }}" \
+          --data-binary @artifacts/deployguardian.json \
+          && echo "✅ Dashboard ingestion successful" \
+          || echo "⚠️  Dashboard ingestion failed (non-blocking)"
+
     # -------------------------------
     # 7. Run Prisma Build Surgeon v5
     # -------------------------------
