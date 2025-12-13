@@ -2,7 +2,7 @@ import { AppShell } from "@/src/components/layout/AppShell";
 import { PageHeader } from "@/src/components/layout/PageHeader";
 import { Suspense } from "react";
 import { ComplianceDashboard } from "@/src/components/compliance/ComplianceDashboard";
-import { Card } from "@magnus-flipper-ai/ui/components/Card";
+import { Card } from "@magnus-flipper-ai/ui/components";
 
 /**
  * Compliance Page - Main compliance monitoring dashboard

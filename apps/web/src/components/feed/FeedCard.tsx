@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@magnus-flipper-ai/ui/components/Card";
+import { Card } from "@magnus-flipper-ai/ui/components";
 import { Badge } from "@magnus-flipper-ai/ui/components";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
 import Link from "next/link";

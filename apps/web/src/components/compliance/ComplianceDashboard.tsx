@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@magnus-flipper-ai/ui/components/Card";
+import { Card } from "@magnus-flipper-ai/ui/components";
 import { useComplianceRisk } from "@/hooks/useComplianceRisk";
 import { useComplianceGuardrails } from "@/hooks/useComplianceGuardrails";
 import { RiskScoreCard } from "./RiskScoreCard";

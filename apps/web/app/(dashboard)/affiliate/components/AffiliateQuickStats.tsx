@@ -1,4 +1,4 @@
-import { Card } from "@magnus-flipper-ai/ui/components/Card";
+import { Card } from "@magnus-flipper-ai/ui/components";
 import Link from "next/link";
 
 /**

@@ -2,7 +2,7 @@
 
 import { AppShell } from "@/src/components/layout/AppShell";
 import { PageHeader } from "@/src/components/layout/PageHeader";
-import { Button } from "@magnus-flipper-ai/ui/components/Button";
+import { Button } from "@magnus-flipper-ai/ui/components";
 import { useState } from "react";
 import { FeedList } from "@/src/components/feed/FeedList";
 import { FeedFilters } from "@/src/components/feed/FeedFilters";

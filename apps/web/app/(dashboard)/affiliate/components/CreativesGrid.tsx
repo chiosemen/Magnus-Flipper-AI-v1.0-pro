@@ -1,7 +1,7 @@
 "use client";
 
-import { Card } from "@magnus-flipper-ai/ui/components/Card";
-import { Button } from "@magnus-flipper-ai/ui/components/Button";
+import { Button } from "@magnus-flipper-ai/ui/components";
+import { Card } from "@magnus-flipper-ai/ui/components";
 import type { AffiliateCreative } from "@magnus-flipper-ai/core/types/affiliate";
 
 interface CreativesGridProps {

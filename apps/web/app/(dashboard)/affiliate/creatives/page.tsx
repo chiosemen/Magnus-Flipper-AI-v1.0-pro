@@ -1,6 +1,6 @@
 import { AppShell } from "@/src/components/layout/AppShell";
 import { PageHeader } from "@/src/components/layout/PageHeader";
-import { Button } from "@magnus-flipper-ai/ui/components/Button";
+import { Button } from "@magnus-flipper-ai/ui/components";
 import { Suspense } from "react";
 import { AffiliateCreativesContent } from "./components/AffiliateCreativesContent";
 

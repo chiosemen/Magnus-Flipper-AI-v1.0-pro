@@ -1,7 +1,7 @@
 "use client";
 
-import { Card } from "@magnus-flipper-ai/ui/components/Card";
-import { Button } from "@magnus-flipper-ai/ui/components/Button";
+import { Button } from "@magnus-flipper-ai/ui/components";
+import { Card } from "@magnus-flipper-ai/ui/components";
 import { Input } from "@magnus-flipper-ai/ui/components/Input";
 import { useState } from "react";
 import type { AffiliateLink } from "@magnus-flipper-ai/core/types/affiliate";

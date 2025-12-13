@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@magnus-flipper-ai/ui/components/Card";
-import { Button } from "@magnus-flipper-ai/ui/components/Button";
+import { Button } from "@magnus-flipper-ai/ui/components";
+import { Card } from "@magnus-flipper-ai/ui/components";
 import { useAffiliateEarnings } from "@/hooks/useAffiliateEarnings";
 import { EarningsChart } from "../../../components/EarningsChart";
 import { MetricsSummaryBar } from "../../../components/MetricsSummaryBar";

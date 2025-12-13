@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 import { MarketplaceRiskTable } from "@/src/components/compliance/MarketplaceRiskTable";
 import { useComplianceRisk } from "@/hooks/useComplianceRisk";
-import { Card } from "@magnus-flipper-ai/ui/components/Card";
+import { Card } from "@magnus-flipper-ai/ui/components";
 
 /**
  * Compliance Marketplaces Page - Detailed marketplace risk view
