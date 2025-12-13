@@ -70,9 +70,14 @@ export default function FeedPage() {
   }, [viewMode, realtimeListings, feedData]);
 
   const handleListingClick = (listing: AggregatedListing) => {
-    // TODO: Add URL property to AggregatedListing or construct from marketplace + id
-    // For now, this is a placeholder
-    console.log("Listing clicked:", listing.id);
+    // Access URL from listing (may not be in type but is included in API response)
+    const url = (listing as any).url;
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      // Fallback: construct URL from marketplace and id if URL not available
+      console.warn("Listing URL not available for:", listing.id);
+    }
   };
 
   return (

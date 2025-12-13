@@ -11,7 +11,7 @@
  */
 
 import { WebSocketServer, WebSocket } from "ws";
-import { prisma } from "@magnus-flipper-ai/core/db";
+import { prisma } from "@magnus-flipper-ai/core";
 import {
   aggregateListings,
   calculateMarketplaceAvgPrices,
@@ -149,6 +149,7 @@ export function createWebSocketServer(port: number = 8080) {
               sellerId: (listing.metadata as any)?.sellerId,
               sellerName: (listing.metadata as any)?.sellerName,
               viewsCount: (listing.metadata as any)?.viewsCount,
+              url: listing.url, // Include URL for navigation
             }));
 
             const marketplaceAvgPrices = calculateMarketplaceAvgPrices(feedListings);

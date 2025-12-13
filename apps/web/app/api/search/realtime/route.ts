@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@magnus-flipper-ai/core/db";
+import { prisma } from "@magnus-flipper-ai/core";
 import {
   aggregateListings,
   calculateMarketplaceAvgPrices,
@@ -95,6 +95,7 @@ export async function GET(request: NextRequest) {
               sellerId: (listing.metadata as any)?.sellerId,
               sellerName: (listing.metadata as any)?.sellerName,
               viewsCount: (listing.metadata as any)?.viewsCount,
+              url: listing.url, // Include URL for navigation
             }));
 
             // Aggregate (deduplicate + rank)
