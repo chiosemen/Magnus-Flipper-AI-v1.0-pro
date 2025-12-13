@@ -1,0 +1,36 @@
+{
+  "verdict": {
+    "status": "SAFE",
+    "exitCode": 0,
+    "blockers": 0,
+    "minWarnings": 0,
+    "minPassed": 5
+  },
+  "checks": [
+    {
+      "id": "terraform.validation",
+      "status": "PASS",
+      "severity": "WARNING"
+    },
+    {
+      "id": "prisma.validation",
+      "status": "PASS",
+      "severity": "BLOCKER"
+    },
+    {
+      "id": "workers.validation",
+      "status": "PASS",
+      "severity": "WARNING"
+    },
+    {
+      "id": "secrets.validation",
+      "status": "PASS",
+      "severity": "WARNING"
+    },
+    {
+      "id": "unsafe.merge",
+      "status": "PASS",
+      "severity": "WARNING"
+    }
+  ]
+}

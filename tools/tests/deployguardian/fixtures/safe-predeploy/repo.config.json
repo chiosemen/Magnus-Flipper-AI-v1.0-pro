@@ -1,0 +1,83 @@
+{
+  "mode": "pre-deploy",
+  "terraform": {
+    "exists": true,
+    "installed": true,
+    "initSucceeds": true,
+    "validateSucceeds": true,
+    "planSucceeds": true,
+    "hasDrift": false
+  },
+  "prisma": {
+    "schemaExists": true,
+    "schemaValid": true,
+    "generateSucceeds": true,
+    "clientExists": true,
+    "clientFresh": true,
+    "migrationsExist": true,
+    "hasDangerousMigrations": false
+  },
+  "workers": {
+    "worker-realtime": {
+      "exists": true,
+      "dockerfileExists": true,
+      "dockerfileValid": true,
+      "hasFrom": true,
+      "multiStage": true,
+      "packageJsonExists": true,
+      "hasStartScript": true
+    },
+    "worker-scheduler": {
+      "exists": true,
+      "dockerfileExists": true,
+      "dockerfileValid": true,
+      "hasFrom": true,
+      "multiStage": true,
+      "packageJsonExists": true,
+      "hasStartScript": true
+    },
+    "worker-alerts": {
+      "exists": true,
+      "dockerfileExists": true,
+      "dockerfileValid": true,
+      "hasFrom": true,
+      "multiStage": false,
+      "packageJsonExists": true,
+      "hasStartScript": true
+    }
+  },
+  "secrets": {
+    "DATABASE_URL": {
+      "exists": true,
+      "valid": true,
+      "format": "postgresql://"
+    },
+    "SUPABASE_URL": {
+      "exists": true,
+      "valid": true,
+      "format": "https://"
+    },
+    "SUPABASE_ANON_KEY": {
+      "exists": true,
+      "valid": true
+    },
+    "AZURE_CLIENT_ID": {
+      "exists": true,
+      "valid": true
+    }
+  },
+  "git": {
+    "uncommittedChanges": false,
+    "lastCommitWIP": false,
+    "recentForcepush": false
+  },
+  "tests": {
+    "passing": true
+  },
+  "lint": {
+    "passing": true
+  },
+  "docker": {
+    "available": false
+  }
+}

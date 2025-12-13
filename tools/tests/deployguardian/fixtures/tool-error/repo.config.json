@@ -1,0 +1,23 @@
+{
+  "mode": "pre-deploy",
+  "terraform": {
+    "exists": false,
+    "installed": false,
+    "initSucceeds": false,
+    "validateSucceeds": false
+  },
+  "prisma": {
+    "schemaExists": false,
+    "schemaValid": false,
+    "generateSucceeds": false
+  },
+  "workers": {},
+  "secrets": {},
+  "git": {
+    "repositoryExists": false
+  },
+  "docker": {
+    "available": false
+  },
+  "simulateError": "Missing critical dependencies"
+}

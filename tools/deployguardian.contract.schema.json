@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://magnus-flipper-ai.local/schemas/deployguardian.v2.schema.json",
+  "title": "DeployGuardian v2 Output Contract",
+  "description": "Machine-readable output contract for DeployGuardian v2 validation results",
+  "type": "object",
+  "required": ["contractVersion", "tool", "context", "verdict", "checks"],
+  "properties": {
+    "contractVersion": {
+      "type": "string",
+      "pattern": "^2\\.0\\.\\d+$",
+      "description": "Semantic version of the contract specification"
+    },
+    "tool": {
+      "type": "object",
+      "required": ["name", "version", "timestamp"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "DeployGuardian",
+          "description": "Tool name (always DeployGuardian)"
+        },
+        "version": {
+          "type": "string",
+          "description": "DeployGuardian version"
+        },
+        "commitSha": {
+          "type": "string",
+          "description": "Git commit SHA of the codebase being validated"
+        },
+        "runId": {
+          "type": "string",
+          "description": "Unique run identifier (GitHub Run ID or local timestamp)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when validation started"
+        }
+      },
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["pre-deploy", "validate", "pre-merge"],
+          "description": "Validation mode"
+        },
+        "repo": {
+          "type": "string",
+          "description": "Repository identifier (e.g., owner/repo or local)"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Git branch being validated"
+        },
+        "actor": {
+          "type": "string",
+          "description": "User or actor triggering the validation"
+        },
+        "ci": {
+          "type": ["object", "null"],
+          "properties": {
+            "provider": {
+              "type": "string",
+              "description": "CI provider (e.g., github-actions)"
+            },
+            "workflow": {
+              "type": "string",
+              "description": "Workflow name"
+            },
+            "job": {
+              "type": "string",
+              "description": "Job name"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "verdict": {
+      "type": "object",
+      "required": ["status", "exitCode", "blockers", "warnings", "passed", "skipped", "durationMs"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["SAFE", "UNSAFE"],
+          "description": "Overall deployment safety verdict"
+        },
+        "exitCode": {
+          "type": "integer",
+          "enum": [0, 1, 2],
+          "description": "Exit code: 0=safe, 1=unsafe (blockers), 2=tool error"
+        },
+        "blockers": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of BLOCKER-level failures"
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of WARNING-level issues"
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of checks that passed"
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of checks that were skipped"
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total validation duration in milliseconds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "checks": {
+      "type": "array",
+      "description": "Individual validation checks",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "category", "status", "severity", "mode", "durationMs", "humanSummary"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable unique identifier for the check (e.g., terraform.validation)"
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable check title"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["terraform", "prisma", "docker", "secrets", "tests", "lint", "build", "custom"],
+            "description": "Check category"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PASS", "WARN", "FAIL", "SKIP"],
+            "description": "Check execution status"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["INFO", "WARNING", "BLOCKER"],
+            "description": "Issue severity level"
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["pre-deploy", "validate", "pre-merge"],
+            "description": "Mode in which this check was executed"
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Check execution duration in milliseconds"
+          },
+          "humanSummary": {
+            "type": "string",
+            "description": "One-line human-readable summary of the check result"
+          },
+          "evidence": {
+            "type": "object",
+            "description": "Machine-parseable evidence (paths, error codes, etc.)",
+            "additionalProperties": true
+          },
+          "messages": {
+            "type": "array",
+            "description": "Detailed messages from the check",
+            "items": {
+              "type": "object",
+              "required": ["text", "severity"],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "Message text"
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["INFO", "WARNING", "BLOCKER"],
+                  "description": "Message severity"
+                }
+              }
+            }
+          },
+          "remediation": {
+            "type": "object",
+            "description": "Optional remediation guidance",
+            "properties": {
+              "owner": {
+                "type": "string",
+                "description": "Team or person responsible for fixing (e.g., platform, backend)"
+              },
+              "priority": {
+                "type": "string",
+                "description": "Priority level (e.g., P0, P1, P2)"
+              },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "List of remediation actions"
+              },
+              "docs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Links to documentation"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "description": "Output artifacts produced by this validation run",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of artifact file paths"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

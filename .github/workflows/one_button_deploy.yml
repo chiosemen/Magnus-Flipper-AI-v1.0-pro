@@ -88,10 +88,24 @@ jobs:
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "This check blocks deployment if validation fails"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        node tools/deploy_guardian.js --mode=pre-deploy
+        mkdir -p artifacts
+        node tools/deploy_guardian.js --mode=pre-deploy --format=both --out=artifacts/deployguardian.json
         echo ""
         echo "✅ DeployGuardian pre-deploy validation passed (SAFETY GATE)"
       continue-on-error: false
+
+    - name: 📎 Upload DeployGuardian artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployguardian-results
+        path: artifacts/deployguardian.json
+        retention-days: 30
+
+    - name: 📊 DeployGuardian Summary
+      if: always()
+      run: |
+        node tools/deployguardian_render_summary.js artifacts/deployguardian.json >> $GITHUB_STEP_SUMMARY
 
     # -------------------------------
     # 7. Run Prisma Build Surgeon v5

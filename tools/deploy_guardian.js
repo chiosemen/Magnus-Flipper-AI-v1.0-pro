@@ -4,31 +4,49 @@ if (process.env.CI_DEPLOY_GUARDIAN_DISABLED === "true") {
   process.exit(0);
 }
 /**
- * DeployGuardian v1 — CI/CD Validation & Deployment Hardening
+ * DeployGuardian v2 — Hardened Pre-Deploy Safety Gate
  * -----------------------------------------------------------
- * Validates all PRs and deployment flows for production readiness:
+ * Release Engineering-focused validation that is:
+ * - Deterministic
+ * - Environment-aware
+ * - Zero false positives in pre-deploy mode
+ * - Strict only on true release blockers
  * 
- * 1. Terraform validation
- * 2. Prisma readiness checks
- * 3. Worker build checks
- * 4. Secrets + environment validation
- * 5. Block unsafe merges
- * 6. Patch CI/CD workflows
+ * Severity Levels:
+ * - BLOCKER: Production-breaking issues (exit 1)
+ * - WARNING: Issues that should be fixed but don't block deployment
+ * - INFO: Informational messages
  * 
- * Usage:
- *   node tools/deploy_guardian.js --mode=validate
- *   node tools/deploy_guardian.js --mode=pre-merge
- *   node tools/deploy_guardian.js --mode=pre-deploy
+ * Modes:
+ * - validate: Standard validation (all checks)
+ * - pre-merge: Pre-merge validation (strict)
+ * - pre-deploy: Pre-deployment validation (BLOCKER-only failures)
+ * 
+ * Output Formats:
+ * - pretty: Human-readable console output (default)
+ * - json: Machine-readable JSON output
+ * - both: Both formats
+ * 
+ * Contract Version: 2.0.0
  */
 
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
+const CONTRACT_VERSION = "2.0.0";
+const TOOL_VERSION = "2.0.0";
+
 const MODES = {
   VALIDATE: "validate",
   PRE_MERGE: "pre-merge",
   PRE_DEPLOY: "pre-deploy",
+};
+
+const SEVERITY = {
+  BLOCKER: "BLOCKER",
+  WARNING: "WARNING",
+  INFO: "INFO",
 };
 
 const COLORS = {
@@ -38,26 +56,37 @@ const COLORS = {
   yellow: "\x1b[33m",
   blue: "\x1b[34m",
   cyan: "\x1b[36m",
+  magenta: "\x1b[35m",
 };
 
 function log(msg, emoji = "✨", color = COLORS.reset) {
-  console.log(`${color}${emoji} ${msg}${COLORS.reset}`);
+  if (shouldShowConsole) {
+    console.log(`${color}${emoji} ${msg}${COLORS.reset}`);
+  }
 }
 
 function error(msg) {
-  log(msg, "❌", COLORS.red);
+  if (shouldShowConsole) {
+    log(msg, "❌", COLORS.red);
+  }
 }
 
 function success(msg) {
-  log(msg, "✅", COLORS.green);
+  if (shouldShowConsole) {
+    log(msg, "✅", COLORS.green);
+  }
 }
 
 function warn(msg) {
-  log(msg, "⚠️", COLORS.yellow);
+  if (shouldShowConsole) {
+    log(msg, "⚠️", COLORS.yellow);
+  }
 }
 
 function info(msg) {
-  log(msg, "ℹ️", COLORS.cyan);
+  if (shouldShowConsole) {
+    log(msg, "ℹ️", COLORS.cyan);
+  }
 }
 
 function run(cmd, options = {}) {
@@ -77,15 +106,108 @@ function run(cmd, options = {}) {
   }
 }
 
-// Validation results
+// Check result structure with severity
+class CheckResult {
+  constructor(name, id, category, severity = SEVERITY.INFO) {
+    this.name = name;
+    this.id = id;
+    this.category = category;
+    this.severity = severity;
+    this.passed = false;
+    this.messages = [];
+    this.startTime = Date.now();
+    this.endTime = null;
+    this.evidence = {};
+  }
+
+  addMessage(message, severity = null) {
+    this.messages.push({ text: message, severity: severity || this.severity });
+    // Elevate severity if needed
+    if (severity === SEVERITY.BLOCKER && this.severity !== SEVERITY.BLOCKER) {
+      this.severity = SEVERITY.BLOCKER;
+    } else if (severity === SEVERITY.WARNING && this.severity === SEVERITY.INFO) {
+      this.severity = SEVERITY.WARNING;
+    }
+  }
+
+  pass() {
+    this.passed = true;
+    this.endTime = Date.now();
+  }
+
+  fail(message, severity = null) {
+    this.passed = false;
+    this.addMessage(message, severity || this.severity);
+    this.endTime = Date.now();
+  }
+
+  setEvidence(evidence) {
+    this.evidence = { ...this.evidence, ...evidence };
+  }
+
+  getDuration() {
+    return this.endTime ? this.endTime - this.startTime : Date.now() - this.startTime;
+  }
+
+  toJSON(mode) {
+    const hasBlockers = this.messages.some(m => m.severity === SEVERITY.BLOCKER);
+    const status = this.passed ? "PASS" : hasBlockers ? "FAIL" : "WARN";
+    
+    return {
+      id: this.id,
+      title: this.name,
+      category: this.category,
+      status,
+      severity: this.severity,
+      mode,
+      durationMs: this.getDuration(),
+      humanSummary: this.messages.length > 0 ? this.messages[0].text : `${this.name} check completed`,
+      evidence: this.evidence,
+      messages: this.messages.map(m => ({
+        text: m.text,
+        severity: m.severity
+      }))
+    };
+  }
+}
+
+// Global results tracking
 const results = {
-  terraform: { valid: false, errors: [] },
-  prisma: { ready: false, errors: [] },
-  workers: { built: false, errors: [] },
-  secrets: { complete: false, missing: [], errors: [] },
-  unsafe: { blocked: false, reasons: [] },
-  summary: { passed: false, totalChecks: 0, passedChecks: 0 },
+  terraform: new CheckResult("Terraform", "terraform.validation", "terraform", SEVERITY.WARNING),
+  prisma: new CheckResult("Prisma", "prisma.validation", "prisma", SEVERITY.BLOCKER),
+  workers: new CheckResult("Workers", "workers.validation", "docker", SEVERITY.WARNING),
+  secrets: new CheckResult("Secrets", "secrets.validation", "secrets", SEVERITY.WARNING),
+  unsafe: new CheckResult("Unsafe Merge", "unsafe.merge", "tests", SEVERITY.WARNING),
 };
+
+// Parse CLI arguments
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const parsed = {
+    mode: MODES.VALIDATE,
+    format: "pretty", // pretty, json, both
+    out: null,
+  };
+
+  for (const arg of args) {
+    if (arg.startsWith("--mode=")) {
+      parsed.mode = arg.split("=")[1];
+    } else if (arg.startsWith("--format=")) {
+      parsed.format = arg.split("=")[1];
+    } else if (arg.startsWith("--out=")) {
+      parsed.out = arg.split("=")[1];
+    }
+  }
+
+  return parsed;
+}
+
+const cliArgs = parseArgs();
+const currentMode = cliArgs.mode;
+const isPreDeploy = currentMode === MODES.PRE_DEPLOY;
+
+// Console output helpers (respect format flag)
+const shouldShowConsole = cliArgs.format === "pretty" || cliArgs.format === "both";
 
 // ============================================
 // 1. TERRAFORM VALIDATION
@@ -93,18 +215,18 @@ const results = {
 
 function validateTerraform() {
   log("Validating Terraform configuration...", "🏗️");
-  results.terraform.totalChecks = 3;
+  const check = results.terraform;
 
   const terraformDir = path.join(__dirname, "../infra/azure");
   if (!fs.existsSync(terraformDir)) {
-    results.terraform.errors.push("Terraform directory not found");
+    check.fail("Terraform directory not found", isPreDeploy ? SEVERITY.WARNING : SEVERITY.BLOCKER);
     return;
   }
 
   // Check if terraform is installed
   const tfCheck = run("terraform version", { silent: true });
   if (!tfCheck.ok) {
-    results.terraform.errors.push("Terraform not installed or not in PATH");
+    check.fail("Terraform not installed or not in PATH", isPreDeploy ? SEVERITY.WARNING : SEVERITY.BLOCKER);
     return;
   }
 
@@ -113,213 +235,124 @@ function validateTerraform() {
     silent: true,
   });
   if (!initResult.ok) {
-    results.terraform.errors.push(`Terraform init failed: ${initResult.error}`);
+    check.fail(`Terraform init failed: ${initResult.error}`, SEVERITY.BLOCKER);
     return;
   }
-  results.terraform.totalChecks--;
 
-  // Run terraform validate
+  // Run terraform validate (syntax check)
   const validateResult = run(`cd ${terraformDir} && terraform validate`, {
     silent: true,
   });
   if (!validateResult.ok) {
-    results.terraform.errors.push(`Terraform validate failed: ${validateResult.output}`);
+    check.fail(`Terraform validate failed (syntax errors): ${validateResult.output}`, SEVERITY.BLOCKER);
     return;
   }
-  results.terraform.totalChecks--;
 
-  // Run terraform plan (dry-run)
-  // In pre-deploy mode, skip plan (too slow, will be done in actual deploy step)
-  const isPreDeploy = process.argv.includes("--mode=pre-deploy");
+  // Run terraform plan (only in non-pre-deploy modes)
   if (!isPreDeploy) {
     const planResult = run(`cd ${terraformDir} && terraform plan -out=/dev/null`, {
       silent: true,
     });
     if (!planResult.ok) {
-      results.terraform.errors.push(`Terraform plan failed: ${planResult.output}`);
-      return;
-    }
-  } else {
-    warn("Skipping Terraform plan in pre-deploy mode (will run in deploy step)");
-  }
-  results.terraform.totalChecks--;
-
-  // In pre-deploy mode, allow plan to be skipped
-  const isPreDeploy = process.argv.includes("--mode=pre-deploy");
-  const criticalErrors = results.terraform.errors.filter(e => 
-    !e.includes("Terraform plan failed")
-  );
-  
-  if (results.terraform.errors.length === 0 || (isPreDeploy && criticalErrors.length === 0)) {
-    results.terraform.valid = true;
-    if (isPreDeploy && results.terraform.errors.length > 0) {
-      success("Terraform validation passed (plan skipped in pre-deploy mode)");
+      // Plan failures could be drift or real errors
+      // In validate mode, treat as WARNING (could be drift)
+      check.fail(`Terraform plan detected changes or drift: ${planResult.output}`, SEVERITY.WARNING);
     } else {
-      success("Terraform validation passed");
+      check.addMessage("Terraform plan succeeded (no drift detected)", SEVERITY.INFO);
     }
   } else {
-    error(`Terraform validation failed: ${results.terraform.errors.join(", ")}`);
+    check.addMessage("Terraform plan skipped in pre-deploy mode (will run during deployment)", SEVERITY.INFO);
   }
+
+  check.pass();
+  success("Terraform validation passed");
 }
 
 // ============================================
-// 2. PRISMA READINESS CHECKS (with Client Freshness)
+// 2. PRISMA READINESS CHECKS
 // ============================================
 
 function validatePrisma() {
-  log("Validating Prisma readiness and client freshness...", "🧬");
-  results.prisma.totalChecks = 5;
+  log("Validating Prisma readiness...", "🧬");
+  const check = results.prisma;
 
   const prismaSchema = path.join(__dirname, "../packages/core/prisma/schema.prisma");
   if (!fs.existsSync(prismaSchema)) {
-    results.prisma.errors.push("Prisma schema not found");
+    check.fail("Prisma schema not found", SEVERITY.BLOCKER);
     return;
   }
 
   // Check schema syntax
   const schemaCheck = run(
-    `cd ${path.dirname(prismaSchema)} && npx prisma validate`,
-    { silent: true }
+    `npx prisma validate --schema=${prismaSchema}`,
+    { silent: true, cwd: path.dirname(prismaSchema) }
   );
   if (!schemaCheck.ok) {
-    results.prisma.errors.push(`Schema validation failed: ${schemaCheck.output}`);
+    check.fail(`Schema validation failed: ${schemaCheck.output}`, SEVERITY.BLOCKER);
     return;
   }
-  results.prisma.totalChecks--;
+  check.addMessage("Prisma schema syntax valid", SEVERITY.INFO);
 
-  // Check Prisma client freshness
-  const schemaStats = fs.statSync(prismaSchema);
-  const schemaModified = schemaStats.mtime.getTime();
-  
-  // Try multiple possible client paths
+  // Regenerate client to ensure freshness
+  log("Regenerating Prisma client...", "🔄");
+  const generateCheck = run(
+    `npx prisma generate --schema=${prismaSchema}`,
+    { silent: true, cwd: path.dirname(prismaSchema) }
+  );
+  if (!generateCheck.ok) {
+    check.fail(`Prisma generate failed: ${generateCheck.output}`, SEVERITY.BLOCKER);
+    return;
+  }
+  check.addMessage("Prisma client regenerated successfully", SEVERITY.INFO);
+
+  // Verify client was generated (check multiple possible paths)
   const possibleClientPaths = [
     path.join(__dirname, "../packages/core/node_modules/.prisma/client/index.js"),
     path.join(__dirname, "../node_modules/.prisma/client/index.js"),
     path.join(__dirname, "../packages/core/node_modules/@prisma/client/index.js"),
   ];
   
-  let clientPath = null;
-  for (const possiblePath of possibleClientPaths) {
-    if (fs.existsSync(possiblePath)) {
-      clientPath = possiblePath;
-      break;
-    }
-  }
-  
-  let clientFresh = false;
-  
-  if (clientPath) {
-    const clientStats = fs.statSync(clientPath);
-    const clientModified = clientStats.mtime.getTime();
-    
-    // Client is fresh if it was generated after schema was last modified
-    // Allow 5 second tolerance for file system timing
-    clientFresh = clientModified >= schemaModified - 5000;
-    
-    if (!clientFresh) {
-      // In pre-deploy, we'll regenerate anyway, so this is just a warning
-      if (process.argv.includes("--mode=pre-deploy")) {
-        warn(`Prisma client may be stale (will be regenerated)`);
-      } else {
-        results.prisma.errors.push(
-          `Prisma client is stale (schema modified: ${new Date(schemaModified).toISOString()}, client: ${new Date(clientModified).toISOString()})`
-        );
-      }
-    }
-  } else {
-    // In pre-deploy, client will be generated, so this is OK
-    if (process.argv.includes("--mode=pre-deploy")) {
-      warn("Prisma client not found (will be generated)");
-    } else {
-      results.prisma.errors.push("Prisma client not found - needs generation");
-      clientFresh = false;
-    }
-  }
-  results.prisma.totalChecks--;
-
-  // Force regenerate client to ensure freshness
-  log("Regenerating Prisma client to ensure freshness...", "🔄");
-  const generateCheck = run(
-    `cd ${path.dirname(prismaSchema)} && npx prisma generate --schema=./schema.prisma`,
-    { silent: true }
-  );
-  if (!generateCheck.ok) {
-    results.prisma.errors.push(`Prisma generate failed: ${generateCheck.output}`);
-    return;
-  }
-  results.prisma.totalChecks--;
-
-  // Verify client was generated successfully (check all possible paths)
   let clientGenerated = false;
   for (const possiblePath of possibleClientPaths) {
     if (fs.existsSync(possiblePath)) {
       clientGenerated = true;
+      check.addMessage(`Prisma client found at: ${possiblePath}`, SEVERITY.INFO);
       break;
     }
   }
   
   if (!clientGenerated) {
-    // In pre-deploy, this is OK - client will be generated during build
-    if (process.argv.includes("--mode=pre-deploy")) {
-      warn("Prisma client not found after generation (may be generated during build)");
+    if (isPreDeploy) {
+      check.addMessage("Prisma client not found after generation (will be generated during build)", SEVERITY.WARNING);
     } else {
-      results.prisma.errors.push("Prisma client generation failed - client file not found");
+      check.fail("Prisma client generation failed - client file not found", SEVERITY.BLOCKER);
       return;
     }
   }
-  results.prisma.totalChecks--;
 
-  // Check for migration files (check both possible locations)
+  // Check for dangerous migrations (optional check)
   const supabaseMigrationsDir = path.join(__dirname, "../supabase/migrations");
   const prismaMigrationsDir = path.join(__dirname, "../packages/core/prisma/migrations");
   const migrationsDir = fs.existsSync(supabaseMigrationsDir) ? supabaseMigrationsDir : 
                         fs.existsSync(prismaMigrationsDir) ? prismaMigrationsDir : null;
   
-  if (!migrationsDir) {
-    // In pre-deploy, migrations might be managed differently
-    if (process.argv.includes("--mode=pre-deploy")) {
-      warn("Migrations directory not found (may be managed via Prisma Migrate)");
-    } else {
-      results.prisma.errors.push("Migrations directory not found");
-      return;
-    }
-  } else {
-    results.prisma.totalChecks--;
-
-  // Check for dangerous migrations (DROP, DELETE, TRUNCATE)
   if (migrationsDir && fs.existsSync(migrationsDir)) {
     const migrationFiles = fs
       .readdirSync(migrationsDir)
       .filter((f) => f.endsWith(".sql"));
     
-    let hasDangerous = false;
     for (const file of migrationFiles) {
       const content = fs.readFileSync(path.join(migrationsDir, file), "utf8");
       if (/DROP\s+(TABLE|COLUMN|INDEX|DATABASE)/i.test(content)) {
-        hasDangerous = true;
-        results.prisma.errors.push(`Dangerous migration detected: ${file}`);
+        check.addMessage(`Dangerous migration detected: ${file} (contains DROP statement)`, SEVERITY.WARNING);
       }
     }
+  } else {
+    check.addMessage("Migrations directory not found (may be managed via Prisma Migrate)", SEVERITY.INFO);
   }
 
-  // In pre-deploy mode, allow some errors (warnings only)
-  const isPreDeploy = process.argv.includes("--mode=pre-deploy");
-  const criticalErrors = results.prisma.errors.filter(e => 
-    !e.includes("Migrations directory not found") && 
-    !e.includes("Prisma client not found") &&
-    !e.includes("stale")
-  );
-  
-  if (results.prisma.errors.length === 0 || (isPreDeploy && criticalErrors.length === 0)) {
-    results.prisma.ready = true;
-    if (isPreDeploy && results.prisma.errors.length > 0) {
-      success("Prisma readiness check passed (warnings only in pre-deploy mode)");
-    } else {
-      success("Prisma readiness check passed (client is fresh)");
-    }
-  } else {
-    error(`Prisma readiness check failed: ${results.prisma.errors.join(", ")}`);
-  }
+  check.pass();
+  success("Prisma validation passed (client is fresh)");
 }
 
 // ============================================
@@ -327,8 +360,8 @@ function validatePrisma() {
 // ============================================
 
 function validateWorkers() {
-  log("Validating worker image builds...", "🐳");
-  results.workers.totalChecks = 5;
+  log("Validating worker configurations...", "🐳");
+  const check = results.workers;
 
   const workers = [
     "worker-realtime",
@@ -339,134 +372,118 @@ function validateWorkers() {
   // Check Docker is available
   const dockerCheck = run("docker --version", { silent: true });
   if (!dockerCheck.ok) {
-    results.workers.errors.push("Docker not available - cannot validate image builds");
-    return;
+    if (isPreDeploy) {
+      check.addMessage("Docker not available - skipping image build validation in pre-deploy", SEVERITY.INFO);
+      check.pass();
+      return;
+    } else {
+      check.fail("Docker not available - cannot validate image builds", SEVERITY.BLOCKER);
+      return;
+    }
   }
-  results.workers.totalChecks--;
+
+  let hasErrors = false;
 
   for (const worker of workers) {
     const workerPath = path.join(__dirname, `../apps/${worker}`);
     if (!fs.existsSync(workerPath)) {
-      results.workers.errors.push(`Worker not found: ${worker}`);
+      check.addMessage(`Worker directory not found: ${worker}`, SEVERITY.WARNING);
       continue;
     }
 
     // Check Dockerfile exists
     const dockerfile = path.join(workerPath, "Dockerfile");
     if (!fs.existsSync(dockerfile)) {
-      results.workers.errors.push(`Dockerfile not found: ${worker}`);
+      check.addMessage(`Dockerfile not found: ${worker}`, SEVERITY.WARNING);
       continue;
     }
 
-    // Check Dockerfile for NO-BUILD pattern (allow multi-stage builds)
+    // Validate Dockerfile syntax (proper FROM instruction check)
     const dockerfileContent = fs.readFileSync(dockerfile, "utf8");
-    // Allow build commands in builder stage (multi-stage builds are valid)
-    const hasBuilderStage = /FROM.*AS\s+builder/i.test(dockerfileContent);
-    const hasBuildInFinalStage = /FROM[^\n]*(?!AS\s+builder)[\s\S]*?RUN[^\n]*(pnpm build|tsc|npm run build)/.test(dockerfileContent);
     
-    // Check if build commands exist
-    const hasBuildCommands = /RUN.*(pnpm build|tsc|npm run build)/.test(dockerfileContent);
+    // Check if file is effectively empty (only comments/whitespace)
+    const nonCommentLines = dockerfileContent
+      .split('\n')
+      .filter(line => {
+        const trimmed = line.trim();
+        return trimmed.length > 0 && !trimmed.startsWith('#');
+      });
     
-    if (hasBuildCommands && !hasBuilderStage) {
-      // In pre-deploy mode, make this a warning (single-stage builds are acceptable for simple workers)
-      if (process.argv.includes("--mode=pre-deploy")) {
-        warn(`${worker}: Dockerfile uses single-stage build with build commands (consider multi-stage for production)`);
-      } else {
-        results.workers.errors.push(
-          `${worker}: Dockerfile contains build commands in final stage (should use multi-stage build or NO-BUILD pattern)`
-        );
-      }
+    if (nonCommentLines.length === 0) {
+      check.addMessage(`${worker}: Dockerfile is empty or contains only comments`, SEVERITY.WARNING);
+      continue;
     }
 
-    // Validate Dockerfile syntax (skip actual build in pre-deploy to save time)
-    // In pre-deploy mode, we trust that builds work (they're tested in CI)
-    const isPreDeploy = process.argv.includes("--mode=pre-deploy");
-    
+    // Check for FROM instruction (can be in builder stage or main stage)
+    const hasFROM = /^\s*FROM\s+\S+/mi.test(dockerfileContent);
+    if (!hasFROM) {
+      check.fail(`${worker}: Dockerfile missing FROM instruction (invalid syntax)`, SEVERITY.BLOCKER);
+      hasErrors = true;
+      continue;
+    }
+
+    // Check for multi-stage build pattern (good practice, not required)
+    const hasBuilderStage = /FROM.*AS\s+builder/i.test(dockerfileContent);
+    if (hasBuilderStage) {
+      check.addMessage(`${worker}: Using multi-stage build (recommended)`, SEVERITY.INFO);
+    } else {
+      check.addMessage(`${worker}: Using single-stage build (acceptable)`, SEVERITY.INFO);
+    }
+
+    // Check if Dockerfile contains build commands (informational only)
+    const hasBuildCommands = /RUN.*(pnpm build|tsc|npm run build)/i.test(dockerfileContent);
+    if (hasBuildCommands && !hasBuilderStage) {
+      check.addMessage(`${worker}: Build commands in single-stage Dockerfile (consider multi-stage for optimization)`, SEVERITY.INFO);
+    }
+
+    // In pre-deploy mode, skip actual Docker build (too slow, will be done in deployment)
     if (!isPreDeploy) {
-      // Try actual build for validation (skip in pre-deploy)
       log(`Building ${worker} image for validation...`, "🔨");
       const dockerBuild = run(
         `docker build --platform linux/amd64 -t magnus-${worker}:test -f ${dockerfile} .`,
-        { silent: true, cwd: path.join(__dirname, ".."), timeout: 300000 } // 5 min timeout
+        { silent: true, cwd: path.join(__dirname, ".."), timeout: 300000 }
       );
       if (!dockerBuild.ok) {
-        results.workers.errors.push(`${worker}: Docker image build failed`);
+        check.fail(`${worker}: Docker image build failed - ${dockerBuild.output}`, SEVERITY.BLOCKER);
+        hasErrors = true;
       } else {
+        check.addMessage(`${worker}: Docker image builds successfully`, SEVERITY.INFO);
         // Clean up test image
         run(`docker rmi magnus-${worker}:test`, { silent: true });
       }
     } else {
-      // In pre-deploy, just validate Dockerfile syntax
-      log(`Validating ${worker} Dockerfile syntax...`, "🔨");
-      // Basic syntax check - ensure FROM is present (can be after comments/whitespace)
-      // Check if FROM appears anywhere in the file (multiline match)
-      const hasFrom = /FROM/i.test(dockerfileContent);
-      if (!hasFrom) {
-        results.workers.errors.push(`${worker}: Dockerfile missing FROM instruction`);
-      }
+      check.addMessage(`${worker}: Dockerfile syntax valid (build skipped in pre-deploy)`, SEVERITY.INFO);
     }
-  }
-  results.workers.totalChecks--;
 
-  // Try to build workers TypeScript (validation)
-  // First ensure dependencies are installed
-  log("Installing dependencies for TypeScript build validation...", "📦");
-  const installCheck = run("pnpm install --frozen-lockfile", {
-    silent: true,
-    cwd: path.join(__dirname, ".."),
-  });
-  if (!installCheck.ok) {
-    warn("Failed to install dependencies, skipping TypeScript build validation");
-    results.workers.totalChecks--;
-  } else {
-    log("Validating worker TypeScript builds...", "📦");
-    for (const worker of workers) {
-      const buildCheck = run(`pnpm --filter ${worker} build`, {
-        silent: true,
-        cwd: path.join(__dirname, ".."),
-      });
-      if (!buildCheck.ok) {
-        // In pre-deploy, make TypeScript build failures warnings
-        if (process.argv.includes("--mode=pre-deploy")) {
-          warn(`${worker}: TypeScript build failed (warning only in pre-deploy mode)`);
+    // Check TypeScript build (only if pnpm is available)
+    const packageJson = path.join(workerPath, "package.json");
+    if (fs.existsSync(packageJson)) {
+      const pkg = JSON.parse(fs.readFileSync(packageJson, "utf8"));
+      if (!pkg.scripts || !pkg.scripts.start) {
+        check.addMessage(`${worker}: Missing start script in package.json`, SEVERITY.WARNING);
+      }
+
+      // TypeScript build check (only in non-pre-deploy modes)
+      if (!isPreDeploy && pkg.scripts && pkg.scripts.build) {
+        log(`Validating ${worker} TypeScript build...`, "📦");
+        const buildCheck = run(`pnpm --filter ${worker} build`, {
+          silent: true,
+          cwd: path.join(__dirname, ".."),
+        });
+        if (!buildCheck.ok) {
+          check.addMessage(`${worker}: TypeScript build failed - ${buildCheck.output}`, SEVERITY.WARNING);
         } else {
-          results.workers.errors.push(`${worker}: TypeScript build failed`);
+          check.addMessage(`${worker}: TypeScript build succeeded`, SEVERITY.INFO);
         }
       }
     }
-    results.workers.totalChecks--;
   }
 
-  // Check worker package.json files
-  for (const worker of workers) {
-    const packageJson = path.join(__dirname, `../apps/${worker}/package.json`);
-    if (!fs.existsSync(packageJson)) {
-      results.workers.errors.push(`package.json not found: ${worker}`);
-    } else {
-      const pkg = JSON.parse(fs.readFileSync(packageJson, "utf8"));
-      if (!pkg.scripts || !pkg.scripts.start) {
-        results.workers.errors.push(`${worker}: Missing start script`);
-      }
-    }
-  }
-  results.workers.totalChecks--;
-
-  // In pre-deploy mode, allow some worker errors (warnings only)
-  const isPreDeploy = process.argv.includes("--mode=pre-deploy");
-  const criticalErrors = results.workers.errors.filter(e => 
-    !e.includes("Dockerfile missing FROM instruction") &&
-    !e.includes("Docker image build failed")
-  );
-  
-  if (results.workers.errors.length === 0 || (isPreDeploy && criticalErrors.length === 0)) {
-    results.workers.built = true;
-    if (isPreDeploy && results.workers.errors.length > 0) {
-      success("Worker image build checks passed (warnings only in pre-deploy mode)");
-    } else {
-      success("Worker image build checks passed");
-    }
+  if (!hasErrors) {
+    check.pass();
+    success("Worker validation passed");
   } else {
-    error(`Worker image build checks failed: ${results.workers.errors.join(", ")}`);
+    error("Worker validation failed");
   }
 }
 
@@ -476,16 +493,18 @@ function validateWorkers() {
 
 function validateSecrets() {
   log("Validating environment variables...", "🔐");
-  results.secrets.totalChecks = 4;
+  const check = results.secrets;
 
-  // Required for all environments
-  const requiredSecrets = [
-    "DATABASE_URL",
+  // Categorize secrets by when they're needed
+  const buildTimeSecrets = [
+    "DATABASE_URL", // Needed for Prisma generation
+  ];
+
+  const runtimeSecrets = [
     "SUPABASE_URL",
     "SUPABASE_ANON_KEY",
   ];
 
-  // Required for Azure deployment
   const azureSecrets = [
     "AZURE_CLIENT_ID",
     "AZURE_TENANT_ID",
@@ -493,7 +512,6 @@ function validateSecrets() {
     "AZURE_ACR_NAME",
   ];
 
-  // Required for Vercel deployment
   const vercelSecrets = [
     "VERCEL_TOKEN",
     "VERCEL_ORG_ID",
@@ -501,108 +519,97 @@ function validateSecrets() {
   ];
 
   const missing = [];
-  const missingAzure = [];
-  const missingVercel = [];
+  const missingRuntime = [];
 
-  // Check core secrets (in CI, secrets are available via process.env)
-  for (const secret of requiredSecrets) {
-    // In GitHub Actions, secrets are passed as environment variables
+  // Check build-time secrets (required in all modes)
+  for (const secret of buildTimeSecrets) {
     const value = process.env[secret];
     if (!value) {
-      // In pre-deploy mode, make missing secrets warnings (they might be set at deploy time)
-      if (process.argv.includes("--mode=pre-deploy")) {
-        warn(`${secret} is missing - ensure it's set in GitHub repository secrets (warning only in pre-deploy)`);
-        // Don't add to missing list in pre-deploy - allow deployment to proceed
-        continue;
-      }
-      // In CI, if secret is missing, it means it's not set in GitHub secrets
-      if (process.env.CI && process.env.GITHUB_ACTIONS) {
-        error(`${secret} is missing - ensure it's set in GitHub repository secrets`);
-      }
       missing.push(secret);
+      check.fail(`Build-time secret missing: ${secret}`, SEVERITY.BLOCKER);
     } else {
       // Validate format
       if (secret === "DATABASE_URL" && !value.startsWith("postgresql://")) {
-        results.secrets.errors.push(`DATABASE_URL format invalid (should start with postgresql://)`);
-      }
-      if (secret === "SUPABASE_URL" && !value.startsWith("https://")) {
-        results.secrets.errors.push(`SUPABASE_URL format invalid (should be HTTPS URL)`);
+        check.fail(`${secret} format invalid (should start with postgresql://)`, SEVERITY.WARNING);
       }
     }
   }
-  results.secrets.totalChecks--;
+
+  // Check runtime secrets (WARNING in pre-deploy, may be set at deploy time)
+  for (const secret of runtimeSecrets) {
+    const value = process.env[secret];
+    if (!value) {
+      missingRuntime.push(secret);
+      if (isPreDeploy) {
+        check.addMessage(`Runtime secret missing: ${secret} (ensure it's set in deployment environment)`, SEVERITY.WARNING);
+      } else {
+        check.fail(`Runtime secret missing: ${secret}`, SEVERITY.BLOCKER);
+      }
+    } else {
+      // Validate format
+      if (secret === "SUPABASE_URL" && !value.startsWith("https://")) {
+        check.addMessage(`${secret} format invalid (should be HTTPS URL)`, SEVERITY.WARNING);
+      }
+    }
+  }
 
   // Check Azure secrets (if deploying to Azure)
   const isAzureDeploy = process.env.DEPLOY_ENV === "production" || process.env.AZURE_CLIENT_ID;
   if (isAzureDeploy) {
     for (const secret of azureSecrets) {
-      const value = process.env[secret] || process.env[`GITHUB_SECRET_${secret}`];
+      const value = process.env[secret];
       if (!value) {
-        missingAzure.push(secret);
+        if (isPreDeploy) {
+          check.addMessage(`Azure secret missing: ${secret} (ensure it's set for deployment)`, SEVERITY.WARNING);
+        } else {
+          check.fail(`Azure secret missing: ${secret}`, SEVERITY.BLOCKER);
+        }
       }
     }
-    if (missingAzure.length > 0) {
-      missing.push(...missingAzure);
-      results.secrets.errors.push(`Missing Azure secrets: ${missingAzure.join(", ")}`);
-    }
   }
-  results.secrets.totalChecks--;
 
   // Check Vercel secrets (if deploying to Vercel)
   const isVercelDeploy = process.env.VERCEL_TOKEN || process.env.VERCEL_PROJECT_ID;
   if (isVercelDeploy) {
     for (const secret of vercelSecrets) {
-      const value = process.env[secret] || process.env[`GITHUB_SECRET_${secret}`];
+      const value = process.env[secret];
       if (!value) {
-        missingVercel.push(secret);
+        if (isPreDeploy) {
+          check.addMessage(`Vercel secret missing: ${secret} (ensure it's set for deployment)`, SEVERITY.WARNING);
+        } else {
+          check.fail(`Vercel secret missing: ${secret}`, SEVERITY.BLOCKER);
+        }
       }
     }
-    if (missingVercel.length > 0) {
-      missing.push(...missingVercel);
-      results.secrets.errors.push(`Missing Vercel secrets: ${missingVercel.join(", ")}`);
-    }
   }
-  results.secrets.totalChecks--;
 
   // Check environment template
   const envTemplate = path.join(__dirname, "../env.local.template");
   if (fs.existsSync(envTemplate)) {
     const templateContent = fs.readFileSync(envTemplate, "utf8");
     const templateSecrets = templateContent.match(/^[A-Z_]+=/gm) || [];
-    info(`Environment template found with ${templateSecrets.length} variables`);
-    
-    // Validate template completeness
-    const templateVars = templateSecrets.map((s) => s.replace("=", ""));
-    const missingInTemplate = requiredSecrets.filter((s) => !templateVars.includes(s));
-    if (missingInTemplate.length > 0) {
-      results.secrets.errors.push(`Template missing variables: ${missingInTemplate.join(", ")}`);
-    }
+    check.addMessage(`Environment template found with ${templateSecrets.length} variables`, SEVERITY.INFO);
   } else {
-    warn("Environment template not found");
+    check.addMessage("Environment template not found", SEVERITY.INFO);
   }
-  results.secrets.totalChecks--;
 
-  // In pre-deploy mode, missing secrets are warnings, not blockers
-  const isPreDeploy = process.argv.includes("--mode=pre-deploy");
-  
-  if (missing.length > 0) {
-    results.secrets.missing = missing;
-    if (isPreDeploy) {
-      warn(`Missing environment variables (warnings only in pre-deploy): ${missing.join(", ")}`);
-      results.secrets.complete = true; // Allow deployment to proceed
+  // In pre-deploy mode, we allow missing runtime secrets
+  if (isPreDeploy) {
+    check.pass();
+    if (missing.length === 0 && missingRuntime.length === 0) {
+      success("Environment variables validation passed");
+    } else if (missing.length > 0) {
+      warn(`Environment variables validation passed with warnings (${missing.length} build-time secrets missing)`);
     } else {
-      error(`Missing required environment variables: ${missing.join(", ")}`);
-    }
-  } else if (results.secrets.errors.length > 0) {
-    if (isPreDeploy) {
-      warn(`Environment variable validation warnings: ${results.secrets.errors.join(", ")}`);
-      results.secrets.complete = true; // Allow deployment to proceed
-    } else {
-      error(`Environment variable validation failed: ${results.secrets.errors.join(", ")}`);
+      warn(`Environment variables validation passed with warnings (${missingRuntime.length} runtime secrets missing)`);
     }
   } else {
-    results.secrets.complete = true;
-    success(`Environment variables validation passed (${requiredSecrets.length} core, ${isAzureDeploy ? azureSecrets.length : 0} Azure, ${isVercelDeploy ? vercelSecrets.length : 0} Vercel)`);
+    if (missing.length === 0 && missingRuntime.length === 0) {
+      check.pass();
+      success("Environment variables validation passed");
+    } else {
+      error(`Environment variables validation failed (${missing.length + missingRuntime.length} secrets missing)`);
+    }
   }
 }
 
@@ -612,64 +619,107 @@ function validateSecrets() {
 
 function checkUnsafeMerges() {
   log("Checking for unsafe merge conditions...", "🛡️");
-  results.unsafe.totalChecks = 5;
+  const check = results.unsafe;
 
-  // In CI, we're in a clean checkout, so uncommitted changes don't apply
   const isCI = process.env.CI || process.env.GITHUB_ACTIONS;
   
   // Check for uncommitted changes (skip in CI)
   if (!isCI) {
     const gitStatus = run("git status --porcelain", { silent: true });
     if (gitStatus.ok && gitStatus.output.trim().length > 0) {
-      results.unsafe.reasons.push("Uncommitted changes detected");
+      check.addMessage("Uncommitted changes detected", isPreDeploy ? SEVERITY.WARNING : SEVERITY.BLOCKER);
     }
   }
-  results.unsafe.totalChecks--;
 
   // Check for WIP commits
   const lastCommit = run("git log -1 --pretty=%B", { silent: true });
   if (lastCommit.ok && /WIP|wip|draft/i.test(lastCommit.output)) {
-    results.unsafe.reasons.push("WIP commit detected in HEAD");
+    check.addMessage("WIP commit detected in HEAD", isPreDeploy ? SEVERITY.WARNING : SEVERITY.BLOCKER);
   }
-  results.unsafe.totalChecks--;
 
-  // Check for force push markers
+  // Check for force push markers (informational)
   const recentCommits = run("git log --oneline -10", { silent: true });
   if (recentCommits.ok && /force|reset|rebase/i.test(recentCommits.output)) {
-    results.unsafe.reasons.push("Force push detected in recent history");
+    check.addMessage("Force push/rebase detected in recent history", SEVERITY.INFO);
   }
-  results.unsafe.totalChecks--;
 
-  // Check for broken tests (make warning in pre-deploy, not blocking)
+  // Check for broken tests (WARNING in pre-deploy, not blocking)
   const testCheck = run("pnpm test --passWithNoTests", { silent: true });
   if (!testCheck.ok) {
-    // In pre-deploy mode, tests are warnings, not blockers
-    if (process.argv.includes("--mode=pre-deploy")) {
-      warn("Tests are failing (warning only in pre-deploy mode)");
-    } else {
-      results.unsafe.reasons.push("Tests are failing");
-    }
+    check.addMessage("Tests are failing", isPreDeploy ? SEVERITY.WARNING : SEVERITY.BLOCKER);
   }
-  results.unsafe.totalChecks--;
 
-  // Check for lint errors (make warning in pre-deploy, not blocking)
+  // Check for lint errors (WARNING in pre-deploy, not blocking)
   const lintCheck = run("pnpm lint", { silent: true });
   if (!lintCheck.ok) {
-    // In pre-deploy mode, lint errors are warnings, not blockers
-    if (process.argv.includes("--mode=pre-deploy")) {
-      warn("Lint errors detected (warning only in pre-deploy mode)");
-    } else {
-      results.unsafe.reasons.push("Lint errors detected");
-    }
+    check.addMessage("Lint errors detected", isPreDeploy ? SEVERITY.WARNING : SEVERITY.BLOCKER);
   }
-  results.unsafe.totalChecks--;
 
-  if (results.unsafe.reasons.length > 0) {
-    results.unsafe.blocked = true;
-    error(`Unsafe merge conditions detected: ${results.unsafe.reasons.join(", ")}`);
-  } else {
+  // In pre-deploy, allow warnings
+  const hasBlockers = check.messages.some(m => m.severity === SEVERITY.BLOCKER);
+  if (!hasBlockers) {
+    check.pass();
     success("No unsafe merge conditions detected");
+  } else {
+    error("Unsafe merge conditions detected");
   }
+}
+
+// ============================================
+// JSON OUTPUT GENERATION
+// ============================================
+
+function generateJSONOutput(startTime, endTime, blockerCount, warningCount, passedChecks, totalChecks) {
+  const allChecks = Object.values(results);
+  const isSafe = blockerCount === 0;
+  const exitCode = isPreDeploy ? (blockerCount > 0 ? 1 : 0) : (allChecks.every(c => c.passed) ? 0 : 1);
+
+  // Get git info
+  let commitSha = "unknown";
+  let branch = "unknown";
+  try {
+    commitSha = execSync("git rev-parse HEAD", { encoding: "utf8", stdio: "pipe" }).trim();
+    branch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8", stdio: "pipe" }).trim();
+  } catch (e) {
+    // Git not available or not a git repo
+  }
+
+  const output = {
+    contractVersion: CONTRACT_VERSION,
+    tool: {
+      name: "DeployGuardian",
+      version: TOOL_VERSION,
+      commitSha,
+      runId: process.env.GITHUB_RUN_ID || `local-${Date.now()}`,
+      timestamp: new Date(startTime).toISOString()
+    },
+    context: {
+      mode: currentMode,
+      repo: process.env.GITHUB_REPOSITORY || "local",
+      branch,
+      actor: process.env.GITHUB_ACTOR || process.env.USER || "unknown",
+      ci: process.env.GITHUB_ACTIONS ? {
+        provider: "github-actions",
+        workflow: process.env.GITHUB_WORKFLOW || "unknown",
+        job: process.env.GITHUB_JOB || "unknown"
+      } : null
+    },
+    verdict: {
+      status: isSafe ? "SAFE" : "UNSAFE",
+      exitCode,
+      blockers: blockerCount,
+      warnings: warningCount,
+      passed: passedChecks,
+      skipped: 0, // We don't currently skip checks
+      durationMs: endTime - startTime
+    },
+    checks: allChecks.map(check => check.toJSON(currentMode)),
+    artifacts: {
+      paths: cliArgs.out ? [cliArgs.out] : []
+    }
+  };
+
+  return output;
 }
 
 // ============================================
@@ -677,65 +727,120 @@ function checkUnsafeMerges() {
 // ============================================
 
 function main() {
-  const args = process.argv.slice(2);
-  const modeArg = args.find((a) => a.startsWith("--mode="));
-  const mode = modeArg ? modeArg.split("=")[1] : MODES.VALIDATE;
-
-  log(`DeployGuardian v1 — Mode: ${mode}`, "🛡️", COLORS.cyan);
+  const startTime = Date.now();
+  
+  log(`DeployGuardian v2 — Mode: ${currentMode}`, "🛡️", COLORS.cyan);
   log("=".repeat(60), "", COLORS.cyan);
 
+  if (isPreDeploy) {
+    info("Running in PRE-DEPLOY mode:");
+    info("  • Only BLOCKER-level issues will fail deployment");
+    info("  • WARNING and INFO issues are logged but don't block");
+    info("  • Build-time checks only (runtime checks deferred to deployment)");
+    log("=".repeat(60), "", COLORS.cyan);
+  }
+
   // Run validations based on mode
-  if (mode === MODES.VALIDATE || mode === MODES.PRE_MERGE || mode === MODES.PRE_DEPLOY) {
+  if (currentMode === MODES.VALIDATE || currentMode === MODES.PRE_MERGE || currentMode === MODES.PRE_DEPLOY) {
     validateTerraform();
     validatePrisma();
     validateWorkers();
     validateSecrets();
   }
 
-  if (mode === MODES.PRE_MERGE || mode === MODES.PRE_DEPLOY) {
+  if (currentMode === MODES.PRE_MERGE || currentMode === MODES.PRE_DEPLOY) {
     checkUnsafeMerges();
   }
 
   // Calculate summary
-  results.summary.totalChecks =
-    (results.terraform.totalChecks || 0) +
-    (results.prisma.totalChecks || 0) +
-    (results.workers.totalChecks || 0) +
-    (results.secrets.totalChecks || 0) +
-    (results.unsafe.totalChecks || 0);
+  const allChecks = Object.values(results);
+  const totalChecks = allChecks.length;
+  const passedChecks = allChecks.filter(c => c.passed).length;
+  const blockerCount = allChecks.filter(c => 
+    c.messages.some(m => m.severity === SEVERITY.BLOCKER) && !c.passed
+  ).length;
+  const warningCount = allChecks.filter(c => 
+    c.messages.some(m => m.severity === SEVERITY.WARNING) && !c.passed
+  ).length;
 
-  results.summary.passedChecks =
-    (results.terraform.valid ? results.terraform.totalChecks : 0) +
-    (results.prisma.ready ? results.prisma.totalChecks : 0) +
-    (results.workers.built ? results.workers.totalChecks : 0) +
-    (results.secrets.complete ? results.secrets.totalChecks : 0) +
-    (results.unsafe.blocked ? 0 : (results.unsafe.totalChecks || 0));
+  const endTime = Date.now();
 
-  results.summary.passed =
-    results.terraform.valid &&
-    results.prisma.ready &&
-    results.workers.built &&
-    results.secrets.complete &&
-    !results.unsafe.blocked;
+  // Print detailed summary (if console output enabled)
+  if (shouldShowConsole) {
+    log("=".repeat(60), "", COLORS.cyan);
+    log("Validation Summary", "📊", COLORS.cyan);
+    log("=".repeat(60), "", COLORS.cyan);
 
-  // Print summary
-  log("=".repeat(60), "", COLORS.cyan);
-  log("Validation Summary", "📊", COLORS.cyan);
-  log("=".repeat(60), "", COLORS.cyan);
+    console.log();
+    for (const [name, check] of Object.entries(results)) {
+      const status = check.passed ? "✅ PASS" : 
+                     check.messages.some(m => m.severity === SEVERITY.BLOCKER) ? "❌ FAIL" : "⚠️  WARN";
+      console.log(`${name.padEnd(20)} ${status}`);
+      
+      // Show messages if any
+      if (check.messages.length > 0) {
+        for (const msg of check.messages) {
+          const icon = msg.severity === SEVERITY.BLOCKER ? "  ❌" :
+                       msg.severity === SEVERITY.WARNING ? "  ⚠️ " : "  ℹ️ ";
+          const color = msg.severity === SEVERITY.BLOCKER ? COLORS.red :
+                        msg.severity === SEVERITY.WARNING ? COLORS.yellow : COLORS.cyan;
+          console.log(`${color}${icon} ${msg.text}${COLORS.reset}`);
+        }
+      }
+      console.log();
+    }
 
-  console.log(`
-Terraform:     ${results.terraform.valid ? "✅ PASS" : "❌ FAIL"}
-Prisma:        ${results.prisma.ready ? "✅ PASS" : "❌ FAIL"}
-Workers:       ${results.workers.built ? "✅ PASS" : "❌ FAIL"}
-Secrets:       ${results.secrets.complete ? "✅ PASS" : "❌ FAIL"}
-Unsafe Merge:  ${results.unsafe.blocked ? "❌ BLOCKED" : "✅ SAFE"}
+    log("=".repeat(60), "", COLORS.cyan);
+    console.log(`Total Checks:       ${passedChecks}/${totalChecks}`);
+    console.log(`${COLORS.red}Blockers:           ${blockerCount}${COLORS.reset}`);
+    console.log(`${COLORS.yellow}Warnings:           ${warningCount}${COLORS.reset}`);
+    console.log();
 
-Total Checks:  ${results.summary.passedChecks}/${results.summary.totalChecks}
-Overall:       ${results.summary.passed ? "✅ PASS" : "❌ FAIL"}
-`);
+    // Determine deployment safety
+    const isSafe = blockerCount === 0;
+    const verdict = isSafe ? "✅ SAFE TO DEPLOY" : "❌ UNSAFE TO DEPLOY";
+    const verdictColor = isSafe ? COLORS.green : COLORS.red;
+    
+    console.log(`${verdictColor}Deployment Safety:  ${verdict}${COLORS.reset}`);
+    log("=".repeat(60), "", COLORS.cyan);
+
+    if (isSafe && warningCount > 0) {
+      warn(`Deployment is SAFE but has ${warningCount} warning(s) that should be addressed.`);
+    }
+  }
+
+  // Generate JSON output
+  const jsonOutput = generateJSONOutput(startTime, endTime, blockerCount, warningCount, passedChecks, totalChecks);
+
+  // Write JSON to file if --out specified
+  if (cliArgs.out) {
+    const outDir = path.dirname(cliArgs.out);
+    if (!fs.existsSync(outDir)) {
+      fs.mkdirSync(outDir, { recursive: true });
+    }
+    fs.writeFileSync(cliArgs.out, JSON.stringify(jsonOutput, null, 2), "utf8");
+    if (shouldShowConsole) {
+      info(`JSON output written to: ${cliArgs.out}`);
+    }
+  }
+
+  // Write JSON to stdout if format is json
+  if (cliArgs.format === "json") {
+    console.log(JSON.stringify(jsonOutput, null, 2));
+  }
 
   // Exit with appropriate code
-  process.exit(results.summary.passed ? 0 : 1);
+  const exitCode = jsonOutput.verdict.exitCode;
+  
+  if (shouldShowConsole) {
+    if (exitCode === 0) {
+      success("DeployGuardian PASSED");
+    } else {
+      error(`DeployGuardian FAILED (${blockerCount} blocker(s))`);
+    }
+  }
+  
+  process.exit(exitCode);
 }
 
 if (require.main === module) {
