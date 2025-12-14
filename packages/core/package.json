@@ -6,21 +6,58 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./tiers/tier-service": "./dist/tiers/tier-service.js",
-    "./tiers/tier-config": "./dist/tiers/tier-config.js",
-    "./types/feed": "./dist/types/feed.js",
-    "./types/affiliate": "./dist/types/affiliate.js",
-    "./types/compliance": "./dist/types/compliance.js",
-    "./types/scraper": "./dist/types/scraper.js",
-    "./services/marketplaceControlService": "./dist/services/marketplaceControlService.js",
-    "./services/scrapeRunService": "./dist/services/scrapeRunService.js",
-    "./db": "./dist/db.js",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./db": {
+      "types": "./dist/db.d.ts",
+      "default": "./dist/db.js"
+    },
     "./alerts/alert-service": {
       "types": "./dist/alerts/alert-service.d.ts",
       "default": "./dist/alerts/alert-service.js"
     },
-    "./*": "./dist/*"
+    "./tiers/tier-config": {
+      "types": "./dist/tiers/tier-config.d.ts",
+      "default": "./dist/tiers/tier-config.js"
+    },
+    "./tiers/tier-service": {
+      "types": "./dist/tiers/tier-service.d.ts",
+      "default": "./dist/tiers/tier-service.js"
+    },
+    "./analytics/search-analytics": {
+      "types": "./dist/analytics/search-analytics.d.ts",
+      "default": "./dist/analytics/search-analytics.js"
+    },
+    "./types/feed": {
+      "types": "./dist/types/feed.d.ts",
+      "default": "./dist/types/feed.js"
+    },
+    "./types/affiliate": {
+      "types": "./dist/types/affiliate.d.ts",
+      "default": "./dist/types/affiliate.js"
+    },
+    "./types/compliance": {
+      "types": "./dist/types/compliance.d.ts",
+      "default": "./dist/types/compliance.js"
+    },
+    "./types/scraper": {
+      "types": "./dist/types/scraper.d.ts",
+      "default": "./dist/types/scraper.js"
+    },
+    "./services/marketplaceControlService": {
+      "types": "./dist/services/marketplaceControlService.d.ts",
+      "default": "./dist/services/marketplaceControlService.js"
+    },
+    "./services/scrapeRunService": {
+      "types": "./dist/services/scrapeRunService.d.ts",
+      "default": "./dist/services/scrapeRunService.js"
+    },
+    "./ui-contracts": {
+      "types": "./ui-contracts/index.d.ts",
+      "default": "./ui-contracts/index.js"
+    }
   },
   "files": [
     "dist"

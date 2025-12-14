@@ -7,7 +7,15 @@ export * from "./db.js";
 export * from "./marketplaces.js";
 export * from "./services/scrapeRunService.js";
 export * from "./services/marketplaceControlService.js";
-export * from "./services/scraperMonitor.js";
+
+// scraper monitoring (public)
+export { ScraperMonitor } from "./services/scraperMonitor.js";
+
+// scraper-related shared types (public)
+export type {
+  ScraperHealthMetrics,
+  ScraperResult,
+} from "./types/scraper.js";
 
 // Tier management
 export * from "./tiers/tier-config.js";
@@ -16,9 +24,8 @@ export * from "./tiers/tier-service.js";
 // Alerts
 export * from "./alerts/alert-service.js";
 
+// Analytics
+export * from "./analytics/search-analytics.js";
+
 // Types exports
 export * from "./types/index.js";
-
-// UI Component Contracts (for cross-platform consistency)
-// Note: These are TypeScript types, exported directly
-export * from "../ui-contracts";
