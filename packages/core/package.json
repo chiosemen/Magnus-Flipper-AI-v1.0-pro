@@ -8,67 +8,63 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js"
     },
     "./db": {
       "types": "./dist/db.d.ts",
-      "default": "./dist/db.js"
+      "import": "./dist/db.js"
     },
     "./alerts/alert-service": {
       "types": "./dist/alerts/alert-service.d.ts",
-      "default": "./dist/alerts/alert-service.js"
+      "import": "./dist/alerts/alert-service.js"
     },
     "./tiers/tier-config": {
       "types": "./dist/tiers/tier-config.d.ts",
-      "default": "./dist/tiers/tier-config.js"
+      "import": "./dist/tiers/tier-config.js"
     },
     "./tiers/tier-service": {
       "types": "./dist/tiers/tier-service.d.ts",
-      "default": "./dist/tiers/tier-service.js"
+      "import": "./dist/tiers/tier-service.js"
     },
     "./analytics/search-analytics": {
       "types": "./dist/analytics/search-analytics.d.ts",
-      "default": "./dist/analytics/search-analytics.js"
+      "import": "./dist/analytics/search-analytics.js"
     },
     "./contracts/feed": {
       "types": "./dist/contracts/feed.d.ts",
-      "default": "./dist/contracts/feed.js"
-    },
-    "./contracts/mmListing": {
-      "types": "./dist/contracts/mmListing.d.ts",
-      "default": "./dist/contracts/mmListing.js"
+      "import": "./dist/contracts/feed.js"
     },
     "./types/feed": {
       "types": "./dist/types/feed.d.ts",
-      "default": "./dist/types/feed.js"
+      "import": "./dist/types/feed.js"
     },
     "./types/affiliate": {
       "types": "./dist/types/affiliate.d.ts",
-      "default": "./dist/types/affiliate.js"
+      "import": "./dist/types/affiliate.js"
     },
     "./types/compliance": {
       "types": "./dist/types/compliance.d.ts",
-      "default": "./dist/types/compliance.js"
+      "import": "./dist/types/compliance.js"
     },
     "./types/scraper": {
       "types": "./dist/types/scraper.d.ts",
-      "default": "./dist/types/scraper.js"
+      "import": "./dist/types/scraper.js"
     },
     "./services/marketplaceControlService": {
       "types": "./dist/services/marketplaceControlService.d.ts",
-      "default": "./dist/services/marketplaceControlService.js"
+      "import": "./dist/services/marketplaceControlService.js"
     },
     "./services/scrapeRunService": {
       "types": "./dist/services/scrapeRunService.d.ts",
-      "default": "./dist/services/scrapeRunService.js"
+      "import": "./dist/services/scrapeRunService.js"
     },
     "./healthcheck": {
       "types": "./dist/healthcheck.d.ts",
-      "default": "./dist/healthcheck.js"
+      "import": "./dist/healthcheck.js"
     },
     "./ui-contracts": {
       "types": "./ui-contracts/index.d.ts",
-      "default": "./ui-contracts/index.js"
+      "import": "./ui-contracts/index.js"
     }
   },
   "files": [

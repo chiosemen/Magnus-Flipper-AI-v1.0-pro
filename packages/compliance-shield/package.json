@@ -8,19 +8,19 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js"
     },
     "./riskScoring": {
       "types": "./dist/riskScoring.d.ts",
-      "default": "./dist/riskScoring.js"
+      "import": "./dist/riskScoring.js"
     },
     "./guardrails": {
       "types": "./dist/guardrails.d.ts",
-      "default": "./dist/guardrails.js"
+      "import": "./dist/guardrails.js"
     },
     "./observability": {
       "types": "./dist/observability.d.ts",
-      "default": "./dist/observability.js"
+      "import": "./dist/observability.js"
     }
   },
   "files": [
