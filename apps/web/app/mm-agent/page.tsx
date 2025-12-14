@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useIngestionRun } from "../../src/hooks/useIngestionRun";
-import type { MMListing } from "@magnus-flipper-ai/core/contracts/mmListing";
+type MMListing = {
+  id: string;
+  title: string;
+  price: number | null;
+  currency: string;
+  location: string;
+  marketplace: "facebook";
+};
 
 export default function MMAgent() {
   const [query, setQuery] = useState("");
