@@ -31,7 +31,7 @@ export default function EarningsPage() {
     {
       label: "Pending",
       value: "$1,250.00",
-      change: null,
+      change: undefined,
       changeType: "neutral" as const,
     },
   ];
