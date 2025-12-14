@@ -12,9 +12,9 @@ import {
   getPendingAlertsForDelivery,
   updateAlertDeliveryStatus,
   type AlertChannel,
-} from "./alert-service";
-import { sendAlertEmail } from "./email-service";
-import { canReceiveEmailAlerts } from "../tiers/tier-service";
+} from "./alert-service.js";
+import { sendAlertEmail } from "./email-service.js";
+import { canReceiveEmailAlerts } from "../tiers/tier-service.js";
 
 export interface AlertDeliveryResult {
   processed: number;

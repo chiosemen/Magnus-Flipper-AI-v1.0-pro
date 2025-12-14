@@ -3,8 +3,8 @@
  * Handles tier checks and limit enforcement
  */
 
-import { prisma } from "../db";
-import { getTierLimits, getUserTier, type TierName } from "./tier-config";
+import { prisma } from "../db.js";
+import { getTierLimits, getUserTier, type TierName } from "./tier-config.js";
 
 /**
  * Get user with subscription info

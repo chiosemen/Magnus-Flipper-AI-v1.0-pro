@@ -3,8 +3,8 @@
  * Handles creation and management of user alerts for matched listings
  */
 
-import { prisma } from "../db";
-import { canReceiveAlert } from "../tiers/tier-service";
+import { prisma } from "../db.js";
+import { canReceiveAlert } from "../tiers/tier-service.js";
 
 export type AlertChannel = "in_app" | "email";
 export type AlertDeliveryStatus = "pending" | "sent" | "failed";
