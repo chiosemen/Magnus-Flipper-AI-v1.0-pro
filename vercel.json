@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm vercel-build",
+  "buildCommand": "pnpm --filter web build",
   "installCommand": "corepack enable && corepack prepare pnpm@9.12.0 --activate && pnpm install --frozen-lockfile",
   "framework": "nextjs",
   "rootDirectory": "apps/web"
