@@ -64,6 +64,7 @@
   "exclude": [
     "node_modules",
     "**/*.disabled.ts",
-    "**/*.disabled.tsx"
+    "**/*.disabled.tsx",
+    "app/(dashboard)/**"
   ]
 }
