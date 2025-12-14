@@ -10,10 +10,9 @@
  */
 
 import { MarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
-export * from './riskScoring';
-export * from './guardrails';
-export * from './observability';
-export * from './fingerprintManager';
+export * from './guardrails.js';
+export * from './observability.js';
+export * from './fingerprintManager.js';
 
 export interface RequestFingerprint {
   userAgent: string;
