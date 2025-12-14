@@ -1,6 +1,6 @@
 import { MarketplaceProfile } from '@magnus-flipper-ai/marketplace-config';
-import { calculateRiskScore } from './riskScoring';
-import { applyGuardrails } from './guardrails';
+import { calculateRiskScore } from './riskScoring.js';
+import { applyGuardrails } from './guardrails.js';
 
 export interface ComplianceMetrics {
   successRate: number; // 0-1

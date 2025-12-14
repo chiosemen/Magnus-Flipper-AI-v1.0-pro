@@ -5,7 +5,7 @@
  */
 
 import { MarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
-import { RequestFingerprint, generateFingerprint } from './index';
+import { RequestFingerprint, generateFingerprint } from './index.js';
 
 interface FingerprintCache {
   fingerprint: RequestFingerprint;
