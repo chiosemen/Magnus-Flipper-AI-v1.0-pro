@@ -1,3 +1,7 @@
+// DISABLED: This route imports backend-only modules (@magnus-flipper-ai/core, @magnus-flipper-ai/feed-engine)
+// and breaks Next.js build. MM v1 does NOT need this route.
+// Temporarily disabled for v1 deployment.
+
 import { NextRequest } from "next/server";
 import { prisma } from "@magnus-flipper-ai/core";
 import {
@@ -74,7 +78,7 @@ export async function GET(request: NextRequest) {
 
           // Filter out already-seen listings
           const newListings = recentListings.filter(
-            (listing) => !lastSeenIds.has(listing.id)
+            (listing: { id: string }) => !lastSeenIds.has(listing.id)
           );
 
           if (newListings.length > 0) {

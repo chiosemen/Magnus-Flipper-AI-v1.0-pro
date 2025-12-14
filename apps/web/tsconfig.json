@@ -62,6 +62,8 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "**/*.disabled.ts",
+    "**/*.disabled.tsx"
   ]
 }
