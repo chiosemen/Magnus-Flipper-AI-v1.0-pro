@@ -132,7 +132,7 @@ export async function getUserSearchStats(userId: string): Promise<SearchStats[]>
 
     const now = new Date();
 
-    return searches.map((search) => {
+    return searches.map((search: any) => {
       const daysSinceCreation = Math.max(
         1,
         Math.floor((now.getTime() - search.createdAt.getTime()) / (1000 * 60 * 60 * 24))
@@ -195,7 +195,7 @@ export async function getSearchActivityTimeline(
       take: limit,
     });
 
-    return alerts.map((alert) => ({
+    return alerts.map((alert: any) => ({
       date: alert.createdAt,
       title: alert.title,
       price: alert.price,
@@ -234,14 +234,14 @@ export async function getUserAggregatedStats(userId: string): Promise<{
     });
 
     const totalSearches = searches.length;
-    const activeSearches = searches.filter((s) => s.isActive).length;
-    const totalMatches = searches.reduce((sum, s) => sum + s.totalMatchesFound, 0);
-    const totalListingsScanned = searches.reduce((sum, s) => sum + s.totalListingsScanned, 0);
+    const activeSearches = searches.filter((s: any) => s.isActive).length;
+    const totalMatches = searches.reduce((sum: number, s: any) => sum + s.totalMatchesFound, 0);
+    const totalListingsScanned = searches.reduce((sum: number, s: any) => sum + s.totalListingsScanned, 0);
 
     // Calculate overall avg matches per day
     const now = new Date();
     let totalDays = 0;
-    searches.forEach((search) => {
+    searches.forEach((search: any) => {
       const days = Math.max(
         1,
         Math.floor((now.getTime() - search.createdAt.getTime()) / (1000 * 60 * 60 * 24))

@@ -11,8 +11,15 @@
     "./tiers/tier-config": "./dist/tiers/tier-config.js",
     "./types/feed": "./dist/types/feed.js",
     "./types/affiliate": "./dist/types/affiliate.js",
+    "./types/compliance": "./dist/types/compliance.js",
+    "./types/scraper": "./dist/types/scraper.js",
     "./services/marketplaceControlService": "./dist/services/marketplaceControlService.js",
     "./services/scrapeRunService": "./dist/services/scrapeRunService.js",
+    "./db": "./dist/db.js",
+    "./alerts/alert-service": {
+      "types": "./dist/alerts/alert-service.d.ts",
+      "default": "./dist/alerts/alert-service.js"
+    },
     "./*": "./dist/*"
   },
   "files": [
@@ -27,13 +34,16 @@
     "postinstall": "echo 'Skipping prisma generate (temporarily patched)'"
   },
   "dependencies": {
+    "@magnus-flipper-ai/compliance-shield": "workspace:*",
     "@prisma/client": "7.0.1",
     "@prisma/adapter-pg": "7.0.1",
+    "@supabase/supabase-js": "^2.87.1",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@magnus-flipper-ai/feed-engine": "workspace:*",
+    "@types/react": "^18.3.0",
     "prisma": "7.0.1",
     "@types/node": "^20.11.0",
     "typescript": "^5.6.3"

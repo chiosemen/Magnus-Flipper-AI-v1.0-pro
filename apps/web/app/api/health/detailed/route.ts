@@ -80,8 +80,8 @@ export async function GET() {
         message: `Supabase connection failed: ${error.message}`,
         connected: false,
       };
-      // In preview, degraded is acceptable; in production, this is a concern
-      overallStatus = isPreview ? 'degraded' : 'degraded';
+      // In preview, degraded is acceptable; in production, this is down
+      overallStatus = isPreview ? 'degraded' : 'down';
     }
   } else {
     // If Supabase not configured, mark as degraded (acceptable in preview)

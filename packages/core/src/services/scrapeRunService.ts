@@ -1,6 +1,20 @@
 // packages/core/src/services/scrapeRunService.ts
 import { prisma } from '../db';
-import type { ScrapeRun } from '@prisma/client';
+
+// ScrapeRun type - using Prisma generated types
+// Note: Prisma client must be generated for this to work
+export interface ScrapeRun {
+  id: string;
+  marketplace: string;
+  userId?: string | null;
+  outcome: string;
+  listingsFound: number;
+  listingsProcessed: number;
+  errors?: string | null;
+  metadata?: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export type ScrapeOutcome =
   | 'SUCCESS'

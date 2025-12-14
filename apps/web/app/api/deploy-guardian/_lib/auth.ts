@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
+import { timingSafeEqual as nodeTimingSafeEqual } from "crypto";
 
 function timingSafeEqual(a: string, b: string): boolean {
   // Minimal timing-safe compare
   const ba = Buffer.from(a);
   const bb = Buffer.from(b);
   if (ba.length !== bb.length) return false;
-  return crypto.timingSafeEqual(ba, bb);
+  return nodeTimingSafeEqual(ba, bb);
 }
 
 /**

@@ -44,7 +44,7 @@ export async function GET(
     });
 
     // Transform to API format
-    const formatted = listings.map((listing) => ({
+    const formatted = listings.map((listing: any) => ({
       id: listing.id,
       externalId: listing.externalId,
       marketplace: listing.marketplace,

@@ -140,15 +140,23 @@ export class BrowserManager {
     }
 
     // Enhanced anti-detection scripts (CPU-optimized)
+    // Note: This code runs in the browser context via addInitScript
+    // TypeScript sees this as Node.js code, but it executes in browser
     await context.addInitScript(() => {
+      // Browser globals exist in execution context - use type assertions
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nav = globalThis.navigator as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const win = globalThis.window as any;
+
       // Override navigator.webdriver
-      Object.defineProperty(navigator, "webdriver", {
+      Object.defineProperty(nav, "webdriver", {
         get: () => undefined,
         configurable: true,
       });
 
       // Override plugins (realistic count)
-      Object.defineProperty(navigator, "plugins", {
+      Object.defineProperty(nav, "plugins", {
         get: () => {
           const plugins = [];
           for (let i = 0; i < 5; i++) {
@@ -163,13 +171,13 @@ export class BrowserManager {
       });
 
       // Override languages
-      Object.defineProperty(navigator, "languages", {
+      Object.defineProperty(nav, "languages", {
         get: () => ["en-US", "en"],
         configurable: true,
       });
 
       // Add chrome object
-      (window as any).chrome = {
+      win.chrome = {
         runtime: {},
         loadTimes: () => ({}),
         csi: () => ({}),
@@ -177,17 +185,18 @@ export class BrowserManager {
       };
 
       // Override permissions
-      const originalQuery = window.navigator.permissions.query;
-      window.navigator.permissions.query = (parameters: any) =>
+      const originalQuery = win.navigator.permissions.query;
+      win.navigator.permissions.query = (parameters: any) =>
         parameters.name === "notifications"
           ? Promise.resolve({
               state: Notification.permission,
             } as PermissionStatus)
           : originalQuery(parameters);
 
-      // Override getBattery (if available)
-      if (navigator.getBattery) {
-        (navigator as any).getBattery = () =>
+      // Override getBattery (if available) - browser-only API
+      // Runtime check ensures this only runs in browser context where getBattery may exist
+      if ('getBattery' in nav && typeof nav.getBattery === 'function') {
+        nav.getBattery = () =>
           Promise.resolve({
             charging: true,
             chargingTime: 0,
@@ -308,7 +317,10 @@ export class BrowserManager {
     let scrollCount = 0;
 
     while (scrollCount < maxScrolls) {
-      const currentHeight = await page.evaluate(() => document.body.scrollHeight);
+      // Browser context evaluation - document exists in browser
+      const currentHeight = await page.evaluate(() => {
+        return typeof document !== 'undefined' ? document.body.scrollHeight : 0;
+      });
 
       if (currentHeight === previousHeight) {
         // Reached bottom or no new content

@@ -23,28 +23,15 @@ export async function GET(request: NextRequest) {
     // For now, return mock structure matching AffiliateOverview type
 
     const overview: AffiliateOverview = {
+      links: [],
       metrics: {
-        totalEarnings: 0,
-        totalClicks: 0,
-        totalConversions: 0,
-        conversionRate: 0,
-        totalLinks: 0,
+        totalClicks: { label: "Total Clicks", value: "0" },
+        conversionRate: { label: "Conversion Rate", value: "0%" },
+        totalEarnings: { label: "Total Earnings", value: "$0.00" },
         activeLinks: 0,
-        totalCreatives: 0,
-        activeCreatives: 0,
-        pendingPayout: 0,
-        paidOut: 0,
-        period: {
-          start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          end: new Date().toISOString(),
-        },
+        totalLinks: 0,
       },
-      recentLinks: [],
-      recentEarnings: [],
-      topPerformers: {
-        links: [],
-        creatives: [],
-      },
+      recentActivity: [],
     };
 
     return NextResponse.json(overview, {

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      alerts: result.alerts.map((alert) => ({
+      alerts: result.alerts.map((alert: any) => ({
         id: alert.id,
         title: alert.title,
         price: alert.price,

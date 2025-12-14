@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         select: { id: true },
       });
 
-      const searchIds = searches.map(s => s.id);
+      const searchIds = searches.map((s: { id: string }) => s.id);
 
       // Get listings for this marketplace that match user's searches
       const listings = await prisma.listing.findMany({
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         skip: offset,
       });
 
-      const deals = listings.map((listing) => ({
+      const deals = listings.map((listing: any) => ({
         id: listing.id,
         title: listing.title,
         marketplace: listing.marketplace,

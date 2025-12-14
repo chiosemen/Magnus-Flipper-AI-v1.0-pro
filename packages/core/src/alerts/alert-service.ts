@@ -200,7 +200,7 @@ export async function getPendingAlertsForDelivery(
   });
 
   // Filter by channel based on metadata
-  return alerts.filter((alert) => {
+  return alerts.filter((alert: any) => {
     const metadata = alert.metadata as any;
     const deliveryStatus = metadata?.deliveryStatus?.[channel];
     return !deliveryStatus || deliveryStatus.status === "pending";

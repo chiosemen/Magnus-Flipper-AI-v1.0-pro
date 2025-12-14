@@ -1,6 +1,16 @@
 // packages/core/src/services/marketplaceControlService.ts
 import { prisma } from '../db';
-import type { MarketplaceControl } from '@prisma/client';
+
+// MarketplaceControl type - using Prisma schema structure
+// Note: Prisma client must be generated for full type safety
+export interface MarketplaceControl {
+  id: string;
+  marketplace: string;
+  enabled: boolean;
+  maxConcurrency: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface MarketplaceControlDTO {
   marketplace: string;
@@ -15,7 +25,7 @@ export async function getAllMarketplaceControls(): Promise<MarketplaceControlDTO
     orderBy: { marketplace: 'asc' }
   });
 
-  return rows.map((row) => ({
+  return rows.map((row: any) => ({
     marketplace: row.marketplace,
     enabled: row.enabled,
     maxConcurrency: row.maxConcurrency

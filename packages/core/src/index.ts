@@ -12,6 +12,9 @@ export * from "./services/marketplaceControlService.js";
 export * from "./tiers/tier-config.js";
 export * from "./tiers/tier-service.js";
 
+// Alerts
+export * from "./alerts/alert-service.js";
+
 // Types exports
 export * from "./types/index.js";
 

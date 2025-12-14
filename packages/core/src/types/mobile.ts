@@ -101,9 +101,9 @@ export interface MobilePerformanceSnapshot {
 }
 
 /**
- * Performance Comparison
+ * Performance Comparison (Mobile)
  */
-export interface PerformanceComparison {
+export interface MobilePerformanceComparison {
   current: MobilePerformanceSnapshot;
   previous?: MobilePerformanceSnapshot;
   trend: "improving" | "stable" | "degrading";
