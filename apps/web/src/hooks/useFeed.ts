@@ -88,8 +88,9 @@ export function useInfiniteFeed(options: UseFeedOptions = {}) {
     enabled = true,
   } = options;
 
-  return useInfiniteQuery<FeedResponse>({
+  return useInfiniteQuery<FeedResponse, Error, FeedResponse, readonly unknown[], string | undefined>({
     queryKey: ["feed", "infinite", options],
+    initialPageParam: undefined,
     queryFn: async ({ pageParam }) => {
       const params: FeedQueryParams = {
         limit: limit.toString(),
@@ -110,7 +111,7 @@ export function useInfiniteFeed(options: UseFeedOptions = {}) {
       }
 
       if (pageParam) {
-        params.cursor = pageParam;
+        params.cursor = pageParam as string;
       }
 
       const queryString = new URLSearchParams(

@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
-import { Stack } from "../../../../components/ui/stack";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Stack } from "@/components/ui/stack";
 
 export interface EarningsDataPoint {
   date: string;

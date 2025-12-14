@@ -13,6 +13,8 @@ import { useInfiniteFeed } from "@/hooks/useFeed";
 import { useMemo } from "react";
 import type { FeedFilters as FeedFiltersType, FeedViewMode, FeedResponse } from "@magnus-flipper-ai/core/types/feed";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
+import type { InfiniteData } from "@tanstack/react-query";
+import { normalizeFeedItemsToAggregated } from "@/utils/feedNormalizer";
 
 /**
  * Feed Page - Main feed view with paginated and real-time options
@@ -38,6 +40,9 @@ export default function FeedPage() {
     enabled: viewMode === "paginated" || viewMode === "hybrid",
   });
 
+  // Type assertion for feedData to ensure it's InfiniteData
+  const infiniteFeedData = feedData as InfiniteData<FeedResponse> | undefined;
+
   // Real-time feed
   const {
     status: realtimeStatus,
@@ -51,14 +56,18 @@ export default function FeedPage() {
   // Combine listings based on view mode
   const displayListings: AggregatedListing[] = useMemo(() => {
     if (viewMode === "realtime") {
-      return realtimeListings;
+      // Normalize realtime listings to ensure required fields
+      return normalizeFeedItemsToAggregated(realtimeListings);
     }
     if (viewMode === "hybrid") {
-      const feedListings = (feedData?.pages || []).flatMap((p: any) => p.listings || []);
+      const feedListings = (infiniteFeedData?.pages || []).flatMap((p: FeedResponse) => p.listings || []);
+      // Normalize all listings before merging
+      const normalizedRealtime = normalizeFeedItemsToAggregated(realtimeListings);
+      const normalizedFeed = normalizeFeedItemsToAggregated(feedListings);
       // Merge and deduplicate by ID
       const seen = new Set<string>();
       const merged: AggregatedListing[] = [];
-      [...realtimeListings, ...feedListings].forEach((listing) => {
+      [...normalizedRealtime, ...normalizedFeed].forEach((listing) => {
         if (!seen.has(listing.id)) {
           seen.add(listing.id);
           merged.push(listing);
@@ -66,8 +75,10 @@ export default function FeedPage() {
       });
       return merged;
     }
-    return (feedData?.pages || []).flatMap((p: any) => p.listings || []);
-  }, [viewMode, realtimeListings, feedData]);
+    // Normalize paginated feed listings
+    const feedListings = (infiniteFeedData?.pages || []).flatMap((p: FeedResponse) => p.listings || []);
+    return normalizeFeedItemsToAggregated(feedListings);
+  }, [viewMode, realtimeListings, infiniteFeedData]);
 
   const handleListingClick = (listing: AggregatedListing) => {
     // Access URL from listing (may not be in type but is included in API response)

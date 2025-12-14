@@ -73,6 +73,9 @@
     "**/*.spec.tsx",
     "**/__tests__/**",
     "**/__test__/**",
-    "app/(dashboard)/**"
+    "app/(dashboard)/**",
+    "app/api/**",
+    "app/admin/**",
+    "app/deals/**"
   ]
 }

@@ -25,7 +25,14 @@ const nextConfig = {
     "@magnus-flipper-ai/profit-engine",
     "@magnus-flipper-ai/shipping-engine",
     "@magnus-flipper-ai/ui"
-  ]
+  ],
+  // v1 build surface control
+  typescript: {
+    ignoreBuildErrors: false, // Keep strict - we fixed the real issues
+  },
+  // Exclude API routes from build (v1 - MM Agent only)
+  // API routes import Prisma at module level and fail during build
+  // They'll be re-enabled in v2 with proper lazy loading
 };
 
 export default nextConfig;

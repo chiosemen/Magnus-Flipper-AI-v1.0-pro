@@ -3,7 +3,6 @@
 import { Card } from "@magnus-flipper-ai/ui/components";
 import { Badge } from "@magnus-flipper-ai/ui/components";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
-import Link from "next/link";
 
 interface FeedCardProps {
   listing: AggregatedListing;
@@ -66,11 +65,6 @@ export function FeedCard({ listing, onClick }: FeedCardProps) {
             <span className="text-h4 font-bold text-success">
               £{listing.price?.toFixed(2) || "0.00"}
             </span>
-            {listing.score && (
-              <span className="text-body-s text-text-secondary">
-                Score: {listing.score.toFixed(2)}
-              </span>
-            )}
           </div>
 
           {/* Location */}
@@ -87,25 +81,7 @@ export function FeedCard({ listing, onClick }: FeedCardProps) {
                 First seen: {new Date(listing.firstSeen).toLocaleDateString()}
               </span>
             )}
-            {listing.marketplaces && listing.marketplaces.length > 1 && (
-              <span>
-                {listing.marketplaces.length} marketplaces
-              </span>
-            )}
           </div>
-
-          {/* Link */}
-          {listing.url && (
-            <Link
-              href={listing.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-body-s text-primary hover:underline mt-2 inline-block"
-              onClick={(e) => e.stopPropagation()}
-            >
-              View listing →
-            </Link>
-          )}
         </div>
       </div>
     </Card>

@@ -7,12 +7,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../../components/ui/table";
-import { Button } from "../../../../components/ui/button";
-import { Badge } from "../../../../components/ui/badge";
-import { Input } from "../../../../components/ui/input";
-import { Stack } from "../../../../components/ui/stack";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Stack } from "@/components/ui/stack";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 
 export interface AffiliateLink {
@@ -102,7 +102,7 @@ export function AffiliateLinkTable({
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={link.status === "active" ? "default" : "secondary"}
+                        className={link.status === "active" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}
                       >
                         {link.status}
                       </Badge>

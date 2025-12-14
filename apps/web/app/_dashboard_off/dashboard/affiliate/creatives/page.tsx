@@ -2,9 +2,9 @@
 
 import { CreativesGrid } from "../components/CreativesGrid";
 import { MetricsSummaryBar } from "../components/MetricsSummaryBar";
-import { Button } from "../../../../components/ui/button";
-import { Stack } from "../../../../components/ui/stack";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Stack } from "@/components/ui/stack";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mockCreatives, mockMetrics } from "../lib/mockData";
 import { useState } from "react";
 

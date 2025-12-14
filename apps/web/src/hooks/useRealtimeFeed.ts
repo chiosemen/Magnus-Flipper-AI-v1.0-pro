@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import type { RealtimeEvent, FeedConnectionStatus } from "@magnus-flipper-ai/core/types/feed";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
+import { normalizeFeedItemsToAggregated } from "@/utils/feedNormalizer";
 
 interface UseRealtimeFeedOptions {
   marketplaces?: string[];
@@ -59,9 +60,11 @@ export function useRealtimeFeed(options: UseRealtimeFeedOptions = {}) {
           setStatus("connected");
         } else if (data.type === "listings" && data.listings) {
           setListings((prev) => {
+            // Normalize listings to ensure required fields
+            const normalizedListings = normalizeFeedItemsToAggregated(data.listings!);
             // Merge new listings, avoiding duplicates
             const existingIds = new Set(prev.map((l) => l.id));
-            const newListings = data.listings!.filter((l) => !existingIds.has(l.id));
+            const newListings = normalizedListings.filter((l) => !existingIds.has(l.id));
             const merged = [...newListings, ...prev].slice(0, limit * 3); // Keep last 3 batches
             onNewListings?.(newListings);
             return merged;

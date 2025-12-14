@@ -9,6 +9,10 @@ type MMListing = {
   currency: string;
   location: string;
   marketplace: "facebook";
+  url: string;
+  imageUrl?: string;
+  sellerName?: string;
+  scrapedAt: string;
 };
 
 export default function MMAgent() {
@@ -50,7 +54,7 @@ export default function MMAgent() {
             currency: item.currency || "USD",
             location: item.location || geo,
             marketplace: "facebook" as const,
-            url: item.url,
+            url: item.url || `https://facebook.com/marketplace/item/${item.id || Math.random()}`,
             imageUrl: item.images?.[0],
             sellerName: item.sellerName,
             scrapedAt: item.postedAt || new Date().toISOString(),

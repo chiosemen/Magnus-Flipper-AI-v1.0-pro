@@ -1,10 +1,10 @@
 "use client";
 
-import { Stack } from "../../../components/ui/stack";
-import { Button } from "../../../components/ui/button";
+import { Stack } from "@/components/ui/stack";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "../../../lib/utils";
+import { cn } from "@/lib/utils";
 
 export default function AffiliateLayout({
   children,

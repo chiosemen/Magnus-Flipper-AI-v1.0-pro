@@ -1,9 +1,9 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../../components/ui/card";
-import { Button } from "../../../../components/ui/button";
-import { Badge } from "../../../../components/ui/badge";
-import { Stack } from "../../../../components/ui/stack";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Stack } from "@/components/ui/stack";
 
 export interface Creative {
   id: string;
@@ -36,12 +36,12 @@ export function CreativesGrid({ creatives, onEdit, onToggleStatus }: CreativesGr
                 </CardDescription>
               </div>
               <Badge
-                variant={
+                className={
                   creative.status === "active"
-                    ? "default"
+                    ? "bg-primary text-primary-foreground"
                     : creative.status === "paused"
-                    ? "secondary"
-                    : "outline"
+                    ? "bg-secondary text-secondary-foreground"
+                    : "border border-muted text-muted-foreground"
                 }
               >
                 {creative.status}
@@ -86,9 +86,9 @@ export function CreativesGrid({ creatives, onEdit, onToggleStatus }: CreativesGr
                 Edit
               </Button>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
-                className="flex-1"
+                className="flex-1 bg-secondary text-secondary-foreground"
                 onClick={() => onToggleStatus?.(creative.id)}
               >
                 {creative.status === "active" ? "Pause" : "Activate"}

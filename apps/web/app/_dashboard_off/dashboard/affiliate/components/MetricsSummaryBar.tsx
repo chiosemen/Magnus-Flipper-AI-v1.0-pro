@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent } from "../../../../components/ui/card";
-import { Stack } from "../../../../components/ui/stack";
+import { Card, CardContent } from "@/components/ui/card";
+import { Stack } from "@/components/ui/stack";
 
 export interface Metric {
   label: string;

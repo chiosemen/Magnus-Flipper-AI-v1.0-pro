@@ -61,8 +61,8 @@ async function DashboardContent() {
           </h2>
           <div className="flex flex-wrap gap-3">
             <Button variant="default">View All Deals</Button>
-            <Button variant="secondary">Run Profit Calculator</Button>
-            <Button variant="secondary">View Analytics</Button>
+            <Button variant="outline" className="bg-secondary text-secondary-foreground">Run Profit Calculator</Button>
+            <Button variant="outline" className="bg-secondary text-secondary-foreground">View Analytics</Button>
           </div>
         </Card>
       </>
