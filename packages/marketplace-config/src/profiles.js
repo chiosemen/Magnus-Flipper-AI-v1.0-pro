@@ -179,4 +179,7 @@ export function getMarketplaceProfile(id) {
     }
     return profile;
 }
+export function getAllMarketplaceIds() {
+    return Object.keys(MARKETPLACE_PROFILES);
+}
 //# sourceMappingURL=profiles.js.map

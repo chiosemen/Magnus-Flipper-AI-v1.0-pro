@@ -68,24 +68,13 @@ export function getTierLimits(tier: TierName = "free"): TierLimits {
 }
 
 /**
- * Get user's tier from subscription or role
- * Priority: Subscription status > Role > Default (free)
+ * Get user's tier from role
+ * Priority: Role > Default (free)
  */
 export function getUserTier(user: {
-  subscription?: { plan: string; status: string } | null;
   role?: string;
 }): TierName {
-  // Check subscription first
-  if (user.subscription) {
-    const { plan, status } = user.subscription;
-    if (status === "active" || status === "trialing") {
-      if (plan === "pro" || plan === "premium") {
-        return "pro";
-      }
-    }
-  }
-
-  // Fallback to role (for manual assignments)
+  // Check role (for manual assignments)
   if (user.role) {
     if (user.role === "pro" || user.role === "premium" || user.role === "admin") {
       return "pro";

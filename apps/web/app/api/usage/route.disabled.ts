@@ -1,3 +1,7 @@
+// DISABLED: This route imports backend-only modules (@magnus-flipper-ai/core/tiers/tier-service)
+// and breaks Next.js build. MM v1 does NOT need this route.
+// Temporarily disabled for v1 deployment.
+
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/supabase/server";
 import { getUserUsageStats } from "@magnus-flipper-ai/core/tiers/tier-service";

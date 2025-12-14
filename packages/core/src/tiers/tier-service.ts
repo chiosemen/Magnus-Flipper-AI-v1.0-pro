@@ -7,19 +7,11 @@ import { prisma } from "../db.js";
 import { getTierLimits, getUserTier, type TierName } from "./tier-config.js";
 
 /**
- * Get user with subscription info
+ * Get user with tier info
  */
 export async function getUserWithTier(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
-      subscription: {
-        select: {
-          plan: true,
-          status: true,
-        },
-      },
-    },
   });
 
   if (!user) {
@@ -27,7 +19,6 @@ export async function getUserWithTier(userId: string) {
   }
 
   const tier = getUserTier({
-    subscription: user.subscription,
     role: undefined, // Add role field to User model if needed
   });
 

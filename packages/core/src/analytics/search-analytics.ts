@@ -3,7 +3,7 @@
  * Tracks and reports performance metrics for saved searches
  */
 
-import { prisma } from "../db";
+import { prisma } from "../db.js";
 
 export interface SearchRunMetrics {
   searchId: string;

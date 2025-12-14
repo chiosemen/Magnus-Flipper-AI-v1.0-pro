@@ -47,6 +47,9 @@
       "@/providers/*": [
         "./providers/*",
         "./src/providers/*"
+      ],
+      "@/hooks/*": [
+        "./src/hooks/*"
       ]
     }
   },

@@ -12,6 +12,7 @@ import {
   type RequestFingerprint,
 } from "@magnus-flipper-ai/compliance-shield";
 import { getMarketplaceProfile } from "@magnus-flipper-ai/marketplace-config";
+import { MARKETPLACE_COOKIES_PLAYWRIGHT } from "../runtime/marketplaceCookies.js";
 
 export class BrowserManager {
   private browser: Browser | null = null;
@@ -51,8 +52,12 @@ export class BrowserManager {
       this.currentProxy = this.selectRandomProxy(config.proxy_list);
     }
 
+    // Check HEADLESS environment variable (takes precedence over config)
+    const headless = process.env.HEADLESS === "false" ? false : (config.headless ?? true);
+
     const launchOptions: any = {
-      headless: config.headless ?? true,
+      headless,
+      slowMo: headless ? 0 : 50,
       args: [
         "--disable-blink-features=AutomationControlled",
         "--disable-features=IsolateOrigins,site-per-process",
@@ -77,6 +82,7 @@ export class BrowserManager {
     }
 
     this.browser = await chromium.launch(launchOptions);
+    console.log("[PLAYWRIGHT] Browser launched", { headless });
     return this.browser;
   }
 
@@ -134,9 +140,17 @@ export class BrowserManager {
       extraHTTPHeaders: fingerprint.headers,
     });
 
-    // Load cookies if provided
+    // Load cookies if provided in config
     if (config.cookies && config.cookies.length > 0) {
       await context.addCookies(config.cookies);
+    }
+
+    // Auto-inject marketplace cookies from JSON files
+    if (marketplaceId) {
+      const marketplaceCookies = MARKETPLACE_COOKIES_PLAYWRIGHT[marketplaceId];
+      if (marketplaceCookies && marketplaceCookies.length > 0) {
+        await context.addCookies(marketplaceCookies);
+      }
     }
 
     // Enhanced anti-detection scripts (CPU-optimized)
@@ -234,6 +248,7 @@ export class BrowserManager {
   async createPage(context?: BrowserContext, marketplaceId?: string): Promise<Page> {
     const ctx = context || (await this.createContext({} as ScraperConfig, marketplaceId));
     const page = await ctx.newPage();
+    console.log("[PLAYWRIGHT] Page created");
 
     // Apply fingerprint viewport with slight jitter
     if (this.fingerprint) {

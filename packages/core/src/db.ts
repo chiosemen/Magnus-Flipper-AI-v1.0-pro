@@ -1,8 +1,11 @@
 // @ts-ignore - Prisma client is generated at build time
-// ESM interop: Prisma Client is CommonJS, use createRequire
+// ESM interop: Prisma Client is CommonJS, use default import
+import pkg from "@prisma/client";
+// @ts-ignore - CommonJS module default export destructuring
+const { PrismaClient } = pkg;
+// ESM interop: @prisma/adapter-pg has no default export, use createRequire
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
 
 const databaseUrl = process.env.DATABASE_URL;

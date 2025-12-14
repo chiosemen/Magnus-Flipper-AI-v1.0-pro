@@ -34,6 +34,7 @@ export { ScraperMonitor } from "@magnus-flipper-ai/core";
 
 // Orchestrator
 export { ScraperOrchestrator } from "./orchestrator/scraperOrchestrator.js";
+export { pollActiveSearches } from "./orchestrator/pollActiveSearches.js";
 
 // Utils
 export { BrowserManager } from "./utils/browserManager.js";

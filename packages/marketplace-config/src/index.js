@@ -1,2 +1,2 @@
-export { MARKETPLACE_PROFILES, getMarketplaceProfile } from './profiles';
+export { MARKETPLACE_PROFILES, getMarketplaceProfile, getAllMarketplaceIds } from './profiles';
 //# sourceMappingURL=index.js.map

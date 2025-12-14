@@ -40,8 +40,8 @@ export class FacebookMarketplaceScraper {
 
     try {
       // Launch browser and create context
-      await this.browserManager.launch(this.config);
-      const context = await this.browserManager.createContext(this.config);
+      await this.browserManager.launch(this.config, this.config.marketplace);
+      const context = await this.browserManager.createContext(this.config, this.config.marketplace);
       page = await this.browserManager.createPage(context);
 
       // Login if credentials provided
@@ -67,7 +67,11 @@ export class FacebookMarketplaceScraper {
       result.total_scraped = result.listings.length;
       result.success = result.listings.length > 0;
     } catch (error: any) {
-      result.errors.push(`Facebook scraper error: ${error.message}`);
+      const errorMsg = `Facebook scraper error: ${error.message}`;
+      console.error("[SCRAPER]", errorMsg, error);
+      result.errors.push(errorMsg);
+      // Rethrow to ensure errors are visible
+      throw error;
     } finally {
       if (page) {
         await page.close();
@@ -134,6 +138,7 @@ export class FacebookMarketplaceScraper {
 
     // Navigate to Marketplace search
     const searchUrl = this.buildSearchUrl(query);
+    console.log("[SCRAPER] Navigating to Facebook Marketplace");
     await page.goto(searchUrl, { waitUntil: "networkidle" });
 
     await this.browserManager.randomDelay(2000, 3000);

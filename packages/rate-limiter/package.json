@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "ioredis": "^5.4.1",
-    "@magnus-flipper-ai/marketplace-config": "workspace:*"
+    "@magnus-flipper-ai/marketplace-config": "workspace:*",
+    "@magnus-flipper-ai/compliance-shield": "workspace:*"
   }
 }

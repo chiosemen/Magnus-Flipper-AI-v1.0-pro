@@ -1,24 +1,29 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "lib": ["ES2022", "DOM"],
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@magnus-flipper-ai/*": ["../*/dist/src"],
-      "@magnus-flipper-ai/core/types/scraper": ["../core/dist/src/types/scraper"]
-    },
-    "outDir": "./dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+      "@magnus-flipper-ai/core": ["../core/dist/index"],
+      "@magnus-flipper-ai/core/*": ["../core/dist/*"],
+      "@magnus-flipper-ai/marketplace-config": ["../marketplace-config/dist/index"],
+      "@magnus-flipper-ai/compliance-shield": ["../compliance-shield/dist/index"],
+      "@magnus-flipper-ai/compliance-shield/*": ["../compliance-shield/dist/*"]
+    }
   },
-  "include": ["./**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

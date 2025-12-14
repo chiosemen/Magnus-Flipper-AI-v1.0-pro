@@ -30,6 +30,14 @@
       "types": "./dist/analytics/search-analytics.d.ts",
       "default": "./dist/analytics/search-analytics.js"
     },
+    "./contracts/feed": {
+      "types": "./dist/contracts/feed.d.ts",
+      "default": "./dist/contracts/feed.js"
+    },
+    "./contracts/mmListing": {
+      "types": "./dist/contracts/mmListing.d.ts",
+      "default": "./dist/contracts/mmListing.js"
+    },
     "./types/feed": {
       "types": "./dist/types/feed.d.ts",
       "default": "./dist/types/feed.js"
@@ -53,6 +61,10 @@
     "./services/scrapeRunService": {
       "types": "./dist/services/scrapeRunService.d.ts",
       "default": "./dist/services/scrapeRunService.js"
+    },
+    "./healthcheck": {
+      "types": "./dist/healthcheck.d.ts",
+      "default": "./dist/healthcheck.js"
     },
     "./ui-contracts": {
       "types": "./ui-contracts/index.d.ts",
@@ -79,7 +91,6 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@magnus-flipper-ai/feed-engine": "workspace:*",
     "@types/react": "^18.3.0",
     "prisma": "7.0.1",
     "@types/node": "^20.11.0",

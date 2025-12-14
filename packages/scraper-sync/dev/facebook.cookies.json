@@ -1,0 +1,42 @@
+[
+  {
+    "name": "c_user",
+    "value": "61585343031907",
+    "domain": ".facebook.com",
+    "path": "/",
+    "secure": true,
+    "httpOnly": false
+  },
+  {
+    "name": "xs",
+    "value": "9%3AxSeq8byQlUnEAw%3A2%3A1765734938%3A-1%3A-1%3A%3AAcy6IgbKnLUJFdmx1glUZoxVP8ug1dp6k6vVGj3HTg",
+    "domain": ".facebook.com",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  },
+  {
+    "name": "fr",
+    "value": "1RTkOBlsj0QWJFd11.AWenstkjXv1p9G4r-bgEt0Dq-7TjS2kiw-eBAYJ0BRWtVOb2i2Y",
+    "domain": ".facebook.com",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  },
+  {
+    "name": "datr",
+    "value": "Evo-aeybzO15dFyc4BbX1Bb3",
+    "domain": ".facebook.com",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  },
+  {
+    "name": "sb",
+    "value": "Evo-aYNiG21BXwte6_ErJt4f",
+    "domain": ".facebook.com",
+    "path": "/",
+    "secure": true,
+    "httpOnly": true
+  }
+]

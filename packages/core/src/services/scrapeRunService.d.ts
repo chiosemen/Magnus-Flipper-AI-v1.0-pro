@@ -1,4 +1,15 @@
-import type { ScrapeRun } from '@prisma/client';
+export interface ScrapeRun {
+    id: string;
+    marketplace: string;
+    userId?: string | null;
+    outcome: string;
+    listingsFound: number;
+    listingsProcessed: number;
+    errors?: string | null;
+    metadata?: any;
+    createdAt: Date;
+    updatedAt: Date;
+}
 export type ScrapeOutcome = 'SUCCESS' | 'RATE_LIMIT' | 'ERROR';
 export interface RecordScrapeRunInput {
     marketplace: string;

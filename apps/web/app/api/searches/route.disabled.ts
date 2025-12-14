@@ -1,3 +1,7 @@
+// DISABLED: This route imports backend-only modules (@magnus-flipper-ai/core/db, tier-service)
+// and breaks Next.js build. MM v1 does NOT need this route.
+// Temporarily disabled for v1 deployment.
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@magnus-flipper-ai/core/db";
 import { getUser } from "@/lib/supabase/server";
@@ -43,6 +47,27 @@ export async function POST(request: NextRequest) {
       const tier = getUserTier({ subscription: null, role: undefined });
       const errorResponse = formatLimitError("MAX_SEARCHES_REACHED", tier);
       return NextResponse.json(errorResponse, { status: 403 });
+    }
+
+    // ✅ STEP 2: Enforce 10 active search limit (TODAY-ONLY guard)
+    const activeSearchesCount = await prisma.savedSearch.count({
+      where: {
+        userId: user.id,
+        isActive: true,
+        marketplace: marketplace.toLowerCase(),
+      },
+    });
+
+    if (activeSearchesCount >= 10) {
+      return NextResponse.json(
+        {
+          error: "Maximum active searches reached",
+          message: `You have reached the maximum of 10 active ${marketplace} searches. Please deactivate an existing search before creating a new one.`,
+          limit: 10,
+          current: activeSearchesCount,
+        },
+        { status: 403 }
+      );
     }
 
     // ✅ TIER CHECK 2: Check if user can access this marketplace

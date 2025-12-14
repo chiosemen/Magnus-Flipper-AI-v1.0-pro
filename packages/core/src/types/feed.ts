@@ -3,9 +3,17 @@
  * 
  * Shared TypeScript types for feed and real-time data
  * Used across web and mobile platforms
+ * 
+ * NO IMPORTS FROM feed-engine - use contracts instead
  */
 
-import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
+import type { FeedItem } from "../contracts/feed.js";
+
+/**
+ * AggregatedListing type alias for backward compatibility
+ * In practice, feed-engine's AggregatedListing should extend FeedItem
+ */
+export type AggregatedListing = FeedItem;
 
 /**
  * Feed Query Parameters

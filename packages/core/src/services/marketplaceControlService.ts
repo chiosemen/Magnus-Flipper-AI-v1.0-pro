@@ -1,5 +1,5 @@
 // packages/core/src/services/marketplaceControlService.ts
-import { prisma } from '../db';
+import { prisma } from '../db.js';
 
 // MarketplaceControl type - using Prisma schema structure
 // Note: Prisma client must be generated for full type safety

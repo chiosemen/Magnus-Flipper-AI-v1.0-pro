@@ -1,3 +1,11 @@
+export interface MarketplaceControl {
+    id: string;
+    marketplace: string;
+    enabled: boolean;
+    maxConcurrency: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
 export interface MarketplaceControlDTO {
     marketplace: string;
     enabled: boolean;

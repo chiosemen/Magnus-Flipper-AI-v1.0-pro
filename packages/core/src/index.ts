@@ -27,5 +27,14 @@ export * from "./alerts/alert-service.js";
 // Analytics
 export * from "./analytics/search-analytics.js";
 
+// Contracts (feed-engine implements these)
+export * from "./contracts/feed.js";
+
+// MM Listing contracts
+export * from "./contracts/mmListing.js";
+
+// Health check utilities
+export * from "./healthcheck.js";
+
 // Types exports
 export * from "./types/index.js";

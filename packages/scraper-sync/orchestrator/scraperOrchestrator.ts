@@ -10,19 +10,48 @@ import { VintedScraper } from "../scrapers/vinted.js";
 import { DepopScraper } from "../scrapers/depop.js";
 import { GumtreeScraper } from "../scrapers/gumtree.js";
 import { IngestionPipeline } from "../ingestion/pipeline.js";
-import { ScraperMonitor } from "@magnus-flipper-ai/core";
+import { IS_DB_LITE } from "../config/ingestionMode.js";
 import type {
   ScraperConfig,
   ScraperResult,
 } from "../types/ScrapedListing.js";
 
+// Lazy import ScraperMonitor to avoid loading Prisma in db-lite mode
+type ScraperMonitorInstance = InstanceType<typeof import("@magnus-flipper-ai/core").ScraperMonitor>;
+
 export class ScraperOrchestrator {
-  private ingestion: IngestionPipeline;
-  private monitor: ScraperMonitor;
+  private ingestion: IngestionPipeline | null;
+  private monitor: ScraperMonitorInstance | null;
+  private monitorModule: typeof import("@magnus-flipper-ai/core") | null = null;
+  private supabaseUrl: string;
+  private supabaseKey: string;
 
   constructor(supabaseUrl: string, supabaseKey: string) {
-    this.ingestion = new IngestionPipeline(supabaseUrl, supabaseKey);
-    this.monitor = new ScraperMonitor(supabaseUrl, supabaseKey);
+    this.supabaseUrl = supabaseUrl;
+    this.supabaseKey = supabaseKey;
+    
+    // Only initialize ingestion in db-full mode
+    if (!IS_DB_LITE && supabaseUrl && supabaseKey) {
+      this.ingestion = new IngestionPipeline(supabaseUrl, supabaseKey);
+    } else {
+      this.ingestion = null;
+    }
+    // Monitor is lazy-loaded to avoid Prisma import in db-lite mode
+    this.monitor = null;
+    this.monitorModule = null;
+  }
+
+  private async ensureMonitor(): Promise<ScraperMonitorInstance> {
+    if (IS_DB_LITE) {
+      throw new Error("ScraperMonitor should not be used in db-lite mode");
+    }
+    if (!this.monitor) {
+      if (!this.monitorModule) {
+        this.monitorModule = await import("@magnus-flipper-ai/core");
+      }
+      this.monitor = new this.monitorModule.ScraperMonitor(this.supabaseUrl, this.supabaseKey);
+    }
+    return this.monitor;
   }
 
   /**
@@ -32,8 +61,6 @@ export class ScraperOrchestrator {
     marketplace: string,
     config: ScraperConfig
   ): Promise<ScraperResult> {
-    console.log(`Starting ${marketplace} scraper...`);
-
     let result: ScraperResult;
 
     try {
@@ -43,8 +70,8 @@ export class ScraperOrchestrator {
       // Execute scraper
       result = await scraper.scrape();
 
-      // If successful, ingest listings
-      if (result.success && result.listings.length > 0) {
+      // If successful, ingest listings (only in db-full mode)
+      if (!IS_DB_LITE && result.success && result.listings.length > 0 && this.ingestion) {
         console.log(`Ingesting ${result.listings.length} listings from ${marketplace}...`);
 
         const ingestStats = await this.ingestion.ingest(result.listings);
@@ -58,8 +85,11 @@ export class ScraperOrchestrator {
         console.log(`Marked ${staleCount} listings as stale for ${marketplace}`);
       }
 
-      // Log result to telemetry
-      await this.monitor.logScraperRun(result);
+      // Log result to telemetry (only in db-full mode)
+      if (!IS_DB_LITE) {
+        const monitor = await this.ensureMonitor();
+        await monitor.logScraperRun(result);
+      }
     } catch (error: any) {
       console.error(`Error running ${marketplace} scraper:`, error);
 
@@ -74,7 +104,11 @@ export class ScraperOrchestrator {
         duration_ms: 0,
       };
 
-      await this.monitor.logScraperRun(result);
+      // Log result to telemetry (only in db-full mode)
+      if (!IS_DB_LITE) {
+        const monitor = await this.ensureMonitor();
+        await monitor.logScraperRun(result);
+      }
     }
 
     return result;
@@ -137,13 +171,21 @@ export class ScraperOrchestrator {
    * Get scraper health status
    */
   async getHealthStatus(): Promise<any> {
-    return await this.monitor.checkScraperHealth();
+    if (!IS_DB_LITE) {
+      const monitor = await this.ensureMonitor();
+      return await monitor.checkScraperHealth();
+    }
+    return { healthy: [], degraded: [], down: [] };
   }
 
   /**
    * Get performance statistics
    */
   async getPerformanceStats(marketplace: string): Promise<any> {
-    return await this.monitor.getPerformanceStats(marketplace);
+    if (!IS_DB_LITE) {
+      const monitor = await this.ensureMonitor();
+      return await monitor.getPerformanceStats(marketplace);
+    }
+    return null;
   }
 }

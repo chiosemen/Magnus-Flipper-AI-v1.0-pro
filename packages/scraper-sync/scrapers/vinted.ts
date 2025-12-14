@@ -6,6 +6,7 @@
 import { Page } from "playwright";
 import { BrowserManager } from "../utils/browserManager.js";
 import axios from "axios";
+import { MARKETPLACE_COOKIES } from "../runtime/marketplaceCookies.js";
 import type {
   ScrapedListing,
   ScraperConfig,
@@ -74,8 +75,8 @@ export class VintedScraper {
    * Initialize session by visiting the site and getting cookies
    */
   private async initializeSession(): Promise<void> {
-    await this.browserManager.launch(this.config);
-    const context = await this.browserManager.createContext(this.config);
+    await this.browserManager.launch(this.config, this.config.marketplace);
+    const context = await this.browserManager.createContext(this.config, this.config.marketplace);
     const page = await this.browserManager.createPage(context);
 
     try {
@@ -160,7 +161,10 @@ export class VintedScraper {
       "Accept-Language": "en-US,en;q=0.9",
     };
 
-    if (this.sessionCookie) {
+    // Inject browser cookies if available
+    if (MARKETPLACE_COOKIES.vinted) {
+      headers.Cookie = MARKETPLACE_COOKIES.vinted;
+    } else if (this.sessionCookie) {
       headers.Cookie = `_vinted_fr_session=${this.sessionCookie}`;
     }
 

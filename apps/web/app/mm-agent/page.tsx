@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useIngestionRun } from "@/hooks/useIngestionRun";
+import { useIngestionRun } from "../../src/hooks/useIngestionRun";
 import type { MMListing } from "@magnus-flipper-ai/core/contracts/mmListing";
 
 export default function MMAgent() {
