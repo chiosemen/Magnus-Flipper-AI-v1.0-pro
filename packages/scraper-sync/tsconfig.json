@@ -4,8 +4,12 @@
     "module": "ESNext",
     "lib": ["ES2022", "DOM"],
     "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@magnus-flipper-ai/*": ["../*/dist/src"],
+      "@magnus-flipper-ai/core/types/scraper": ["../core/dist/src/types/scraper"]
+    },
     "outDir": "./dist",
-    "rootDir": "./",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
