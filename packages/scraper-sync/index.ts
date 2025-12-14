@@ -12,6 +12,9 @@ export type {
   ScraperHealthMetrics,
 } from "./types/ScrapedListing.js";
 
+// Re-export monitoring types from core
+export type { ScraperHealthMetrics as CoreScraperHealthMetrics } from "@magnus-flipper-ai/core/types/scraper";
+
 // Scrapers
 export { FacebookMarketplaceScraper } from "./scrapers/facebookMarketplace.js";
 export { CraigslistScraper } from "./scrapers/craigslist.js";
@@ -26,8 +29,8 @@ export { ListingNormalizer } from "./normalization/normalizer.js";
 // Ingestion
 export { IngestionPipeline } from "./ingestion/pipeline.js";
 
-// Telemetry
-export { ScraperMonitor } from "./telemetry/monitor.js";
+// Telemetry - re-export from core for backward compatibility
+export { ScraperMonitor } from "@magnus-flipper-ai/core";
 
 // Orchestrator
 export { ScraperOrchestrator } from "./orchestrator/scraperOrchestrator.js";

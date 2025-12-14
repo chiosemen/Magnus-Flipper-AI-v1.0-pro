@@ -2,13 +2,13 @@
 
 /**
  * Scraper telemetry integration
- * Wired up to @magnus-flipper-ai/scraper-sync package
+ * Uses @magnus-flipper-ai/core for lightweight monitoring (no browser dependencies)
  * 
  * PERFORMANCE: Uses React cache() for request-level deduplication
  */
 
 import { cache } from "react";
-import { ScraperMonitor } from "@magnus-flipper-ai/scraper-sync";
+import { ScraperMonitor } from "@magnus-flipper-ai/core";
 import { withTrace, logError } from "@/lib/observability/logger";
 import { createTraceContext } from "@/lib/observability/correlation";
 import { recordLatency } from "@/lib/observability/metrics";
@@ -111,7 +111,7 @@ export const getScannerMetrics = getScannerMetricsInternal;
 
 /**
  * Get telemetry events for the Live Event Log
- * Uses scraper-sync monitor to get recent logs
+ * Uses core monitor to get recent logs (lightweight, no browser dependencies)
  */
 const getScannerTelemetryInternal = cache(async () => {
   const context = await createTraceContext({ module: "admin/scanners" });
@@ -119,7 +119,7 @@ const getScannerTelemetryInternal = cache(async () => {
   return withTrace(async () => {
     const start = performance.now();
     
-    // Get recent logs from scraper-sync package
+    // Get recent logs from core (lightweight, no browser dependencies)
     const monitorInstance = getMonitor();
     const recentLogs = await monitorInstance.getRecentLogs(undefined, 50);
     

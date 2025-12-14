@@ -34,6 +34,13 @@ interface FeedResponse {
   };
 }
 
+interface FeedListing {
+  id: string;
+  title: string;
+  price: number;
+  url?: string;
+}
+
 /**
  * GET /api/search/feed
  * Returns ranked, deduped, marketplace-merged feed with cursor-based pagination
@@ -146,7 +153,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to feed engine format
-    const feedListings = listings.map((listing) => ({
+    const feedListings = listings.map((listing: FeedListing) => ({
       id: listing.id,
       title: listing.title,
       price: listing.price,

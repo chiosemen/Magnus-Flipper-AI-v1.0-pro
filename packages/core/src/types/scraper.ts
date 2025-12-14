@@ -96,3 +96,36 @@ export interface PerformanceComparison {
     listingsPerRun: number;
   };
 }
+
+/**
+ * Scraper Health Metrics
+ * Used for monitoring scraper status and performance
+ */
+export interface ScraperHealthMetrics {
+  marketplace: string;
+  status: "healthy" | "degraded" | "down";
+  last_run_at: string;
+  last_success_at: string;
+  total_runs: number;
+  successful_runs: number;
+  failed_runs: number;
+  avg_items_per_run: number;
+  avg_duration_ms: number;
+  error_rate: number;
+  last_error?: string;
+}
+
+/**
+ * Scraper Result
+ * Result of a scraper execution
+ */
+export interface ScraperResult {
+  marketplace: string;
+  success: boolean;
+  listings: any[];
+  total_scraped: number;
+  errors: string[];
+  started_at: string;
+  completed_at: string;
+  duration_ms: number;
+}

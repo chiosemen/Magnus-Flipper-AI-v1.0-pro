@@ -10,7 +10,7 @@ import { VintedScraper } from "../scrapers/vinted.js";
 import { DepopScraper } from "../scrapers/depop.js";
 import { GumtreeScraper } from "../scrapers/gumtree.js";
 import { IngestionPipeline } from "../ingestion/pipeline.js";
-import { ScraperMonitor } from "../telemetry/monitor.js";
+import { ScraperMonitor } from "@magnus-flipper-ai/core";
 import type {
   ScraperConfig,
   ScraperResult,

@@ -8,7 +8,7 @@
  */
 
 import { cache } from "react";
-import { ScraperMonitor } from "@magnus-flipper-ai/scraper-sync";
+import { ScraperMonitor } from "@magnus-flipper-ai/core";
 import { withTrace, logError } from "@/lib/observability/logger";
 import { createTraceContext } from "@/lib/observability/correlation";
 import { recordLatency } from "@/lib/observability/metrics";
@@ -31,7 +31,7 @@ const fetchScannersInternal = cache(async () => {
   return withTrace(async () => {
     const start = performance.now();
     
-    // Get all health metrics from the scraper-sync package
+    // Get all health metrics from core (lightweight, no browser dependencies)
     const monitorInstance = getMonitor();
     const healthMetrics = await monitorInstance.getAllHealthMetrics();
     
@@ -67,7 +67,7 @@ const getScannerMetricsInternal = cache(async () => {
   return withTrace(async () => {
     const start = performance.now();
     
-    // Get all health metrics from the scraper-sync package
+    // Get all health metrics from core (lightweight, no browser dependencies)
     const monitorInstance = getMonitor();
     const healthMetrics = await monitorInstance.getAllHealthMetrics();
     
@@ -119,7 +119,7 @@ const getScannerTelemetryInternal = cache(async () => {
   return withTrace(async () => {
     const start = performance.now();
     
-    // Get recent logs from scraper-sync package
+    // Get recent logs from core (lightweight, no browser dependencies)
     const monitorInstance = getMonitor();
     const recentLogs = await monitorInstance.getRecentLogs(undefined, 50);
     

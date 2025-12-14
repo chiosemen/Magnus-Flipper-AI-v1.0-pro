@@ -94,16 +94,5 @@ export interface ScraperResult {
   duration_ms: number;
 }
 
-export interface ScraperHealthMetrics {
-  marketplace: string;
-  status: "healthy" | "degraded" | "down";
-  last_run_at: string;
-  last_success_at: string;
-  total_runs: number;
-  successful_runs: number;
-  failed_runs: number;
-  avg_items_per_run: number;
-  avg_duration_ms: number;
-  error_rate: number;
-  last_error?: string;
-}
+// Re-export ScraperHealthMetrics from core for backward compatibility
+export type { ScraperHealthMetrics } from "@magnus-flipper-ai/core/types/scraper";

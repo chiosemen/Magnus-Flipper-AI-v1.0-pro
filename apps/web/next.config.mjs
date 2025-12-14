@@ -23,7 +23,6 @@ const nextConfig = {
     "@magnus-flipper-ai/deal-engine",
     "@magnus-flipper-ai/feed-engine",
     "@magnus-flipper-ai/profit-engine",
-    "@magnus-flipper-ai/scraper-sync",
     "@magnus-flipper-ai/shipping-engine",
     "@magnus-flipper-ai/ui"
   ]

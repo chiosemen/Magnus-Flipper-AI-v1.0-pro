@@ -7,6 +7,7 @@ export * from "./db.js";
 export * from "./marketplaces.js";
 export * from "./services/scrapeRunService.js";
 export * from "./services/marketplaceControlService.js";
+export * from "./services/scraperMonitor.js";
 
 // Tier management
 export * from "./tiers/tier-config.js";
