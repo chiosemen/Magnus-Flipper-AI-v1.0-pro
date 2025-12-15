@@ -73,6 +73,7 @@
   "scripts": {
     "prebuild": "echo 'Skipping prisma generate inside Docker build...'",
     "build": "tsc -p tsconfig.json",
+    "prepare": "pnpm run build",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "db:erd": "echo 'ERD generation: prisma-erd-generator incompatible with Prisma 7.x. Use dbdiagram.io with schema.prisma or SQL introspection.'",
