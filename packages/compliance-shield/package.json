@@ -28,6 +28,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepare": "pnpm run build",
     "dev": "tsc --watch"
   },
   "dependencies": {
