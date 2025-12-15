@@ -1,0 +1,23 @@
+{
+  "name": "worker-ingest",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@magnus-flipper-ai/queue": "workspace:*",
+    "@magnus-flipper-ai/scrapers": "workspace:*",
+    "bullmq": "^5.0.0",
+    "p-queue": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
