@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
-import { redis } from "./redis";
-import type { ScrapeJob, ParentJob, DealerJob } from "./types";
+import { redis } from "./redis.js";
+import type { ScrapeJob, ParentJob, DealerJob } from "./types.js";
 
 export const ingestQueue = new Queue<ScrapeJob | ParentJob>("ingest", {
   connection: redis,

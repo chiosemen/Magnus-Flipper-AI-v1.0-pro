@@ -1,4 +1,4 @@
-import IORedis from "ioredis";
+import { Redis as IORedis } from "ioredis";
 
 // Support Azure Redis (host/port/password/tls) with fallback to REDIS_URL for local development
 export const redis = process.env.REDIS_HOST
