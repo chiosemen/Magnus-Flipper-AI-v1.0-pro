@@ -1,8 +1,26 @@
 import { NextResponse } from "next/server";
 import { ingestQueue, redis, type IngestRunPayload, type Marketplace, type ScrapeJob } from "@magnus-flipper-ai/queue";
 
+// Force dynamic rendering - this route must run at request time, never at build time
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   try {
+    // Verify Redis connection is available
+    try {
+      await redis.ping();
+    } catch (redisError) {
+      console.error("Redis connection failed:", redisError);
+      return NextResponse.json(
+        { 
+          error: "Redis connection unavailable. Please ensure Redis is configured and running.",
+          details: process.env.NODE_ENV === "development" ? String(redisError) : undefined
+        },
+        { status: 503 }
+      );
+    }
+
     const body = await req.json();
 
     // Handle both new format (IngestRunPayload) and legacy format from MM Agent
