@@ -6,21 +6,52 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./config": "./dist/config.js",
-    "./types/Listing": "./dist/types/Listing.js",
-    "./types/DealScore": "./dist/types/DealScore.js",
-    "./scoring/baseScore": "./dist/scoring/baseScore.js",
-    "./scoring/deepseekClassifier": "./dist/scoring/deepseekClassifier.js",
-    "./scoring/openaiClassifier": "./dist/scoring/openaiClassifier.js",
-    "./calibrator/calibrate": "./dist/calibrator/calibrate.js",
-    "./calibrator/bayesian": "./dist/calibrator/bayesian.js",
-    "./calibrator/llmConsensus": "./dist/calibrator/llmConsensus.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
+    "./types/Listing": {
+      "types": "./dist/types/Listing.d.ts",
+      "import": "./dist/types/Listing.js"
+    },
+    "./types/DealScore": {
+      "types": "./dist/types/DealScore.d.ts",
+      "import": "./dist/types/DealScore.js"
+    },
+    "./scoring/baseScore": {
+      "types": "./dist/scoring/baseScore.d.ts",
+      "import": "./dist/scoring/baseScore.js"
+    },
+    "./scoring/deepseekClassifier": {
+      "types": "./dist/scoring/deepseekClassifier.d.ts",
+      "import": "./dist/scoring/deepseekClassifier.js"
+    },
+    "./scoring/openaiClassifier": {
+      "types": "./dist/scoring/openaiClassifier.d.ts",
+      "import": "./dist/scoring/openaiClassifier.js"
+    },
+    "./calibrator/calibrate": {
+      "types": "./dist/calibrator/calibrate.d.ts",
+      "import": "./dist/calibrator/calibrate.js"
+    },
+    "./calibrator/bayesian": {
+      "types": "./dist/calibrator/bayesian.d.ts",
+      "import": "./dist/calibrator/bayesian.js"
+    },
+    "./calibrator/llmConsensus": {
+      "types": "./dist/calibrator/llmConsensus.d.ts",
+      "import": "./dist/calibrator/llmConsensus.js"
+    }
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepare": "pnpm run build"
   },
   "keywords": ["ai", "deals", "classification", "scoring"],
   "author": "Magnus Flipper AI",
