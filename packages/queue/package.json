@@ -28,7 +28,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepare": "pnpm run build"
   },
   "dependencies": {
     "bullmq": "^5.0.0",
