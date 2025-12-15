@@ -19,6 +19,8 @@ export interface ScrapeJob {
   batchSize: number;
   userId?: string;        // optional for manual runs
   savedSearchId?: string; // optional, present when from saved search
+  tier?: "free" | "pro" | "premium"; // User tier (defaults to "free")
+  traceId?: string; // For observability
 }
 
 export interface ParentJob {
@@ -54,4 +56,20 @@ export interface SavedSearch {
   trend?: "up" | "down" | "flat";
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DealerJob {
+  leadId: string;
+  dealerId: string;
+  vehicle: {
+    make: string;
+    model: string;
+    year: number;
+    mileage?: number;
+    condition?: string;
+  };
+  location?: string;
+  zip?: string;
+  email?: string;
+  phone?: string;
 }

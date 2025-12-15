@@ -1,3 +1,3 @@
 export { redis } from "./redis";
-export { ingestQueue } from "./queues";
+export { ingestQueue, dealerQueue } from "./queues";
 export * from "./types";

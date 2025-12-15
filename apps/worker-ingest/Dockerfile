@@ -36,17 +36,21 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 # Copy worker-ingest app
 COPY apps/worker-ingest ./apps/worker-ingest
 
-# Copy required workspace packages
+# Copy required workspace packages (all dependencies of worker-ingest)
+# These packages are required at build time for TypeScript resolution
 COPY packages/queue ./packages/queue
 COPY packages/scrapers ./packages/scrapers
+COPY packages/ingest-registry ./packages/ingest-registry
+COPY packages/apify-adapter ./packages/apify-adapter
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Install Playwright Chromium browser (required for scrapers fallback)
 # Playwright is installed in @magnus-flipper-ai/scrapers package
-RUN cd packages/scrapers && pnpm exec playwright install chromium
-RUN cd packages/scrapers && pnpm exec playwright install-deps chromium
+# Note: Must run from workspace root to resolve pnpm workspace correctly
+RUN pnpm --filter @magnus-flipper-ai/scrapers exec playwright install chromium
+RUN pnpm --filter @magnus-flipper-ai/scrapers exec playwright install-deps chromium
 
 # Build only worker-ingest
 RUN pnpm --filter worker-ingest build

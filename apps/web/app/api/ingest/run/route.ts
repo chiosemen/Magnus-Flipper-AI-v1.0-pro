@@ -68,6 +68,12 @@ export async function POST(req: Request) {
       updatedAt: new Date().toISOString(),
     });
 
+    // Extract tier from body or default to "free"
+    const tier = (body.tier as "free" | "pro" | "premium") || "free";
+    
+    // Generate traceId for observability
+    const traceId = body.traceId || `trace-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     // Fan out batch jobs
     const batchJobs: ScrapeJob[] = [];
     for (const marketplace of marketplaces) {
@@ -79,6 +85,8 @@ export async function POST(req: Request) {
           region,
           page,
           batchSize,
+          tier,
+          traceId,
         });
       }
     }

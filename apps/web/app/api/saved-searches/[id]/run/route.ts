@@ -33,6 +33,12 @@ export async function POST(
       updatedAt: new Date().toISOString(),
     });
 
+    // Extract tier from query params or default to "free"
+    const tier = (searchParams.get("tier") as "free" | "pro" | "premium") || "free";
+    
+    // Generate traceId for observability
+    const traceId = `trace-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     // Enqueue scrape job
     const scrapeJob: ScrapeJob = {
       jobId,
@@ -43,6 +49,8 @@ export async function POST(
       batchSize: 20,
       userId: saved.userId,
       savedSearchId: id,
+      tier,
+      traceId,
     };
 
     await ingestQueue.add(`scrape:${saved.marketplace}:1`, scrapeJob);

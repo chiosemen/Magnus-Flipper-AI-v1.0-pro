@@ -17,6 +17,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // User model
@@ -98,10 +99,15 @@ model Listing {
   lastSeen    DateTime @default(now()) @map("last_seen") @db.Timestamptz(6)
   isActive    Boolean  @default(true) @map("is_active")
 
+  // Relation to IngestRun
+  ingestRunId String?  @map("ingest_run_id") @db.Uuid
+  ingestRun   IngestRun? @relation(fields: [ingestRunId], references: [id], onDelete: SetNull)
+
   @@map("listings")
   @@index([marketplace])
   @@index([externalId])
   @@index([isActive])
+  @@index([ingestRunId])
 }
 
 // Subscription model
@@ -227,4 +233,76 @@ model DeployGuardianRun {
   @@index([status, createdAt(sort: Desc)])
   @@index([commitSha])
   @@index([contractVersion])
+}
+
+// IngestRun model - tracks hybrid ingestion runs with strategy, cost, and ROI
+model IngestRun {
+  id            String   @id @default(uuid()) @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  startedAt     DateTime @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt    DateTime? @map("finished_at") @db.Timestamptz(6)
+
+  // Context
+  marketplace   String
+  query         String
+  region        String
+  tier          String   // "free" | "pro" | "premium"
+  traceId       String?  @map("trace_id")
+  userId        String?  @map("user_id") @db.Uuid
+  savedSearchId String?  @map("saved_search_id") @db.Uuid
+
+  // Execution strategy
+  strategy      IngestStrategy @default(local)
+  apifyRunId    String?  @map("apify_run_id") // Apify actor run ID if used
+
+  // Results
+  listingsFetched Int     @default(0) @map("listings_fetched")
+  durationSeconds Int?    @map("duration_seconds")
+  errorCount      Int     @default(0) @map("error_count")
+
+  // Cost tracking (estimated USD)
+  estimatedCostUSD Float? @map("estimated_cost_usd")
+
+  // Relations
+  listings      Listing[]
+
+  @@map("ingest_runs")
+  @@index([marketplace, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([strategy, createdAt(sort: Desc)])
+  @@index([tier, createdAt(sort: Desc)])
+}
+
+// DealEvent model - tracks user interactions with listings (saved, alerted, exported, purchased)
+model DealEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Event context
+  eventType     DealEventType @map("event_type")
+  userId        String   @map("user_id") @db.Uuid
+  listingId     String?  @map("listing_id") @db.Uuid
+  ingestRunId   String?  @map("ingest_run_id") @db.Uuid
+
+  // Event metadata
+  metadata      Json?
+
+  @@map("deal_events")
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([eventType, createdAt(sort: Desc)])
+  @@index([listingId])
+}
+
+// Enums
+enum IngestStrategy {
+  local
+  apify
+  hybrid
+}
+
+enum DealEventType {
+  SAVED
+  ALERTED
+  EXPORTED
+  PURCHASED
 }
