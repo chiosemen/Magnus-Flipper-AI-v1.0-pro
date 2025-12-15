@@ -1,4 +1,6 @@
 import * as cheerio from "cheerio";
+import type { ScrapedListing } from "../types";
+import { hashImageUrl } from "../utils/imageHash";
 
 export interface HTMLScrapeResult {
   listings: ScrapedListing[];
@@ -6,21 +8,73 @@ export interface HTMLScrapeResult {
   confidence: number;
 }
 
-export interface ScrapedListing {
-  id: string;
-  title: string;
-  price?: number;
-  imageUrl?: string;
-  url: string;
-  marketplace: "facebook";
-  region: string;
-  scrapedAt: string;
-}
-
 export interface HTMLScrapeInput {
   query: string;
   region: string;
   page?: number;
+}
+
+// Helper: Extract price text from string using regex
+const moneyRx = /(?:£|\$|€)\s?\d[\d,]*(?:\.\d{2})?/;
+
+export function extractPriceText(text: string): string | undefined {
+  const m = text.match(moneyRx);
+  return m?.[0]?.trim();
+}
+
+// Helper: Pick best image URL from srcset or fallback to src
+export function pickBestImageUrl(srcset?: string, src?: string): string | undefined {
+  if (!srcset && src) return src;
+  if (!srcset) return undefined;
+  // srcset: "url 320w, url 640w"
+  const parts = srcset.split(",").map((s) => s.trim().split(" "));
+  const best = parts
+    .map(([u, w]) => ({ u, w: Number((w || "").replace("w", "")) || 0 }))
+    .sort((a, b) => b.w - a.w)[0];
+  return best?.u || src;
+}
+
+// Helper: Parse search HTML and extract rough listing objects
+export function parseSearchHtml(html: string, baseUrl: string): Array<{
+  id: string;
+  title: string;
+  url: string;
+  priceText?: string;
+  imageUrl?: string;
+}> {
+  const $ = cheerio.load(html);
+  const cards: Array<{
+    id: string;
+    title: string;
+    url: string;
+    priceText?: string;
+    imageUrl?: string;
+  }> = [];
+
+  $("a").each((_, a) => {
+    const href = $(a).attr("href");
+    if (!href) return;
+
+    // Marketplace item URL heuristic
+    if (!href.includes("/marketplace/item/")) return;
+
+    const url = href.startsWith("http") ? href : new URL(href, baseUrl).toString();
+    const container = $(a).closest("div");
+
+    const title = container.text().split("\n").map((s) => s.trim()).filter(Boolean)[0] || "Listing";
+    const priceText = extractPriceText(container.text());
+
+    const img = container.find("img").first();
+    const imageUrl = pickBestImageUrl(img.attr("srcset"), img.attr("src"));
+
+    // Try pull ID from URL
+    const idMatch = url.match(/\/marketplace\/item\/(\d+)/);
+    const id = idMatch?.[1] || url;
+
+    cards.push({ id, title, url, priceText, imageUrl });
+  });
+
+  return cards;
 }
 
 export async function scrapeFacebookHTML(
@@ -56,26 +110,30 @@ export async function scrapeFacebookHTML(
       return { listings: [], blocked: true, confidence: 0 };
     }
 
-    const $ = cheerio.load(html);
-    const listings: ScrapedListing[] = [];
+    const baseUrl = "https://www.facebook.com";
+    const rough = parseSearchHtml(html, baseUrl);
+    const now = new Date().toISOString();
 
-    // Try to find marketplace listing elements
-    // Facebook Marketplace structure may vary, so we try multiple selectors
-    $("a[href*='/marketplace/item/']").each((_, el) => {
-      const href = $(el).attr("href");
-      if (!href) return;
+    const listings: ScrapedListing[] = rough.slice(0, 20).map((card) => {
+      // Extract listingId from URL (normalize ID)
+      const listingIdMatch = card.url.match(/\/item\/(\d+)/);
+      const listingId = listingIdMatch?.[1] || card.id;
 
-      const itemId = href.split("/").pop() || `item-${Date.now()}-${Math.random()}`;
-      const title = $(el).text().trim().slice(0, 120) || "Unknown item";
+      // Calculate image hash if imageUrl exists
+      const imageHash = card.imageUrl ? hashImageUrl(card.imageUrl) : undefined;
 
-      listings.push({
-        id: itemId,
-        title,
-        url: href.startsWith("http") ? href : `https://facebook.com${href}`,
-        marketplace: "facebook",
-        region,
-        scrapedAt: new Date().toISOString(),
-      });
+      return {
+        listingId,
+        id: listingId, // Keep for backward compatibility
+        title: card.title,
+        url: card.url,
+        priceText: card.priceText,
+        imageUrl: card.imageUrl,
+        imageHash,
+        scrapedAt: now,
+        source: "facebook",
+        confidence: (card.imageUrl ? 0.5 : 0.2) + (card.priceText ? 0.4 : 0.1),
+      };
     });
 
     // Calculate confidence based on results

@@ -4,3 +4,9 @@
 
 /* Theme imports are handled by theme.css */
 /* This file is kept for Tailwind directives and any app-specific overrides */
+
+/* Override Next.js portal positioning */
+nextjs-portal {
+  left: unset !important;
+  top: unset !important;
+}

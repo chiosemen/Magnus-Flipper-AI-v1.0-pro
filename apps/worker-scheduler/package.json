@@ -14,9 +14,11 @@
     "@magnus-flipper-ai/marketplace-config": "workspace:*",
     "@magnus-flipper-ai/rate-limiter": "workspace:*",
     "@magnus-flipper-ai/marketplaces": "workspace:*",
+    "@magnus-flipper-ai/queue": "workspace:*",
     "@supabase/supabase-js": "^2.45.0",
     "axios": "^1.13.2",
     "cheerio": "^1.1.2",
+    "cron-parser": "^4.9.0",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

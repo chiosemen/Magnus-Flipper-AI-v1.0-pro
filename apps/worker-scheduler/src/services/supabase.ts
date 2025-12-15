@@ -1,33 +1,55 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+let _client: SupabaseClient | null = null;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing Supabase environment variables");
+export function getSupabase(): SupabaseClient {
+  if (_client) return _client;
+
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    throw new Error("Supabase not configured (SUPABASE_URL / SERVICE_ROLE_KEY missing)");
+  }
+
+  _client = createClient(url, key);
+  return _client;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
 export async function getMarketplaceSettings() {
-  const { data, error } = await supabase
-    .from("marketplace_settings")
-    .select("*")
-    .eq("enabled", true);
+  try {
+    const { data, error } = await getSupabase()
+      .from("marketplace_accounts")
+      .select("*")
+      .eq("enabled", true);
 
-  if (error) {
+    if (error) {
+      console.error("Error fetching marketplace settings:", error);
+      return [];
+    }
+
+    const result = data || [];
+    
+    if (result.length === 0) {
+      console.warn("[scheduler] No enabled marketplaces found in marketplace_accounts table");
+    }
+
+    return result;
+  } catch (error: any) {
+    if (error.message?.includes("Supabase not configured")) {
+      console.warn("[scheduler] Supabase not configured, returning empty marketplace list");
+      return [];
+    }
     console.error("Error fetching marketplace settings:", error);
     return [];
   }
-
-  return data || [];
 }
 
 export async function saveListings(listings: any[]) {
-  const { error } = await supabase.from("listings_raw").insert(listings);
+  const { error } = await getSupabase().from("listings_raw").insert(listings);
 
   if (error) {
     console.error("Error saving listings:", error);
@@ -38,12 +60,20 @@ export async function saveListings(listings: any[]) {
 }
 
 export async function updateMarketplaceSync(marketplace: string) {
-  const { error } = await supabase
-    .from("marketplace_settings")
-    .update({ last_sync: new Date().toISOString() })
-    .eq("marketplace", marketplace);
+  try {
+    const { error } = await getSupabase()
+      .from("marketplace_accounts")
+      .update({ last_sync: new Date().toISOString() })
+      .eq("marketplace", marketplace);
 
-  if (error) {
+    if (error) {
+      console.error("Error updating marketplace sync:", error);
+    }
+  } catch (error: any) {
+    if (error.message?.includes("Supabase not configured")) {
+      // Non-fatal: Supabase is optional
+      return;
+    }
     console.error("Error updating marketplace sync:", error);
   }
 }

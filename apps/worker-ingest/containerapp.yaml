@@ -1,0 +1,41 @@
+# Azure Container App for worker-ingest
+# Deploy with: az containerapp create --resource-group magnus-rg --name worker-ingest --yaml apps/worker-ingest/containerapp.yaml
+
+apiVersion: 2024-03-01
+kind: containerApp
+properties:
+  managedEnvironmentId: /subscriptions/<SUB_ID>/resourceGroups/magnus-rg/providers/Microsoft.App/managedEnvironments/magnus-env
+  configuration:
+    activeRevisionsMode: Single
+    secrets:
+      - name: redis-password
+        value: "<REDIS_PASSWORD>"
+    ingress:
+      external: false
+      targetPort: 8080
+      allowInsecure: false
+  template:
+    containers:
+      - name: worker-ingest
+        image: ghcr.io/chiosemen/magnus-worker-ingest:latest
+        env:
+          - name: REDIS_HOST
+            value: magnus-redis.redis.cache.windows.net
+          - name: REDIS_PORT
+            value: "6379"
+          - name: REDIS_PASSWORD
+            secretRef: redis-password
+          - name: REDIS_TLS
+            value: "false"
+          - name: WORKER_CONCURRENCY
+            value: "10"
+          - name: FB_BATCH_CONCURRENCY
+            value: "2"
+          - name: NODE_ENV
+            value: "production"
+        resources:
+          cpu: 1
+          memory: 2Gi
+    scale:
+      minReplicas: 1
+      maxReplicas: 5

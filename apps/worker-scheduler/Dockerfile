@@ -41,6 +41,10 @@ COPY packages/marketplace-config/package.json ./packages/marketplace-config/pack
 COPY packages/marketplace-config/tsconfig.json ./packages/marketplace-config/tsconfig.json
 COPY packages/marketplace-config/src ./packages/marketplace-config/src
 
+COPY packages/queue/package.json ./packages/queue/package.json
+COPY packages/queue/tsconfig.json ./packages/queue/tsconfig.json
+COPY packages/queue/src ./packages/queue/src
+
 # Enable pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -54,6 +58,7 @@ RUN pnpm --filter @magnus-flipper-ai/core exec -- prisma generate --schema=./pri
 RUN pnpm --filter @magnus-flipper-ai/core build
 RUN pnpm --filter @magnus-flipper-ai/rate-limiter build
 RUN pnpm --filter @magnus-flipper-ai/marketplace-config build
+RUN pnpm --filter @magnus-flipper-ai/queue build
 
 # Build worker-scheduler
 RUN pnpm --filter @magnus-flipper-ai/worker-scheduler build
@@ -82,6 +87,9 @@ COPY --from=builder /app/packages/rate-limiter/package.json ./packages/rate-limi
 
 COPY --from=builder /app/packages/marketplace-config/dist ./packages/marketplace-config/dist
 COPY --from=builder /app/packages/marketplace-config/package.json ./packages/marketplace-config/package.json
+
+COPY --from=builder /app/packages/queue/dist ./packages/queue/dist
+COPY --from=builder /app/packages/queue/package.json ./packages/queue/package.json
 
 # Enable pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate

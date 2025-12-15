@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 
 export async function logEvent(
   marketplace: string,
@@ -9,7 +9,7 @@ export async function logEvent(
     payload?: any;
   } = {}
 ) {
-  const { error } = await supabase.from("scanner_telemetry").insert({
+  const { error } = await getSupabase().from("scanner_telemetry").insert({
     marketplace,
     event,
     success: options.success ?? true,
@@ -23,7 +23,7 @@ export async function logEvent(
 }
 
 export async function sendHeartbeat(workerId: string) {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("worker_heartbeat")
     .upsert(
       {

@@ -9,7 +9,8 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@magnus-flipper-ai/core": "workspace:*"
+    "@magnus-flipper-ai/core": "workspace:*",
+    "axios": "^1.13.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

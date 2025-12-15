@@ -19,3 +19,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Override Next.js portal positioning */
+nextjs-portal {
+  left: unset !important;
+  top: unset !important;
+}

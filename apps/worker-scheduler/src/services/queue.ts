@@ -1,7 +1,7 @@
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 
 export async function createJob(jobType: string, marketplace?: string, payload?: any) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("job_queue")
     .insert({
       job_type: jobType,
@@ -21,7 +21,7 @@ export async function createJob(jobType: string, marketplace?: string, payload?:
 }
 
 export async function claimJob(workerId: string) {
-  const { data: job, error } = await supabase
+  const { data: job, error } = await getSupabase()
     .from("job_queue")
     .select("*")
     .eq("status", "pending")
@@ -33,7 +33,7 @@ export async function claimJob(workerId: string) {
     return null;
   }
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await getSupabase()
     .from("job_queue")
     .update({
       status: "active",
@@ -51,7 +51,7 @@ export async function claimJob(workerId: string) {
 }
 
 export async function completeJob(jobId: string, result?: any) {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("job_queue")
     .update({
       status: "completed",
@@ -66,7 +66,7 @@ export async function completeJob(jobId: string, result?: any) {
 }
 
 export async function failJob(jobId: string, errorMessage: string) {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from("job_queue")
     .update({
       status: "failed",

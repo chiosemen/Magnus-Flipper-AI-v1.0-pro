@@ -5,13 +5,13 @@ import { runActivityFeedTTL } from "./services/ttl-cleanup";
 import { rehydrateListings } from "./hydration";
 import { runFacebookScrapingJob } from "./facebook-job";
 import { runVintedScrapingJob } from "./vinted-job";
-import { runAlertDeliveryCycle } from "@magnus-flipper-ai/core/alerts/alert-delivery-worker";
-import http from "http";
+import { runAlertDeliveryCycle } from "./alerts/alert-delivery-worker";
+import { redis, ingestQueue, type ScrapeJob } from "@magnus-flipper-ai/queue";
+import cronParser from "cron-parser";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default
 const TTL_CLEANUP_INTERVAL = parseInt(process.env.TTL_CLEANUP_INTERVAL || "86400000"); // 24 hours default
-const PORT = parseInt(process.env.PORT || "3001");
 
 // Track last TTL cleanup run to prevent over-execution
 let lastTTLCleanup = 0;
@@ -33,28 +33,8 @@ const workerHeartbeat = {
   totalJobsProcessed: 0,
 };
 
-// Health check server
-const server = http.createServer((req, res) => {
-  if (req.url === "/health") {
-    workerHeartbeat.lastHeartbeat = new Date().toISOString();
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ 
-      status: "ok", 
-      worker: WORKER_ID, 
-      timestamp: new Date().toISOString(),
-      scanInterval: SCAN_INTERVAL,
-      uptime: Date.now() - new Date(workerHeartbeat.startTime).getTime(),
-      heartbeat: workerHeartbeat,
-    }));
-  } else {
-    res.writeHead(404);
-    res.end();
-  }
-});
-
-server.listen(PORT, () => {
-  console.log(`Health check server listening on port ${PORT}`);
-});
+// Optional health check server (disabled by default, enable with ENABLE_HTTP=true)
+// Moved to main() function to avoid top-level await
 
 /**
  * Risk-tier aware scheduler
@@ -115,6 +95,34 @@ async function runTTLCleanup() {
 
 async function main() {
   console.log(`Worker Scheduler ${WORKER_ID} starting...`);
+
+  // Optional health check server (disabled by default, enable with ENABLE_HTTP=true)
+  if (process.env.ENABLE_HTTP === "true") {
+    const http = await import("http");
+    const PORT = parseInt(process.env.PORT || "3001");
+    
+    const server = http.createServer((req, res) => {
+      if (req.url === "/health") {
+        workerHeartbeat.lastHeartbeat = new Date().toISOString();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ 
+          status: "ok", 
+          worker: WORKER_ID, 
+          timestamp: new Date().toISOString(),
+          scanInterval: SCAN_INTERVAL,
+          uptime: Date.now() - new Date(workerHeartbeat.startTime).getTime(),
+          heartbeat: workerHeartbeat,
+        }));
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+
+    server.listen(PORT, () => {
+      console.log(`Health check server listening on port ${PORT}`);
+    });
+  }
 
   // Initial schedule
   await scheduleScans();
@@ -224,35 +232,168 @@ async function main() {
     }
   }, 150000); // Run after 2.5 minutes (staggered from Facebook)
 
-  // Alert delivery job (every 5 minutes)
-  const ALERT_DELIVERY_INTERVAL = 5 * 60 * 1000; // 5 minutes
-  setInterval(async () => {
-    try {
-      console.log(`[${WORKER_ID}] 📧 Alert delivery START`);
-      const result = await runAlertDeliveryCycle();
-      console.log(
-        `[${WORKER_ID}] ✅ Alert delivery COMPLETE: In-app (${result.inApp.succeeded}/${result.inApp.processed}), Email (${result.email.succeeded}/${result.email.processed})`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Alert delivery ERROR:`, error);
-    }
-  }, ALERT_DELIVERY_INTERVAL);
+  // Alert delivery job (every 5 minutes) - only if enabled
+  if (process.env.ENABLE_ALERT_DELIVERY === "true") {
+    const ALERT_DELIVERY_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    setInterval(async () => {
+      try {
+        console.log(`[${WORKER_ID}] 📧 Alert delivery START`);
+        const result = await runAlertDeliveryCycle();
+        console.log(
+          `[${WORKER_ID}] ✅ Alert delivery COMPLETE: In-app (${result.inApp.succeeded}/${result.inApp.processed}), Email (${result.email.succeeded}/${result.email.processed})`
+        );
+      } catch (error) {
+        console.error(`[${WORKER_ID}] ❌ Alert delivery ERROR:`, error);
+      }
+    }, ALERT_DELIVERY_INTERVAL);
 
-  // Initial alert delivery run
-  setTimeout(async () => {
-    try {
-      console.log(`[${WORKER_ID}] 📧 Alert delivery START (initial run)`);
-      const result = await runAlertDeliveryCycle();
-      console.log(
-        `[${WORKER_ID}] ✅ Alert delivery COMPLETE (initial): In-app (${result.inApp.succeeded}), Email (${result.email.succeeded})`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Initial alert delivery ERROR:`, error);
-    }
-  }, 180000); // Run after 3 minutes
+    // Initial alert delivery run
+    setTimeout(async () => {
+      try {
+        console.log(`[${WORKER_ID}] 📧 Alert delivery START (initial run)`);
+        const result = await runAlertDeliveryCycle();
+        console.log(
+          `[${WORKER_ID}] ✅ Alert delivery COMPLETE (initial): In-app (${result.inApp.succeeded}), Email (${result.email.succeeded})`
+        );
+      } catch (error) {
+        console.error(`[${WORKER_ID}] ❌ Initial alert delivery ERROR:`, error);
+      }
+    }, 180000); // Run after 3 minutes
+  } else {
+    console.log("🔕 Alert delivery disabled (local dev)");
+  }
 
-  console.log(`Worker Scheduler ${WORKER_ID} running (scan interval: ${SCAN_INTERVAL}ms, TTL cleanup interval: ${TTL_CLEANUP_INTERVAL}ms, re-hydration interval: ${REHYDRATION_INTERVAL}ms, Facebook job interval: ${FACEBOOK_JOB_INTERVAL}ms, Alert delivery interval: ${ALERT_DELIVERY_INTERVAL}ms)...`);
+  // Saved search scheduler (cron-based)
+  const SCHEDULER_TICK_MS = Number(process.env.SCHEDULER_TICK_MS ?? 60000);
+  const MAX_DUE_PER_TICK = Number(process.env.SCHEDULER_MAX_DUE ?? 25);
+
+  function nextRun(cron: string, fromDate: Date = new Date()): number {
+    try {
+      const it = cronParser.parseExpression(cron, { currentDate: fromDate });
+      return it.next().getTime();
+    } catch (error) {
+      console.error(`[${WORKER_ID}] Invalid cron expression: ${cron}`, error);
+      // Default to 1 hour from now if cron is invalid
+      return Date.now() + 60 * 60 * 1000;
+    }
+  }
+
+  async function seedDueIndexForUser(userId: string) {
+    try {
+      const ids = await redis.smembers(`saved:search:index:${userId}`);
+      for (const id of ids) {
+        const s = await redis.hgetall(`saved:search:${userId}:${id}`);
+        if (!s || s.paused === "true") continue;
+        const nr = nextRun(s.cron);
+        await redis.zadd("saved:due", nr, `${userId}:${id}`);
+      }
+    } catch (error) {
+      console.error(`[${WORKER_ID}] Error seeding due index for user ${userId}:`, error);
+    }
+  }
+
+  async function savedSearchTick() {
+    try {
+      const now = Date.now();
+
+      // grab due searches
+      const due = await redis.zrangebyscore("saved:due", 0, now, "LIMIT", 0, MAX_DUE_PER_TICK);
+      if (!due.length) return;
+
+      console.log(`[${WORKER_ID}] 🗓️ Saved search tick: ${due.length} due searches`);
+
+      for (const member of due) {
+        try {
+          const [userId, searchId] = member.split(":");
+          if (!userId || !searchId) {
+            await redis.zrem("saved:due", member);
+            continue;
+          }
+
+          const s = await redis.hgetall(`saved:search:${userId}:${searchId}`);
+          if (!s || !s.query) {
+            await redis.zrem("saved:due", member);
+            continue;
+          }
+
+          if (s.paused === "true") {
+            await redis.zrem("saved:due", member);
+            continue;
+          }
+
+          // Create parent job
+          const parent = await ingestQueue.add("ingest-parent", { kind: "parent" });
+          const jobId = String(parent.id);
+
+          // Initialize status
+          await redis.hset(`ingest:${jobId}:status`, {
+            status: "queued",
+            message: "Queued for scanning",
+            totalBatches: "1",
+            doneBatches: "0",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+
+          // enqueue scrape
+          const job: ScrapeJob = {
+            jobId,
+            marketplace: (s.marketplace || "facebook") as "facebook",
+            query: s.query,
+            region: s.region,
+            page: 1,
+            batchSize: 20,
+            userId: s.userId || userId,
+            savedSearchId: searchId,
+          };
+
+          await ingestQueue.add(`scrape:${s.marketplace || "facebook"}:1`, job, {
+            attempts: 3,
+            backoff: { type: "exponential", delay: 2000 },
+            removeOnComplete: true,
+            removeOnFail: false,
+          });
+
+          // update schedule
+          const nextRunAt = nextRun(s.cron, new Date(now));
+          await redis.hset(`saved:search:${userId}:${searchId}`, {
+            lastRun: new Date(now).toISOString(),
+            updatedAt: new Date(now).toISOString(),
+          });
+          await redis.zadd("saved:due", nextRunAt, member);
+
+          console.log(`[${WORKER_ID}] ✅ Enqueued saved search ${searchId} for user ${userId}, next run: ${new Date(s.nextRunAt).toISOString()}`);
+        } catch (error) {
+          console.error(`[${WORKER_ID}] Error processing saved search ${member}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error(`[${WORKER_ID}] Saved search tick error:`, error);
+    }
+  }
+
+  // Run saved search scheduler
+  setInterval(() => {
+    savedSearchTick().catch((e) => console.error(`[${WORKER_ID}] Saved search tick error:`, e));
+  }, SCHEDULER_TICK_MS);
+
+  // Immediate tick on startup
+  savedSearchTick().catch((e) => console.error(`[${WORKER_ID}] Initial saved search tick error:`, e));
+
+  const alertDeliveryStatus = process.env.ENABLE_ALERT_DELIVERY === "true" ? "enabled" : "disabled";
+  console.log(`Worker Scheduler ${WORKER_ID} running (scan interval: ${SCAN_INTERVAL}ms, TTL cleanup interval: ${TTL_CLEANUP_INTERVAL}ms, re-hydration interval: ${REHYDRATION_INTERVAL}ms, Facebook job interval: ${FACEBOOK_JOB_INTERVAL}ms, Alert delivery: ${alertDeliveryStatus}, saved search tick: ${SCHEDULER_TICK_MS}ms)...`);
 }
+
+// Clean shutdown handlers
+process.on("SIGTERM", () => {
+  console.log(`[${WORKER_ID}] SIGTERM received, shutting down gracefully...`);
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  console.log(`[${WORKER_ID}] SIGINT received, shutting down gracefully...`);
+  process.exit(0);
+});
 
 main().catch((error) => {
   console.error("Worker failed:", error);

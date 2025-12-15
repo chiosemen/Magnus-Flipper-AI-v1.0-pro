@@ -1,0 +1,37 @@
+# Azure Container App for worker-scheduler
+# Deploy with: az containerapp create --resource-group magnus-rg --name worker-scheduler --yaml apps/worker-scheduler/containerapp.yaml
+
+apiVersion: 2024-03-01
+kind: containerApp
+properties:
+  managedEnvironmentId: /subscriptions/<SUB_ID>/resourceGroups/magnus-rg/providers/Microsoft.App/managedEnvironments/magnus-env
+  configuration:
+    activeRevisionsMode: Single
+    secrets:
+      - name: redis-password
+        value: "<REDIS_PASSWORD>"
+    ingress:
+      external: false
+  template:
+    containers:
+      - name: worker-scheduler
+        image: ghcr.io/chiosemen/magnus-worker-scheduler:latest
+        env:
+          - name: REDIS_HOST
+            value: magnus-redis.redis.cache.windows.net
+          - name: REDIS_PORT
+            value: "6379"
+          - name: REDIS_PASSWORD
+            secretRef: redis-password
+          - name: REDIS_TLS
+            value: "false"
+          - name: SCHEDULER_TICK_MS
+            value: "60000"
+          - name: NODE_ENV
+            value: "production"
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+    scale:
+      minReplicas: 1
+      maxReplicas: 1

@@ -1,4 +1,4 @@
-import { prisma } from '@magnus-flipper-ai/core/db';
+import { getPrisma } from '@magnus-flipper-ai/core/db';
 import { getAdapter, isMarketplaceLive } from '@magnus-flipper-ai/marketplaces';
 import { logEvent } from './services/telemetry';
 
@@ -22,6 +22,7 @@ async function hydrateListing(
       return { success: false, error: 'Adapter returned null' };
     }
 
+    const prisma = getPrisma();
     const existing = await prisma.listing.findUnique({
       where: { externalId: listing.externalId },
     });
@@ -76,6 +77,9 @@ async function hydrateListing(
       return { success: true, listingId: created.id };
     }
   } catch (error: any) {
+    if (error.message?.includes("Prisma client not generated") || error.code === "MODULE_NOT_FOUND") {
+      return { success: false, error: "Prisma unavailable" };
+    }
     return { success: false, error: error.message };
   }
 }
@@ -91,6 +95,17 @@ export async function rehydrateListings(
   marketplace?: 'facebook' | 'vinted',
   maxAgeMinutes: number = 30
 ): Promise<{ processed: number; succeeded: number; failed: number }> {
+  try {
+    // Check if Prisma is available before starting
+    getPrisma();
+  } catch (error: any) {
+    if (error.message?.includes("Prisma client not generated") || error.code === "MODULE_NOT_FOUND") {
+      console.warn("[scheduler] Prisma unavailable, skipping re-hydration");
+      return { processed: 0, succeeded: 0, failed: 0 };
+    }
+    throw error;
+  }
+
   const liveMarketplaces = (process.env.LIVE_MARKETPLACES || '')
     .split(',')
     .map(m => m.trim().toLowerCase());
@@ -103,17 +118,20 @@ export async function rehydrateListings(
   let totalSucceeded = 0;
   let totalFailed = 0;
 
-  for (const mp of marketplacesToProcess) {
-    if (!isMarketplaceLive(mp)) {
-      continue;
-    }
+  try {
+    const prisma = getPrisma();
 
-    // Get listings that need re-hydration:
-    // 1. Active listings older than maxAgeMinutes
-    // 2. Listings with status 'unknown' (failed hydration)
-    const cutoffTime = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
+    for (const mp of marketplacesToProcess) {
+      if (!isMarketplaceLive(mp)) {
+        continue;
+      }
 
-    const listingsToUpdate = await prisma.listing.findMany({
+      // Get listings that need re-hydration:
+      // 1. Active listings older than maxAgeMinutes
+      // 2. Listings with status 'unknown' (failed hydration)
+      const cutoffTime = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
+
+      const listingsToUpdate = await prisma.listing.findMany({
       where: {
         marketplace: mp,
         OR: [
@@ -164,14 +182,26 @@ export async function rehydrateListings(
         totalProcessed++;
       }
     }
+  } catch (error: any) {
+    if (error.message?.includes("Prisma client not generated") || error.code === "MODULE_NOT_FOUND") {
+      console.warn("[scheduler] Prisma unavailable during re-hydration, skipping");
+      return { processed: 0, succeeded: 0, failed: 0 };
+    }
+    console.error("[scheduler] Re-hydration error:", error);
+    return { processed: totalProcessed, succeeded: totalSucceeded, failed: totalFailed };
   }
 
   if (totalProcessed > 0) {
-    await logEvent('system', 'rehydration_complete', {
-      processed: totalProcessed,
-      succeeded: totalSucceeded,
-      failed: totalFailed,
-    });
+    try {
+      await logEvent('system', 'rehydration_complete', {
+        processed: totalProcessed,
+        succeeded: totalSucceeded,
+        failed: totalFailed,
+      });
+    } catch (error) {
+      // Non-fatal: telemetry failure shouldn't break re-hydration
+      console.warn("[scheduler] Failed to log re-hydration event:", error);
+    }
   }
 
   return {

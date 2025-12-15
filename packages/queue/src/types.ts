@@ -17,6 +17,8 @@ export interface ScrapeJob {
   region: string;
   page: number;
   batchSize: number;
+  userId?: string;        // optional for manual runs
+  savedSearchId?: string; // optional, present when from saved search
 }
 
 export interface ParentJob {
@@ -33,6 +35,23 @@ export interface JobStatusData {
   message: string;
   totalBatches: string;
   doneBatches: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavedSearch {
+  id: string;
+  userId: string;
+  query: string;
+  region: string;
+  marketplace: "facebook";
+  cron: string; // e.g. "*/30 * * * *"
+  cronLabel?: string; // Human-readable: "Every 30 minutes"
+  priceDropPct?: number; // Alert threshold (e.g. 10 = alert if -10%)
+  paused: boolean;
+  lastRun?: string; // ISO timestamp
+  lastResultHash?: string; // SHA1 hash of last results
+  trend?: "up" | "down" | "flat";
   createdAt: string;
   updatedAt: string;
 }

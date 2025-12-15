@@ -1,6 +1,13 @@
-export { scrapeFacebookHTML } from "./html";
-export { scrapeFacebookPlaywright } from "./playwright";
+export { scrapeFacebookHTML, extractPriceText, pickBestImageUrl, parseSearchHtml } from "./html";
+export { scrapeFacebookPlaywright, hydrateListingViaPlaywright } from "./playwright";
 export { scrapeFacebookHybrid } from "./hybrid";
-export type { ScrapedListing, HTMLScrapeResult, HTMLScrapeInput } from "./html";
+export { hydrateFromOpenGraph } from "./hydrate-og";
+export { FB_ALWAYS_HYDRATE_TOP_N } from "./constants";
+export { rotateUA } from "./utils";
+export { acquireSession, getSession, releaseSession, removeSession } from "./sessionPool";
+export type { ScrapedListing } from "../types";
+export type { HTMLScrapeResult, HTMLScrapeInput } from "./html";
 export type { PlaywrightScrapeInput } from "./playwright";
 export type { HybridScrapeInput, HybridScrapeResult } from "./hybrid";
+export type { OpenGraphData } from "./hydrate-og";
+export type { FBSession } from "./sessionPool";

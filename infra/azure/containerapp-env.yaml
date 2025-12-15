@@ -1,0 +1,10 @@
+# Azure Container App Environment
+# Deploy with: az containerapp env create --resource-group magnus-rg --name magnus-env --location eastus
+
+apiVersion: 2024-03-01
+kind: containerAppEnvironment
+properties:
+  location: eastus
+  workloadProfiles:
+    - name: Consumption
+      workloadProfileType: Consumption
