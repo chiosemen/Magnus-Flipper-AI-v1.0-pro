@@ -731,6 +731,31 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  apps/worker-dealer:
+    dependencies:
+      '@magnus-flipper-ai/dealer-engine':
+        specifier: workspace:*
+        version: link:../../packages/dealer-engine
+      '@magnus-flipper-ai/queue':
+        specifier: workspace:*
+        version: link:../../packages/queue
+      bullmq:
+        specifier: ^5.0.0
+        version: 5.66.0
+      ioredis:
+        specifier: ^5.3.2
+        version: 5.8.2
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.26
+      tsx:
+        specifier: ^4.19.2
+        version: 4.21.0
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
   apps/worker-ingest:
     dependencies:
       '@magnus-flipper-ai/apify-adapter':
@@ -1067,6 +1092,19 @@ importers:
         version: 20.19.26
       typescript:
         specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/dealer-engine:
+    dependencies:
+      ioredis:
+        specifier: ^5.3.2
+        version: 5.8.2
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.26
+      typescript:
+        specifier: ^5.6.3
         version: 5.9.3
 
   packages/feed-engine:
@@ -2532,7 +2570,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {node: '>=0.10.0'}
+    engines: {'0': node >=0.10.0}
 
   '@expo/cli@0.22.26':
     resolution: {integrity: sha512-I689wc8Fn/AX7aUGiwrh3HnssiORMJtR2fpksX+JIe8Cj/EDleblYMSwRPd0025wrwOV9UN1KM/RuEt/QjCS3Q==}
