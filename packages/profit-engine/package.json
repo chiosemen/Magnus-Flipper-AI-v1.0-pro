@@ -6,18 +6,46 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./autosell/saleDetector": "./dist/autosell/saleDetector.js",
-    "./autosell/finalizeSale": "./dist/autosell/finalizeSale.js",
-    "./autosell/crossPlatformLock": "./dist/autosell/crossPlatformLock.js",
-    "./ledger/feeModel": "./dist/ledger/feeModel.js",
-    "./ledger/profitLedger": "./dist/ledger/profitLedger.js",
-    "./ledger/evCorrector": "./dist/ledger/evCorrector.js",
-    "./ledger/portfolioEngine": "./dist/ledger/portfolioEngine.js",
-    "./schemas/SaleEvent": "./dist/schemas/SaleEvent.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./autosell/saleDetector": {
+      "types": "./dist/autosell/saleDetector.d.ts",
+      "import": "./dist/autosell/saleDetector.js"
+    },
+    "./autosell/finalizeSale": {
+      "types": "./dist/autosell/finalizeSale.d.ts",
+      "import": "./dist/autosell/finalizeSale.js"
+    },
+    "./autosell/crossPlatformLock": {
+      "types": "./dist/autosell/crossPlatformLock.d.ts",
+      "import": "./dist/autosell/crossPlatformLock.js"
+    },
+    "./ledger/feeModel": {
+      "types": "./dist/ledger/feeModel.d.ts",
+      "import": "./dist/ledger/feeModel.js"
+    },
+    "./ledger/profitLedger": {
+      "types": "./dist/ledger/profitLedger.d.ts",
+      "import": "./dist/ledger/profitLedger.js"
+    },
+    "./ledger/evCorrector": {
+      "types": "./dist/ledger/evCorrector.d.ts",
+      "import": "./dist/ledger/evCorrector.js"
+    },
+    "./ledger/portfolioEngine": {
+      "types": "./dist/ledger/portfolioEngine.d.ts",
+      "import": "./dist/ledger/portfolioEngine.js"
+    },
+    "./schemas/SaleEvent": {
+      "types": "./dist/schemas/SaleEvent.d.ts",
+      "import": "./dist/schemas/SaleEvent.js"
+    }
   },
   "scripts": {
     "build": "tsc",
+    "prepare": "pnpm run build",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
