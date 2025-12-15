@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Tilt3D } from "./Tilt3D";
 
 interface ScannerCard3DProps {

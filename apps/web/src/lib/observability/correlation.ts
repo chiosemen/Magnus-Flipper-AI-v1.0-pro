@@ -5,7 +5,7 @@
  * PERFORMANCE: Uses React cache() to deduplicate correlation ID retrieval
  */
 
-import { cache } from 'react';
+import { cache } from '@/lib/react-cache';
 import { headers } from 'next/headers';
 import { NextRequest } from 'next/server';
 

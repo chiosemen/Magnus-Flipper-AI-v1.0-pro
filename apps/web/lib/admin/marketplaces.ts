@@ -10,7 +10,7 @@
  * PERFORMANCE: Uses React cache() for request-level deduplication
  */
 
-import { cache } from "react";
+import { cache } from "@/lib/react-cache";
 import { createServerClient } from "@/lib/supabase";
 import { withTrace, logError } from "@/lib/observability/logger";
 import { createTraceContext } from "@/lib/observability/correlation";

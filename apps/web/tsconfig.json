@@ -57,6 +57,7 @@
   },
   "include": [
     "next-env.d.ts",
+    "react-cache.d.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
     "src/**/*.ts",
