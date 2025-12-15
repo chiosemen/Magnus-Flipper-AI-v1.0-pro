@@ -57,11 +57,27 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx",
+    "utils/**/*.ts",
+    "utils/**/*.tsx",
+    "types/**/*.ts",
+    "types/**/*.tsx",
+    "providers/**/*.ts",
+    "providers/**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "*.ts",
+    "*.tsx",
+    "*.mts"
   ],
   "exclude": [
     "node_modules",
@@ -76,6 +92,7 @@
     "app/(dashboard)/**",
     "app/_api_off/**",
     "app/_admin_off/**",
-    "app/_deals_off/**"
+    "app/_deals_off/**",
+    "_dashboard_off/**"
   ]
 }

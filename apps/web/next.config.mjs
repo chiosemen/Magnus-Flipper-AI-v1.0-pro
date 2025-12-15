@@ -31,7 +31,10 @@ const nextConfig = {
   // v1 build surface control
   typescript: {
     ignoreBuildErrors: false, // Keep strict - we fixed the real issues
+    tsconfigPath: './tsconfig.json',
   },
+  // Exclude _dashboard_off from Next.js file system scanning
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   // Exclude API routes from build (v1 - MM Agent only)
   // API routes import Prisma at module level and fail during build
   // They'll be re-enabled in v2 with proper lazy loading
