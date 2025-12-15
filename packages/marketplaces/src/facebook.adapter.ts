@@ -73,7 +73,7 @@ export class FacebookAdapter implements MarketplaceAdapter {
         },
         timeout: 10000,
         maxRedirects: 5,
-        validateStatus: (status) => status < 500, // Accept redirects and client errors
+        validateStatus: (status: number) => status < 500, // Accept redirects and client errors
       });
 
       // Extract title from HTML if possible

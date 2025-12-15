@@ -97,7 +97,7 @@ export class VintedAdapter implements MarketplaceAdapter {
         },
         timeout: 10000,
         maxRedirects: 5,
-        validateStatus: (status) => status < 500,
+        validateStatus: (status: number) => status < 500,
       });
 
       if (htmlResponse.status === 200 && htmlResponse.data) {
