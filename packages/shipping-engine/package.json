@@ -6,18 +6,46 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./tracking/trackingManager": "./dist/tracking/trackingManager.js",
-    "./label/labelGenerator": "./dist/label/labelGenerator.js",
-    "./schemas/ShippingRequest": "./dist/schemas/ShippingRequest.js",
-    "./carrier/selectCarrier": "./dist/carrier/selectCarrier.js",
-    "./carrier/rateCalculator": "./dist/carrier/rateCalculator.js",
-    "./label/labelStorage": "./dist/label/labelStorage.js",
-    "./workflow/fulfillmentOrchestrator": "./dist/workflow/fulfillmentOrchestrator.js",
-    "./workflow/packagingAdvisor": "./dist/workflow/packagingAdvisor.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./tracking/trackingManager": {
+      "types": "./dist/tracking/trackingManager.d.ts",
+      "import": "./dist/tracking/trackingManager.js"
+    },
+    "./label/labelGenerator": {
+      "types": "./dist/label/labelGenerator.d.ts",
+      "import": "./dist/label/labelGenerator.js"
+    },
+    "./schemas/ShippingRequest": {
+      "types": "./dist/schemas/ShippingRequest.d.ts",
+      "import": "./dist/schemas/ShippingRequest.js"
+    },
+    "./carrier/selectCarrier": {
+      "types": "./dist/carrier/selectCarrier.d.ts",
+      "import": "./dist/carrier/selectCarrier.js"
+    },
+    "./carrier/rateCalculator": {
+      "types": "./dist/carrier/rateCalculator.d.ts",
+      "import": "./dist/carrier/rateCalculator.js"
+    },
+    "./label/labelStorage": {
+      "types": "./dist/label/labelStorage.d.ts",
+      "import": "./dist/label/labelStorage.js"
+    },
+    "./workflow/fulfillmentOrchestrator": {
+      "types": "./dist/workflow/fulfillmentOrchestrator.d.ts",
+      "import": "./dist/workflow/fulfillmentOrchestrator.js"
+    },
+    "./workflow/packagingAdvisor": {
+      "types": "./dist/workflow/packagingAdvisor.d.ts",
+      "import": "./dist/workflow/packagingAdvisor.js"
+    }
   },
   "scripts": {
     "build": "tsc",
+    "prepare": "pnpm run build",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
