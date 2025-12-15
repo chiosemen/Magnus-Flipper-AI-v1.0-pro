@@ -183,16 +183,17 @@ async function processScrapeJob(job: { data: ScrapeJob }) {
 
     if (marketplace === "facebook") {
       // Use per-marketplace queue for Facebook to limit concurrency
-      listings = await fbQueue.add(async () => {
-        const result = await scrapeFacebookHybrid({
+      const result = await fbQueue.add(async () => {
+        const scrapeResult = await scrapeFacebookHybrid({
           query,
           region,
           page,
           batchSize,
         });
 
-        return result.listings;
+        return scrapeResult.listings;
       });
+      listings = result || [];
     } else {
       // For other marketplaces, add scrapers as needed
       listings = [];
