@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { createServerClient } from "@/lib/supabase";
 import { redirect } from "next/navigation";
@@ -5,7 +6,7 @@ import { redirect } from "next/navigation";
 export default async function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const supabase = await createServerClient();
   const {
