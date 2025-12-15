@@ -12,11 +12,7 @@ import { ThemeProvider } from "@magnus-flipper-ai/ui/providers";
 
 const queryClient = new QueryClient();
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: any) {
   return (
     <html lang="en" suppressHydrationWarning data-theme="dark">
       <head>
@@ -41,7 +37,7 @@ export default function RootLayout({
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              {children}
+              {children as React.ReactNode}
             </TooltipProvider>
           </QueryClientProvider>
         </ThemeProvider>
