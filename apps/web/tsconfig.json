@@ -74,8 +74,8 @@
     "**/__tests__/**",
     "**/__test__/**",
     "app/(dashboard)/**",
-    "app/api/**",
-    "app/admin/**",
-    "app/deals/**"
+    "app/_api_off/**",
+    "app/_admin_off/**",
+    "app/_deals_off/**"
   ]
 }

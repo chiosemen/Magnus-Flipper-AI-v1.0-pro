@@ -18,7 +18,7 @@ type MMListing = {
 export default function MMAgent() {
   const [query, setQuery] = useState("");
   const [geo, setGeo] = useState<"US" | "UK">("US");
-  const { runIngestion, status, progress, results } = useIngestionRun();
+  const { runIngestion, status, message, progress, results } = useIngestionRun();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +141,11 @@ export default function MMAgent() {
                 {status}
               </span>
             </div>
+            {message && (
+              <div className="mb-4 text-sm text-gray-600">
+                {message}
+              </div>
+            )}
             {progress && (
               <div className="mb-4">
                 <div className="flex justify-between text-sm text-gray-600 mb-2">

@@ -3,7 +3,7 @@
 import "./globals.css";
 import "../theme/theme.css";
 import "../marketing-swoopa/marketing.css";
-import { ReactNode } from "react";
+import React from "react";
 import { Toaster } from "../marketing-swoopa/components/ui/toaster";
 import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
 import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
@@ -12,7 +12,11 @@ import { ThemeProvider } from "@magnus-flipper-ai/ui/providers";
 
 const queryClient = new QueryClient();
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" suppressHydrationWarning data-theme="dark">
       <head>

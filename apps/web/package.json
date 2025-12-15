@@ -22,6 +22,7 @@
     "@magnus-flipper-ai/feed-engine": "workspace:*",
     "@magnus-flipper-ai/profit-engine": "workspace:*",
     "@magnus-flipper-ai/marketplace-config": "workspace:*",
+    "@magnus-flipper-ai/queue": "workspace:*",
     "@magnus-flipper-ai/shipping-engine": "workspace:*",
     "@magnus-flipper-ai/ui": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -75,8 +76,8 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "18.2.66",
+    "@types/react-dom": "18.2.22",
     "@testing-library/react": "^16.0.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@vitejs/plugin-react": "^4.3.4",

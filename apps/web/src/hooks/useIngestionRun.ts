@@ -9,18 +9,23 @@ export type IngestStatus =
 
 interface RunResponse {
   jobId: string;
-  status: "queued";
-  receivedAt: string;
 }
 
 interface StatusResponse {
+  jobId: string;
   status: IngestStatus;
+  message: string;
+  progress: {
+    totalBatches: number;
+    doneBatches: number;
+  };
   results?: any[];
 }
 
 export function useIngestionRun() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<IngestStatus | null>(null);
+  const [message, setMessage] = useState<string>("");
   const [progress, setProgress] = useState<{ total: number; completed: number; failed: number } | null>(null);
   const [results, setResults] = useState<any[] | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,31 +39,64 @@ export function useIngestionRun() {
       body: JSON.stringify(payload)
     });
 
+    if (!res.ok) {
+      throw new Error("Failed to start ingestion");
+    }
+
     const data: RunResponse = await res.json();
     setJobId(data.jobId);
     setStatus("queued");
+    setMessage("Queued for scanning");
+    setResults(null); // Reset results for new job
     return data.jobId;
   }, []);
 
   const pollStatus = useCallback(async (id: string) => {
-    const res = await fetch(`/api/ingest/status/${id}`);
+    try {
+      const res = await fetch(`/api/ingest/status/${id}`);
 
-    const data: StatusResponse = await res.json();
-    setStatus(data.status);
+      if (!res.ok) {
+        if (res.status === 404) {
+          setStatus("failed");
+          setMessage("Job not found");
+          if (pollingRef.current) clearInterval(pollingRef.current);
+        }
+        return;
+      }
 
-    // Update progress based on status
-    if (data.status === "running") {
-      setProgress({ total: 100, completed: 50, failed: 0 });
-    } else if (data.status === "completed") {
-      setProgress({ total: 100, completed: 100, failed: 0 });
-    }
+      const data: StatusResponse = await res.json();
+      setStatus(data.status);
+      setMessage(data.message || "");
 
-    // If completed, extract results from status response
-    if (data.status === "completed" && data.results) {
-      setResults(data.results);
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    } else if (data.status === "failed") {
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      // Calculate progress percentage from batches
+      const { totalBatches, doneBatches } = data.progress;
+      if (totalBatches > 0) {
+        const percentage = Math.round((doneBatches / totalBatches) * 100);
+        setProgress({
+          total: totalBatches,
+          completed: doneBatches,
+          failed: 0,
+        });
+      } else {
+        // Fallback progress calculation
+        if (data.status === "running") {
+          setProgress({ total: 100, completed: 50, failed: 0 });
+        } else if (data.status === "completed") {
+          setProgress({ total: 100, completed: 100, failed: 0 });
+        }
+      }
+
+      // Stream results as they arrive (not just on completion)
+      if (data.results && data.results.length > 0) {
+        setResults(data.results);
+      }
+
+      // Stop polling when job is complete or failed
+      if (data.status === "completed" || data.status === "failed") {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+      }
+    } catch (error) {
+      console.error("Error polling status:", error);
     }
   }, []);
 
@@ -78,6 +116,7 @@ export function useIngestionRun() {
     runIngestion,
     requestId: jobId, // Keep requestId for backward compatibility with MM Agent page
     status,
+    message,
     progress,
     results
   };
