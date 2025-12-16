@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
       recordEvent("dealer_job_enqueued", {
         leadId,
         dealerCount: dealerJobs.length,
-        dealerIds: selectedDealers.map((d) => d.id),
+        dealerIds: selectedDealers.map((d: Dealer) => d.id),
       });
     }
 
