@@ -88,13 +88,28 @@ ${colorConfig
   );
 };
 
+type ChartTooltipPayload = {
+  dataKey?: string | number;
+  name?: string;
+  value?: number | string;
+  payload?: {
+    fill?: string;
+    [k: string]: unknown;
+  };
+  color?: string;
+};
+
 type ChartTooltipProps = TooltipProps<number, string> & {
+  payload?: ChartTooltipPayload[];
+  label?: string;
+  color?: string;
   className?: string;
   hideLabel?: boolean;
   hideIndicator?: boolean;
   indicator?: "line" | "dot" | "dashed";
   nameKey?: string;
   labelKey?: string;
+  labelClassName?: string;
 };
 
 const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(function ChartTooltipContent(
@@ -103,7 +118,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
 ) {
   const {
     active,
-    payload,
+    payload: rawPayload,
     className,
     indicator = "dot",
     hideLabel = false,
@@ -120,11 +135,11 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
   const { config } = useChart();
 
   const tooltipLabel = React.useMemo(() => {
-      if (hideLabel || !payload?.length) {
+      if (hideLabel || !rawPayload?.length) {
         return null;
       }
 
-      const [item] = payload;
+      const [item] = rawPayload;
       const key = `${labelKey || item.dataKey || item.name || "value"}`;
       const itemConfig = getPayloadConfigFromPayload(config, item, key);
       const value =
@@ -133,7 +148,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
           : itemConfig?.label;
 
       if (labelFormatter) {
-        return <div className={cn("font-medium", labelClassName)}>{labelFormatter(value, payload)}</div>;
+        return <div className={cn("font-medium", labelClassName)}>{labelFormatter(value, rawPayload)}</div>;
       }
 
       if (!value) {
@@ -141,13 +156,14 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
       }
 
       return <div className={cn("font-medium", labelClassName)}>{value}</div>;
-    }, [label, labelFormatter, payload, hideLabel, labelClassName, config, labelKey]);
+    }, [label, labelFormatter, rawPayload, hideLabel, labelClassName, config, labelKey]);
 
-    if (!active || !payload?.length) {
+    if (!active || !rawPayload?.length) {
       return null;
     }
 
-    const nestLabel = payload.length === 1 && indicator !== "dot";
+    const payload = rawPayload as ChartTooltipPayload[] | undefined;
+    const nestLabel = payload?.length === 1 && indicator !== "dot";
 
     return (
       <div
@@ -158,11 +174,12 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
         )}
       >
         {!nestLabel ? tooltipLabel : null}
+
         <div className="grid gap-1.5">
-          {payload.map((item, index) => {
+          {payload?.map((item, index) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
-            const indicatorColor = color || item.payload.fill || item.color;
+            const indicatorColor = color || item.payload?.fill || item.color;
 
             return (
               <div
@@ -173,7 +190,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
                 )}
               >
                 {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
+                  formatter(item.value, item.name, item, index, rawPayload)
                 ) : (
                   <>
                     {itemConfig?.icon ? (
