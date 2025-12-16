@@ -1,4 +1,5 @@
 packages:
-  - apps/*
-  - packages/*
-  - tools/*
+  - "apps/*"
+  - "packages/*"
+  - "!packages/dealer-engine"
+  - "!apps/worker-dealer"
