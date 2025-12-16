@@ -1,0 +1,20 @@
+{
+  "name": "eslint-plugin-ssr-guards",
+  "version": "1.0.0",
+  "description": "ESLint rules for Next.js App Router SSR safety",
+  "main": "index.js",
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "nextjs",
+    "ssr",
+    "app-router",
+    "error-boundaries"
+  ],
+  "author": "Magnus Flipper AI Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "eslint": ">=7.0.0"
+  }
+}
+

@@ -6,6 +6,10 @@ const __dirname = dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Set build-time env vars to prevent Redis/Queue connections during static analysis
+  env: {
+    SKIP_REDIS: process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV ? 'true' : 'false',
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "2mb",

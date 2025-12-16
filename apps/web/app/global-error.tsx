@@ -1,34 +1,83 @@
 'use client';
 
+/**
+ * GLOBAL ERROR BOUNDARY — SSR SAFE (Gold Standard)
+ *
+ * ⚠️ ABSOLUTE RULES:
+ * - NO hooks (useContext, useState, etc.)
+ * - NO client components
+ * - NO providers
+ * - NO UI libraries
+ * - NO icons
+ * - NO dynamic logic
+ *
+ * NOTE: 'use client' is required by Next.js but this component must remain pure.
+ * Do NOT add hooks or import components that use hooks.
+ *
+ * This file renders BEFORE providers exist.
+ * Treat it as raw HTML, not a React app.
+ * 
+ * GUARDRAILS:
+ * - ESLint will fail if hooks are added
+ * - CI guard will fail build if violations detected
+ * - See: ERROR_BOUNDARY_RULES.md for complete documentation
+ */
+
 export default function GlobalError({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  reset?: () => void;
 }) {
   return (
-    <html>
-      <body style={{ fontFamily: 'system-ui', padding: 40 }}>
-        <h1>Something went wrong</h1>
-        <p>An unexpected error occurred.</p>
-
-        <button
-          onClick={() => reset()}
+    <html lang="en">
+      <head>
+        <title>Application Error</title>
+        <meta name="robots" content="noindex" />
+      </head>
+      <body
+        style={{
+          margin: 0,
+          padding: 0,
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+          background: "#0b0b0b",
+          color: "#ffffff",
+        }}
+      >
+        <main
           style={{
-            marginTop: 20,
-            padding: '8px 14px',
-            borderRadius: 6,
-            border: '1px solid #ccc',
-            cursor: 'pointer',
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            padding: "2rem",
           }}
         >
-          Try again
-        </button>
+          <div>
+            <h1 style={{ fontSize: "1.5rem", marginBottom: "0.75rem" }}>
+              Something went wrong
+            </h1>
 
-        <p style={{ marginTop: 20, fontSize: 12, opacity: 0.6 }}>
-          Error ID: {error?.digest}
-        </p>
+            <p style={{ opacity: 0.75, maxWidth: 420 }}>
+              A critical error occurred while loading the application.
+              Please refresh the page or try again later.
+            </p>
+
+            {error?.digest && (
+              <p
+                style={{
+                  marginTop: "1.25rem",
+                  fontSize: "0.75rem",
+                  opacity: 0.4,
+                }}
+              >
+                Error ID: {error.digest}
+              </p>
+            )}
+          </div>
+        </main>
       </body>
     </html>
   );
