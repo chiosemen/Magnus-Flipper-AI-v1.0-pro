@@ -212,8 +212,9 @@ describe('isAnchorStale', () => {
     expect(isAnchorStale(anchor, mockPolicy)).toBe(true);
   });
 
-  it('should return false for anchor exactly at max age boundary', () => {
-    const boundaryDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  it('should return false for anchor just inside max age boundary', () => {
+    // Use a date 1 second inside the 7-day boundary to avoid timing flakiness
+    const boundaryDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 1000);
     const anchor = createAnchor({ scrapedAt: boundaryDate });
     expect(isAnchorStale(anchor, mockPolicy)).toBe(false);
   });

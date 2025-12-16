@@ -392,6 +392,9 @@ importers:
       '@magnus-flipper-ai/shipping-engine':
         specifier: workspace:*
         version: link:../../packages/shipping-engine
+      '@magnus-flipper-ai/tech-trade-core':
+        specifier: workspace:*
+        version: link:../../packages/tech-trade-core
       '@magnus-flipper-ai/ui':
         specifier: workspace:*
         version: link:../../packages/ui

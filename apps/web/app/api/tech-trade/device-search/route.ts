@@ -13,6 +13,7 @@ import {
   searchDevices,
   type DeviceSearchResult,
   type TechDeviceWithAttributes,
+  type DeviceAttributeGroup,
 } from '@magnus-flipper-ai/tech-trade-core';
 
 export const runtime = 'nodejs';
@@ -69,7 +70,7 @@ function transformDevice(device: TechDeviceWithAttributes) {
     releaseYear: device.releaseYear,
     basePrice: device.basePrice,
     currency: device.currency,
-    attributes: device.attributes.map(attr => ({
+    attributes: device.attributes.map((attr: DeviceAttributeGroup) => ({
       type: attr.type,
       values: attr.values,
     })),

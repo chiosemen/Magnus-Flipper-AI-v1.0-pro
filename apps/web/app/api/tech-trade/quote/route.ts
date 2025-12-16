@@ -18,6 +18,7 @@ import {
   type Condition,
   type QuoteBreakdown,
   type MarketIndicators,
+  type DeviceAttributeGroup,
   DEFAULT_PRICING_POLICY,
 } from '@magnus-flipper-ai/tech-trade-core';
 
@@ -125,8 +126,8 @@ export async function POST(
       device,
       condition,
       attributes,
-      deviceAttributes: device.attributes?.flatMap(group => 
-        group.modifiers.map(mod => ({
+      deviceAttributes: device.attributes?.flatMap((group: DeviceAttributeGroup) => 
+        group.modifiers.map((mod: { value: string; priceModifier: number }) => ({
           id: `${device.id}-${group.type}-${mod.value}`,
           deviceId: device.id,
           attributeType: group.type,
