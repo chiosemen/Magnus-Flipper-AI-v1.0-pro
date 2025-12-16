@@ -88,8 +88,6 @@ ${colorConfig
   );
 };
 
-const ChartTooltip = RechartsPrimitive.Tooltip;
-
 type ChartTooltipContentProps = TooltipProps<number, string> &
   React.ComponentProps<"div"> & {
     hideLabel?: boolean;
@@ -225,6 +223,16 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
   },
 );
 ChartTooltipContent.displayName = "ChartTooltip";
+
+type RechartsPayload = TooltipProps<number, string>["payload"];
+
+type ChartTooltipProps = ChartTooltipContentProps & {
+  payload?: RechartsPayload;
+};
+
+export function ChartTooltip(props: ChartTooltipProps) {
+  return <ChartTooltipContent {...props} />;
+}
 
 const ChartLegend = RechartsPrimitive.Legend;
 
