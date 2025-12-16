@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import type { UsedCarLeadPayload, UsedCarLeadResponse } from "@/types/usedCarLead";
 import { recordEvent } from "@/lib/analytics";
 
+type Dealer = {
+  id: string;
+  name?: string;
+  endpoint?: string;
+};
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -202,7 +208,7 @@ export async function POST(req: NextRequest) {
       const maxDealers = Math.min(activeDealers.length, 5);
       const selectedDealers = activeDealers.slice(0, maxDealers);
 
-      const dealerJobs = selectedDealers.map((dealer) => ({
+      const dealerJobs = selectedDealers.map((dealer: Dealer) => ({
         name: `dealer:${dealer.id}`,
         data: {
           leadId,
