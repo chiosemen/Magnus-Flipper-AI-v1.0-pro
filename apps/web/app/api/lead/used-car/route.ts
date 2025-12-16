@@ -6,11 +6,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const dealerEngineEnabled = process.env.DEALER_ENGINE_ENABLED === "true";
+
   // Soft disable: Return early if dealer engine is disabled
-  if (process.env.DEALER_ENGINE_ENABLED !== "true") {
+  if (!dealerEngineEnabled) {
     try {
       const body = (await req.json()) as UsedCarLeadPayload;
-      
+
       // Still validate the payload
       if (
         !body.make ||
@@ -89,13 +91,7 @@ export async function POST(req: NextRequest) {
 
       // Return accepted response without dealer fan-out
       return NextResponse.json(
-        {
-          success: true,
-          leadId,
-          estimatedOfferMid,
-          priceDelta,
-          note: "Dealer offers coming soon",
-        },
+        { status: "dealer_engine_disabled" },
         { status: 202 }
       );
     } catch (err) {
@@ -110,8 +106,12 @@ export async function POST(req: NextRequest) {
   // Dealer engine enabled - proceed with full fan-out
   try {
     const { dealerQueue } = await import("@magnus-flipper-ai/queue");
-    const { getDealerRegistry } = await import("@magnus-flipper-ai/dealer-engine");
-    
+    let getDealerRegistry: any;
+    if (dealerEngineEnabled) {
+      const mod = eval("require")("@magnus-flipper-ai/dealer-engine");
+      getDealerRegistry = mod.getDealerRegistry;
+    }
+
     const body = (await req.json()) as UsedCarLeadPayload;
 
     // Validation
@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Fan out to dealers (only if dealerQueue is available)
-    if (dealerQueue) {
+    if (dealerQueue && getDealerRegistry) {
       const registry = getDealerRegistry();
       const activeDealers = registry.getActiveDealers();
       
