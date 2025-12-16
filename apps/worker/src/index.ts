@@ -1,7 +1,7 @@
-import { runScheduledScan } from "./scheduler";
-import { sendHeartbeat } from "./services/telemetry";
-import { processJob } from "./services/jobs";
-import { scanMarketplace } from "./scheduler";
+import { runScheduledScan } from "./scheduler.js";
+import { sendHeartbeat } from "./services/telemetry.js";
+import { processJob } from "./services/jobs.js";
+import { scanMarketplace } from "./scheduler.js";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-001";
 const HEARTBEAT_INTERVAL = parseInt(process.env.WORKER_HEARTBEAT_INTERVAL || "60000");

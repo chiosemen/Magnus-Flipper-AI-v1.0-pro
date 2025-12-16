@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase } from "./supabase.js";
 
 export async function createJob(jobType: string, marketplace?: string, payload?: any) {
   const { data, error } = await supabase

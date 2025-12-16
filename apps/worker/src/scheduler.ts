@@ -1,5 +1,5 @@
-import { getMarketplaceSettings, saveListings, updateMarketplaceSync } from "./services/supabase";
-import { logEvent } from "./services/telemetry";
+import { getMarketplaceSettings, saveListings, updateMarketplaceSync } from "./services/supabase.js";
+import { logEvent } from "./services/telemetry.js";
 import {
   tryConsume,
   registerBackoff,
@@ -15,12 +15,12 @@ import {
 import {
   getMarketplaceEffectiveControl
 } from '@magnus-flipper-ai/core/services/marketplaceControlService';
-import * as craigslist from "./marketplaces/craigslist";
-import * as gumtree from "./marketplaces/gumtree";
-import * as ebay from "./marketplaces/ebay";
-import * as vinted from "./marketplaces/vinted";
-import * as facebook from "./marketplaces/facebook";
-import * as offerup from "./marketplaces/offerup";
+import * as craigslist from "./marketplaces/craigslist.js";
+import * as gumtree from "./marketplaces/gumtree.js";
+import * as ebay from "./marketplaces/ebay.js";
+import * as vinted from "./marketplaces/vinted.js";
+import * as facebook from "./marketplaces/facebook.js";
+import * as offerup from "./marketplaces/offerup.js";
 
 const scrapers: Record<string, (query?: string) => Promise<any[]>> = {
   craigslist: craigslist.scrapeListings,
