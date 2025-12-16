@@ -2,10 +2,107 @@
  * Policy Enforcement Module
  * 
  * Enforces business rules including floor prices, margin requirements,
- * and maximum discount limits for tech device pricing.
+ * maximum discount limits, and risk controls for tech device pricing.
+ * 
+ * All risk control enforcement is centralized here to avoid scattered checks.
  */
 
-import type { PricingPolicy } from './types';
+import type { PricingPolicy, RiskControlConfig } from './types';
+import { PricingHaltedError } from './types';
+
+// ============================================================================
+// Risk Control (Kill Switch)
+// ============================================================================
+
+/**
+ * Global risk control state
+ * 
+ * Default: reads from TECH_TRADE_RISK_HALT environment variable
+ * Can be overridden programmatically for testing via setRiskControlConfig()
+ */
+let riskControlConfig: RiskControlConfig = {
+  pricingHalted: process.env.TECH_TRADE_RISK_HALT === 'true',
+  haltReason: process.env.TECH_TRADE_RISK_HALT === 'true' 
+    ? 'Environment variable TECH_TRADE_RISK_HALT is set' 
+    : undefined,
+};
+
+/**
+ * Set risk control configuration
+ * 
+ * Primary use case: testing, admin overrides
+ * 
+ * @param config - New risk control configuration
+ */
+export function setRiskControlConfig(config: RiskControlConfig): void {
+  riskControlConfig = { ...config };
+}
+
+/**
+ * Get current risk control configuration
+ * 
+ * @returns Current risk control state
+ */
+export function getRiskControlConfig(): RiskControlConfig {
+  return { ...riskControlConfig };
+}
+
+/**
+ * Check if pricing is currently halted
+ * 
+ * When halted:
+ * - Anchor blending should be skipped
+ * - B2C quotes should be marked as pricingFrozen
+ * - Bulk/B2B operations should be rejected
+ * 
+ * @returns true if pricing is halted
+ */
+export function isPricingHalted(): boolean {
+  return riskControlConfig.pricingHalted;
+}
+
+/**
+ * Assert that pricing is not halted
+ * 
+ * Use for B2C quote operations where we want to continue but mark as frozen.
+ * This function does NOT throw - it just returns the halted state.
+ * For operations that must be blocked, use assertBulkTradeAllowed().
+ * 
+ * @returns true if pricing is halted (caller should mark quote as frozen)
+ */
+export function checkPricingHalted(): boolean {
+  return riskControlConfig.pricingHalted;
+}
+
+/**
+ * Assert that bulk/B2B trades are allowed
+ * 
+ * Throws PricingHaltedError if risk halt is active.
+ * Bulk trades MUST be rejected when halted - no fallback.
+ * 
+ * @throws PricingHaltedError if pricing is halted
+ */
+export function assertBulkTradeAllowed(): void {
+  if (riskControlConfig.pricingHalted) {
+    throw new PricingHaltedError(
+      riskControlConfig.haltReason || 'Bulk trades are disabled during risk halt'
+    );
+  }
+}
+
+/**
+ * Reset risk control to default state (reads from env)
+ * 
+ * Primarily for test cleanup
+ */
+export function resetRiskControl(): void {
+  riskControlConfig = {
+    pricingHalted: process.env.TECH_TRADE_RISK_HALT === 'true',
+    haltReason: process.env.TECH_TRADE_RISK_HALT === 'true'
+      ? 'Environment variable TECH_TRADE_RISK_HALT is set'
+      : undefined,
+  };
+}
 
 /**
  * Round a number to 2 decimal places

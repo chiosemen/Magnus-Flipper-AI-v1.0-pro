@@ -18,6 +18,7 @@ import type {
   AnchorSource,
 } from './types';
 import { isAnchorStale, calculateAnchorConfidence } from './anchor-blending';
+import { getRiskControlConfig } from './policy-enforcement';
 
 /**
  * Round a number to 2 decimal places
@@ -423,12 +424,19 @@ export async function getMarketIndicators(
     calculateMomentum(filteredAnchors, effectivePolicy),
   ]);
 
+  // Get current risk control state for system status
+  const riskControl = getRiskControlConfig();
+
   return {
     volume,
     anchors: anchorMetrics,
     confidence,
     momentum,
     generatedAt: new Date(),
+    systemStatus: {
+      pricingHalted: riskControl.pricingHalted,
+      haltReason: riskControl.haltReason,
+    },
   };
 }
 

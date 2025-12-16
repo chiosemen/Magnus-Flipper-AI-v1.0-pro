@@ -58,6 +58,13 @@ export {
   calculatePolicyAdjustment,
   isPriceBelowFloor,
   getEffectiveFloor,
+  // Risk Control (Kill Switch)
+  setRiskControlConfig,
+  getRiskControlConfig,
+  isPricingHalted,
+  checkPricingHalted,
+  assertBulkTradeAllowed,
+  resetRiskControl,
 } from './policy-enforcement';
 export type { PolicyValidationResult } from './policy-enforcement';
 

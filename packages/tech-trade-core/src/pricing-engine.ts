@@ -14,7 +14,7 @@ import type {
   QuoteBreakdown,
 } from './types';
 import { blendAnchors } from './anchor-blending';
-import { enforceFloorPrice, enforceMarginRequirement } from './policy-enforcement';
+import { enforceFloorPrice, enforceMarginRequirement, isPricingHalted } from './policy-enforcement';
 
 /**
  * Round a number to 2 decimal places
@@ -153,11 +153,16 @@ export interface QuoteBreakdownInput {
  * 1. Start with device base price
  * 2. Apply condition multiplier
  * 3. Add attribute adjustments
- * 4. Blend with market anchors (if available)
+ * 4. Blend with market anchors (if available AND pricing not halted)
  * 5. Apply policy floor
  * 
+ * When pricing is halted (kill switch active):
+ * - Anchor blending is SKIPPED (fallback to policy-only pricing)
+ * - Quote is marked as pricingFrozen: true
+ * - B2C quotes still work, just without market signals
+ * 
  * @param input - Quote calculation inputs
- * @returns Complete price breakdown
+ * @returns Complete price breakdown with pricingFrozen flag
  */
 export function generateQuoteBreakdown(input: QuoteBreakdownInput): QuoteBreakdown {
   const {
@@ -170,6 +175,9 @@ export function generateQuoteBreakdown(input: QuoteBreakdownInput): QuoteBreakdo
     cost,
   } = input;
 
+  // Check kill switch state FIRST
+  const pricingFrozen = isPricingHalted();
+
   // Step 1: Base price
   const basePrice = device.basePrice;
 
@@ -181,11 +189,14 @@ export function generateQuoteBreakdown(input: QuoteBreakdownInput): QuoteBreakdo
   const attributeAdjustment = applyAttributeAdjustments(attributes, deviceAttributes);
   const afterAttributes = round2(afterCondition + attributeAdjustment);
 
-  // Step 4: Blend with market anchors
+  // Step 4: Blend with market anchors (SKIP if pricing is halted)
   let anchorBlendedPrice: number | null = null;
   let priceBeforePolicy = afterAttributes;
 
-  if (anchors.length > 0) {
+  // Only blend anchors if:
+  // 1. Pricing is NOT halted (kill switch off)
+  // 2. We have anchors to blend
+  if (!pricingFrozen && anchors.length > 0) {
     const blendResult = blendAnchors(anchors, afterAttributes, policy, condition);
     if (blendResult.blendedPrice !== null) {
       anchorBlendedPrice = blendResult.blendedPrice;
@@ -206,6 +217,7 @@ export function generateQuoteBreakdown(input: QuoteBreakdownInput): QuoteBreakdo
     anchorBlendedPrice,
     policyAdjustment,
     finalPrice,
+    pricingFrozen,
   };
 }
 

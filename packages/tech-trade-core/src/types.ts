@@ -171,6 +171,8 @@ export interface QuoteBreakdown {
   anchorBlendedPrice: number | null;
   policyAdjustment: number;
   finalPrice: number;
+  /** Indicates if quote was generated while pricing was halted (kill switch active) */
+  pricingFrozen: boolean;
 }
 
 export interface DeviceQuote {
@@ -300,6 +302,11 @@ export interface MarketIndicators {
   confidence: ConfidenceMetrics;
   momentum: MomentumMetrics;
   generatedAt: Date;
+  /** System status including risk control state */
+  systemStatus: {
+    pricingHalted: boolean;
+    haltReason?: string;
+  };
 }
 
 export interface IndicatorFilters {
@@ -338,6 +345,35 @@ export class VersionConflictError extends Error {
   constructor(anchorId: string) {
     super(`Version conflict for anchor: ${anchorId}`);
     this.name = 'VersionConflictError';
+  }
+}
+
+// ============================================================================
+// Risk Control Types
+// ============================================================================
+
+/**
+ * Configuration for global risk controls
+ * 
+ * When pricingHalted is true:
+ * - Anchor blending is disabled (fallback to manual base prices)
+ * - Bulk/B2B trades are rejected
+ * - B2C quotes still work but marked as pricingFrozen
+ */
+export interface RiskControlConfig {
+  pricingHalted: boolean;
+  haltReason?: string;
+  haltedAt?: Date;
+  haltedBy?: string;
+}
+
+/**
+ * Error thrown when pricing is halted and operation is not allowed
+ */
+export class PricingHaltedError extends Error {
+  constructor(reason?: string) {
+    super(`Pricing halted: ${reason || 'Risk control active'}`);
+    this.name = 'PricingHaltedError';
   }
 }
 
