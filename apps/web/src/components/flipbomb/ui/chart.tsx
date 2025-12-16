@@ -88,16 +88,16 @@ ${colorConfig
   );
 };
 
-type ChartTooltipContentProps = TooltipProps<number, string> &
-  React.ComponentProps<"div"> & {
-    hideLabel?: boolean;
-    hideIndicator?: boolean;
-    indicator?: "line" | "dot" | "dashed";
-    nameKey?: string;
-    labelKey?: string;
-  };
+type ChartTooltipProps = TooltipProps<number, string> & {
+  className?: string;
+  hideLabel?: boolean;
+  hideIndicator?: boolean;
+  indicator?: "line" | "dot" | "dashed";
+  nameKey?: string;
+  labelKey?: string;
+};
 
-const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContentProps>(function ChartTooltipContent(
+const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(function ChartTooltipContent(
   props,
   ref,
 ) {
@@ -223,12 +223,6 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
   },
 );
 ChartTooltipContent.displayName = "ChartTooltip";
-
-type RechartsPayload = TooltipProps<number, string>["payload"];
-
-type ChartTooltipProps = ChartTooltipContentProps & {
-  payload?: RechartsPayload;
-};
 
 export function ChartTooltip(props: ChartTooltipProps) {
   return <ChartTooltipContent {...props} />;
