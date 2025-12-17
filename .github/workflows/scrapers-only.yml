@@ -1,0 +1,39 @@
+name: Scrapers Only (Ruthless Mode)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  scrapers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Build core + scraper
+        run: |
+          pnpm --filter @magnus-flipper-ai/core build
+          pnpm --filter worker-scraper build
+
+      - name: Start scraper (smoke test)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          node apps/worker-scraper/dist/index.js &
+          sleep 10
+
