@@ -104,6 +104,7 @@ jobs:
 
     - name: 📊 DeployGuardian Summary
       if: always()
+      continue-on-error: true
       run: |
         node tools/deployguardian_render_summary.js artifacts/deployguardian.json >> $GITHUB_STEP_SUMMARY
 
