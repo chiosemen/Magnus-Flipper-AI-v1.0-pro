@@ -128,9 +128,8 @@ async function phase1_prismaEnvVerification() {
   
   console.log(`📦 Current Prisma version: ${cleanVersion}`);
   
-  // Check if version is > 7.0.1
-  const versionNum = parseFloat(cleanVersion);
-  if (versionNum > 7.0.1 || (!cleanVersion.startsWith("7.0.1") && cleanVersion !== "7.0.1")) {
+  // Check if version differs from the pinned 7.0.1
+  if (cleanVersion !== "7.0.1" && !cleanVersion.startsWith("7.0.1")) {
     log("⚠️  Prisma version is not 7.0.1. Pinning to 7.0.1...", "🔧");
     const pinResult = applyPrisma701Pin();
     console.log(pinResult);
