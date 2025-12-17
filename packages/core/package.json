@@ -71,6 +71,7 @@
     "dist"
   ],
   "scripts": {
+    "prisma:generate": "prisma generate",
     "prebuild": "echo 'Skipping prisma generate inside Docker build...'",
     "build": "tsc -p tsconfig.json",
     "prepare": "pnpm run build",

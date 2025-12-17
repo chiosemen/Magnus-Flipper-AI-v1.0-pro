@@ -2,9 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --only=production
+# The workspace is already built and Prisma client generated in CI.
+# We only need the built artifacts and runtime deps copied in.
+COPY . .
 
-COPY scraper.js ./scraper.js
-
-CMD ["npm", "start"]
+CMD ["node", "apps/worker/dist/index.js"]

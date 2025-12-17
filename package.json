@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "pnpm --filter @magnus-flipper-ai/core prisma generate",
     "dev": "turbo run dev --parallel",
     "verify:exports": "ts-node tools/verify-workspace-exports.ts",
     "prebuild": "pnpm verify:exports && pnpm --filter '@magnus-flipper-ai/*' build",

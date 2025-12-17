@@ -11,12 +11,10 @@ const nextConfig = {
     SKIP_REDIS: process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV ? 'true' : 'false',
   },
   experimental: {
+    turbo: false, // Disable Turbopack for production builds on Vercel
     serverActions: {
       bodySizeLimit: "2mb",
     },
-  },
-  turbopack: {
-    root: resolve(__dirname, '../..'),
   },
   serverExternalPackages: ['pg', '@prisma/adapter-pg'],
   transpilePackages: [
