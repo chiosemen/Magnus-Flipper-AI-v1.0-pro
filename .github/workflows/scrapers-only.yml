@@ -29,9 +29,12 @@ jobs:
       - name: Build core + scraper
         run: pnpm --filter @magnus-flipper-ai/core build
 
+      - name: Run scrapers
+        run: |
+          pnpm --filter @magnus/worker-scraper run scrape
+
       - name: Scraper smoke test
         run: |
           echo "🔥 Scrapers-only ruthless mode"
           echo "No Terraform. No Prisma. No Infra."
           echo "Build passed."
-
