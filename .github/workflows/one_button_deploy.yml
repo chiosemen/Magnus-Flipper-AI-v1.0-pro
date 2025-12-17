@@ -122,12 +122,10 @@ jobs:
     # -------------------------------
     # 7. Run Prisma Build Surgeon v5
     # -------------------------------
-    - name: 🧬 Prisma Build Surgeon v5 (Backend + Workers + Terraform)
-      id: prisma_v5
+    - name: 🚫 Prisma Build Surgeon (DISABLED)
       run: |
-        echo "🚀 Running Prisma Build Surgeon v5..."
-        node tools/prisma_build_surgeon_v5.js
-      continue-on-error: false
+        echo "🚫 Prisma Build Surgeon disabled by operator"
+        echo "Reason: CI stability + deterministic builds"
 
     # -------------------------------
     # 8. Terraform Drift Surgeon (plan only)
