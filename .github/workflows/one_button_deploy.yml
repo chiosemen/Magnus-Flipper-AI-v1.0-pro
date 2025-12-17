@@ -131,6 +131,11 @@ jobs:
     # 8. Terraform Drift Surgeon (plan only)
     #    v5 already orchestrates, this is an extra safety view.
     # -------------------------------
+    - name: 🏗️ Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
     - name: 🛠 Terraform Drift Surgeon — Plan
       run: |
         echo "🔍 Terraform drift plan..."
