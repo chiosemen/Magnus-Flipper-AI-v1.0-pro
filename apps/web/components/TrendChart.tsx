@@ -50,11 +50,12 @@ export function TrendChart({ data, searchId }: TrendChartProps) {
             label={{ value: "Price", angle: -90, position: "insideLeft" }}
           />
           <Tooltip
-            formatter={(value: number, name: string) => {
+            formatter={(value: number | undefined, name: string) => {
+              if (typeof value !== "number") return ["—", name];
               if (name === "medianPrice") return [`£${value.toFixed(2)}`, "Median Price"];
               if (name === "minPrice") return [`£${value.toFixed(2)}`, "Min Price"];
               if (name === "maxPrice") return [`£${value.toFixed(2)}`, "Max Price"];
-              return [value, name];
+              return [`£${value.toFixed(2)}`, name];
             }}
             labelFormatter={(label) => `Date: ${label}`}
           />
