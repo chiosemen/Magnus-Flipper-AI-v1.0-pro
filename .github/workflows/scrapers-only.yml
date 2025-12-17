@@ -36,6 +36,11 @@ jobs:
         run: pnpm --filter worker-scraper build
 
       - name: Run scrapers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: |
           pnpm --filter worker-scraper run scrape
 
