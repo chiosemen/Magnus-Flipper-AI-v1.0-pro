@@ -5,7 +5,7 @@
 
 import { app, InvocationContext, Timer } from "@azure/functions";
 import { createClient } from "@supabase/supabase-js";
-import { ScraperOrchestrator } from "@magnus-flipper-ai/scraper-sync/orchestrator/scraperOrchestrator";
+import { ScraperOrchestrator } from "@magnus-flipper-ai/scraper-sync";
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
