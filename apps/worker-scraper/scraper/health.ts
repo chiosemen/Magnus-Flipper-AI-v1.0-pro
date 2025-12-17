@@ -3,7 +3,7 @@
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { performHealthCheck } from "@magnus-flipper-ai/core/healthcheck.js";
+import { performHealthCheck } from "@magnus-flipper-ai/core";
 
 export async function healthCheck(
   request: HttpRequest,
@@ -43,4 +43,3 @@ app.http("health", {
   route: "health",
   handler: healthCheck,
 });
-
