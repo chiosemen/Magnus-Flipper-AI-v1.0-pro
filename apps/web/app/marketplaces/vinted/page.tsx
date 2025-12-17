@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Zap } from "lucide-react";
 import Header from "../../../marketing-swoopa/components/Header";

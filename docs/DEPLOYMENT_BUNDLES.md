@@ -379,7 +379,7 @@ app.timer("evaluator", {
   "name": "worker-evaluator",
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc",
+    "build": "pnpm exec tsc",
     "watch": "tsc --watch",
     "clean": "rimraf dist",
     "start": "func start",
@@ -548,7 +548,7 @@ app.timer("autosell", {
   "name": "worker-autosell",
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc",
+    "build": "pnpm exec tsc",
     "watch": "tsc --watch",
     "clean": "rimraf dist",
     "start": "func start",
@@ -648,7 +648,7 @@ app.timer("tracker", {
   "name": "worker-tracker",
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc",
+    "build": "pnpm exec tsc",
     "watch": "tsc --watch",
     "clean": "rimraf dist",
     "start": "func start",

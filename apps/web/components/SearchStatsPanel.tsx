@@ -41,25 +41,8 @@ export default function SearchStatsPanel({ searchId, searchName }: SearchStatsPa
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    if (expanded) {
-      fetchStats();
-    }
-  }, [expanded, searchId]);
-
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/searches/${searchId}/stats`);
-      if (response.ok) {
-        const result = await response.json();
-        setData(result);
-      }
-    } catch (error) {
-      console.error("Failed to fetch search stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setLoading(false);
+  }, [searchId, expanded]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

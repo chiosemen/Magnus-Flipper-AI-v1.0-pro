@@ -60,7 +60,7 @@ export default function SavedSearchesPage() {
       if (res.ok) {
         const data = await res.json();
         // Redirect to mm-agent with jobId to show status
-        window.location.href = `/mm-agent?jobId=${data.jobId}`;
+        window.location.href = `/tech-trade?jobId=${data.jobId}`;
       }
     } catch (error) {
       console.error("Error running search:", error);
@@ -114,7 +114,7 @@ export default function SavedSearchesPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900">Saved Searches</h1>
             <Link
-              href="/mm-agent"
+              href="/tech-trade"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               New Search
@@ -126,7 +126,7 @@ export default function SavedSearchesPage() {
           <div className="bg-white p-8 rounded-lg shadow-sm text-center">
             <p className="text-gray-600 mb-4">No saved searches yet.</p>
             <Link
-              href="/mm-agent"
+              href="/tech-trade"
               className="text-blue-600 hover:text-blue-800 underline"
             >
               Create your first saved search

@@ -1,20 +1,25 @@
-"use client";
-
-import { Sidebar } from "./Sidebar";
-import { TopNav } from "./TopNav";
+import type { ReactNode } from 'react';
+import { Sidebar } from './Sidebar';
+import { TopNav } from './TopNav';
 
 interface AppShellProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
+/**
+ * AppShell - Main application layout wrapper
+ * Uses design tokens from packages/ui/theme/tokens.ts
+ */
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <TopNav />
-      <main className="ml-64 pt-16 min-h-screen">
-        <div className="p-6">{children}</div>
-      </main>
+      <div className="flex-1 flex flex-col">
+        <TopNav />
+        <main className="flex-1 p-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

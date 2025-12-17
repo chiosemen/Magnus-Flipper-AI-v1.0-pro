@@ -25,26 +25,12 @@ interface SavedSearchesListProps {
 }
 
 export default function SavedSearchesList({ marketplace }: SavedSearchesListProps) {
-  const [searches, setSearches] = useState<SavedSearch[]>([]);
+  const [searches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSearches();
+    setLoading(false);
   }, [marketplace]);
-
-  const fetchSearches = async () => {
-    try {
-      const response = await fetch(`/api/searches?marketplace=${marketplace}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSearches(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch searches:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

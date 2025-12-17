@@ -19,41 +19,9 @@ export default function LiveDealsGrid({
   marketplaceSlug,
   limit = 12,
 }: LiveDealsGridProps) {
-  const [deals, setDeals] = useState<LiveDeal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadDeals() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const fetchedDeals = await fetchLiveDeals(marketplaceSlug);
-        if (mounted) {
-          setDeals(fetchedDeals.slice(0, limit));
-          setError(null);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : "Failed to load deals");
-          setDeals([]);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadDeals();
-
-    return () => {
-      mounted = false;
-    };
-  }, [marketplaceSlug, limit]);
+  const [deals] = useState<LiveDeal[]>([]);
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   if (loading) {
     return (

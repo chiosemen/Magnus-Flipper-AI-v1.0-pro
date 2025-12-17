@@ -17,34 +17,9 @@ interface Deal {
 }
 
 export default function VintedDealsList() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchDeals() {
-      try {
-        const response = await fetch("/api/deals?marketplace=vinted&limit=50");
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch deals");
-        }
-
-        const data = await response.json();
-        setDeals(data.deals || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load deals");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchDeals();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchDeals, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const [deals] = useState<Deal[]>([]);
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   if (loading) {
     return (

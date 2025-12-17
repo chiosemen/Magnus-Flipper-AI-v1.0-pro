@@ -55,18 +55,19 @@ export function CreateSearch({ marketplace, onCreated }: CreateSearchProps) {
       const conditionArray = condition === "any" ? undefined : [condition];
 
       // Adapt to existing API: distance -> maxDistanceMiles
-      const res = await fetch("/api/searches", {
+      const res = await fetch("/api/apify/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          marketplace,
-          name,
-          keywords: keywordArray,
-          minPrice: minPrice === "" ? undefined : minPrice,
-          maxPrice: maxPrice === "" ? undefined : maxPrice,
-          maxDistanceMiles: distance === "" ? undefined : distance,
-          condition: conditionArray,
-        }),
+        body: JSON.stringify([
+          {
+            marketplace,
+            query: name,
+            minPrice: minPrice === "" ? undefined : minPrice,
+            maxPrice: maxPrice === "" ? undefined : maxPrice,
+            location: distance === "" ? undefined : distance,
+            condition: conditionArray,
+          },
+        ]),
       });
 
       if (!res.ok) {

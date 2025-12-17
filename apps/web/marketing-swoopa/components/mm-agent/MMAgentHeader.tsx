@@ -20,7 +20,7 @@ export const MMAgentHeader = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/mm-agent" className="flex items-center gap-2">
+          <Link href="/tech-trade" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-mm-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">M</span>
             </div>

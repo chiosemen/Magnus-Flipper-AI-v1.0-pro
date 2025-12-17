@@ -21,8 +21,8 @@
     "@magnus-flipper-ai/core": "workspace:*",
     "@magnus-flipper-ai/deal-engine": "workspace:*",
     "@magnus-flipper-ai/feed-engine": "workspace:*",
-    "@magnus-flipper-ai/profit-engine": "workspace:*",
     "@magnus-flipper-ai/marketplace-config": "workspace:*",
+    "@magnus-flipper-ai/profit-engine": "workspace:*",
     "@magnus-flipper-ai/queue": "workspace:*",
     "@magnus-flipper-ai/shipping-engine": "workspace:*",
     "@magnus-flipper-ai/tech-trade-core": "workspace:*",
@@ -57,13 +57,17 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.87.0",
     "@tanstack/react-query": "^5.90.12",
+    "apify-client": "^2.9.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "cron-parser": "^4.9.0",
+    "dayjs": "^1.11.19",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^11.0.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.554.0",
+    "nanoid": "^5.0.0",
     "next": "16.0.7",
     "next-themes": "^0.4.6",
     "react": "18.3.1",
@@ -75,18 +79,16 @@
     "sonner": "^2.0.7",
     "stripe": "^19.3.1",
     "tailwind-merge": "^3.4.0",
-    "vaul": "^1.1.2",
-    "nanoid": "^5.0.0",
-    "cron-parser": "^4.9.0"
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.1",
-    "@testing-library/react": "^16.0.1",
-    "@testing-library/jest-dom": "^6.6.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/ui": "^2.1.8",
     "jsdom": "^25.0.1",
-    "vitest": "^2.1.8",
-    "@vitest/ui": "^2.1.8"
+    "vitest": "^2.1.8"
   }
 }

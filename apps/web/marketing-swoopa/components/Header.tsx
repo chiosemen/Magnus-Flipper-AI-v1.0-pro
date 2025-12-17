@@ -33,8 +33,8 @@ const Header = () => {
             <Link href="/register" className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors">
               SIGN UP
             </Link>
-            <Link href="/mm-agent" className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors">
-              MM AGENT
+            <Link href="/tech-trade" className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors">
+              TRADE TECH
             </Link>
           </nav>
 

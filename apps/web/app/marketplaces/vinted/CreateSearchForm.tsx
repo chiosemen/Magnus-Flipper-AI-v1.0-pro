@@ -35,23 +35,25 @@ export default function CreateSearchForm() {
         return;
       }
 
-      const response = await fetch("/api/searches", {
+      const response = await fetch("/api/apify/run", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: formData.name || keywords.join(" "),
-          keywords,
-          minPrice: formData.minPrice ? parseFloat(formData.minPrice) : undefined,
-          maxPrice: formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
-          maxDistanceMiles: formData.maxDistanceMiles
-            ? parseFloat(formData.maxDistanceMiles)
-            : undefined,
-          condition:
-            formData.condition.length > 0 ? formData.condition : undefined,
-          marketplace: "vinted",
-        }),
+        body: JSON.stringify([
+          {
+            marketplace: "vinted",
+            query: keywords.join(" "),
+            minPrice: formData.minPrice
+              ? parseFloat(formData.minPrice)
+              : undefined,
+            maxPrice: formData.maxPrice
+              ? parseFloat(formData.maxPrice)
+              : undefined,
+            location: formData.maxDistanceMiles || undefined,
+            country: "UK",
+          },
+        ]),
       });
 
       if (!response.ok) {
