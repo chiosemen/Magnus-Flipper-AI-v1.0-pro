@@ -26,10 +26,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build core + scraper
-        run: |
-          pnpm --filter @magnus-flipper-ai/core build
-          pnpm --filter worker-scraper build
+      - name: Build core
+        run: pnpm --filter @magnus-flipper-ai/core build
+
+      - name: Build scraper-sync
+        run: pnpm --filter @magnus-flipper-ai/scraper-sync build
+
+      - name: Build worker-scraper
+        run: pnpm --filter worker-scraper build
 
       - name: Run scrapers
         run: |
