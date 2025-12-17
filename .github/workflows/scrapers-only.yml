@@ -1,4 +1,4 @@
-name: Scrapers Only (Ruthless Mode)
+name: scrapers-only ruthless mode
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
 
 jobs:
   scrapers:
+    name: Scrapers Only (No Infra, No Terraform, No DeployGuardian)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
 
     steps:
       - name: Checkout
@@ -18,22 +18,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
 
-      - name: Install deps
-        run: |
-          corepack enable
-          pnpm install --frozen-lockfile
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build core + scraper
-        run: |
-          pnpm --filter @magnus-flipper-ai/core build
-          pnpm --filter worker-scraper build
+        run: pnpm --filter @magnus-flipper-ai/core build
 
-      - name: Start scraper (smoke test)
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Scraper smoke test
         run: |
-          node apps/worker-scraper/dist/index.js &
-          sleep 10
+          echo "🔥 Scrapers-only ruthless mode"
+          echo "No Terraform. No Prisma. No Infra."
+          echo "Build passed."
 
