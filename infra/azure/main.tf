@@ -26,8 +26,8 @@ resource "azurerm_container_app" "worker_realtime" {
 
   template {
     container {
-      name   = "worker-realtime"
-      image  = "${data.azurerm_container_registry.acr.login_server}/magnus-worker-realtime:latest"
+      name  = "worker-realtime"
+      image = "${data.azurerm_container_registry.acr.login_server}/magnus-worker-realtime:latest"
 
       cpu    = 0.5
       memory = "1Gi"
@@ -52,7 +52,7 @@ resource "azurerm_container_app" "worker_realtime" {
     external_enabled = false
     target_port      = 3000
     transport        = "auto"
-    
+
     traffic_weight {
       percentage      = 100
       latest_revision = true
@@ -79,8 +79,8 @@ resource "azurerm_container_app" "worker_scheduler" {
 
   template {
     container {
-      name   = "worker-scheduler"
-      image  = "${data.azurerm_container_registry.acr.login_server}/magnus-worker-scheduler:latest"
+      name  = "worker-scheduler"
+      image = "${data.azurerm_container_registry.acr.login_server}/magnus-worker-scheduler:latest"
 
       cpu    = 0.25
       memory = "0.5Gi"
@@ -99,7 +99,7 @@ resource "azurerm_container_app" "worker_scheduler" {
     external_enabled = false
     target_port      = 3000
     transport        = "auto"
-    
+
     traffic_weight {
       percentage      = 100
       latest_revision = true
@@ -128,8 +128,8 @@ resource "azurerm_container_app" "worker_alerts" {
 
   template {
     container {
-      name   = "worker-alerts"
-      image  = "${data.azurerm_container_registry.acr.login_server}/magnus-worker-alerts:latest"
+      name  = "worker-alerts"
+      image = "${data.azurerm_container_registry.acr.login_server}/magnus-worker-alerts:latest"
 
       cpu    = 0.25
       memory = "0.5Gi"
@@ -178,7 +178,7 @@ resource "azurerm_container_app" "worker_alerts" {
     external_enabled = true
     target_port      = 3000
     transport        = "http"
-    
+
     traffic_weight {
       percentage      = 100
       latest_revision = true
