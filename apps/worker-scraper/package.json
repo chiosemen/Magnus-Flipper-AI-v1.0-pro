@@ -9,7 +9,8 @@
     "watch": "tsc --watch",
     "prestart": "npm run build",
     "start": "func start",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "scrape": "node dist/scraper/index.js"
   },
   "dependencies": {
     "@azure/functions": "^4.5.1",
