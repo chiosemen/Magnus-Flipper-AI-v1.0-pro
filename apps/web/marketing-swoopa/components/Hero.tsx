@@ -2,33 +2,46 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
 import { Button } from "../components/ui/button";
 import { Check, Play, Smartphone, Zap, TrendingUp, BarChart3 } from "lucide-react";
 import Image from "next/image";
+import { useRegion } from "@/providers/RegionProvider";
+import { copyForRegion } from "@/lib/copy-config";
+import { useMotionPrefs } from "@/lib/motion";
 
 const Hero = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const reducedMotion = useReducedMotion();
+  const motionPrefs = useMotionPrefs();
+  const enableParallax = !reducedMotion && motionPrefs.canHover;
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+
+  const { region } = useRegion();
+  const copy = copyForRegion(region);
   
   const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [5, -5]));
   const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-5, 5]));
 
   useEffect(() => {
+    if (!enableParallax) {
+      mouseX.set(0);
+      mouseY.set(0);
+      return;
+    }
+
     const handleMouseMove = (e: MouseEvent) => {
       const { clientX, clientY } = e;
       const { innerWidth, innerHeight } = window;
       const x = (clientX / innerWidth - 0.5) * 2;
       const y = (clientY / innerHeight - 0.5) * 2;
-      setMousePosition({ x, y });
       mouseX.set(x);
       mouseY.set(y);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [mouseX, mouseY]);
+  }, [enableParallax, mouseX, mouseY]);
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-20 bg-[#0A0A0A]">
@@ -54,15 +67,6 @@ const Hero = () => {
       {/* Floating icons with parallax */}
       <motion.div
         className="absolute top-20 right-20 w-12 h-12 text-[#00E5FF]/30"
-        animate={{
-          y: [0, -20, 0],
-          rotate: [0, 10, 0],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
         style={{
           x: useTransform(mouseX, [-1, 1], [10, -10]),
         }}
@@ -72,16 +76,6 @@ const Hero = () => {
       
       <motion.div
         className="absolute top-40 left-10 w-10 h-10 text-[#7B2FFF]/30"
-        animate={{
-          y: [0, 15, 0],
-          rotate: [0, -10, 0],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1,
-        }}
         style={{
           x: useTransform(mouseX, [-1, 1], [-15, 15]),
         }}
@@ -91,16 +85,6 @@ const Hero = () => {
       
       <motion.div
         className="absolute bottom-40 left-1/4 w-8 h-8 text-[#00E5FF]/20"
-        animate={{
-          y: [0, -25, 0],
-          rotate: [0, 15, 0],
-        }}
-        transition={{
-          duration: 7,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2,
-        }}
         style={{
           x: useTransform(mouseX, [-1, 1], [20, -20]),
         }}
@@ -123,11 +107,11 @@ const Hero = () => {
             </h1>
             
             <p className="text-white/80 text-lg sm:text-xl mb-8 max-w-xl font-medium break-words">
-              Magnus Flipper automatically scans every marketplace in real-time. Get AI Deal Alerts from Facebook, Craigslist, OfferUp, Kijiji, Gumtree, Nextdoor, and eBay so you message the seller before anyone else even sees the listing.
+              {copy.heroSubtitle}
             </p>
 
             <p className="text-[#00E5FF] font-extrabold tracking-widest text-sm mb-6">
-              DOMINATE WITH MAGNUS FLIPPER
+              {copy.heroMarketplacesLabel}
             </p>
 
             {/* App store buttons */}
@@ -188,7 +172,7 @@ const Hero = () => {
                     <Smartphone className="w-10 h-10 text-white/70" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-extrabold text-white mb-1">Toyota Camry GLE</h4>
+                    <h4 className="font-extrabold text-white mb-1">{copy.heroSampleDealTitle}</h4>
                     <div className="w-24 h-2 bg-white/10 rounded mb-3" />
                     <div className="flex items-center gap-2">
                       <span className="bg-[#00E5FF]/20 text-[#00E5FF] text-xs font-extrabold px-2 py-1 rounded flex items-center gap-1">

@@ -15,6 +15,16 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Safety net: ensure region exists for worker/selector filters (defaults to US).
+  EXECUTE 'ALTER TABLE public.deal_pools ADD COLUMN IF NOT EXISTS region text';
+  EXECUTE $$UPDATE public.deal_pools SET region = COALESCE(region, 'US') WHERE region IS NULL$$;
+  EXECUTE 'ALTER TABLE public.deal_pools ALTER COLUMN region SET DEFAULT ''US''';
+  BEGIN
+    EXECUTE 'ALTER TABLE public.deal_pools ALTER COLUMN region SET NOT NULL';
+  EXCEPTION
+    WHEN others THEN NULL;
+  END;
+
   EXECUTE 'ALTER TABLE public.deal_pools ADD COLUMN IF NOT EXISTS status text';
   EXECUTE 'ALTER TABLE public.deal_pools ADD COLUMN IF NOT EXISTS priority integer';
   EXECUTE 'ALTER TABLE public.deal_pools ADD COLUMN IF NOT EXISTS consecutive_failures integer';
@@ -45,6 +55,10 @@ BEGIN
   EXCEPTION
     WHEN others THEN NULL;
   END;
+
+  -- Region-aware scheduler indexes (idempotent).
+  EXECUTE 'CREATE INDEX IF NOT EXISTS idx_pools_region_marketplace_next_run ON public.deal_pools (region, marketplace, next_run_at)';
+  EXECUTE 'CREATE INDEX IF NOT EXISTS idx_pools_region_enabled_next_run ON public.deal_pools (region, enabled, next_run_at)';
 END $$;
 
 -- Migrate fb_pools rows into deal_pools, preserving UUIDs to avoid rewriting references.
@@ -255,4 +269,3 @@ BEGIN
     EXECUTE 'DROP TABLE public.fb_pools';
   END IF;
 END $$;
-

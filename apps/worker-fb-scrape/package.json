@@ -1,0 +1,26 @@
+{
+  "name": "@magnus-flipper-ai/worker-fb-scrape",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "pnpm exec tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@magnus-flipper-ai/apify": "workspace:*",
+    "@magnus-flipper-ai/budget": "workspace:*",
+    "@magnus-flipper-ai/concurrency": "workspace:*",
+    "@magnus-flipper-ai/plans": "workspace:*",
+    "@magnus-flipper-ai/queue": "workspace:*",
+    "@supabase/supabase-js": "^2.87.0",
+    "bullmq": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
+

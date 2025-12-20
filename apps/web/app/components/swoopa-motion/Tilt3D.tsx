@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useRef } from "react";
 import React from "react";
+import { useMotionPrefs } from "@/lib/motion";
 
 type Tilt3DProps = {
   className?: string;
@@ -15,6 +16,8 @@ export function Tilt3D({
   className = "",
   intensity = 15,
 }: Tilt3DProps) {
+  const motionPrefs = useMotionPrefs();
+  const enableTilt = !motionPrefs.reducedMotion && motionPrefs.canHover;
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -42,6 +45,10 @@ export function Tilt3D({
     y.set(0);
   };
 
+  if (!enableTilt) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       ref={ref}
@@ -59,4 +66,3 @@ export function Tilt3D({
     </motion.div>
   );
 }
-

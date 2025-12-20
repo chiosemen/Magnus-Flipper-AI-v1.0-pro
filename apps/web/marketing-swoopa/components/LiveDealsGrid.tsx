@@ -1,46 +1,116 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { ExternalLink, TrendingUp, MapPin } from "lucide-react";
-import type { LiveDeal } from "../lib/api";
-import { fetchLiveDeals } from "../lib/api";
-import { Card, CardContent } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { cn } from "../lib/utils";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { DealCard } from "./deals/DealCard";
+import { SkeletonDealCard } from "./deals/SkeletonDealCard";
+import { useDealCards } from "./deals/useDealCards";
+import { useViewerTier } from "./deals/useViewerTier";
+import { TierMessage } from "./deals/TierMessage";
+import type { DealCardModel } from "./deals/dealUtils";
+import { DealDetailDrawer } from "./deals/DealDetailDrawer";
+import { MOTION_TRANSITION, useMotionPrefs } from "@/lib/motion";
+import { useMotionSeverity } from "@/lib/motionSeverity";
+import { useMotionDebug } from "@/lib/motionDebug";
+import { useRegion } from "@/providers/RegionProvider";
+import { useHydratedMotionProps } from "@/lib/hydratedMotion";
+import { useIsHydrated } from "@/providers/HydrationProvider";
 
 type LiveDealsGridProps = {
   marketplaceSlug?: string;
+  marketplaces?: string[] | null;
   limit?: number;
+  searchId?: string | null;
+  searchIds?: string[] | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  hideDealers?: boolean;
+  hideSpam?: boolean;
 };
+
+function LiveDealCardItem({
+  deal,
+  tier,
+  motionSeverity,
+  variants,
+  onSelect,
+}: {
+  deal: DealCardModel;
+  tier: ReturnType<typeof useViewerTier>["tier"];
+  motionSeverity: ReturnType<typeof useMotionSeverity>;
+  variants: any;
+  onSelect: (deal: DealCardModel) => void;
+}) {
+  const debug = useMotionDebug({
+    label: `LiveDealsGrid:DealCard`,
+    type: "entry",
+    durationMs: motionSeverity.baseDurationMs,
+    tier: motionSeverity.tier,
+  });
+
+  return (
+    <motion.div
+      className="mb-4 break-inside-avoid"
+      role="button"
+      tabIndex={0}
+      onClickCapture={(e) => {
+        const target = e.target as HTMLElement | null;
+        if (target?.closest?.("a")) return;
+        onSelect(deal);
+      }}
+      onKeyDown={(e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        onSelect(deal);
+      }}
+      variants={variants}
+      {...debug}
+    >
+      <DealCard deal={deal} tier={tier} motion={motionSeverity} />
+    </motion.div>
+  );
+}
 
 export default function LiveDealsGrid({
   marketplaceSlug,
+  marketplaces,
   limit = 12,
+  searchId,
+  searchIds,
+  minPrice,
+  maxPrice,
+  hideDealers,
+  hideSpam,
 }: LiveDealsGridProps) {
-  const [deals] = useState<LiveDeal[]>([]);
-  const [loading] = useState(false);
-  const [error] = useState<string | null>(null);
+  const { deals, loading, error } = useDealCards({
+    marketplaceSlug,
+    marketplaces,
+    limit,
+    searchId,
+    searchIds,
+    minPrice,
+    maxPrice,
+    hideDealers,
+    hideSpam,
+  });
+  const { tier } = useViewerTier();
+  const [detailDeal, setDetailDeal] = useState<DealCardModel | null>(null);
+  const motionPrefs = useMotionPrefs();
+  const motionSeverity = useMotionSeverity(tier);
+  const { region } = useRegion();
+  const hydrated = useIsHydrated();
+  const hasAnimatedOnceRef = useRef(false);
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(6)].map((_, i) => (
-          <Card
-            key={i}
-            className="border border-white/10 bg-gradient-to-br from-[#121212] via-[#0A0A0A] to-[#121212] animate-pulse"
-          >
-            <CardContent className="p-4">
-              <div className="h-4 bg-white/10 rounded mb-3 w-3/4" />
-              <div className="h-3 bg-white/10 rounded mb-2 w-1/2" />
-              <div className="h-3 bg-white/10 rounded w-2/3" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!hasAnimatedOnceRef.current && deals.length > 0) {
+      hasAnimatedOnceRef.current = true;
+    }
+  }, [deals.length]);
+
+  const skeletonCount = useMemo(() => {
+    const base = Math.max(6, Math.min(12, Math.floor(limit)));
+    return base;
+  }, [limit]);
 
   if (error) {
     return (
@@ -53,90 +123,104 @@ export default function LiveDealsGrid({
     );
   }
 
-  if (deals.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-white/70 font-medium mb-2">
-          No live deals found
-          {marketplaceSlug ? ` for this marketplace` : " at this time"}.
-        </p>
-        <p className="text-white/50 text-sm">
-          Check back soon for new opportunities.
-        </p>
-      </div>
-    );
-  }
+  const showSkeleton = deals.length === 0;
+  const shouldAnimateCards =
+    hydrated && !motionPrefs.reducedMotion && !hasAnimatedOnceRef.current && !showSkeleton;
+
+  const debugSkeleton = useMotionDebug({
+    label: "LiveDealsGrid:Skeleton",
+    type: "transition",
+    durationMs: motionSeverity.baseDurationMs,
+    tier: motionSeverity.tier,
+  });
+  const debugDeals = useMotionDebug({
+    label: "LiveDealsGrid:Deals",
+    type: "transition",
+    durationMs: motionSeverity.baseDurationMs,
+    tier: motionSeverity.tier,
+  });
+
+  const containerVariants = {
+    hidden: {},
+    show: {
+      transition: {
+        staggerChildren: motionSeverity.staggerSec,
+      },
+    },
+  } as const;
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 8 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { ...MOTION_TRANSITION.fadeUpFast, duration: motionSeverity.durationSec },
+    },
+  } as const;
+
+  const fadeMotionProps = useHydratedMotionProps(
+    motionPrefs.reducedMotion
+      ? {}
+      : {
+          initial: { opacity: 0 },
+          animate: { opacity: 1 },
+          exit: { opacity: 0 },
+          transition: { ...MOTION_TRANSITION.fade, duration: motionSeverity.durationSec },
+        }
+  );
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {deals.map((deal, index) => (
-        <motion.div
-          key={deal.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05, duration: 0.3 }}
-        >
-          <Card className="group relative flex h-full flex-col border border-white/10 bg-gradient-to-br from-[#121212] via-[#0A0A0A] to-[#121212] shadow-[0_0_25px_rgba(0,0,0,0.9)] transition hover:-translate-y-1 hover:border-[#00E5FF]/80 hover:shadow-[0_0_40px_rgba(0,229,255,0.8)]">
-            <CardContent className="flex flex-1 flex-col justify-between gap-3 p-4">
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="text-sm font-extrabold text-white tracking-tight line-clamp-2 flex-1">
-                    {deal.title}
-                  </h3>
-                  {deal.profitEstimate && deal.profitEstimate > 0 && (
-                    <span className="flex-shrink-0 inline-flex items-center gap-1 bg-[#00E5FF]/20 text-[#00E5FF] text-[10px] font-extrabold px-2 py-1 rounded">
-                      <TrendingUp className="w-3 h-3" />
-                      +${deal.profitEstimate.toLocaleString()}
-                    </span>
-                  )}
-                </div>
+    <div className="space-y-3">
+      <AnimatePresence initial={false} mode="wait">
+        {showSkeleton ? (
+          <motion.div
+            key={`skeleton-${region}`}
+            className="space-y-4"
+            {...fadeMotionProps}
+            {...debugSkeleton}
+          >
+            <div className="text-white/70 text-sm font-medium">
+              Market is warming up — scanning for fresh opportunities.
+            </div>
+            <TierMessage tier={tier} />
+            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]">
+              {Array.from({ length: skeletonCount }).map((_, idx) => (
+                <SkeletonDealCard key={`skeleton-${idx}`} />
+              ))}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key={`deals-${region}`}
+            className="space-y-3"
+            {...fadeMotionProps}
+            {...debugDeals}
+          >
+            <TierMessage tier={tier} />
+            <motion.div
+              className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]"
+              variants={containerVariants}
+              initial={shouldAnimateCards ? "hidden" : false}
+              animate={shouldAnimateCards ? "show" : undefined}
+            >
+              {deals.map((deal) => (
+                <LiveDealCardItem
+                  key={deal.id}
+                  deal={deal}
+                  tier={tier}
+                  motionSeverity={motionSeverity}
+                  variants={itemVariants}
+                  onSelect={setDetailDeal}
+                />
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                <div className="flex items-center gap-2 text-[11px] text-white/70 font-medium mb-2">
-                  <span className="inline-flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#00E5FF]" />
-                    {deal.marketplace}
-                  </span>
-                  {deal.location && (
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {deal.location}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-baseline gap-2">
-                  <span className="text-base font-extrabold text-white">
-                    {deal.currency || "$"}
-                    {deal.currentPrice.toLocaleString()}
-                  </span>
-                  {deal.previousPrice && deal.previousPrice > deal.currentPrice && (
-                    <span className="text-xs text-white/50 line-through">
-                      {deal.currency || "$"}
-                      {deal.previousPrice.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <Button
-                asChild
-                size="sm"
-                className="w-full bg-[#121212] text-white hover:bg-[#121212]/80 border border-white/10 hover:border-[#00E5FF]/50 transition-all text-xs font-extrabold"
-              >
-                <a
-                  href={deal.url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="flex items-center justify-center gap-2"
-                >
-                  View listing
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
+      {detailDeal && (
+        <DealDetailDrawer deal={detailDeal} onClose={() => setDetailDeal(null)} />
+      )}
     </div>
   );
 }

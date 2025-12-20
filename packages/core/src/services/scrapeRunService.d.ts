@@ -2,11 +2,12 @@ export interface ScrapeRun {
     id: string;
     marketplace: string;
     userId?: string | null;
-    outcome: string;
-    listingsFound: number;
-    listingsProcessed: number;
-    errors?: string | null;
-    metadata?: any;
+    savedSearchId?: string | null;
+    tier?: string | null;
+    success: boolean;
+    durationMs?: number | null;
+    errorCode?: string | null;
+    errorMessage?: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

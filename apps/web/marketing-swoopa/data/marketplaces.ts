@@ -35,6 +35,13 @@ export const MARKETPLACE_PROFILES: MarketplaceProfile[] = [
     marketplaceId: "facebook",
   },
   {
+    name: "Car Trade",
+    slug: "cars",
+    tagline: "Used car deals before anyone else",
+    refresh: "Every 60s",
+    marketplaceId: "cars",
+  },
+  {
     name: "Craigslist",
     slug: "craigslist",
     tagline: "Big-ticket local arbitrage",

@@ -1,10 +1,17 @@
 "use client";
 
 import { Star } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { testimonials } from "../data/testimonials";
+import { useRegion } from "@/providers/RegionProvider";
+import { copyForRegion } from "@/lib/copy-config";
 
 const Testimonials = () => {
+  const reducedMotion = useReducedMotion();
+  const { region } = useRegion();
+  const copy = copyForRegion(region);
+  const visible = testimonials.filter((t) => !t.regions || t.regions.includes(region));
+
   return (
     <section className="relative py-24 lg:py-32 overflow-hidden bg-[#0A0A0A]">
       {/* Background elements */}
@@ -15,20 +22,20 @@ const Testimonials = () => {
         {/* Section header */}
         <div className="text-center mb-16">
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-            Close the deal before your competition even sees it
+            {copy.testimonialsHeading}
           </h2>
         </div>
 
         {/* Testimonial cards - Horizontal scroll carousel */}
         <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
           <div className="flex gap-6 md:grid md:grid-cols-2 md:max-w-5xl md:mx-auto">
-            {testimonials.map((testimonial, index) => (
+            {visible.map((testimonial, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={reducedMotion ? false : { opacity: 0, x: -20 }}
+                whileInView={reducedMotion ? undefined : { opacity: 1, x: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
-                transition={{ delay: index * 0.15, duration: 0.5 }}
+                transition={reducedMotion ? undefined : { delay: index * 0.15, duration: 0.5 }}
                 className="relative gradient-card rounded-2xl p-8 lg:p-10 border border-white/10 hover:border-[#00E5FF]/30 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,229,255,0.4)] min-w-[300px] md:min-w-0 flex-shrink-0 md:flex-shrink"
               >
               {/* Stars */}

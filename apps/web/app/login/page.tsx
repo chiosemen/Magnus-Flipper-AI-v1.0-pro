@@ -1,14 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { FloatingParticles } from "../components/swoopa-motion/FloatingParticles";
 import { SwoopaAIOrb } from "../components/swoopa-ultra/SwoopaAIOrb";
 import { LiquidMetalButton } from "../components/swoopa-ultra/LiquidMetalButton";
 import { NeonCard } from "../components/swoopa-ultra/NeonCard";
 
 export default function LoginPage() {
-  const [isTyping, setIsTyping] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-purple-950/30 via-blue-950/20 to-black text-white flex items-center justify-center px-6 relative overflow-hidden">
@@ -16,30 +15,8 @@ export default function LoginPage() {
       <FloatingParticles layerCount={4} particlesPerLayer={15} speed={0.15} color="rgba(147, 51, 234, 0.2)" />
 
       {/* Nebula Gradient Layers */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-radial from-purple-900/30 via-blue-900/20 to-transparent"
-        animate={{
-          opacity: [0.3, 0.5, 0.3],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute inset-0 bg-gradient-radial from-cyan-900/20 via-transparent to-purple-900/20"
-        animate={{
-          opacity: [0.2, 0.4, 0.2],
-          scale: [1, 1.2, 1],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
+      <div className="absolute inset-0 bg-gradient-radial from-purple-900/30 via-blue-900/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-radial from-cyan-900/20 via-transparent to-purple-900/20" />
 
       {/* AI Guardian Orb */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 opacity-30 pointer-events-none">
@@ -47,8 +24,8 @@ export default function LoginPage() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        initial={reducedMotion ? false : { opacity: 0, y: 30, scale: 0.95 }}
+        animate={reducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
         className="w-full max-w-md relative z-10"
       >
         <NeonCard
@@ -61,31 +38,19 @@ export default function LoginPage() {
           </h1>
           <p className="text-neutral-300 mb-8">Sign in to your Magnus account</p>
           <form className="flex flex-col gap-5">
-            <motion.input
+            <input
               type="email"
               placeholder="Email address"
               className="bg-black/50 border border-purple-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition"
-              whileHover={{ scale: 1.02 }}
-              whileFocus={{ scale: 1.02 }}
-              onFocus={() => setIsTyping(true)}
-              onBlur={() => setIsTyping(false)}
-              animate={isTyping ? { boxShadow: "0 0 20px rgba(147, 51, 234, 0.5)" } : {}}
             />
-            <motion.input
+            <input
               type="password"
               placeholder="Password"
               className="bg-black/50 border border-purple-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition"
-              whileHover={{ scale: 1.02 }}
-              whileFocus={{ scale: 1.02 }}
-              onFocus={() => setIsTyping(true)}
-              onBlur={() => setIsTyping(false)}
-              animate={isTyping ? { boxShadow: "0 0 20px rgba(59, 130, 246, 0.5)" } : {}}
             />
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <LiquidMetalButton variant="primary" className="w-full">
-                Sign In
-              </LiquidMetalButton>
-            </motion.div>
+            <LiquidMetalButton variant="primary" className="w-full">
+              Sign In
+            </LiquidMetalButton>
           </form>
           <p className="text-neutral-300 mt-8 text-center">
             Don't have an account?{" "}

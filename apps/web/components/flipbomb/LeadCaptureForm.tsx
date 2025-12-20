@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/flipbomb/ui/button";
 import { Input } from "@/components/flipbomb/ui/input";
 import { Label } from "@/components/flipbomb/ui/label";
@@ -26,9 +26,9 @@ interface LeadCaptureFormProps {
   onSuccess: (jobId: string) => void;
 }
 
-export function LeadCaptureForm({ formRef, onSuccess }: LeadCaptureFormProps) {
+export function LeadCaptureForm({ formRef, onSuccess: _onSuccess }: LeadCaptureFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { trackFormSubmit, trackConversion, trackFailure } = useConversionPath();
+  const { trackFailure } = useConversionPath();
 
   const [formData, setFormData] = useState<FlipbombScanPayload>({
     brand: "",
@@ -54,56 +54,15 @@ export function LeadCaptureForm({ formRef, onSuccess }: LeadCaptureFormProps) {
     setIsSubmitting(true);
 
     try {
-      // Build query string
-      const query = `${formData.brand} ${formData.model}`.trim();
-
-      // Prepare payload for /api/ingest/run
-      const payload = {
-        query,
-        region: formData.region || "US",
-        marketplaces: ["facebook"] as const,
-        maxPrice: formData.maxPrice ? Number(formData.maxPrice) : undefined,
-        source: "flipbomb-marketing",
-      };
-
-      const response = await fetch("/api/ingest/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to start deal scan");
-      }
-
-      const result = await response.json();
-      const jobId = result.jobId;
-
-      // Track analytics
-      recordEvent("flipbomb_scan_started", {
+      // Guardrail: UI must never trigger scraping. Flipbomb "scan" is deprecated in pooled mode.
+      toast.error("Live scans are disabled. Create a saved search in the Marketplace page instead.");
+      recordEvent("flipbomb_scan_blocked", {
         brand: formData.brand,
         model: formData.model,
         condition: formData.condition,
         maxPrice: formData.maxPrice,
-        jobId,
       });
-
-      // Track conversion
-      trackFormSubmit("flipbomb_scan");
-      trackConversion({
-        type: "scan_started",
-        value: formData.maxPrice,
-        metadata: {
-          brand: formData.brand,
-          model: formData.model,
-          condition: formData.condition,
-          jobId,
-        },
-      });
-
-      toast.success("Deal scan started successfully!");
-      onSuccess(jobId);
+      return;
     } catch (error) {
       console.error("Scan submission error:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to start deal scan";

@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { Button } from "../components/ui/button";
+import { useRegion } from "@/providers/RegionProvider";
+import { copyForRegion } from "@/lib/copy-config";
 
 const CTA = () => {
+  const { region } = useRegion();
+  const copy = copyForRegion(region);
+
   return (
     <section className="relative py-24 lg:py-32 overflow-hidden bg-[#0A0A0A]">
       {/* Background */}
@@ -13,11 +18,11 @@ const CTA = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-white mb-6 tracking-tight">
-            Get AI Deal Alerts so you can contact sellers within seconds
+            {copy.ctaHeading}
           </h2>
           
           <p className="text-white/80 text-lg lg:text-xl mb-10 max-w-3xl mx-auto leading-relaxed font-medium">
-            Forget jumping between Facebook Marketplace, Craigslist, OfferUp, and countless other sites. Magnus Flipper automatically scans every marketplace in real-time and pulls new listings from all your favorite marketplaces into one reliable feed.
+            {copy.ctaBody}
           </p>
 
           {/* App store buttons */}
@@ -49,7 +54,7 @@ const CTA = () => {
 
           {/* Trust text */}
           <p className="text-white/80 text-sm font-medium">
-            Join thousands of flippers who never miss a deal
+            {copy.ctaTrustLine}
           </p>
         </div>
       </div>

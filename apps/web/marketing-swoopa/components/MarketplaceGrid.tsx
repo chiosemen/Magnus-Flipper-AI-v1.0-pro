@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { MARKETPLACE_PROFILES } from "../data/marketplaces";
+import { getSupportedMarketplacesForRegion } from "@magnus-flipper-ai/marketplace-config";
+import { useRegion } from "@/providers/RegionProvider";
 
 const MarketplaceGrid = () => {
+  const reducedMotion = useReducedMotion();
+  const { region } = useRegion();
+  const includeOptional = process.env.NEXT_PUBLIC_ENABLE_SHPOCK === "true";
+  const supported = new Set(getSupportedMarketplacesForRegion(region, { includeOptional }));
+  const visible = MARKETPLACE_PROFILES.filter((p) => supported.has(p.slug));
+
   return (
     <section
       id="marketplaces"
@@ -32,13 +40,13 @@ const MarketplaceGrid = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 max-w-full overflow-hidden">
-        {MARKETPLACE_PROFILES.map((mkt, idx) => (
+        {visible.map((mkt, idx) => (
           <motion.div
             key={mkt.slug}
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+            whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: idx * 0.03, duration: 0.35 }}
+            transition={reducedMotion ? undefined : { delay: idx * 0.03, duration: 0.35 }}
           >
             <Link href={`/marketplaces/${mkt.slug}`} className="block h-full">
               <Card className="group relative flex h-full flex-col border border-white/10 bg-gradient-to-br from-[#121212] via-[#0A0A0A] to-[#121212] shadow-[0_0_25px_rgba(0,0,0,0.9)] transition hover:-translate-y-1 hover:border-[#00E5FF]/80 hover:shadow-[0_0_40px_rgba(0,229,255,0.8)]">

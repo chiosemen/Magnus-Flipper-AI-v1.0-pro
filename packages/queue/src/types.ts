@@ -73,3 +73,44 @@ export interface DealerJob {
   email?: string;
   phone?: string;
 }
+
+/**
+ * Facebook pool scheduler jobs.
+ *
+ * Guardrails:
+ * - These jobs schedule/execute pooled scraping, not per-user scraping.
+ * - Pricing/billing is unrelated; never embed currency conversion logic here.
+ */
+export type FbScrapeJob = {
+  type: "SCRAPE_FB_POOL";
+  poolId: string;
+  // Optional: user-triggered priority refresh (instant/timed) for metering/concurrency enforcement.
+  requestedByUserId?: string;
+  isInstant?: boolean;
+};
+
+export type SchedulerTickJob = {
+  type: "SCHEDULER_TICK";
+};
+
+/**
+ * User alert dispatch jobs (pooled deals -> user notifications).
+ *
+ * Guardrails:
+ * - Must never trigger scraping.
+ * - Must operate only on existing pooled deals + saved_searches intent.
+ */
+export type AlertDispatchJob =
+  | {
+      type: "ALERT_DISPATCH_DEAL";
+      marketplace: string;
+      listingId: string;
+      dealId?: string;
+    }
+  | {
+      type: "ALERT_DISPATCH_BATCH";
+      marketplace: string;
+      listingIds: string[];
+    };
+
+export type QueueJob = FbScrapeJob | SchedulerTickJob | AlertDispatchJob;

@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/providers/AuthProvider";
+import { useRegion } from "@/providers/RegionProvider";
 import { Button } from "../../../marketing-swoopa/components/ui/button";
+import { toast } from "../../../marketing-swoopa/components/ui/use-toast";
+import type { SavedSearchRow } from "../../../lib/supabase/types";
 
 type Props = {
-  onSearchCreated?: (runs: any[]) => void;
+  onSearchCreated?: (search: SavedSearchRow) => void;
   disabled?: boolean;
+  initialKeywords?: string;
 };
 
-export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
+export default function CreateSearchForm({
+  onSearchCreated,
+  disabled,
+  initialKeywords,
+}: Props) {
+  const { user, openAuthModal } = useAuth();
+  const { region } = useRegion();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,12 +27,22 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
   
   const [formData, setFormData] = useState({
     name: "",
-    keywords: "",
+    keywords: typeof initialKeywords === "string" ? initialKeywords : "",
     minPrice: "",
     maxPrice: "",
     maxDistanceMiles: "",
     condition: [] as string[],
   });
+
+  useEffect(() => {
+    if (
+      typeof initialKeywords === "string" &&
+      initialKeywords.trim().length > 0 &&
+      formData.keywords.trim().length === 0
+    ) {
+      setFormData((prev) => ({ ...prev, keywords: initialKeywords.trim() }));
+    }
+  }, [formData.keywords, initialKeywords]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +51,16 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
       setStep((s) => Math.min(5, s + 1));
       return;
     }
+
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Sign in to save searches and start monitoring.",
+      });
+      openAuthModal("login");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -46,34 +77,42 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
         return;
       }
 
-      const response = await fetch("/api/apify/run", {
+      const response = await fetch(`/api/searches?region=${encodeURIComponent(region)}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify([
-          {
-            marketplace: "facebook",
-            query: keywords.join(" "),
-            minPrice: formData.minPrice
-              ? parseFloat(formData.minPrice)
-              : undefined,
-            maxPrice: formData.maxPrice
-              ? parseFloat(formData.maxPrice)
-              : undefined,
-            location: formData.maxDistanceMiles || undefined,
-          },
-        ]),
+        body: JSON.stringify({
+          name: formData.name,
+          keywords,
+          minPrice: formData.minPrice
+            ? parseFloat(formData.minPrice)
+            : undefined,
+          maxPrice: formData.maxPrice
+            ? parseFloat(formData.maxPrice)
+            : undefined,
+          maxDistanceMiles: formData.maxDistanceMiles
+            ? parseFloat(formData.maxDistanceMiles)
+            : undefined,
+          condition: formData.condition,
+        }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create search");
+        const data = await response.json().catch(() => ({}));
+        const message = (data as any)?.error || "Failed to create search";
+        toast({
+          title: "Unable to save search",
+          description: message,
+        });
+        throw new Error(message);
       }
 
       const data = await response.json();
-      setSuccess(true);
-      onSearchCreated?.(data.runs || []);
+      if (data?.search) {
+        onSearchCreated?.(data.search as SavedSearchRow);
+      }
+      setSuccess(false);
       setFormData({
         name: "",
         keywords: "",
@@ -82,11 +121,21 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
         maxDistanceMiles: "",
         condition: [],
       });
+      setStep(1);
 
-      // Refresh page after 1 second to show new search
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      toast({
+        title: "Search saved",
+        description: "Your search will monitor the live market pool automatically.",
+      });
+
+      try {
+        document
+          .getElementById("saved-searches")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch {
+        // Ignore scroll errors
+      }
+
     } catch (err: any) {
       setError(err.message || "Failed to create search");
     } finally {

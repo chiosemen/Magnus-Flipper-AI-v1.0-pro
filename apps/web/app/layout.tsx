@@ -9,8 +9,24 @@ import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
 import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@magnus-flipper-ai/ui/providers";
+import { AuthProvider } from "@/providers/AuthProvider";
+import { HelpWidget } from "@/components/HelpWidget";
+import { RegionProvider } from "@/providers/RegionProvider";
+import { HydrationProvider } from "@/providers/HydrationProvider";
+import dynamic from "next/dynamic";
 
 const queryClient = new QueryClient();
+
+const MotionDebugOverlay =
+  process.env.NODE_ENV === "development"
+    ? dynamic(
+        () =>
+          import("@/components/dev/MotionDebugOverlay").then(
+            (m) => m.MotionDebugOverlay
+          ),
+        { ssr: false }
+      )
+    : () => null;
 
 export default function RootLayout({ children }: any) {
   return (
@@ -33,13 +49,21 @@ export default function RootLayout({ children }: any) {
         }}
       >
         <ThemeProvider defaultTheme="dark">
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              {children as React.ReactNode}
-            </TooltipProvider>
-          </QueryClientProvider>
+          <HydrationProvider>
+            <AuthProvider>
+              <RegionProvider>
+                <QueryClientProvider client={queryClient}>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    {children as React.ReactNode}
+                    <HelpWidget />
+                    <MotionDebugOverlay />
+                  </TooltipProvider>
+                </QueryClientProvider>
+              </RegionProvider>
+            </AuthProvider>
+          </HydrationProvider>
         </ThemeProvider>
       </body>
     </html>

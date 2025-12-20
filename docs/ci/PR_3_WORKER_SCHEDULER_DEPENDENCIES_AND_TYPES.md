@@ -16,7 +16,7 @@ Add missing dependencies (axios, cheerio) and fix TypeScript type errors.
     "scripts": {
       "dev": "tsx watch src/index.ts",
       "start": "node dist/index.js",
-      "build": "tsc",
+      "build": "pnpm exec tsc",
       "test": "echo \"No tests yet\""
     },
     "dependencies": {

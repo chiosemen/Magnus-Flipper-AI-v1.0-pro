@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
+import { useEffect } from "react";
+import { useMotionPrefs } from "@/lib/motion";
 
 interface OrbitCarouselProps {
   items: string[];
@@ -14,14 +15,30 @@ export function OrbitCarousel({
   radius = 150,
   speed = 1,
 }: OrbitCarouselProps) {
-  const [rotation, setRotation] = useState(0);
+  const reducedMotion = useReducedMotion();
+  const motionPrefs = useMotionPrefs();
+  const rotation = useMotionValue(0);
+  const counterRotation = useTransform(rotation, (v) => -v);
+  const allowMotion = !reducedMotion && motionPrefs.canHover;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRotation((prev) => prev + speed * 0.5);
-    }, 50);
-    return () => clearInterval(interval);
-  }, [speed]);
+    if (!allowMotion) {
+      rotation.set(0);
+      return;
+    }
+
+    const safeSpeed = Number.isFinite(speed) ? Math.max(0.1, speed) : 1;
+    // Historical behavior: +0.5deg every 50ms at speed=1 ≈ 10deg/s → 36s per rotation.
+    const durationSec = 36 / safeSpeed;
+
+    const controls = animate(rotation, 360, {
+      duration: durationSec,
+      ease: "linear",
+      repeat: Infinity,
+    });
+
+    return () => controls.stop();
+  }, [allowMotion, rotation, speed]);
 
   return (
     <div className="relative w-full h-96 flex items-center justify-center">
@@ -30,7 +47,7 @@ export function OrbitCarousel({
         style={{
           width: radius * 2,
           height: radius * 2,
-          rotateZ: rotation,
+          rotateZ: allowMotion ? rotation : 0,
         }}
       >
         {items.map((item, i) => {
@@ -46,9 +63,9 @@ export function OrbitCarousel({
               style={{
                 x: x - 50,
                 y: y - 25,
-                rotateZ: -rotation,
+                rotateZ: allowMotion ? counterRotation : 0,
               }}
-              whileHover={{ scale: 1.2, z: 50 }}
+              whileHover={allowMotion ? { scale: 1.2, z: 50 } : undefined}
             >
               <div className="w-24 h-12 bg-gradient-to-br from-purple-900/50 to-blue-900/50 border border-purple-500/30 rounded-lg flex items-center justify-center text-sm text-neutral-200 backdrop-blur-sm">
                 {item}
@@ -61,4 +78,3 @@ export function OrbitCarousel({
     </div>
   );
 }
-

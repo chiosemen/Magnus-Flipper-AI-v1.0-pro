@@ -16,7 +16,9 @@
       "@magnus-flipper-ai/core/*": ["../core/dist/*"],
       "@magnus-flipper-ai/marketplace-config": ["../marketplace-config/dist/index"],
       "@magnus-flipper-ai/compliance-shield": ["../compliance-shield/dist/index"],
-      "@magnus-flipper-ai/compliance-shield/*": ["../compliance-shield/dist/*"]
+      "@magnus-flipper-ai/compliance-shield/*": ["../compliance-shield/dist/*"],
+      "@magnus-flipper-ai/scoring": ["../scoring/dist/index"],
+      "@magnus-flipper-ai/scoring/*": ["../scoring/dist/*"]
     }
   },
   "include": [

@@ -20,6 +20,7 @@ export interface EmailAlert {
     marketplace: string;
     url: string;
     imageUrl?: string;
+    primaryImageUrl?: string | null;
   };
   search: {
     name: string;
@@ -111,6 +112,8 @@ export async function sendAlertEmail(alert: EmailAlert): Promise<{
  * Generate HTML email template for alert
  */
 export function generateAlertEmailHTML(alert: EmailAlert): string {
+  const imageUrl = alert.listing.primaryImageUrl ?? alert.listing.imageUrl;
+
   return `
 <!DOCTYPE html>
 <html>
@@ -215,7 +218,13 @@ export function generateAlertEmailHTML(alert: EmailAlert): string {
     </div>
 
     <div class="listing">
-      ${alert.listing.imageUrl ? `<img src="${alert.listing.imageUrl}" alt="${alert.listing.title}" class="listing-image">` : ''}
+      ${
+        imageUrl
+          ? `<p style="margin: 0 0 12px 0; font-size: 12px; color: #666;">
+               <strong>Image:</strong> <a href="${imageUrl}" style="color: #00E5FF;">View image</a>
+             </p>`
+          : ""
+      }
       
       <h2 class="listing-title">${alert.listing.title}</h2>
       
@@ -247,6 +256,8 @@ export function generateAlertEmailHTML(alert: EmailAlert): string {
  * Generate plain text version of alert email
  */
 export function generateAlertEmailText(alert: EmailAlert): string {
+  const imageUrl = alert.listing.primaryImageUrl ?? alert.listing.imageUrl;
+
   return `
 New Match Found!
 
@@ -255,6 +266,7 @@ A listing matching your search "${alert.search.name}" was just found.
 ${alert.listing.title}
 Price: $${alert.listing.price.toFixed(2)}
 Marketplace: ${alert.listing.marketplace}
+${imageUrl ? `Image: ${imageUrl}` : ""}
 
 View listing: ${alert.listing.url}
 

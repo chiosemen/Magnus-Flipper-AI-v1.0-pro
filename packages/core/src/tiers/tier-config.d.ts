@@ -27,14 +27,10 @@ export declare const TIER_CONFIG: Record<TierName, TierLimits>;
  */
 export declare function getTierLimits(tier?: TierName): TierLimits;
 /**
- * Get user's tier from subscription or role
- * Priority: Subscription status > Role > Default (free)
+ * Get user's tier from role
+ * Priority: Role > Default (free)
  */
 export declare function getUserTier(user: {
-    subscription?: {
-        plan: string;
-        status: string;
-    } | null;
     role?: string;
 }): TierName;
 /**

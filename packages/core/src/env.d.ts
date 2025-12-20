@@ -7,7 +7,7 @@ export declare const apiEnvSchema: z.ZodObject<{
     SUPABASE_URL: z.ZodString;
     SUPABASE_ANON_KEY: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    LOG_LEVEL: "error" | "info" | "warn" | "debug";
+    LOG_LEVEL: "info" | "error" | "warn" | "debug";
     NODE_ENV: "production" | "development" | "test";
     PORT: string;
     SUPABASE_URL: string;
@@ -15,7 +15,7 @@ export declare const apiEnvSchema: z.ZodObject<{
 }, {
     SUPABASE_URL: string;
     SUPABASE_ANON_KEY: string;
-    LOG_LEVEL?: "error" | "info" | "warn" | "debug" | undefined;
+    LOG_LEVEL?: "info" | "error" | "warn" | "debug" | undefined;
     NODE_ENV?: "production" | "development" | "test" | undefined;
     PORT?: string | undefined;
 }>;
@@ -26,14 +26,14 @@ export declare const workerEnvSchema: z.ZodObject<{
     SUPABASE_URL: z.ZodString;
     SUPABASE_ANON_KEY: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    LOG_LEVEL: "error" | "info" | "warn" | "debug";
+    LOG_LEVEL: "info" | "error" | "warn" | "debug";
     NODE_ENV: "production" | "development" | "test";
     SUPABASE_URL: string;
     SUPABASE_ANON_KEY: string;
 }, {
     SUPABASE_URL: string;
     SUPABASE_ANON_KEY: string;
-    LOG_LEVEL?: "error" | "info" | "warn" | "debug" | undefined;
+    LOG_LEVEL?: "info" | "error" | "warn" | "debug" | undefined;
     NODE_ENV?: "production" | "development" | "test" | undefined;
 }>;
 export declare const botEnvSchema: z.ZodObject<{
@@ -43,13 +43,13 @@ export declare const botEnvSchema: z.ZodObject<{
     TELEGRAM_BOT_TOKEN: z.ZodString;
     TELEGRAM_CHAT_ID: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    LOG_LEVEL: "error" | "info" | "warn" | "debug";
+    LOG_LEVEL: "info" | "error" | "warn" | "debug";
     NODE_ENV: "production" | "development" | "test";
     TELEGRAM_BOT_TOKEN: string;
     TELEGRAM_CHAT_ID?: string | undefined;
 }, {
     TELEGRAM_BOT_TOKEN: string;
-    LOG_LEVEL?: "error" | "info" | "warn" | "debug" | undefined;
+    LOG_LEVEL?: "info" | "error" | "warn" | "debug" | undefined;
     NODE_ENV?: "production" | "development" | "test" | undefined;
     TELEGRAM_CHAT_ID?: string | undefined;
 }>;

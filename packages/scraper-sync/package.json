@@ -6,11 +6,13 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./orchestrator/scraperOrchestrator": "./dist/orchestrator/scraperOrchestrator.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "pnpm exec tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "poll:active-searches": "node dist/scripts/pollActiveSearches.js"
@@ -22,6 +24,7 @@
     "@magnus-flipper-ai/compliance-shield": "workspace:*",
     "@magnus-flipper-ai/core": "workspace:*",
     "@magnus-flipper-ai/marketplace-config": "workspace:*",
+    "@magnus-flipper-ai/scoring": "workspace:*",
     "@supabase/supabase-js": "^2.86.0",
     "playwright": "^1.48.2",
     "playwright-extra": "^4.3.6",

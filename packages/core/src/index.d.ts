@@ -11,5 +11,9 @@ export type { ScraperHealthMetrics, ScraperResult, } from "./types/scraper.js";
 export * from "./tiers/tier-config.js";
 export * from "./tiers/tier-service.js";
 export * from "./alerts/alert-service.js";
+export * from "./analytics/search-analytics.js";
+export * from "./contracts/feed.js";
+export * from "./contracts/mmListing.js";
+export * from "./healthcheck.js";
 export * from "./types/index.js";
 //# sourceMappingURL=index.d.ts.map

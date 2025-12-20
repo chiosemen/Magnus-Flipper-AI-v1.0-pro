@@ -90,7 +90,7 @@ export async function scrapeFacebookListings(
         // Extract location
         const locationEl = $el.find('span:not([dir="auto"])').filter((i, el) => {
           const text = $(el).text();
-          return text.includes(",") || text.match(/\d+\s*(mi|km)/i);
+          return text.includes(",") || /\d+\s*(mi|km)/i.test(text);
         }).first();
         const location = locationEl.text().trim() || "Unknown";
 

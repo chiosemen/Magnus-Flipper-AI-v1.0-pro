@@ -31,6 +31,11 @@ export function useIngestionRun() {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const runIngestion = useCallback(async (payload: any) => {
+    // Guardrail: UI must never enqueue scrapes in production. Pooled ingestion is worker-only.
+    if (process.env.NODE_ENV !== "development") {
+      throw new Error("INGESTION_DISABLED");
+    }
+
     const res = await fetch("/api/ingest/run", {
       method: "POST",
       headers: {

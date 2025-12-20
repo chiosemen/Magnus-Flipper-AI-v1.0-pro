@@ -5,6 +5,7 @@
 
 import { prisma } from "../db.js";
 import { canReceiveAlert } from "../tiers/tier-service.js";
+import { getCarAlertEligibility } from "@magnus-flipper-ai/alerts/carAlertRules";
 
 export type AlertChannel = "in_app" | "email";
 export type AlertDeliveryStatus = "pending" | "sent" | "failed";
@@ -19,7 +20,24 @@ export interface CreateAlertInput {
     marketplace: string;
     url: string;
     imageUrl?: string;
+    primaryImageUrl?: string | null;
     description?: string;
+    score?: number;
+    mileage?: number;
+    // Optional fields (used for marketplace-specific eligibility rules).
+    // IMPORTANT: Alert eligibility must remain passive: no scraping, no external calls.
+    scoring?: {
+      dealScore?: number;
+      estimatedProfit?: number;
+      estimatedResale?: number;
+      sellerType?: "dealer" | "private" | "unknown";
+      createdAt?: string;
+    };
+    sellerType?: "dealer" | "private" | "unknown";
+    estimatedProfit?: number;
+    estimatedResale?: number;
+    createdAt?: string;
+    postedAt?: string;
   };
 }
 
@@ -47,13 +65,64 @@ export async function createAlert(input: CreateAlertInput): Promise<{ created: b
       return { created: false, reason: "MAX_ALERTS_REACHED" };
     }
 
+    const marketplace = listing.marketplace?.toLowerCase?.() || listing.marketplace;
+
+    // Marketplace-specific eligibility rules (pure logic).
+    if (marketplace === "cars") {
+      const listingCreatedAt =
+        (listing as any)?.createdAt ??
+        (listing as any)?.postedAt ??
+        (listing as any)?.scoring?.createdAt ??
+        undefined;
+
+      const dealScore =
+        (listing as any)?.score ??
+        (listing as any)?.scoring?.dealScore ??
+        undefined;
+
+      const mileage =
+        (listing as any)?.mileage ??
+        (listing as any)?.scoring?.mileage ??
+        undefined;
+
+      // Tier-aware car alert thresholds.
+      // NOTE: We read subscription tier from the `subscriptions` table (Prisma model),
+      // and keep this path passive (no scraping, no external calls).
+      const subscription = await prisma.subscription.findUnique({
+        where: { userId },
+      });
+
+      const status = String((subscription as any)?.status ?? "").toLowerCase();
+      const isActive = status === "active" || status === "trialing";
+      const userTier = isActive ? (subscription as any)?.plan : "free";
+
+      const eligible = getCarAlertEligibility(
+        {
+          score: dealScore,
+          mileage,
+          createdAt: listingCreatedAt,
+        } as any,
+        userTier
+      );
+
+      if (!eligible) {
+        return { created: false, reason: "NOT_ELIGIBLE" };
+      }
+    }
+
     // Check if alert already exists for this listing + search combination
     const existingAlert = await prisma.alert.findFirst({
-      where: {
-        userId,
-        savedSearchId,
-        listingId,
-      },
+      where:
+        marketplace === "cars"
+          ? {
+              userId,
+              listingId,
+            }
+          : {
+              userId,
+              savedSearchId,
+              listingId,
+            },
     });
 
     if (existingAlert) {
@@ -75,7 +144,10 @@ export async function createAlert(input: CreateAlertInput): Promise<{ created: b
         isRead: false,
         isSent: false,
         metadata: {
-          imageUrl: listing.imageUrl,
+          // Store a safe, optional image URL reference (never embed/attach images here).
+          primaryImageUrl: listing.primaryImageUrl ?? listing.imageUrl ?? null,
+          // Back-compat: keep legacy key for existing consumers.
+          imageUrl: listing.primaryImageUrl ?? listing.imageUrl,
           description: listing.description,
           channels: ["in_app", "email"] as AlertChannel[],
           deliveryStatus: {

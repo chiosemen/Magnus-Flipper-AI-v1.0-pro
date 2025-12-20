@@ -1,22 +1,31 @@
 "use client";
 
 import { Search, Bell, MessageCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useRegion } from "@/providers/RegionProvider";
+import { copyForRegion } from "@/lib/copy-config";
 
 const HowItWorks = () => {
+  const router = useRouter();
+  const [keywords, setKeywords] = useState("");
+  const { region } = useRegion();
+  const copy = copyForRegion(region);
+
   const steps = [
     {
       number: "1",
       icon: Search,
       title: "Create Searches",
-      description: "Choose keywords like \"Tacoma 4×4,\" \"Silverado,\" or \"PS5.\" Fine-tune your search by setting price, distance, and condition filters to target only the deals you want.",
+      description: `${copy.howItWorksExamples} Fine-tune your search by setting price, distance, and condition filters to target only the deals you want.`,
       highlights: ["Select your keywords", "Set price, distance, and condition filters"],
     },
     {
       number: "2",
       icon: Bell,
       title: "Get Alerts First & Fast",
-      description: "Magnus Flipper automatically scans every marketplace in real-time around the clock. The moment a matching vehicle or item is listed, you'll get an AI Deal Alert so you can move first.",
-      highlights: ["Magnus Flipper scans top marketplaces 24/7", "Get AI Deal Alerts the moment a match appears"],
+      description: `Magnus Flipper monitors the pooled market feed around the clock. The moment a matching vehicle or item is added to the pool, you'll get an AI Deal Alert so you can move first. ${copy.howItWorksAlertsLine}`,
+      highlights: ["Pooled marketplaces monitored 24/7", "Get AI Deal Alerts the moment a match appears"],
     },
     {
       number: "3",
@@ -36,6 +45,33 @@ const HowItWorks = () => {
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
             The easiest way to turn alerts into wins
           </h2>
+
+          <form
+            className="mt-8 mx-auto flex w-full max-w-xl flex-col gap-3 sm:flex-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const value = keywords.trim();
+              if (!value) return;
+              router.push(`/marketplaces/facebook?keywords=${encodeURIComponent(value)}`);
+            }}
+          >
+            <input
+              type="text"
+              value={keywords}
+              onChange={(e) => setKeywords(e.target.value)}
+              placeholder='Try: "iPhone 15 Pro", "PS5", "MacBook"'
+              className="w-full flex-1 rounded-xl bg-[#121212] border border-white/10 px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#00E5FF]/50"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-gradient-to-r from-[#00E5FF] to-[#7B2FFF] px-5 py-3 text-sm font-extrabold text-white shadow-[0_0_40px_rgba(0,229,255,0.25)] hover:shadow-[0_0_60px_rgba(123,47,255,0.35)] transition-all"
+            >
+              Search Facebook
+            </button>
+          </form>
+          <p className="mt-3 text-xs text-white/60 font-medium">
+            Routes you to pooled Facebook results (no scraping triggered).
+          </p>
         </div>
 
         {/* Steps */}

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useMotionPrefs } from "@/lib/motion";
 
 interface LiquidMetalButtonProps {
   children: ReactNode;
@@ -19,6 +20,9 @@ export function LiquidMetalButton({
   className = "",
   variant = "primary",
 }: LiquidMetalButtonProps) {
+  const motionPrefs = useMotionPrefs();
+  const allowHover = !motionPrefs.reducedMotion && motionPrefs.canHover;
+
   const baseClasses =
     variant === "primary"
       ? "bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 text-white"
@@ -28,8 +32,8 @@ export function LiquidMetalButton({
 
   const buttonContent = (
     <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={allowHover ? { scale: 1.05 } : undefined}
+      whileTap={allowHover ? { scale: 0.98 } : undefined}
       className={`relative px-8 py-4 rounded-xl font-semibold overflow-hidden ${baseClasses} ${className} inline-block cursor-pointer`}
       onClick={onClick}
       style={{
@@ -38,20 +42,12 @@ export function LiquidMetalButton({
     >
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 opacity-0"
-        whileHover={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        whileHover={allowHover ? { opacity: 1 } : undefined}
+        transition={allowHover ? { duration: 0.3 } : undefined}
       />
-      <motion.div
+      <div
         className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500"
-        animate={{
-          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-        style={{ opacity: 0.3 }}
+        style={{ opacity: 0.25 }}
       />
       <span className="relative z-10">{children}</span>
     </motion.div>
@@ -63,4 +59,3 @@ export function LiquidMetalButton({
 
   return buttonContent;
 }
-

@@ -81,17 +81,17 @@ export function MarketplaceRiskTable({ risks }: MarketplaceRiskTableProps) {
                 <td className="py-4 px-4">
                   <div className="flex flex-wrap gap-2">
                     {risk.score.factors.jsChallengeRisk > 50 && (
-                      <Badge variant="warning" className="text-xs">
+                      <Badge className="text-xs bg-warning/20 text-warning">
                         JS Challenge
                       </Badge>
                     )}
                     {risk.score.factors.throttleBudget > 50 && (
-                      <Badge variant="info" className="text-xs">
+                      <Badge className="text-xs bg-info/20 text-info">
                         Low Budget
                       </Badge>
                     )}
                     {risk.score.factors.antiBotRequirements > 50 && (
-                      <Badge variant="destructive" className="text-xs">
+                      <Badge className="text-xs bg-destructive/20 text-destructive">
                         Anti-Bot
                       </Badge>
                     )}

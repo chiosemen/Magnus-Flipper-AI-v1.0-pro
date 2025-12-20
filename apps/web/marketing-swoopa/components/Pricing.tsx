@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
@@ -69,6 +69,8 @@ const pricingTiers: PricingTier[] = [
 ];
 
 const Pricing = () => {
+  const reducedMotion = useReducedMotion();
+
   return (
     <section
       id="pricing"
@@ -88,10 +90,10 @@ const Pricing = () => {
         {pricingTiers.map((tier, index) => (
           <motion.div
             key={tier.name}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: index * 0.1, duration: 0.4 }}
+            transition={reducedMotion ? undefined : { delay: index * 0.1, duration: 0.4 }}
           >
             <Card
               className={`flex h-full flex-col border bg-gradient-to-br from-[#121212] via-[#0A0A0A] to-[#121212] ${

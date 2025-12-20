@@ -35,25 +35,23 @@ export default function CreateSearchForm() {
         return;
       }
 
-      const response = await fetch("/api/apify/run", {
+      // Guardrail: UI must never trigger scraping. This creates a saved_searches row only.
+      const response = await fetch("/api/searches", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify([
-          {
-            marketplace: "vinted",
-            query: keywords.join(" "),
-            minPrice: formData.minPrice
-              ? parseFloat(formData.minPrice)
-              : undefined,
-            maxPrice: formData.maxPrice
-              ? parseFloat(formData.maxPrice)
-              : undefined,
-            location: formData.maxDistanceMiles || undefined,
-            country: "UK",
-          },
-        ]),
+        body: JSON.stringify({
+          marketplace: "vinted",
+          name: formData.name || undefined,
+          keywords,
+          minPrice: formData.minPrice ? parseFloat(formData.minPrice) : undefined,
+          maxPrice: formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
+          maxDistanceMiles: formData.maxDistanceMiles
+            ? parseFloat(formData.maxDistanceMiles)
+            : undefined,
+          condition: formData.condition.length > 0 ? formData.condition : undefined,
+        }),
       });
 
       if (!response.ok) {
@@ -71,7 +69,7 @@ export default function CreateSearchForm() {
         condition: [],
       });
 
-      // Refresh page after 1 second to show new search
+      // Refresh page after 1 second to show new search (if list is wired)
       setTimeout(() => {
         window.location.reload();
       }, 1000);

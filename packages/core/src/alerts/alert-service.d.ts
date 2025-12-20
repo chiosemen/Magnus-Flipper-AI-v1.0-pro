@@ -14,6 +14,7 @@ export interface CreateAlertInput {
         marketplace: string;
         url: string;
         imageUrl?: string;
+        primaryImageUrl?: string | null;
         description?: string;
     };
 }

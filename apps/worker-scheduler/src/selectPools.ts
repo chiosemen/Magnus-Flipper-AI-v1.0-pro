@@ -67,9 +67,23 @@ export async function selectPoolsForRefresh({
   });
 
   const due = scored.filter((p) => {
-    if (!p.next_run_at) return true;
-    const nextMs = new Date(p.next_run_at).getTime();
-    return !Number.isFinite(nextMs) || nextMs <= nowMs;
+    // Primary due signal: next_run_at (set by the runner after each scrape).
+    if (p.next_run_at) {
+      const nextMs = new Date(p.next_run_at).getTime();
+      return !Number.isFinite(nextMs) || nextMs <= nowMs;
+    }
+
+    // Safety net: if next_run_at is missing (legacy rows), derive due-ness from last_run_at + ttl.
+    // This prevents accidental over-scraping (e.g., every scheduler tick) when next_run_at is NULL.
+    if (p.last_run_at) {
+      const lastMs = new Date(p.last_run_at).getTime();
+      if (!Number.isFinite(lastMs)) return true;
+      const ttlSeconds = Math.max(1, toNumber(p.ttl_seconds));
+      return lastMs + ttlSeconds * 1000 <= nowMs;
+    }
+
+    // Never scraped before: due immediately.
+    return true;
   });
 
   if (due.length === 0) return [];

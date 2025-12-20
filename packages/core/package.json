@@ -73,7 +73,7 @@
   "scripts": {
     "prisma:generate": "prisma generate",
     "prebuild": "echo 'Skipping prisma generate inside Docker build...'",
-    "build": "tsc -p tsconfig.json",
+    "build": "pnpm exec tsc -p tsconfig.json",
     "prepare": "pnpm run build",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
@@ -81,6 +81,7 @@
     "postinstall": "echo 'Skipping prisma generate (temporarily patched)'"
   },
   "dependencies": {
+    "@magnus-flipper-ai/alerts": "workspace:*",
     "@magnus-flipper-ai/compliance-shield": "workspace:*",
     "@prisma/client": "7.0.1",
     "@prisma/adapter-pg": "7.0.1",

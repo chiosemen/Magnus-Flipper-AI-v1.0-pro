@@ -32,7 +32,7 @@
     "tailwind-preset.js"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmitOnError false || true",
+    "build": "pnpm exec tsc -p tsconfig.json --noEmitOnError false || true",
     "prepare": "pnpm run build",
     "clean": "rm -rf dist"
   },

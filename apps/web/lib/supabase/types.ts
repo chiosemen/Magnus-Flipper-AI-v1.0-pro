@@ -1,0 +1,41 @@
+export type SavedSearchRow = {
+  id: string;
+  user_id?: string | null;
+  region?: string | null;
+  name: string | null;
+  marketplace: string;
+  params: Record<string, any>;
+  status?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  deal_count?: number;
+  preview_image?: string | null;
+  preview_images?: string[] | null;
+  last_updated_at?: string | null;
+};
+
+export type DealRow = {
+  id: string;
+  search_id: string | null;
+  region?: string | null;
+  marketplace: string | null;
+  title: string | null;
+  price: number | null;
+  currency?: string | null;
+  score?: number | null;
+  location: string | null;
+  url: string | null;
+  pool_key?: string | null;
+  listing_id?: string | null;
+  seller_type?: string | null;
+  posted_at?: string | null;
+  fetched_at?: string | null;
+  expires_at?: string | null;
+  images?: Array<{ url: string; width?: number | null; height?: number | null }> | null;
+  primary_image?: string | null;
+  thumbnail?: string | null;
+  attributes?: Record<string, any> | null;
+  data?: any;
+  raw?: any;
+  created_at: string | null;
+};

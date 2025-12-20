@@ -5,6 +5,9 @@ export interface Deal {
   currency: string;
   score: number;
   url: string;
+  images?: Array<{ url: string; width?: number; height?: number }> | null;
+  primary_image?: string | null;
+  thumbnail?: string | null;
   created_at: string;
 }
 

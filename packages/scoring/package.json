@@ -1,0 +1,33 @@
+{
+  "name": "@magnus-flipper-ai/scoring",
+  "version": "1.0.0",
+  "description": "Lightweight scoring and heuristics utilities (no IO)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./carScoring": {
+      "types": "./dist/carScoring.d.ts",
+      "import": "./dist/carScoring.js"
+    },
+    "./sellerHeuristics": {
+      "types": "./dist/sellerHeuristics.d.ts",
+      "import": "./dist/sellerHeuristics.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm exec tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "typescript": "^5.7.3"
+  }
+}
+

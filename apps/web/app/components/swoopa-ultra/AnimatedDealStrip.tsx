@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useMotionPrefs } from "@/lib/motion";
 
 interface Deal {
   title: string;
@@ -16,6 +17,8 @@ const sampleDeals: Deal[] = [
 ];
 
 export function AnimatedDealStrip() {
+  const motionPrefs = useMotionPrefs();
+  const allowMotion = !motionPrefs.reducedMotion;
   const extendedDeals = [...sampleDeals, ...sampleDeals, ...sampleDeals];
 
   const getStatusColor = (status: Deal["status"]) => {
@@ -33,55 +36,39 @@ export function AnimatedDealStrip() {
     <div className="w-full bg-gradient-to-r from-purple-900/50 via-blue-900/50 to-cyan-900/50 border-y border-purple-500/30 py-4 overflow-hidden relative">
       <motion.div
         className="flex gap-12 whitespace-nowrap"
-        animate={{
-          x: [0, -50 * extendedDeals.length * 8],
-        }}
-        transition={{
-          x: {
-            repeat: Infinity,
-            repeatType: "loop",
-            duration: 40,
-            ease: "linear",
-          },
-        }}
+        animate={
+          allowMotion
+            ? {
+                x: [0, -50 * extendedDeals.length * 8],
+              }
+            : undefined
+        }
+        transition={
+          allowMotion
+            ? {
+                x: {
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  duration: 40,
+                  ease: "linear",
+                },
+              }
+            : undefined
+        }
       >
         {extendedDeals.map((deal, i) => (
-          <motion.div
-            key={i}
-            className="flex items-center gap-4 text-lg"
-            whileHover={{ scale: 1.1 }}
-          >
-            <motion.span
-              className="text-cyan-400"
-              animate={{ rotate: [0, 360] }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-            >
-              🔥
-            </motion.span>
+          <div key={i} className="flex items-center gap-4 text-lg">
+            <span className="text-cyan-400">🔥</span>
             <span className="text-neutral-200">{deal.title}</span>
-            <motion.span
+            <span
               className={`font-bold ${getStatusColor(deal.status)}`}
-              animate={{
-                opacity: [0.5, 1, 0.5],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
             >
               {deal.status}
-            </motion.span>
+            </span>
             <span className="text-green-400 font-bold">{deal.profit}</span>
-          </motion.div>
+          </div>
         ))}
       </motion.div>
     </div>
   );
 }
-

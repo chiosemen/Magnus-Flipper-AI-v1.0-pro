@@ -3,7 +3,7 @@
  * Handles tier checks and limit enforcement
  */
 /**
- * Get user with subscription info
+ * Get user with tier info
  */
 export declare function getUserWithTier(userId: string): Promise<any>;
 /**

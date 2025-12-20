@@ -18,12 +18,18 @@ type SavedSearch = {
 };
 
 export default function SavedSearchesPage() {
+  const isDev = process.env.NODE_ENV === "development";
   const [searches, setSearches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isDev) {
+      setLoading(false);
+      return;
+    }
+
     fetchSearches();
-  }, []);
+  }, [isDev]);
 
   const fetchSearches = async () => {
     try {
@@ -102,6 +108,19 @@ export default function SavedSearchesPage() {
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-7xl mx-auto">
           <p className="text-gray-600">Loading saved searches...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isDev) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Saved Searches</h1>
+          <p className="text-gray-600">
+            This legacy page is disabled. Use the marketplace pages backed by pooled data instead.
+          </p>
         </div>
       </div>
     );

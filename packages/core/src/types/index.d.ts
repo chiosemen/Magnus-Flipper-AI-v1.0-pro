@@ -1,6 +1,2 @@
-export * from './affiliate';
-export * from './feed';
-export * from './compliance';
-export * from './scraper';
-export * from './mobile';
+export {};
 //# sourceMappingURL=index.d.ts.map

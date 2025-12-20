@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
+import { useRef } from "react";
 
 interface Stat {
   label: string;
@@ -17,46 +17,22 @@ const stats: Stat[] = [
   { label: "AI Scoring Latency", value: 50, suffix: "ms", accent: "text-[#7B2FFF]" },
 ];
 
-function useCountUp(end: number, duration: number = 2, start: number = 0, trigger: boolean) {
-  const [count, setCount] = useState(start);
-
-  useEffect(() => {
-    if (!trigger) return;
-    
-    let startTime: number | null = null;
-    const animate = (currentTime: number) => {
-      if (startTime === null) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / (duration * 1000), 1);
-      
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setCount(Math.floor(start + (end - start) * easeOutQuart));
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-    
-    requestAnimationFrame(animate);
-  }, [trigger, end, duration, start]);
-
-  return count;
-}
-
 function StatItem({ stat, index }: { stat: Stat; index: number }) {
   const ref = useRef(null);
+  const reducedMotion = useReducedMotion();
   const isInView = useInView(ref, { once: true, amount: 0.3 });
-  const count = useCountUp(stat.value, 2, 0, isInView);
+  const shouldAnimate = !reducedMotion;
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 20 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
+      initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
+      animate={shouldAnimate && isInView ? { opacity: 1, y: 0 } : undefined}
+      transition={shouldAnimate ? { delay: index * 0.1, duration: 0.5 } : undefined}
       className="flex flex-col"
     >
       <span className={`text-sm font-extrabold ${stat.accent} tracking-tight`}>
-        {count.toLocaleString()}{stat.suffix}
+        {stat.value.toLocaleString()}{stat.suffix}
       </span>
       <span className="text-[11px] text-white/70 font-medium">{stat.label}</span>
     </motion.div>

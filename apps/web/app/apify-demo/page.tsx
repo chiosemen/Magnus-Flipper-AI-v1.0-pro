@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LiveResults } from "../../components/LiveResults";
 
 export default function ApifyDemoPage() {
+  const isDev = process.env.NODE_ENV === "development";
   const [jobs, setJobs] = useState([
     { marketplace: "facebook", query: "" },
   ]);
@@ -11,6 +12,17 @@ export default function ApifyDemoPage() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (!isDev) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto space-y-3">
+        <h1 className="text-2xl font-bold">Apify Demo</h1>
+        <p className="text-slate-600 text-sm">
+          This dev-only page is disabled in production. Deals are sourced from pooled worker ingestion.
+        </p>
+      </div>
+    );
+  }
 
   const startRun = async () => {
     const payload = jobs

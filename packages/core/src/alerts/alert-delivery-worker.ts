@@ -86,6 +86,7 @@ export async function processAlertDelivery(
                 price: alert.price,
                 marketplace: alert.marketplace,
                 url: alert.url,
+                primaryImageUrl: (alert.metadata as any)?.primaryImageUrl,
                 imageUrl: (alert.metadata as any)?.imageUrl,
               },
               search: {

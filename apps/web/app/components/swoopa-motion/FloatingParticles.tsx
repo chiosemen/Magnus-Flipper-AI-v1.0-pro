@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useMotionPrefs } from "@/lib/motion";
 
 interface FloatingParticlesProps {
   layerCount?: number;
@@ -18,6 +19,7 @@ export function FloatingParticles({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isMounted, setIsMounted] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
+  const motionPrefs = useMotionPrefs();
 
   useEffect(() => {
     setIsMounted(true);
@@ -69,7 +71,7 @@ export function FloatingParticles({
       }
     }
 
-    const animate = () => {
+    const drawFrame = () => {
       if (!canvas || !ctx) return;
 
       try {
@@ -88,14 +90,19 @@ export function FloatingParticles({
           ctx.fillStyle = color.replace("0.4", opacity.toString());
           ctx.fill();
         });
-
-        animationFrameRef.current = requestAnimationFrame(animate);
       } catch (error) {
         console.error("FloatingParticles animation error:", error);
       }
     };
 
-    animate();
+    drawFrame();
+    if (!motionPrefs.reducedMotion) {
+      const animate = () => {
+        drawFrame();
+        animationFrameRef.current = requestAnimationFrame(animate);
+      };
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
 
     return () => {
       if (typeof window !== "undefined") {
@@ -105,7 +112,7 @@ export function FloatingParticles({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isMounted, layerCount, particlesPerLayer, speed, color]);
+  }, [isMounted, layerCount, particlesPerLayer, speed, color, motionPrefs.reducedMotion]);
 
   if (!isMounted) {
     return null;
@@ -128,4 +135,3 @@ export function FloatingParticles({
     />
   );
 }
-

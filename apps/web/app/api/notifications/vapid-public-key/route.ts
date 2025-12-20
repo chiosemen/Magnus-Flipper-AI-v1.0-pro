@@ -1,0 +1,10 @@
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  const key = process.env.VAPID_PUBLIC_KEY || null;
+  if (!key) {
+    return NextResponse.json({ error: "VAPID_PUBLIC_KEY not configured" }, { status: 503 });
+  }
+  return NextResponse.json({ publicKey: key });
+}
+

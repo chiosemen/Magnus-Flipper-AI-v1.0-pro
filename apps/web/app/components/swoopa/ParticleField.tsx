@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useMotionPrefs } from "@/lib/motion";
 
 interface ParticleFieldProps {
   particleCount?: number;
@@ -14,6 +15,8 @@ export function ParticleField({
   color = "rgba(147, 51, 234, 0.3)",
 }: ParticleFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const motionPrefs = useMotionPrefs();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -47,7 +50,7 @@ export function ParticleField({
       });
     }
 
-    const animate = () => {
+    const drawFrame = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach((particle) => {
@@ -62,16 +65,24 @@ export function ParticleField({
         ctx.fillStyle = color;
         ctx.fill();
       });
-
-      requestAnimationFrame(animate);
     };
 
-    animate();
+    drawFrame();
+    if (!motionPrefs.reducedMotion) {
+      const animate = () => {
+        drawFrame();
+        animationFrameRef.current = requestAnimationFrame(animate);
+      };
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
 
     return () => {
       window.removeEventListener("resize", resize);
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [particleCount, speed, color]);
+  }, [particleCount, speed, color, motionPrefs.reducedMotion]);
 
   return (
     <canvas
@@ -81,4 +92,3 @@ export function ParticleField({
     />
   );
 }
-

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 
 interface SwoopaAIOrbProps {
@@ -21,8 +20,12 @@ export function SwoopaAIOrb({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = size;
-    canvas.height = size;
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio ?? 1 : 1;
+    canvas.width = Math.floor(size * dpr);
+    canvas.height = Math.floor(size * dpr);
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const centerX = size / 2;
     const centerY = size / 2;
@@ -42,7 +45,7 @@ export function SwoopaAIOrb({
       });
     }
 
-    const animate = () => {
+    const draw = () => {
       ctx.clearRect(0, 0, size, size);
 
       // Draw outer glow
@@ -64,8 +67,7 @@ export function SwoopaAIOrb({
       ctx.fill();
 
       // Draw particles
-      particles.forEach((particle) => {
-        particle.angle += particle.speed;
+      particles.forEach((particle, idx) => {
         const x = centerX + Math.cos((particle.angle * Math.PI) / 180) * particle.distance;
         const y = centerY + Math.sin((particle.angle * Math.PI) / 180) * particle.distance;
 
@@ -75,7 +77,7 @@ export function SwoopaAIOrb({
         ctx.fill();
 
         // Draw connection lines
-        const nextParticle = particles[(particles.indexOf(particle) + 1) % particles.length];
+        const nextParticle = particles[(idx + 1) % particles.length];
         const nextX =
           centerX +
           Math.cos((nextParticle.angle * Math.PI) / 180) * nextParticle.distance;
@@ -89,28 +91,15 @@ export function SwoopaAIOrb({
         ctx.strokeStyle = "rgba(147, 51, 234, 0.2)";
         ctx.stroke();
       });
-
-      requestAnimationFrame(animate);
     };
 
-    animate();
+    // Static render: keep the orb calm and GPU-light (no rAF loop).
+    draw();
   }, [size, particleCount]);
 
   return (
-    <motion.div
-      className="absolute"
-      style={{ width: size, height: size }}
-      animate={{
-        rotate: [0, 360],
-      }}
-      transition={{
-        duration: 20,
-        repeat: Infinity,
-        ease: "linear",
-      }}
-    >
+    <div className="absolute" style={{ width: size, height: size }}>
       <canvas ref={canvasRef} className="w-full h-full" />
-    </motion.div>
+    </div>
   );
 }
-
