@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ArrowLeft, Zap } from "lucide-react";
 import Header from "../../../marketing-swoopa/components/Header";
 import Footer from "../../../marketing-swoopa/components/Footer";
@@ -10,67 +9,11 @@ import CreateSearchForm from "./CreateSearchForm";
 import FacebookDealsList from "./FacebookDealsList";
 import SavedSearchesList from "../../../components/SavedSearchesList";
 import LiveDealsGrid from "../../../marketing-swoopa/components/LiveDealsGrid";
-import { LiveResults } from "../../../components/LiveResults";
-import { saveSearch } from "../../../lib/supabase/saveSearch";
-import { supabaseBrowser } from "../../../lib/supabase/client";
-
-type SavedSearch = {
-  id: string;
-  name: string;
-  marketplace: "facebook";
-  datasetIds: string[];
-  createdAt: number;
-};
-
-function timeAgo(ts: number) {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} d ago`;
-}
 
 export default function FacebookMarketplacePage() {
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const supabase = supabaseBrowser();
-        const { data, error } = await supabase.from("saved_searches").select("*").eq("marketplace", "facebook").order("created_at", { ascending: false }).limit(10);
-        if (error || !data) return;
-        const mapped: SavedSearch[] = data.map((row: any) => ({
-          id: row.id,
-          name: row.name || "Saved search",
-          marketplace: "facebook",
-          datasetIds: Array.isArray(row.dataset_ids) ? row.dataset_ids : [],
-          createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-        }));
-        setSavedSearches(mapped);
-      } catch {
-        // optional persistence; ignore failures
-      }
-    })();
-  }, []);
-
-  const handleSearchCreated = (runs: any[] = []) => {
-    const ids = runs.map((r) => r.datasetId).filter(Boolean);
-    if (ids.length) {
-      if (savedSearches.length < 10) {
-        const newSearch: SavedSearch = {
-          id: `saved_${Date.now()}`,
-          name: runs[0]?.query || "New search",
-          marketplace: "facebook",
-          datasetIds: ids,
-          createdAt: Date.now(),
-        };
-        setSavedSearches((prev) => [...prev, newSearch]);
-        saveSearch(newSearch);
-      }
-    }
+  const handleSearchCreated = () => {
+    // Pooled-only: Search written to Supabase, no client-side tracking needed
+    // Deals will appear in FacebookDealsList via pooled scraper
   };
 
   return (
@@ -124,15 +67,7 @@ export default function FacebookMarketplacePage() {
                 </p>
               </div>
               <div className="bg-[#121212] border border-white/10 rounded-xl p-6">
-                <CreateSearchForm
-                  onSearchCreated={handleSearchCreated}
-                  disabled={savedSearches.length >= 10}
-                />
-                {savedSearches.length >= 10 && (
-                  <p className="text-xs text-white/60 mt-2">
-                    Max 10 saved searches reached.
-                  </p>
-                )}
+                <CreateSearchForm onSearchCreated={handleSearchCreated} />
               </div>
             </div>
           </div>
@@ -147,43 +82,10 @@ export default function FacebookMarketplacePage() {
                   Your Searches
                 </h2>
                 <p className="text-white/70 text-sm font-medium">
-                  Monitor performance and see what's working
+                  Monitor saved searches and matching deals from pooled scraper
                 </p>
               </div>
               <SavedSearchesList marketplace="facebook" />
-              {savedSearches.length > 0 && (
-                <div className="space-y-4 mt-6">
-                  {savedSearches.map((search) => (
-                    <div
-                      key={search.id}
-                      className="bg-[#121212] border border-white/10 rounded-xl p-4"
-                    >
-                      <div className="flex items-center justify-between text-sm text-white/70">
-                        <span className="font-semibold text-white">
-                          {search.name || "Saved search"}
-                        </span>
-                        <span className="text-xs text-white/50">
-                          {timeAgo(search.createdAt)}
-                        </span>
-                      </div>
-                      <div className="text-xs text-white/60 mt-1">
-                        {search.datasetIds.length > 0 ? "Live" : "Waiting for results…"}
-                      </div>
-                      {search.datasetIds.length > 0 ? (
-                        <div className="mt-3">
-                          <LiveResults datasetIds={search.datasetIds} />
-                        </div>
-                      ) : (
-                        <div className="text-xs text-white/50 mt-3">
-                          No deals yet
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {/* TODO: persist saved searches to Supabase */}
-              {/* TODO: add delete / pause search controls */}
             </div>
           </div>
         </section>

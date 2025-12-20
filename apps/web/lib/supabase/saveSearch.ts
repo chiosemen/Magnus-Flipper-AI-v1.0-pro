@@ -1,10 +1,16 @@
 import { supabaseBrowser } from "./client";
 
+/**
+ * DEPRECATED: This function was part of legacy per-search Apify architecture.
+ * Retained for backward compatibility with apify-demo page only.
+ *
+ * For pooled-only architecture, saved searches should be created via
+ * CreateSearchForm which writes directly to Supabase with proper schema.
+ */
 export type SavedSearch = {
   id: string;
   name: string;
   marketplace: "facebook";
-  datasetIds: string[];
   createdAt: number;
 };
 
@@ -15,8 +21,7 @@ export async function saveSearch(search: SavedSearch) {
       {
         id: search.id,
         name: search.name,
-        marketplace: search.marketplace,
-        dataset_ids: search.datasetIds,
+        marketplaces: [search.marketplace], // Schema uses marketplaces[] array
         created_at: new Date(search.createdAt).toISOString(),
       },
     ]);
