@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { ApifyClient } from "apify-client";
 import { APIFY_MAX_ITEMS } from "../../../../src/config/apify";
 
+export const runtime = "nodejs";
+
 const apifyToken = process.env.APIFY_TOKEN;
 
 const apify = new ApifyClient({
