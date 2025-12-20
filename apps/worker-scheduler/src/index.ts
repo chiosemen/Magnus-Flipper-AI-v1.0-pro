@@ -3,8 +3,6 @@ import { scheduleAllMarketplaces } from "./scanner";
 import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
 import { runActivityFeedTTL } from "./services/ttl-cleanup";
 import { rehydrateListings } from "./hydration";
-import { runFacebookScrapingJob } from "./facebook-job";
-import { runVintedScrapingJob } from "./vinted-job";
 import { runAlertDeliveryCycle } from "./alerts/alert-delivery-worker";
 import { redis, ingestQueue, type ScrapeJob } from "@magnus-flipper-ai/queue";
 import cronParser from "cron-parser";
@@ -20,16 +18,6 @@ let lastTTLCleanup = 0;
 const workerHeartbeat = {
   startTime: new Date().toISOString(),
   lastHeartbeat: new Date().toISOString(),
-  facebookJob: {
-    lastRun: null as string | null,
-    lastSuccess: null as string | null,
-    lastStats: { searchesScanned: 0, listingsFetched: 0, matchesSaved: 0 },
-  },
-  vintedJob: {
-    lastRun: null as string | null,
-    lastSuccess: null as string | null,
-    lastStats: { searchesScanned: 0, listingsFetched: 0, matchesSaved: 0 },
-  },
   totalJobsProcessed: 0,
 };
 
@@ -162,75 +150,9 @@ async function main() {
     }
   }, 60000); // Run after 1 minute
 
-  // Facebook scraping job (every 10 minutes)
-  const FACEBOOK_JOB_INTERVAL = 10 * 60 * 1000; // 10 minutes
-  setInterval(async () => {
-    try {
-      workerHeartbeat.facebookJob.lastRun = new Date().toISOString();
-      console.log(`[${WORKER_ID}] 🔵 Facebook job START`);
-      const result = await runFacebookScrapingJob();
-      workerHeartbeat.facebookJob.lastSuccess = new Date().toISOString();
-      workerHeartbeat.facebookJob.lastStats = result;
-      workerHeartbeat.totalJobsProcessed++;
-      console.log(
-        `[${WORKER_ID}] ✅ Facebook job COMPLETE: ${result.searchesScanned} searches scanned, ${result.listingsFetched} listings fetched, ${result.matchesSaved} matches saved`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Facebook scraping job ERROR:`, error);
-    }
-  }, FACEBOOK_JOB_INTERVAL);
-
-  // Initial Facebook job run
-  setTimeout(async () => {
-    try {
-      workerHeartbeat.facebookJob.lastRun = new Date().toISOString();
-      console.log(`[${WORKER_ID}] 🔵 Facebook job START (initial run)`);
-      const result = await runFacebookScrapingJob();
-      workerHeartbeat.facebookJob.lastSuccess = new Date().toISOString();
-      workerHeartbeat.facebookJob.lastStats = result;
-      workerHeartbeat.totalJobsProcessed++;
-      console.log(
-        `[${WORKER_ID}] ✅ Facebook job COMPLETE (initial): ${result.searchesScanned} searches, ${result.listingsFetched} listings, ${result.matchesSaved} matches`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Initial Facebook job ERROR:`, error);
-    }
-  }, 120000); // Run after 2 minutes
-
-  // Vinted scraping job (every 10 minutes)
-  const VINTED_JOB_INTERVAL = 10 * 60 * 1000; // 10 minutes
-  setInterval(async () => {
-    try {
-      workerHeartbeat.vintedJob.lastRun = new Date().toISOString();
-      console.log(`[${WORKER_ID}] 🟣 Vinted job START`);
-      const result = await runVintedScrapingJob();
-      workerHeartbeat.vintedJob.lastSuccess = new Date().toISOString();
-      workerHeartbeat.vintedJob.lastStats = result;
-      workerHeartbeat.totalJobsProcessed++;
-      console.log(
-        `[${WORKER_ID}] ✅ Vinted job COMPLETE: ${result.searchesScanned} searches scanned, ${result.listingsFetched} listings fetched, ${result.matchesSaved} matches saved`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Vinted scraping job ERROR:`, error);
-    }
-  }, VINTED_JOB_INTERVAL);
-
-  // Initial Vinted job run
-  setTimeout(async () => {
-    try {
-      workerHeartbeat.vintedJob.lastRun = new Date().toISOString();
-      console.log(`[${WORKER_ID}] 🟣 Vinted job START (initial run)`);
-      const result = await runVintedScrapingJob();
-      workerHeartbeat.vintedJob.lastSuccess = new Date().toISOString();
-      workerHeartbeat.vintedJob.lastStats = result;
-      workerHeartbeat.totalJobsProcessed++;
-      console.log(
-        `[${WORKER_ID}] ✅ Vinted job COMPLETE (initial): ${result.searchesScanned} searches, ${result.listingsFetched} listings, ${result.matchesSaved} matches`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Initial Vinted job ERROR:`, error);
-    }
-  }, 150000); // Run after 2.5 minutes (staggered from Facebook)
+  // LEGACY REMOVED: Per-search Facebook/Vinted scraping jobs
+  // Pooled scraping now writes to public.scraped_listings with search_id = NULL
+  // UI reads via /api/deals
 
   // Alert delivery job (every 5 minutes) - only if enabled
   if (process.env.ENABLE_ALERT_DELIVERY === "true") {

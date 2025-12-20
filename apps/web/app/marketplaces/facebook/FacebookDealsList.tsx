@@ -17,9 +17,37 @@ interface Deal {
 }
 
 export default function FacebookDealsList() {
-  const [deals] = useState<Deal[]>([]);
-  const [loading] = useState(false);
-  const [error] = useState<string | null>(null);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchPooledDeals() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch("/api/deals?marketplace=facebook&limit=50");
+        if (!res.ok) {
+          throw new Error(`Failed to fetch: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setDeals(data.deals || []);
+      } catch (err: any) {
+        console.error("Error fetching pooled deals:", err);
+        setError(err.message || "Failed to load deals");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPooledDeals();
+
+    // Refresh every 30 seconds for fresh pooled deals
+    const interval = setInterval(fetchPooledDeals, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -54,7 +82,7 @@ export default function FacebookDealsList() {
       <div className="text-center py-12">
         <p className="text-white/70 font-medium mb-2">No live deals yet</p>
         <p className="text-white/50 text-sm">
-          Create a search above to start finding deals. The worker will scan Facebook Marketplace every 10 minutes.
+          Pooled deals from Facebook Marketplace will appear here. The worker scrapes continuously.
         </p>
       </div>
     );
@@ -68,6 +96,16 @@ export default function FacebookDealsList() {
           className="group relative flex h-full flex-col border border-white/10 bg-gradient-to-br from-[#121212] via-[#0A0A0A] to-[#121212] shadow-[0_0_25px_rgba(0,0,0,0.9)] transition hover:-translate-y-1 hover:border-[#00E5FF]/80 hover:shadow-[0_0_40px_rgba(0,229,255,0.8)]"
         >
           <CardContent className="flex flex-1 flex-col justify-between gap-3 p-4">
+            {deal.imageUrl && (
+              <div className="w-full h-32 mb-2 rounded overflow-hidden">
+                <img
+                  src={deal.imageUrl}
+                  alt={deal.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
             <div>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h3 className="text-sm font-extrabold text-white tracking-tight line-clamp-2 flex-1">

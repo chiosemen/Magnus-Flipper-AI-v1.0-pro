@@ -59,6 +59,16 @@ function selectActor(marketplace: string) {
 }
 
 export async function POST(req: Request) {
+  // DEV-ONLY GATE: This endpoint is disabled in production
+  // Pooled scraping writes to public.scraped_listings with search_id = NULL
+  // UI reads via /api/deals
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_LEGACY_SCRAPING !== "true") {
+    return NextResponse.json(
+      { error: "Legacy scraping endpoint disabled. Use pooled deals via /api/deals" },
+      { status: 403 }
+    );
+  }
+
   if (!apifyToken) {
     return NextResponse.json(
       { error: "APIFY_TOKEN is not configured" },

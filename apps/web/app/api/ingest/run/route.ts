@@ -6,6 +6,16 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  // DEV-ONLY GATE: This endpoint is disabled in production
+  // Pooled scraping writes to public.scraped_listings with search_id = NULL
+  // UI reads via /api/deals
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_LEGACY_SCRAPING !== "true") {
+    return NextResponse.json(
+      { error: "Legacy scraping endpoint disabled. Use pooled deals via /api/deals" },
+      { status: 403 }
+    );
+  }
+
   try {
     // Verify Redis connection is available
     try {
@@ -13,7 +23,7 @@ export async function POST(req: Request) {
     } catch (redisError) {
       console.error("Redis connection failed:", redisError);
       return NextResponse.json(
-        { 
+        {
           error: "Redis connection unavailable. Please ensure Redis is configured and running.",
           details: process.env.NODE_ENV === "development" ? String(redisError) : undefined
         },
