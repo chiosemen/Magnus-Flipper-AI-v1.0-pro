@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ingestQueue, redis, type IngestRunPayload, type Marketplace, type ScrapeJob } from "@magnus-flipper-ai/queue";
+import { blockUnlessDevAdmin } from "../../_lib/legacyScrapeGate";
 
 // Force dynamic rendering - this route must run at request time, never at build time
 export const dynamic = "force-dynamic";
@@ -7,6 +8,10 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
+    // Deprecated: legacy scrape-trigger route (per-search ingestion). Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     // Verify Redis connection is available
     try {
       await redis.ping();
@@ -52,6 +57,20 @@ export async function POST(req: Request) {
 
     const pagesPerMarketplace = body.pagesPerMarketplace ?? 1;
     const batchSize = body.batchSize ?? 20;
+
+    // Guardrail: user searches must never enqueue Facebook scrapes.
+    // Facebook uses pooled data + explicit refresh API instead.
+    if (marketplaces.includes("facebook")) {
+      console.warn("[ingest-run] Blocked Facebook scrape request (pooled-only)", {
+        marketplaces,
+        region,
+        hasQuery: Boolean(query),
+      });
+      return NextResponse.json(
+        { error: "FACEBOOK_SCRAPING_DISABLED_USE_POOLED_DATA" },
+        { status: 409 }
+      );
+    }
 
     // Create parent job
     const parent = await ingestQueue.add("ingest-parent", { kind: "parent" });

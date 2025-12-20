@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { redis, ingestQueue } from "@magnus-flipper-ai/queue";
 import type { ScrapeJob } from "@magnus-flipper-ai/queue";
+import { blockUnlessDevAdmin } from "../../../_lib/legacyScrapeGate";
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Deprecated: legacy per-search run endpoint (enqueues ingestion). Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     const { id } = await params;
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId") || "anonymous";
@@ -16,6 +21,17 @@ export async function POST(
       return NextResponse.json(
         { error: "Saved search not found" },
         { status: 404 }
+      );
+    }
+
+    if ((saved.marketplace || "facebook").toLowerCase() === "facebook") {
+      console.warn("[saved-search-run] Blocked Facebook scrape request (pooled-only)", {
+        userId,
+        savedSearchId: id,
+      });
+      return NextResponse.json(
+        { error: "FACEBOOK_SCRAPING_DISABLED_USE_POOLED_DATA" },
+        { status: 409 }
       );
     }
 

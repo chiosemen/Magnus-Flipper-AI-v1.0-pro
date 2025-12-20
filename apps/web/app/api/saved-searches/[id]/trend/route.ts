@@ -1,21 +1,28 @@
 import { NextResponse } from "next/server";
 import { redis } from "@magnus-flipper-ai/queue";
+import { blockUnlessDevAdmin } from "../../../_lib/legacyScrapeGate";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Deprecated: legacy Redis trend API (per-search metrics). Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     const { id } = await params;
 
-    const raw = await redis.lrange(`trend:${id}`, 0, 19);
-    const snapshots = raw.map((s) => {
+    const raw = (await redis.lrange(`trend:${id}`, 0, 19)) as string[];
+    const snapshots = raw
+      .map((s: string) => {
       try {
         return JSON.parse(s);
       } catch {
         return null;
       }
-    }).filter(Boolean);
+      })
+      .filter(Boolean);
 
     // Format for Recharts
     const trendData = snapshots.map((snap: any) => ({

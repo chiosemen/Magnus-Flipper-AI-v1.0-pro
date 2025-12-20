@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ApifyClient } from "apify-client";
 import { APIFY_MAX_ITEMS } from "../../../../src/config/apify";
+import { blockUnlessDevAdmin } from "../../_lib/legacyScrapeGate";
 
 const apifyToken = process.env.APIFY_TOKEN;
 
@@ -59,6 +60,10 @@ function selectActor(marketplace: string) {
 }
 
 export async function POST(req: Request) {
+  // Deprecated: legacy scrape-trigger route. Kept for local debugging only.
+  const blocked = blockUnlessDevAdmin();
+  if (blocked) return blocked;
+
   if (!apifyToken) {
     return NextResponse.json(
       { error: "APIFY_TOKEN is not configured" },
@@ -95,6 +100,15 @@ export async function POST(req: Request) {
           : undefined,
     }))
     .filter((job) => job.query.length > 0 && selectActor(job.marketplace));
+
+  // Guardrail: Facebook scraping is pooled-only. Use the pool refresh API instead.
+  if (sanitized.some((job) => job.marketplace.toLowerCase() === "facebook")) {
+    console.warn("[apify-run] Blocked Facebook scrape request (pooled-only)");
+    return NextResponse.json(
+      { error: "FACEBOOK_SCRAPING_DISABLED_USE_POOLED_DATA" },
+      { status: 409 }
+    );
+  }
 
   if (sanitized.length === 0) {
     return NextResponse.json(

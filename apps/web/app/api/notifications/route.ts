@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { redis } from "@magnus-flipper-ai/queue";
+import { blockUnlessDevAdmin } from "../_lib/legacyScrapeGate";
 
 export async function GET(req: Request) {
   try {
+    // Deprecated: legacy Redis notifications endpoint. Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId") || "anonymous";
 
     const raw = await redis.lrange(`notif:unread:${userId}`, 0, 19);
-    const notifications = raw.map((s) => {
+    const notifications = raw.map((s: string) => {
       try {
         return JSON.parse(s);
       } catch {
@@ -27,6 +32,10 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    // Deprecated: legacy Redis notifications endpoint. Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     const body = await req.json();
     const { userId = "anonymous", notificationId } = body;
 
@@ -39,7 +48,7 @@ export async function POST(req: Request) {
 
     // Remove notification from unread list
     const raw = await redis.lrange(`notif:unread:${userId}`, 0, -1);
-    const filtered = raw.filter((s) => {
+    const filtered = raw.filter((s: string) => {
       try {
         const notif = JSON.parse(s);
         return notif.id !== notificationId;

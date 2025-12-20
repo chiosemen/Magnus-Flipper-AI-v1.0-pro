@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { redis } from "@magnus-flipper-ai/queue";
+import { blockUnlessDevAdmin } from "../../../_lib/legacyScrapeGate";
 
 // Force dynamic rendering - this route must run at request time, never at build time
 export const dynamic = "force-dynamic";
@@ -10,6 +11,10 @@ export async function GET(
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
+    // Deprecated: legacy ingestion status endpoint. Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     // Verify Redis connection is available
     try {
       await redis.ping();
@@ -38,7 +43,7 @@ export async function GET(
 
     // Read results from Redis list (up to 200 items)
     const rawResults = await redis.lrange(`ingest:${jobId}:results`, 0, 199);
-    const results = rawResults.map((s) => {
+    const results = rawResults.map((s: string) => {
       try {
         return JSON.parse(s);
       } catch {

@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
+import { blockUnlessDevAdmin } from "../../_lib/legacyScrapeGate";
 
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
 
 export async function GET(req: Request) {
+  // Deprecated: legacy Apify dataset proxy route. Kept for local debugging only.
+  const blocked = blockUnlessDevAdmin();
+  if (blocked) return blocked;
+
   const { searchParams } = new URL(req.url);
   const datasetId = searchParams.get("datasetId");
 

@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { redis } from "@magnus-flipper-ai/queue";
+import { blockUnlessDevAdmin } from "../../../_lib/legacyScrapeGate";
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Deprecated: legacy Redis saved-search scheduler API. Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     const { id } = await params;
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId") || "anonymous";

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { redis, ingestQueue } from "@magnus-flipper-ai/queue";
+import { redis } from "@magnus-flipper-ai/queue";
 import { nanoid } from "nanoid";
 import cronParser from "cron-parser";
 import type { SavedSearch } from "@magnus-flipper-ai/queue";
+import { blockUnlessDevAdmin } from "../_lib/legacyScrapeGate";
 
 function nextRun(cron: string, fromDate: Date = new Date()): number {
   try {
@@ -26,6 +27,10 @@ const CRON_LABELS: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
+    // Deprecated: legacy Redis saved-search scheduler API. Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     const body = await req.json();
     const { userId, query, region, cron, priceDropPct, id } = body;
 
@@ -87,12 +92,16 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    // Deprecated: legacy Redis saved-search scheduler API. Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId") || "anonymous";
 
-    const ids = await redis.smembers(`saved:search:index:${userId}`);
+    const ids = (await redis.smembers(`saved:search:index:${userId}`)) as string[];
     const searches = await Promise.all(
-      ids.map(async (id) => {
+      ids.map(async (id: string) => {
         const data = await redis.hgetall(`saved:search:${userId}:${id}`);
         if (!data || !data.id) return null;
 
@@ -126,6 +135,10 @@ export async function GET(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    // Deprecated: legacy Redis saved-search scheduler API. Kept for local debugging only.
+    const blocked = blockUnlessDevAdmin();
+    if (blocked) return blocked;
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId") || "anonymous";
     const id = searchParams.get("id");

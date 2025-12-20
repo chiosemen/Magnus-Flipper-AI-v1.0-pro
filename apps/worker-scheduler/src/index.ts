@@ -2,16 +2,17 @@ import { runScheduledScan } from "./scheduler";
 import { scheduleAllMarketplaces } from "./scanner";
 import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
 import { runActivityFeedTTL } from "./services/ttl-cleanup";
-import { rehydrateListings } from "./hydration";
-import { runFacebookScrapingJob } from "./facebook-job";
-import { runVintedScrapingJob } from "./vinted-job";
 import { runAlertDeliveryCycle } from "./alerts/alert-delivery-worker";
+import { startUserAlertDispatchWorker } from "./alerts/user-alert-dispatch-worker";
 import { redis, ingestQueue, type ScrapeJob } from "@magnus-flipper-ai/queue";
 import cronParser from "cron-parser";
+import { enqueueSchedulerTick } from "./tick";
+import { startFbPoolSchedulerWorker } from "./worker";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default
 const TTL_CLEANUP_INTERVAL = parseInt(process.env.TTL_CLEANUP_INTERVAL || "86400000"); // 24 hours default
+const ENABLE_LEGACY_SCRAPERS = process.env.ENABLE_LEGACY_SCRAPERS === "true";
 
 // Track last TTL cleanup run to prevent over-execution
 let lastTTLCleanup = 0;
@@ -95,6 +96,11 @@ async function runTTLCleanup() {
 
 async function main() {
   console.log(`Worker Scheduler ${WORKER_ID} starting...`);
+  if (!ENABLE_LEGACY_SCRAPERS) {
+    console.warn(
+      `[${WORKER_ID}] Legacy per-search scrapers disabled (set ENABLE_LEGACY_SCRAPERS=true to re-enable in controlled environments)`
+    );
+  }
 
   // Optional health check server (disabled by default, enable with ENABLE_HTTP=true)
   if (process.env.ENABLE_HTTP === "true") {
@@ -140,97 +146,109 @@ async function main() {
     await runTTLCleanup();
   }, TTL_CLEANUP_INTERVAL);
 
-  // Periodic re-hydration (every 30 minutes)
+  // Legacy jobs (per-search scraping + per-listing hydration) are disabled by default.
+  // Guardrail: pooled scraping is only enqueued by the pooled scheduler worker.
   const REHYDRATION_INTERVAL = 30 * 60 * 1000; // 30 minutes
-  setInterval(async () => {
-    try {
-      const result = await rehydrateListings(undefined, 30); // Re-hydrate listings older than 30 minutes
-      if (result.processed > 0) {
-        console.log(`[${WORKER_ID}] Re-hydrated ${result.processed} listings: ${result.succeeded} succeeded, ${result.failed} failed`);
-      }
-    } catch (error) {
-      console.error(`[${WORKER_ID}] Re-hydration error:`, error);
-    }
-  }, REHYDRATION_INTERVAL);
-
-  // Initial re-hydration run
-  setTimeout(async () => {
-    try {
-      await rehydrateListings(undefined, 30);
-    } catch (error) {
-      console.error(`[${WORKER_ID}] Initial re-hydration error:`, error);
-    }
-  }, 60000); // Run after 1 minute
-
-  // Facebook scraping job (every 10 minutes)
   const FACEBOOK_JOB_INTERVAL = 10 * 60 * 1000; // 10 minutes
-  setInterval(async () => {
-    try {
-      workerHeartbeat.facebookJob.lastRun = new Date().toISOString();
-      console.log(`[${WORKER_ID}] 🔵 Facebook job START`);
-      const result = await runFacebookScrapingJob();
-      workerHeartbeat.facebookJob.lastSuccess = new Date().toISOString();
-      workerHeartbeat.facebookJob.lastStats = result;
-      workerHeartbeat.totalJobsProcessed++;
-      console.log(
-        `[${WORKER_ID}] ✅ Facebook job COMPLETE: ${result.searchesScanned} searches scanned, ${result.listingsFetched} listings fetched, ${result.matchesSaved} matches saved`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Facebook scraping job ERROR:`, error);
-    }
-  }, FACEBOOK_JOB_INTERVAL);
-
-  // Initial Facebook job run
-  setTimeout(async () => {
-    try {
-      workerHeartbeat.facebookJob.lastRun = new Date().toISOString();
-      console.log(`[${WORKER_ID}] 🔵 Facebook job START (initial run)`);
-      const result = await runFacebookScrapingJob();
-      workerHeartbeat.facebookJob.lastSuccess = new Date().toISOString();
-      workerHeartbeat.facebookJob.lastStats = result;
-      workerHeartbeat.totalJobsProcessed++;
-      console.log(
-        `[${WORKER_ID}] ✅ Facebook job COMPLETE (initial): ${result.searchesScanned} searches, ${result.listingsFetched} listings, ${result.matchesSaved} matches`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Initial Facebook job ERROR:`, error);
-    }
-  }, 120000); // Run after 2 minutes
-
-  // Vinted scraping job (every 10 minutes)
   const VINTED_JOB_INTERVAL = 10 * 60 * 1000; // 10 minutes
-  setInterval(async () => {
-    try {
-      workerHeartbeat.vintedJob.lastRun = new Date().toISOString();
-      console.log(`[${WORKER_ID}] 🟣 Vinted job START`);
-      const result = await runVintedScrapingJob();
-      workerHeartbeat.vintedJob.lastSuccess = new Date().toISOString();
-      workerHeartbeat.vintedJob.lastStats = result;
-      workerHeartbeat.totalJobsProcessed++;
-      console.log(
-        `[${WORKER_ID}] ✅ Vinted job COMPLETE: ${result.searchesScanned} searches scanned, ${result.listingsFetched} listings fetched, ${result.matchesSaved} matches saved`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Vinted scraping job ERROR:`, error);
-    }
-  }, VINTED_JOB_INTERVAL);
+  if (ENABLE_LEGACY_SCRAPERS) {
+    // Periodic re-hydration (every 30 minutes)
+    setInterval(async () => {
+      try {
+        const { rehydrateListings } = await import("./hydration");
+        const result = await rehydrateListings(undefined, 30); // Re-hydrate listings older than 30 minutes
+        if (result.processed > 0) {
+          console.log(
+            `[${WORKER_ID}] Re-hydrated ${result.processed} listings: ${result.succeeded} succeeded, ${result.failed} failed`
+          );
+        }
+      } catch (error) {
+        console.error(`[${WORKER_ID}] Re-hydration error:`, error);
+      }
+    }, REHYDRATION_INTERVAL);
 
-  // Initial Vinted job run
-  setTimeout(async () => {
-    try {
-      workerHeartbeat.vintedJob.lastRun = new Date().toISOString();
-      console.log(`[${WORKER_ID}] 🟣 Vinted job START (initial run)`);
-      const result = await runVintedScrapingJob();
-      workerHeartbeat.vintedJob.lastSuccess = new Date().toISOString();
-      workerHeartbeat.vintedJob.lastStats = result;
-      workerHeartbeat.totalJobsProcessed++;
-      console.log(
-        `[${WORKER_ID}] ✅ Vinted job COMPLETE (initial): ${result.searchesScanned} searches, ${result.listingsFetched} listings, ${result.matchesSaved} matches`
-      );
-    } catch (error) {
-      console.error(`[${WORKER_ID}] ❌ Initial Vinted job ERROR:`, error);
-    }
-  }, 150000); // Run after 2.5 minutes (staggered from Facebook)
+    // Initial re-hydration run
+    setTimeout(async () => {
+      try {
+        const { rehydrateListings } = await import("./hydration");
+        await rehydrateListings(undefined, 30);
+      } catch (error) {
+        console.error(`[${WORKER_ID}] Initial re-hydration error:`, error);
+      }
+    }, 60000); // Run after 1 minute
+
+    // Facebook scraping job (every 10 minutes)
+    setInterval(async () => {
+      try {
+        workerHeartbeat.facebookJob.lastRun = new Date().toISOString();
+        console.log(`[${WORKER_ID}] 🔵 Facebook job START`);
+        const { runFacebookScrapingJob } = await import("./facebook-job");
+        const result = await runFacebookScrapingJob();
+        workerHeartbeat.facebookJob.lastSuccess = new Date().toISOString();
+        workerHeartbeat.facebookJob.lastStats = result;
+        workerHeartbeat.totalJobsProcessed++;
+        console.log(
+          `[${WORKER_ID}] ✅ Facebook job COMPLETE: ${result.searchesScanned} searches scanned, ${result.listingsFetched} listings fetched, ${result.matchesSaved} matches saved`
+        );
+      } catch (error) {
+        console.error(`[${WORKER_ID}] ❌ Facebook scraping job ERROR:`, error);
+      }
+    }, FACEBOOK_JOB_INTERVAL);
+
+    // Initial Facebook job run
+    setTimeout(async () => {
+      try {
+        workerHeartbeat.facebookJob.lastRun = new Date().toISOString();
+        console.log(`[${WORKER_ID}] 🔵 Facebook job START (initial run)`);
+        const { runFacebookScrapingJob } = await import("./facebook-job");
+        const result = await runFacebookScrapingJob();
+        workerHeartbeat.facebookJob.lastSuccess = new Date().toISOString();
+        workerHeartbeat.facebookJob.lastStats = result;
+        workerHeartbeat.totalJobsProcessed++;
+        console.log(
+          `[${WORKER_ID}] ✅ Facebook job COMPLETE (initial): ${result.searchesScanned} searches, ${result.listingsFetched} listings, ${result.matchesSaved} matches`
+        );
+      } catch (error) {
+        console.error(`[${WORKER_ID}] ❌ Initial Facebook job ERROR:`, error);
+      }
+    }, 120000); // Run after 2 minutes
+
+    // Vinted scraping job (every 10 minutes)
+    setInterval(async () => {
+      try {
+        workerHeartbeat.vintedJob.lastRun = new Date().toISOString();
+        console.log(`[${WORKER_ID}] 🟣 Vinted job START`);
+        const { runVintedScrapingJob } = await import("./vinted-job");
+        const result = await runVintedScrapingJob();
+        workerHeartbeat.vintedJob.lastSuccess = new Date().toISOString();
+        workerHeartbeat.vintedJob.lastStats = result;
+        workerHeartbeat.totalJobsProcessed++;
+        console.log(
+          `[${WORKER_ID}] ✅ Vinted job COMPLETE: ${result.searchesScanned} searches scanned, ${result.listingsFetched} listings fetched, ${result.matchesSaved} matches saved`
+        );
+      } catch (error) {
+        console.error(`[${WORKER_ID}] ❌ Vinted scraping job ERROR:`, error);
+      }
+    }, VINTED_JOB_INTERVAL);
+
+    // Initial Vinted job run
+    setTimeout(async () => {
+      try {
+        workerHeartbeat.vintedJob.lastRun = new Date().toISOString();
+        console.log(`[${WORKER_ID}] 🟣 Vinted job START (initial run)`);
+        const { runVintedScrapingJob } = await import("./vinted-job");
+        const result = await runVintedScrapingJob();
+        workerHeartbeat.vintedJob.lastSuccess = new Date().toISOString();
+        workerHeartbeat.vintedJob.lastStats = result;
+        workerHeartbeat.totalJobsProcessed++;
+        console.log(
+          `[${WORKER_ID}] ✅ Vinted job COMPLETE (initial): ${result.searchesScanned} searches, ${result.listingsFetched} listings, ${result.matchesSaved} matches`
+        );
+      } catch (error) {
+        console.error(`[${WORKER_ID}] ❌ Initial Vinted job ERROR:`, error);
+      }
+    }, 150000); // Run after 2.5 minutes (staggered from Facebook)
+  }
 
   // Alert delivery job (every 5 minutes) - only if enabled
   if (process.env.ENABLE_ALERT_DELIVERY === "true") {
@@ -263,9 +281,12 @@ async function main() {
     console.log("🔕 Alert delivery disabled (local dev)");
   }
 
-  // Saved search scheduler (cron-based)
+  // Saved search scheduler (cron-based) - legacy Redis scheduler that enqueues per-search ingestion jobs
   const SCHEDULER_TICK_MS = Number(process.env.SCHEDULER_TICK_MS ?? 60000);
   const MAX_DUE_PER_TICK = Number(process.env.SCHEDULER_MAX_DUE ?? 25);
+  const FB_POOL_SCHEDULER_ENABLED = process.env.ENABLE_FB_POOL_SCHEDULER === "true";
+  const FB_POOL_SCHEDULER_TICK_MS = Number(process.env.FB_POOL_SCHEDULER_TICK_MS ?? 60_000);
+  const FB_POOL_MAX_POOLS = Number(process.env.FB_POOL_MAX_POOLS ?? 3);
 
   function nextRun(cron: string, fromDate: Date = new Date()): number {
     try {
@@ -372,16 +393,50 @@ async function main() {
     }
   }
 
-  // Run saved search scheduler
-  setInterval(() => {
-    savedSearchTick().catch((e) => console.error(`[${WORKER_ID}] Saved search tick error:`, e));
-  }, SCHEDULER_TICK_MS);
+  if (ENABLE_LEGACY_SCRAPERS) {
+    // Run saved search scheduler
+    setInterval(() => {
+      savedSearchTick().catch((e) =>
+        console.error(`[${WORKER_ID}] Saved search tick error:`, e)
+      );
+    }, SCHEDULER_TICK_MS);
 
-  // Immediate tick on startup
-  savedSearchTick().catch((e) => console.error(`[${WORKER_ID}] Initial saved search tick error:`, e));
+    // Immediate tick on startup
+    savedSearchTick().catch((e) =>
+      console.error(`[${WORKER_ID}] Initial saved search tick error:`, e)
+    );
+  }
+
+  // Facebook pool scheduler (BullMQ-based, operator controlled)
+  if (FB_POOL_SCHEDULER_ENABLED) {
+    startFbPoolSchedulerWorker({ maxPools: FB_POOL_MAX_POOLS });
+
+    const runTick = () =>
+      enqueueSchedulerTick().catch((e) =>
+        console.error(`[${WORKER_ID}] FB pool scheduler tick error:`, e)
+      );
+
+    // Immediate tick on startup
+    runTick();
+
+    // Periodic ticks
+    setInterval(runTick, FB_POOL_SCHEDULER_TICK_MS);
+  }
 
   const alertDeliveryStatus = process.env.ENABLE_ALERT_DELIVERY === "true" ? "enabled" : "disabled";
-  console.log(`Worker Scheduler ${WORKER_ID} running (scan interval: ${SCAN_INTERVAL}ms, TTL cleanup interval: ${TTL_CLEANUP_INTERVAL}ms, re-hydration interval: ${REHYDRATION_INTERVAL}ms, Facebook job interval: ${FACEBOOK_JOB_INTERVAL}ms, Alert delivery: ${alertDeliveryStatus}, saved search tick: ${SCHEDULER_TICK_MS}ms)...`);
+  const userAlertDispatchStatus =
+    process.env.ENABLE_USER_ALERT_DISPATCH === "true" ? "enabled" : "disabled";
+  const fbPoolSchedulerStatus = FB_POOL_SCHEDULER_ENABLED ? "enabled" : "disabled";
+
+  // User-facing instant alerts (pooled deals -> push/email).
+  // Guardrail: this worker reads pooled deals and writes notification tables only; never triggers scraping.
+  if (process.env.ENABLE_USER_ALERT_DISPATCH === "true") {
+    startUserAlertDispatchWorker();
+  }
+
+  console.log(
+    `Worker Scheduler ${WORKER_ID} running (scan interval: ${SCAN_INTERVAL}ms, TTL cleanup interval: ${TTL_CLEANUP_INTERVAL}ms, FB pool scheduler: ${fbPoolSchedulerStatus}, Alert delivery: ${alertDeliveryStatus}, User alerts: ${userAlertDispatchStatus}, legacy scrapers: ${ENABLE_LEGACY_SCRAPERS ? "enabled" : "disabled"})...`
+  );
 }
 
 // Clean shutdown handlers
