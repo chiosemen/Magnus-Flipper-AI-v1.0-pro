@@ -25,7 +25,7 @@ function isUnknownColumnError(error: any): boolean {
 export async function GET(req: Request) {
   // Deprecated: legacy per-search deals endpoint (search_id-based).
   // Guardrail: pooled-only architecture uses `/api/deals` (search params match), not `search_id`.
-  const blocked = blockUnlessDevAdmin();
+  const blocked = blockUnlessDevAdmin(req);
   if (blocked) return blocked;
 
   const supabase = getSupabase();

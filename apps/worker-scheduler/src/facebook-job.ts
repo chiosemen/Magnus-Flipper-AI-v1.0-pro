@@ -11,9 +11,12 @@ export async function runFacebookScrapingJob(): Promise<{
   listingsFetched: number;
   matchesSaved: number;
 }> {
-  if (process.env.ENABLE_LEGACY_SCRAPERS !== "true") {
+  if (
+    process.env.ENABLE_LEGACY_PER_SEARCH_SCRAPERS !== "true" &&
+    process.env.ENABLE_LEGACY_SCRAPERS !== "true"
+  ) {
     console.warn(
-      "[Facebook Job] Legacy per-search scraper is disabled (ENABLE_LEGACY_SCRAPERS=false); skipping"
+      "[Facebook Job] Legacy per-search scraper is disabled (ENABLE_LEGACY_PER_SEARCH_SCRAPERS=false); skipping"
     );
     return { searchesScanned: 0, listingsFetched: 0, matchesSaved: 0 };
   }

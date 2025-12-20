@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     // Deprecated: legacy ingestion status endpoint. Kept for local debugging only.
-    const blocked = blockUnlessDevAdmin();
+    const blocked = blockUnlessDevAdmin(_req);
     if (blocked) return blocked;
 
     // Verify Redis connection is available

@@ -5,7 +5,7 @@ const APIFY_TOKEN = process.env.APIFY_TOKEN;
 
 export async function GET(req: Request) {
   // Deprecated: legacy Apify dataset proxy route. Kept for local debugging only.
-  const blocked = blockUnlessDevAdmin();
+  const blocked = blockUnlessDevAdmin(req);
   if (blocked) return blocked;
 
   const { searchParams } = new URL(req.url);

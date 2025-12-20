@@ -53,10 +53,10 @@ function isUnknownColumnError(error: any): boolean {
   );
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   // Deprecated: legacy Facebook saved-search route (service-role). Kept for local debugging only.
   // Guardrail: production must never allow unauthenticated service-role writes/reads that bypass RLS.
-  const blocked = blockUnlessDevAdmin();
+  const blocked = blockUnlessDevAdmin(req);
   if (blocked) return blocked;
 
   const supabase = getSupabase();
@@ -155,7 +155,7 @@ export async function GET() {
 export async function POST(req: Request) {
   // Deprecated: legacy Facebook saved-search route (service-role). Kept for local debugging only.
   // Guardrail: production must never allow unauthenticated service-role writes/reads that bypass RLS.
-  const blocked = blockUnlessDevAdmin();
+  const blocked = blockUnlessDevAdmin(req);
   if (blocked) return blocked;
 
   const supabase = getSupabase();

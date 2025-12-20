@@ -28,7 +28,7 @@ const CRON_LABELS: Record<string, string> = {
 export async function POST(req: Request) {
   try {
     // Deprecated: legacy Redis saved-search scheduler API. Kept for local debugging only.
-    const blocked = blockUnlessDevAdmin();
+    const blocked = blockUnlessDevAdmin(req);
     if (blocked) return blocked;
 
     const body = await req.json();
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     // Deprecated: legacy Redis saved-search scheduler API. Kept for local debugging only.
-    const blocked = blockUnlessDevAdmin();
+    const blocked = blockUnlessDevAdmin(req);
     if (blocked) return blocked;
 
     const { searchParams } = new URL(req.url);
@@ -136,7 +136,7 @@ export async function GET(req: Request) {
 export async function DELETE(req: Request) {
   try {
     // Deprecated: legacy Redis saved-search scheduler API. Kept for local debugging only.
-    const blocked = blockUnlessDevAdmin();
+    const blocked = blockUnlessDevAdmin(req);
     if (blocked) return blocked;
 
     const { searchParams } = new URL(req.url);

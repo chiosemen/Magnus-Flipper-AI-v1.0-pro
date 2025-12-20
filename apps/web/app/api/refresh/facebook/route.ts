@@ -63,7 +63,7 @@ async function getAuthedUserId(req: Request): Promise<string | null> {
 
 export async function POST(req: Request) {
   // Deprecated: web routes must not enqueue scraping jobs. Pooled scrapes are scheduled by workers only.
-  const blocked = blockUnlessDevAdmin();
+  const blocked = blockUnlessDevAdmin(req);
   if (blocked) return blocked;
 
   // This route enqueues work via BullMQ/Redis; it cannot run in environments without Redis.
@@ -84,6 +84,15 @@ export async function POST(req: Request) {
 
   if (!userId) {
     return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+  }
+
+  // Optional admin allowlist (defense in depth for this dev-only endpoint).
+  const allowlist = (process.env.ADMIN_USER_IDS ?? "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
+  if (allowlist.length > 0 && !allowlist.includes(userId)) {
+    return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
   let body: any = {};

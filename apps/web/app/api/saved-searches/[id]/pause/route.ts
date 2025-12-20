@@ -8,7 +8,7 @@ export async function POST(
 ) {
   try {
     // Deprecated: legacy Redis saved-search scheduler API. Kept for local debugging only.
-    const blocked = blockUnlessDevAdmin();
+    const blocked = blockUnlessDevAdmin(req);
     if (blocked) return blocked;
 
     const { id } = await params;

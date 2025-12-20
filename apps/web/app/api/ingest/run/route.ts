@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     // Deprecated: legacy scrape-trigger route (per-search ingestion). Kept for local debugging only.
-    const blocked = blockUnlessDevAdmin();
+    const blocked = blockUnlessDevAdmin(req);
     if (blocked) return blocked;
 
     // Verify Redis connection is available

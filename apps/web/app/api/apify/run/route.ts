@@ -61,7 +61,7 @@ function selectActor(marketplace: string) {
 
 export async function POST(req: Request) {
   // Deprecated: legacy scrape-trigger route. Kept for local debugging only.
-  const blocked = blockUnlessDevAdmin();
+  const blocked = blockUnlessDevAdmin(req);
   if (blocked) return blocked;
 
   if (!apifyToken) {

@@ -5,7 +5,9 @@ import { Button } from "../../../marketing-swoopa/components/ui/button";
 
 export function FacebookRefreshButton({ poolId }: { poolId: string }) {
   // Guardrail: web UI must never enqueue scraping in production.
+  // Even in development, keep this disabled unless explicitly enabled.
   if (process.env.NODE_ENV !== "development") return null;
+  if (process.env.NEXT_PUBLIC_ENABLE_ADMIN_REFRESH !== "true") return null;
 
   const { state, error, trigger, lastUpdatedAt } = useInstantRefresh(poolId);
 

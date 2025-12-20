@@ -5,7 +5,7 @@ import { blockUnlessDevAdmin } from "../_lib/legacyScrapeGate";
 export async function GET(req: Request) {
   try {
     // Deprecated: legacy Redis notifications endpoint. Kept for local debugging only.
-    const blocked = blockUnlessDevAdmin();
+    const blocked = blockUnlessDevAdmin(req);
     if (blocked) return blocked;
 
     const { searchParams } = new URL(req.url);
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     // Deprecated: legacy Redis notifications endpoint. Kept for local debugging only.
-    const blocked = blockUnlessDevAdmin();
+    const blocked = blockUnlessDevAdmin(req);
     if (blocked) return blocked;
 
     const body = await req.json();

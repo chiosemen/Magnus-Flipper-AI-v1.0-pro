@@ -6,6 +6,7 @@ import { Card, CardContent } from "../../../marketing-swoopa/components/ui/card"
 import { Button } from "../../../marketing-swoopa/components/ui/button";
 import type { DealRow } from "../../../lib/supabase/types";
 import { useHydratedNow } from "@/lib/hydratedTime";
+import { useRegion } from "@/providers/RegionProvider";
 
 type DealImage = {
   url: string;
@@ -81,6 +82,7 @@ export default function FacebookDealsList() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const now = useHydratedNow();
+  const { region } = useRegion();
 
   useEffect(() => {
     (async () => {
@@ -88,7 +90,12 @@ export default function FacebookDealsList() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch("/api/facebook/deals/pool?limit=20");
+        // Pooled-only: UI reads from /api/deals (deals.search_id IS NULL), never from per-search scrape APIs.
+        const params = new URLSearchParams();
+        params.set("region", region);
+        params.set("marketplace", "facebook");
+        params.set("limit", "20");
+        const res = await fetch(`/api/deals?${params.toString()}`, { cache: "no-store" });
         if (!res.ok) {
           const payload = await res.json().catch(() => ({}));
           const message =
@@ -132,7 +139,7 @@ export default function FacebookDealsList() {
             images: images.length > 0 ? images : null,
             primaryImage,
             thumbnail,
-            createdAt: row.created_at || null,
+            createdAt: (row as any).posted_at || (row as any).fetched_at || row.created_at || null,
           };
         });
 
@@ -145,7 +152,7 @@ export default function FacebookDealsList() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [region]);
 
   const postedAgo = (createdAt: string | null) => {
     if (!createdAt) return null;

@@ -4,23 +4,39 @@
  */
 
 import { app, InvocationContext, Timer } from "@azure/functions";
-import { createClient } from "@supabase/supabase-js";
 import { ScraperOrchestrator } from "@magnus-flipper-ai/scraper-sync";
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { pollActiveSearches } from "@magnus-flipper-ai/scraper-sync";
+import { supabase, supabaseServiceRoleKey, supabaseUrl } from "./supabase.js";
+import "./bulldog-timer.js";
 
 export async function scraperTimer(
   myTimer: Timer,
   context: InvocationContext
 ): Promise<void> {
+  const legacyEnabled =
+    process.env.ENABLE_LEGACY_PER_SEARCH_SCRAPERS === "true" ||
+    process.env.ENABLE_LEGACY_SCRAPERS === "true";
+  if (!legacyEnabled) {
+    context.log("[worker-scraper] Legacy scrapers disabled (pooled-only). Skipping tick.");
+    return;
+  }
+
+  console.log("🚀 Worker-scraper started", {
+    env: {
+      hasSupabase: !!process.env.SUPABASE_URL,
+      nodeEnv: process.env.NODE_ENV,
+    },
+  });
+
   const startTime = Date.now();
   context.log(`Marketplace Scraper worker started at ${new Date().toISOString()}`);
 
   try {
     // Initialize orchestrator
-    const orchestrator = new ScraperOrchestrator(supabaseUrl, supabaseKey);
+    const orchestrator = new ScraperOrchestrator(
+      supabaseUrl,
+      supabaseServiceRoleKey
+    );
 
     // Get all enabled scraper configs
     const { data: configs } = await supabase
@@ -47,6 +63,7 @@ export async function scraperTimer(
     // Run scrapers for each marketplace
     const results = [];
     for (const [marketplace, marketplaceConfigs] of configsByMarketplace.entries()) {
+      console.log("🕷️ Running scraper for", marketplace);
       try {
         context.log(`Starting scraper for ${marketplace}...`);
 
@@ -113,3 +130,38 @@ app.timer("scraperTimer", {
   schedule: "0 0 */6 * * *", // Every 6 hours
   handler: scraperTimer,
 });
+
+// -----------------------------------------------------------------------------
+// Bulldog standalone mode (non-Azure environments)
+// -----------------------------------------------------------------------------
+const isAzureRuntime = Boolean(process.env.WEBSITE_INSTANCE_ID);
+const legacyEnabled =
+  process.env.ENABLE_LEGACY_PER_SEARCH_SCRAPERS === "true" ||
+  process.env.ENABLE_LEGACY_SCRAPERS === "true";
+const pollIntervalMs =
+  Number(process.env.BULLDOG_POLL_INTERVAL_MS) > 0
+    ? Number(process.env.BULLDOG_POLL_INTERVAL_MS)
+    : 60_000;
+const runOnce = process.env.BULLDOG_RUN_ONCE === "true";
+
+if (!isAzureRuntime && legacyEnabled) {
+  console.log("[Bulldog] Standalone mode active");
+
+  const runPoll = async () => {
+    try {
+      await pollActiveSearches(supabaseUrl, supabaseServiceRoleKey);
+    } catch (error: any) {
+      console.error("[Bulldog] pollActiveSearches failed", error);
+    }
+  };
+
+  // Kick off immediately; optionally exit after one cycle for controlled local runs
+  if (runOnce) {
+    runPoll()
+      .then(() => process.exit(0))
+      .catch(() => process.exit(1));
+  } else {
+    setInterval(runPoll, pollIntervalMs);
+    runPoll();
+  }
+}

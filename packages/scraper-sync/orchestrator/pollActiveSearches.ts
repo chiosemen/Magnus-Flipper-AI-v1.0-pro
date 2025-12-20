@@ -224,9 +224,13 @@ export async function pollActiveSearches(
 ): Promise<void> {
   // Guardrail (pooled-only cutover):
   // Per-search ingestion is considered legacy and must be explicitly enabled in controlled environments.
-  const legacyEnabled = process.env.ENABLE_LEGACY_SCRAPERS === "true";
+  const legacyEnabled =
+    process.env.ENABLE_LEGACY_PER_SEARCH_SCRAPERS === "true" ||
+    process.env.ENABLE_LEGACY_SCRAPERS === "true";
   if (!legacyEnabled) {
-    console.log("[INGEST] Legacy scrapers disabled via ENABLE_LEGACY_SCRAPERS. Exiting safely.");
+    console.log(
+      "[INGEST] Legacy per-search scrapers disabled (ENABLE_LEGACY_PER_SEARCH_SCRAPERS=false). Exiting safely."
+    );
     return;
   }
 
