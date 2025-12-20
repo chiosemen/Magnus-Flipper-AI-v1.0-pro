@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { ApifyClient } from "apify-client";
 import { APIFY_MAX_ITEMS } from "../../../../src/config/apify";
