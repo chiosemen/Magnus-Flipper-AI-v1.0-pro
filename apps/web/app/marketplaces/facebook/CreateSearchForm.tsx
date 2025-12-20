@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "../../../marketing-swoopa/components/ui/button";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
 
 type Props = {
-  onSearchCreated?: (runs: any[]) => void;
+  onSearchCreated?: (search: any) => void;
   disabled?: boolean;
 };
 
@@ -13,7 +14,7 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
-  
+
   const [formData, setFormData] = useState({
     name: "",
     keywords: "",
@@ -46,34 +47,43 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
         return;
       }
 
-      const response = await fetch("/api/apify/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify([
-          {
-            marketplace: "facebook",
-            query: keywords.join(" "),
-            minPrice: formData.minPrice
-              ? parseFloat(formData.minPrice)
-              : undefined,
-            maxPrice: formData.maxPrice
-              ? parseFloat(formData.maxPrice)
-              : undefined,
-            location: formData.maxDistanceMiles || undefined,
-          },
-        ]),
-      });
+      // POOLED-ONLY: Write intent to saved_searches (Supabase)
+      // Pooled scraper will populate public.scraped_listings independently
+      const supabase = createSupabaseBrowser();
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create search");
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData?.user) {
+        throw new Error("You must be logged in to save searches");
       }
 
-      const data = await response.json();
+      const searchIntent = {
+        user_id: userData.user.id,
+        name: formData.name || keywords.join(" "),
+        marketplace: "facebook",
+        query: keywords.join(" "),
+        filters: {
+          keywords,
+          minPrice: formData.minPrice ? parseFloat(formData.minPrice) : null,
+          maxPrice: formData.maxPrice ? parseFloat(formData.maxPrice) : null,
+          maxDistanceMiles: formData.maxDistanceMiles ? parseFloat(formData.maxDistanceMiles) : null,
+          condition: formData.condition.length > 0 ? formData.condition : null,
+        },
+        is_active: true,
+      };
+
+      const { data: savedSearch, error: saveError } = await supabase
+        .from("saved_searches")
+        .insert(searchIntent)
+        .select()
+        .single();
+
+      if (saveError) {
+        throw new Error(saveError.message || "Failed to save search");
+      }
+
       setSuccess(true);
-      onSearchCreated?.(data.runs || []);
+      onSearchCreated?.(savedSearch);
+
       setFormData({
         name: "",
         keywords: "",
@@ -310,6 +320,10 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
             </div>
           </div>
 
+          <div className="p-3 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-300 text-xs">
+            📌 Your search will be saved and monitored. Live deals appear below from our pooled marketplace scraper.
+          </div>
+
           {error && (
             <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
               {error}
@@ -318,7 +332,7 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
 
           {success && (
             <div className="p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 text-sm">
-              Search created successfully!
+              Search saved successfully! Pooled deals will appear below.
             </div>
           )}
 
@@ -336,7 +350,7 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
               disabled={loading || disabled}
               className="bg-gradient-to-r from-[#00E5FF] to-[#7B2FFF] hover:from-[#00E5FF]/90 hover:to-[#7B2FFF]/90 text-white font-extrabold"
             >
-              {loading ? "Creating..." : "Create Search"}
+              {loading ? "Saving..." : "Save Search"}
             </Button>
           </div>
         </div>
