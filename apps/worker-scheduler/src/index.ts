@@ -1,11 +1,17 @@
+/**
+ * ARCHITECTURAL INVARIANT:
+ * This scheduler operates on POOLS ONLY.
+ * Per-search scheduling is permanently removed.
+ * Any attempt to reintroduce saved_searches or searchId-based logic
+ * must be rejected by code review and guardrails.
+ */
+
 import { runScheduledScan } from "./scheduler";
 import { scheduleAllMarketplaces } from "./scanner";
 import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
 import { runActivityFeedTTL } from "./services/ttl-cleanup";
 import { rehydrateListings } from "./hydration";
 import { runAlertDeliveryCycle } from "./alerts/alert-delivery-worker";
-import { redis, ingestQueue, type ScrapeJob } from "@magnus-flipper-ai/queue";
-import cronParser from "cron-parser";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default
@@ -33,7 +39,7 @@ async function scheduleScans() {
 
   try {
     const schedule = await scheduleAllMarketplaces();
-    
+
     console.log(`[${WORKER_ID}] Schedule generated for ${schedule.size} marketplaces:`);
     for (const [marketplace, delayMs] of schedule.entries()) {
       const delaySeconds = Math.ceil(delayMs / 1000);
@@ -88,14 +94,14 @@ async function main() {
   if (process.env.ENABLE_HTTP === "true") {
     const http = await import("http");
     const PORT = parseInt(process.env.PORT || "3001");
-    
+
     const server = http.createServer((req, res) => {
       if (req.url === "/health") {
         workerHeartbeat.lastHeartbeat = new Date().toISOString();
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ 
-          status: "ok", 
-          worker: WORKER_ID, 
+        res.end(JSON.stringify({
+          status: "ok",
+          worker: WORKER_ID,
           timestamp: new Date().toISOString(),
           scanInterval: SCAN_INTERVAL,
           uptime: Date.now() - new Date(workerHeartbeat.startTime).getTime(),
@@ -185,125 +191,8 @@ async function main() {
     console.log("🔕 Alert delivery disabled (local dev)");
   }
 
-  // Saved search scheduler (cron-based)
-  const SCHEDULER_TICK_MS = Number(process.env.SCHEDULER_TICK_MS ?? 60000);
-  const MAX_DUE_PER_TICK = Number(process.env.SCHEDULER_MAX_DUE ?? 25);
-
-  function nextRun(cron: string, fromDate: Date = new Date()): number {
-    try {
-      const it = cronParser.parseExpression(cron, { currentDate: fromDate });
-      return it.next().getTime();
-    } catch (error) {
-      console.error(`[${WORKER_ID}] Invalid cron expression: ${cron}`, error);
-      // Default to 1 hour from now if cron is invalid
-      return Date.now() + 60 * 60 * 1000;
-    }
-  }
-
-  async function seedDueIndexForUser(userId: string) {
-    try {
-      const ids = await redis.smembers(`saved:search:index:${userId}`);
-      for (const id of ids) {
-        const s = await redis.hgetall(`saved:search:${userId}:${id}`);
-        if (!s || s.paused === "true") continue;
-        const nr = nextRun(s.cron);
-        await redis.zadd("saved:due", nr, `${userId}:${id}`);
-      }
-    } catch (error) {
-      console.error(`[${WORKER_ID}] Error seeding due index for user ${userId}:`, error);
-    }
-  }
-
-  async function savedSearchTick() {
-    try {
-      const now = Date.now();
-
-      // grab due searches
-      const due = await redis.zrangebyscore("saved:due", 0, now, "LIMIT", 0, MAX_DUE_PER_TICK);
-      if (!due.length) return;
-
-      console.log(`[${WORKER_ID}] 🗓️ Saved search tick: ${due.length} due searches`);
-
-      for (const member of due) {
-        try {
-          const [userId, searchId] = member.split(":");
-          if (!userId || !searchId) {
-            await redis.zrem("saved:due", member);
-            continue;
-          }
-
-          const s = await redis.hgetall(`saved:search:${userId}:${searchId}`);
-          if (!s || !s.query) {
-            await redis.zrem("saved:due", member);
-            continue;
-          }
-
-          if (s.paused === "true") {
-            await redis.zrem("saved:due", member);
-            continue;
-          }
-
-          // Create parent job
-          const parent = await ingestQueue.add("ingest-parent", { kind: "parent" });
-          const jobId = String(parent.id);
-
-          // Initialize status
-          await redis.hset(`ingest:${jobId}:status`, {
-            status: "queued",
-            message: "Queued for scanning",
-            totalBatches: "1",
-            doneBatches: "0",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-
-          // enqueue scrape
-          const job: ScrapeJob = {
-            jobId,
-            marketplace: (s.marketplace || "facebook") as "facebook",
-            query: s.query,
-            region: s.region,
-            page: 1,
-            batchSize: 20,
-            userId: s.userId || userId,
-            savedSearchId: searchId,
-          };
-
-          await ingestQueue.add(`scrape:${s.marketplace || "facebook"}:1`, job, {
-            attempts: 3,
-            backoff: { type: "exponential", delay: 2000 },
-            removeOnComplete: true,
-            removeOnFail: false,
-          });
-
-          // update schedule
-          const nextRunAt = nextRun(s.cron, new Date(now));
-          await redis.hset(`saved:search:${userId}:${searchId}`, {
-            lastRun: new Date(now).toISOString(),
-            updatedAt: new Date(now).toISOString(),
-          });
-          await redis.zadd("saved:due", nextRunAt, member);
-
-          console.log(`[${WORKER_ID}] ✅ Enqueued saved search ${searchId} for user ${userId}, next run: ${new Date(s.nextRunAt).toISOString()}`);
-        } catch (error) {
-          console.error(`[${WORKER_ID}] Error processing saved search ${member}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error(`[${WORKER_ID}] Saved search tick error:`, error);
-    }
-  }
-
-  // Run saved search scheduler
-  setInterval(() => {
-    savedSearchTick().catch((e) => console.error(`[${WORKER_ID}] Saved search tick error:`, e));
-  }, SCHEDULER_TICK_MS);
-
-  // Immediate tick on startup
-  savedSearchTick().catch((e) => console.error(`[${WORKER_ID}] Initial saved search tick error:`, e));
-
   const alertDeliveryStatus = process.env.ENABLE_ALERT_DELIVERY === "true" ? "enabled" : "disabled";
-  console.log(`Worker Scheduler ${WORKER_ID} running (scan interval: ${SCAN_INTERVAL}ms, TTL cleanup interval: ${TTL_CLEANUP_INTERVAL}ms, re-hydration interval: ${REHYDRATION_INTERVAL}ms, Facebook job interval: ${FACEBOOK_JOB_INTERVAL}ms, Alert delivery: ${alertDeliveryStatus}, saved search tick: ${SCHEDULER_TICK_MS}ms)...`);
+  console.log(`Worker Scheduler ${WORKER_ID} running (pooled-only mode: scan interval: ${SCAN_INTERVAL}ms, TTL cleanup interval: ${TTL_CLEANUP_INTERVAL}ms, re-hydration interval: 30min, alert delivery: ${alertDeliveryStatus})...`);
 }
 
 // Clean shutdown handlers
