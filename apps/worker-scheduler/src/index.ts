@@ -1,9 +1,13 @@
 /**
- * ARCHITECTURAL INVARIANT:
- * This scheduler operates on POOLS ONLY.
- * Per-search scheduling is permanently removed.
- * Any attempt to reintroduce saved_searches or searchId-based logic
- * must be rejected by code review and guardrails.
+ * ARCHITECTURAL DOCTRINE — Tiered Pooling (Enforced by CI)
+ *
+ * Magnus Flipper uses TIERED POOLING ONLY.
+ * - Scraping happens at the pool level, never per saved_search
+ * - saved_searches stores user intent + tier scaffolding for future pool configs
+ * - Routing columns (tier, cadence_seconds, execution_mode) will migrate to pool-level config
+ * - Per-search scraping is permanently forbidden and blocked by CI verification
+ *
+ * See: scripts/verify-pooled-only.ts for enforcement guardrails
  */
 
 import { runScheduledScan } from "./scheduler";
