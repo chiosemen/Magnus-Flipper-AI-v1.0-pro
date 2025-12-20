@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "name": "bulldogTimer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 */1 * * * *"
+    }
+  ],
+  "scriptFile": "../dist/scraper/bulldog-timer.js"
+}
+

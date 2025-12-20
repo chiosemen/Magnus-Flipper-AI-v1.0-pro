@@ -79,7 +79,7 @@ Module not found: Can't resolve '@magnus-flipper-ai/ui/providers'
   },
   "files": ["dist", "tailwind-preset.js"],
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmitOnError false || true",
+    "build": "pnpm exec tsc -p tsconfig.json --noEmitOnError false || true",
     "clean": "rm -rf dist"
   }
 }

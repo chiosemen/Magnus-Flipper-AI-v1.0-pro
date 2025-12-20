@@ -114,7 +114,7 @@ Error: Command "pnpm install --no-frozen-lockfile && turbo run build --filter=./
 ```json
 {
   "scripts": {
-    "build": "tsc && cp package.json dist/",
+    "build": "pnpm exec tsc && cp package.json dist/",
     "start": "node dist/server.js",
     "dev": "ts-node --esm src/server.ts",
     "clean": "rm -rf dist",

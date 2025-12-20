@@ -56,7 +56,7 @@ if [ "$MISSING" = true ]; then
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "pnpm exec tsc -p tsconfig.json"
   }
 }
 EOF

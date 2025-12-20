@@ -130,7 +130,7 @@ Module not found: Can't resolve './worker-logger.js'
    // packages/core/package.json
    {
      "scripts": {
-       "build": "tsc"
+       "build": "pnpm exec tsc"
      },
      "main": "dist/index.js",
      "types": "dist/index.d.ts"

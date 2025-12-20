@@ -108,7 +108,7 @@ generator client {
    },
    "scripts": {
      "prebuild": "echo 'Skipping prisma generate inside Docker build...'",
-     "build": "tsc -p tsconfig.json",
+     "build": "pnpm exec tsc -p tsconfig.json",
      "dev": "tsc --watch",
      "clean": "rm -rf dist",
 -    "db:erd": "prisma generate --schema=./prisma/schema.prisma && echo 'ERD written to docs/db/erd.svg'",
