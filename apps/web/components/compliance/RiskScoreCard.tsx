@@ -99,7 +99,7 @@ export function RiskScoreCard({ marketplace, score, rank }: RiskScoreCardProps) 
         <div className="pt-4 border-t border-border">
           <h4 className="text-body-m font-semibold text-foreground mb-2">Recommendations</h4>
           <ul className="space-y-1">
-            {score.recommendations.slice(0, 3).map((rec, index) => (
+            {score.recommendations.slice(0, 3).map((rec: string, index: number) => (
               <li key={index} className="text-body-s text-text-secondary flex items-start gap-2">
                 <span className="text-primary">•</span>
                 <span>{rec}</span>

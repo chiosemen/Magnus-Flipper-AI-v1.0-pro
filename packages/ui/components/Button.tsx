@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
 import { cn } from "./cn";
 
 const buttonVariants = cva(
@@ -35,8 +35,10 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
+  intent?: "primary" | "secondary" | "destructive" | "neutral";
   asChild?: boolean;
   /**
    * Loading state - shows spinner and disables button
