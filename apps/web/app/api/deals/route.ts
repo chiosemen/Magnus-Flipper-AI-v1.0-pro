@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to frontend format
-    const deals = (data || []).map((listing: any) => ({
+    const deals = (data || []).map((listing) => ({
       id: listing.id,
       title: listing.title,
       marketplace: listing.marketplace,
