@@ -8,6 +8,7 @@ import Link from "next/link";
 import { AdminMetricCard } from "./_components/AdminMetricCard";
 import { PoolHealthTable, PoolHealthData } from "./_components/PoolHealthTable";
 import { PoolHealthStatus } from "./_components/PoolStatusBadge";
+import { AdminControlsPanel } from "./_components/AdminControlsPanel";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -288,6 +289,9 @@ async function DashboardContent() {
 
   return (
     <div className="space-y-6">
+      {/* Admin Kill-Switches (SAFE MODE) */}
+      <AdminControlsPanel />
+
       {/* A) Market Overview */}
       <section>
         <h2 className="text-xl font-bold text-[#ededed] mb-3">Market Overview</h2>
