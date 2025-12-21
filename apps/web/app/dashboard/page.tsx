@@ -5,6 +5,7 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import Link from "next/link";
+import { AdminMetricCard } from "./_components/AdminMetricCard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -106,6 +107,42 @@ async function getDashboardData() {
     .select("marketplace, status, last_run_at, last_success_at, error_rate")
     .order("marketplace");
 
+  // ============================================================================
+  // ADMIN OPERATIONS METRICS (Read-only, pooled data)
+  // ============================================================================
+  // These metrics are admin-only and track system operations without triggering
+  // any scraping, scheduling, or queue operations.
+
+  // F) Deals marked stale in last 24h (pooled-only)
+  // SAFE: Read-only count query, no mutations
+  const { count: staleDeals24h } = await supabase
+    .from("scraped_listings")
+    .select("*", { count: "exact", head: true })
+    .is("search_id", null) // Pooled-only
+    .eq("is_stale", true)
+    .gte("updated_at", yesterday.toISOString());
+
+  // G) Active pools count (distinct marketplaces with pooled deals)
+  // SAFE: Aggregation query, no mutations or job triggers
+  const { data: activePools } = await supabase
+    .from("scraped_listings")
+    .select("marketplace")
+    .is("search_id", null) // Pooled-only
+    .eq("is_stale", false);
+
+  const activePoolsCount = new Set(
+    (activePools || []).map((item) => item.marketplace)
+  ).size;
+
+  // H) Alerts sent in last 24h (all users, read-only)
+  // SAFE: Read-only count from alert_notifications table
+  // NOTE: This table exists if alert system is enabled, otherwise returns 0
+  const { count: alertsSent24h } = await supabase
+    .from("alert_notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "SENT")
+    .gte("created_at", yesterday.toISOString());
+
   return {
     overview: {
       totalDeals: totalDeals || 0,
@@ -118,6 +155,12 @@ async function getDashboardData() {
     savedSearchesCount: savedSearches?.length || 0,
     searchesByMarketplace,
     scraperHealth: scraperHealth || [],
+    // Admin operations metrics
+    adminMetrics: {
+      staleDeals24h: staleDeals24h || 0,
+      activePoolsCount,
+      alertsSent24h: alertsSent24h || 0,
+    },
   };
 }
 
@@ -165,6 +208,41 @@ async function DashboardContent() {
             label="Freshness"
             value={`${data.overview.freshnessPercent}%`}
             icon="✨"
+          />
+        </div>
+      </section>
+
+      {/* A.2) Admin Operations (Read-Only Metrics) */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold text-[#ededed]">Admin Operations</h2>
+          <span className="text-xs text-[#6E7681]">
+            As of {new Date().toLocaleString(undefined, {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <AdminMetricCard
+            label="Stale (24h)"
+            value={data.adminMetrics.staleDeals24h}
+            icon="⏱️"
+            subtitle="Deals marked stale in last 24h"
+          />
+          <AdminMetricCard
+            label="Active Pools"
+            value={data.adminMetrics.activePoolsCount}
+            icon="🏊"
+            subtitle="Marketplaces with fresh pooled deals"
+          />
+          <AdminMetricCard
+            label="Alerts Sent (24h)"
+            value={data.adminMetrics.alertsSent24h}
+            icon="🔔"
+            subtitle="Notifications delivered to users"
           />
         </div>
       </section>
@@ -409,15 +487,26 @@ export default async function DashboardPage() {
 function LoadingSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
+      {/* Market Overview Skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-6 h-28" />
         ))}
       </div>
+
+      {/* Admin Operations Skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-5 h-32" />
+        ))}
+      </div>
+
       <div className="text-center text-[#4FF0E6] text-lg py-8">
         <div className="text-4xl mb-2">⚡</div>
         Market is warming up...
       </div>
+
+      {/* Marketplace Breakdown Skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {[1, 2, 3].map((i) => (
           <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 h-24" />
