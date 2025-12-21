@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { createSupabaseServer, getUser } from "@/lib/supabase/server";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
@@ -360,7 +361,31 @@ async function DashboardContent() {
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // ============================================================================
+  // ADMIN GUARD: Server-side authentication enforcement
+  // ============================================================================
+  // This check runs BEFORE any data fetching or component rendering.
+  // Non-admin users are redirected immediately, preventing unauthorized access
+  // to pooled marketplace data and system metrics.
+  const user = await getUser();
+
+  // Check 1: User must be authenticated
+  if (!user) {
+    redirect("/");
+  }
+
+  // Check 2: User must have admin role in app_metadata
+  // app_metadata.role is set by Supabase Auth and cannot be modified by users
+  const userRole = user.app_metadata?.role as string | undefined;
+  if (userRole !== "admin") {
+    redirect("/");
+  }
+
+  // ============================================================================
+  // Admin user verified - proceed with dashboard render
+  // ============================================================================
+
   return (
     <div className="min-h-screen bg-[#0D1117] p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">

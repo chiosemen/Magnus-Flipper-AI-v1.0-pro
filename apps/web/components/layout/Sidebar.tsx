@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 interface NavItem {
   label: string;
@@ -12,7 +14,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: "📊", tier: "free" },
+  { label: "Dashboard", href: "/dashboard", icon: "📊", tier: "admin" }, // Admin-only
   { label: "Deals", href: "/deals", icon: "💎", tier: "free" },
   { label: "Live Feed", href: "/dashboard/feed", icon: "⚡", tier: "free" },
   { label: "Affiliate", href: "/dashboard/affiliate", icon: "🔗", tier: "free" },
@@ -21,15 +23,56 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Analytics", href: "/pro/analytics", icon: "📈", tier: "pro", locked: true },
   { label: "Team", href: "/agency", icon: "👥", tier: "agency", locked: true },
   { label: "Settings", href: "/settings", icon: "⚙️" },
-  { label: "Admin", href: "/admin", icon: "🔧", tier: "admin", locked: true },
+  { label: "Admin", href: "/admin", icon: "🔧", tier: "admin" }, // Admin-only
 ];
 
 /**
  * Sidebar - Main navigation sidebar
  * Uses design tokens: background, surface, border, text-primary, text-secondary, text-muted
+ *
+ * Navigation items are filtered based on user role:
+ * - Admin items (tier: "admin") are HIDDEN for non-admin users
+ * - Pro/Agency items are shown as locked for upsell purposes
  */
 export function Sidebar() {
   const pathname = usePathname();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user role from Supabase
+  useEffect(() => {
+    async function fetchUserRole() {
+      try {
+        const supabase = supabaseBrowser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const role = (user?.app_metadata?.role as string) || null;
+        setUserRole(role);
+      } catch (error) {
+        console.error("Failed to fetch user role:", error);
+        setUserRole(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchUserRole();
+  }, []);
+
+  // Filter navigation items based on user role
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    // No tier requirement - always visible
+    if (!item.tier) return true;
+
+    // Free tier - always visible
+    if (item.tier === "free") return true;
+
+    // Admin tier - only visible to admin users (completely hidden otherwise)
+    if (item.tier === "admin") return userRole === "admin";
+
+    // Pro/Agency tier - show as locked for upsell (but still visible)
+    return true;
+  });
 
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col h-screen fixed left-0 top-0 z-sticky">
@@ -41,7 +84,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1 px-3">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
             const isLocked = item.locked;
 
