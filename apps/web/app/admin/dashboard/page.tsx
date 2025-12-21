@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { createSupabaseServer, getUser } from "@/lib/supabase/server";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/badge";
+import { ApifyKillSwitches } from "./_components/ApifyKillSwitches";
 
 // Force dynamic rendering (no static generation)
 export const dynamic = "force-dynamic";
@@ -33,35 +34,99 @@ export const revalidate = 0;
 async function getAdminMetrics() {
   const supabase = await createSupabaseServer();
 
-  // Placeholder queries - replace with actual Apify cost tracking when available
-  // These demonstrate the pattern for read-only admin metrics
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  // Example: Total pooled deals (read-only)
+  // ========================================================================
+  // Apify Burn Rate Metrics (from apify_usage_events table)
+  // ========================================================================
+
+  // 1. Today's spend
+  const { data: todayEvents } = await supabase
+    .from("apify_usage_events")
+    .select("cost_usd")
+    .gte("started_at", startOfToday.toISOString())
+    .eq("status", "SUCCEEDED");
+
+  const todaySpend = todayEvents?.reduce((sum, e) => sum + (e.cost_usd || 0), 0) || 0;
+
+  // 2. Last 7 days spend
+  const { data: week7Events } = await supabase
+    .from("apify_usage_events")
+    .select("cost_usd")
+    .gte("started_at", sevenDaysAgo.toISOString())
+    .eq("status", "SUCCEEDED");
+
+  const week7Spend = week7Events?.reduce((sum, e) => sum + (e.cost_usd || 0), 0) || 0;
+
+  // 3. Cost per pool (last 7 days)
+  const { data: poolEvents } = await supabase
+    .from("apify_usage_events")
+    .select("marketplace, region, cost_usd, items_scraped")
+    .gte("started_at", sevenDaysAgo.toISOString())
+    .eq("status", "SUCCEEDED");
+
+  interface PoolStats {
+    marketplace: string;
+    region: string | null;
+    totalCost: number;
+    totalItems: number;
+  }
+
+  const poolStats: Record<string, PoolStats> = {};
+
+  poolEvents?.forEach((event) => {
+    const poolKey = `${event.marketplace}_${event.region || "global"}`;
+    if (!poolStats[poolKey]) {
+      poolStats[poolKey] = {
+        marketplace: event.marketplace,
+        region: event.region,
+        totalCost: 0,
+        totalItems: 0,
+      };
+    }
+    poolStats[poolKey].totalCost += event.cost_usd || 0;
+    poolStats[poolKey].totalItems += event.items_scraped || 0;
+  });
+
+  const poolCostBreakdown = Object.entries(poolStats)
+    .map(([poolId, stats]) => ({
+      poolId,
+      ...stats,
+      costPerItem: stats.totalItems > 0 ? stats.totalCost / stats.totalItems : 0,
+    }))
+    .sort((a, b) => b.totalCost - a.totalCost); // Sort by cost descending
+
+  // 4. Cost per deal (overall, last 7 days)
+  const totalCost7d = week7Events?.reduce((sum, e) => sum + (e.cost_usd || 0), 0) || 0;
+  const totalItems7d = poolEvents?.reduce((sum, e) => sum + (e.items_scraped || 0), 0) || 0;
+  const costPerDeal = totalItems7d > 0 ? totalCost7d / totalItems7d : 0;
+
+  // ========================================================================
+  // Operational Metrics
+  // ========================================================================
+
+  // Total pooled deals (read-only)
   const { count: totalDeals } = await supabase
     .from("scraped_listings")
     .select("*", { count: "exact", head: true })
     .is("search_id", null)
     .eq("is_stale", false);
 
-  // Example: Active users count (read-only)
+  // Active users count (read-only)
   const { count: activeUsers } = await supabase
     .from("saved_searches")
     .select("user_id", { count: "exact", head: true })
     .eq("active", true);
 
-  // Placeholder for Apify spend metrics
-  // TODO: Implement when apify_runs table exists
-  const apifySpendMonth = 0; // Placeholder
-  const dailyBurnRate = 0;   // Placeholder
-  const projectedSpend = 0;  // Placeholder
-  const costPerDeal = 0;     // Placeholder
-
   return {
     financial: {
-      currentMonthSpend: apifySpendMonth,
-      dailyBurnRate,
-      projectedMonthlySpend: projectedSpend,
+      todaySpend,
+      week7Spend,
       costPerDeal,
+      poolCostBreakdown,
     },
     operational: {
       totalPooledDeals: totalDeals || 0,
@@ -108,37 +173,110 @@ async function AdminDashboardContent() {
       </div>
 
       <div className="space-y-6">
-        {/* Financial Overview Section */}
+        {/* Apify Burn Rate Section */}
         <section>
           <h2 className="text-xl font-bold text-[#ededed] mb-3">
-            Financial Overview
+            Apify Burn Rate
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <MetricCard
-              label="Current Month Spend"
-              value={`$${metrics.financial.currentMonthSpend.toFixed(2)}`}
+              label="Today's Spend"
+              value={`$${metrics.financial.todaySpend.toFixed(2)}`}
               icon="💸"
-              subtitle="Apify costs (placeholder)"
+              subtitle={metrics.financial.todaySpend > 0 ? "Since midnight UTC" : "No runs today"}
             />
             <MetricCard
-              label="Daily Burn Rate"
-              value={`$${metrics.financial.dailyBurnRate.toFixed(2)}`}
-              icon="📉"
-              subtitle="Average per day"
-            />
-            <MetricCard
-              label="Projected Monthly"
-              value={`$${metrics.financial.projectedMonthlySpend.toFixed(2)}`}
+              label="7-Day Spend"
+              value={`$${metrics.financial.week7Spend.toFixed(2)}`}
               icon="📊"
-              subtitle="Based on current trend"
+              subtitle={metrics.financial.week7Spend > 0 ? "Last 7 days" : "No data available"}
             />
             <MetricCard
               label="Cost per Deal"
-              value={`$${metrics.financial.costPerDeal.toFixed(4)}`}
+              value={metrics.financial.costPerDeal > 0 ? `$${metrics.financial.costPerDeal.toFixed(4)}` : "N/A"}
               icon="💎"
-              subtitle="Average scraping cost"
+              subtitle={metrics.financial.costPerDeal > 0 ? "Last 7 days average" : "No deals scraped"}
             />
           </div>
+        </section>
+
+        {/* Cost Per Pool Section */}
+        <section>
+          <h2 className="text-xl font-bold text-[#ededed] mb-3">
+            Cost Per Pool (Last 7 Days)
+          </h2>
+          {metrics.financial.poolCostBreakdown.length > 0 ? (
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-[#0a0a0a] border-b border-[#2a2a2a]">
+                    <tr>
+                      <th className="text-left text-xs text-[#6E7681] uppercase tracking-wide px-4 py-3">
+                        Pool ID
+                      </th>
+                      <th className="text-left text-xs text-[#6E7681] uppercase tracking-wide px-4 py-3">
+                        Marketplace
+                      </th>
+                      <th className="text-left text-xs text-[#6E7681] uppercase tracking-wide px-4 py-3">
+                        Region
+                      </th>
+                      <th className="text-right text-xs text-[#6E7681] uppercase tracking-wide px-4 py-3">
+                        Total Cost
+                      </th>
+                      <th className="text-right text-xs text-[#6E7681] uppercase tracking-wide px-4 py-3">
+                        Items
+                      </th>
+                      <th className="text-right text-xs text-[#6E7681] uppercase tracking-wide px-4 py-3">
+                        $/Item
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics.financial.poolCostBreakdown.map((pool) => (
+                      <tr
+                        key={pool.poolId}
+                        className="border-b border-[#2a2a2a] hover:bg-[#0a0a0a]/50 transition-colors"
+                      >
+                        <td className="px-4 py-3 text-sm font-mono text-[#4FF0E6]">
+                          {pool.poolId}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#ededed] capitalize">
+                          {pool.marketplace}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#ededed] uppercase">
+                          {pool.region || "Global"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#ededed] text-right font-mono">
+                          ${pool.totalCost.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#ededed] text-right">
+                          {pool.totalItems.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#4FF0E6] text-right font-mono">
+                          ${pool.costPerItem.toFixed(4)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[#0a0a0a]/50 border border-dashed border-[#2a2a2a] rounded-lg py-12 px-4">
+              <div className="text-center">
+                <div className="text-5xl mb-3 opacity-30">📊</div>
+                <div className="text-sm text-[#6E7681]">No Apify usage data available</div>
+                <div className="text-xs text-[#6E7681]/60 mt-1">
+                  Run the migration and start logging Apify events
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Apify Kill Switches (UI-Only) */}
+        <section>
+          <ApifyKillSwitches />
         </section>
 
         {/* Operational Metrics Section */}
@@ -168,42 +306,6 @@ async function AdminDashboardContent() {
           </div>
         </section>
 
-        {/* Placeholder: Cost Breakdown */}
-        <section>
-          <h2 className="text-xl font-bold text-[#ededed] mb-3">
-            Cost Breakdown by Pool
-          </h2>
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-6">
-            <div className="text-center py-12">
-              <div className="text-5xl mb-3 opacity-30">📊</div>
-              <div className="text-sm text-[#6E7681]">
-                Pool cost tracking coming soon
-              </div>
-              <div className="text-xs text-[#6E7681]/60 mt-1">
-                Requires apify_runs table setup
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Placeholder: Burn Rate Chart */}
-        <section>
-          <h2 className="text-xl font-bold text-[#ededed] mb-3">
-            30-Day Burn Rate Trend
-          </h2>
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-6">
-            <div className="text-center py-12">
-              <div className="text-5xl mb-3 opacity-30">📈</div>
-              <div className="text-sm text-[#6E7681]">
-                Burn rate visualization coming soon
-              </div>
-              <div className="text-xs text-[#6E7681]/60 mt-1">
-                Requires time-series cost data
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Informational Notice */}
         <section>
           <div className="bg-[#0a0a0a] border border-[#4FF0E6]/20 rounded-lg p-5">
@@ -211,19 +313,18 @@ async function AdminDashboardContent() {
               <div className="text-2xl">ℹ️</div>
               <div>
                 <h3 className="text-sm font-semibold text-[#ededed] mb-1">
-                  Admin Dashboard - Read-Only Mode
+                  Admin Dashboard - Financial Tracking
                 </h3>
                 <p className="text-xs text-[#6E7681]">
-                  This dashboard displays aggregated metrics and costs for administrative oversight.
-                  All queries are read-only. Financial tracking requires{" "}
-                  <code className="text-[#4FF0E6]">apify_runs</code> table setup and webhook integration.
+                  This dashboard displays Apify burn rate metrics from the{" "}
+                  <code className="text-[#4FF0E6]">apify_usage_events</code> table.
+                  All queries are read-only. Kill switches are UI-only and require backend integration.
                 </p>
                 <p className="text-xs text-[#6E7681] mt-2">
-                  For operational controls, see{" "}
+                  For operational controls (pool health, scraper status), see{" "}
                   <a href="/dashboard" className="text-[#4FF0E6] hover:underline">
                     /dashboard
-                  </a>
-                  {" "}(kill-switches, pool health, market overview).
+                  </a>.
                 </p>
               </div>
             </div>
