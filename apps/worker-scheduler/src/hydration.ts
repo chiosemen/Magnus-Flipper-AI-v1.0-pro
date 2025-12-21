@@ -132,54 +132,55 @@ export async function rehydrateListings(
       const cutoffTime = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
 
       const listingsToUpdate = await prisma.listing.findMany({
-      where: {
-        marketplace: mp,
-        OR: [
-          {
-            isActive: true,
-            lastSeen: {
-              lte: cutoffTime,
+        where: {
+          marketplace: mp,
+          OR: [
+            {
+              isActive: true,
+              lastSeen: {
+                lte: cutoffTime,
+              },
             },
-          },
-          {
-            title: 'Pending hydration...',
-          },
-          {
-            // Status unknown (check metadata)
-            metadata: {
-              path: ['status'],
-              equals: 'unknown',
+            {
+              title: 'Pending hydration...',
             },
-          },
-        ],
-      },
-      take: 20, // Process in batches
-      orderBy: {
-        lastSeen: 'asc', // Oldest first
-      },
-    });
+            {
+              // Status unknown (check metadata)
+              metadata: {
+                path: ['status'],
+                equals: 'unknown',
+              },
+            },
+          ],
+        },
+        take: 20, // Process in batches
+        orderBy: {
+          lastSeen: 'asc', // Oldest first
+        },
+      });
 
-    for (const listing of listingsToUpdate) {
-      try {
-        const result = await hydrateListing(
-          mp as 'facebook' | 'vinted',
-          listing.url
-        );
+      for (const listing of listingsToUpdate) {
+        try {
+          const result = await hydrateListing(
+            mp as 'facebook' | 'vinted',
+            listing.url
+          );
 
-        if (result.success) {
-          totalSucceeded++;
-        } else {
+          if (result.success) {
+            totalSucceeded++;
+          } else {
+            totalFailed++;
+          }
+
+          totalProcessed++;
+
+          // Rate limiting: small delay between hydrations
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (error: any) {
+          console.error(`Error re-hydrating listing ${listing.id}:`, error);
           totalFailed++;
+          totalProcessed++;
         }
-
-        totalProcessed++;
-
-        // Rate limiting: small delay between hydrations
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (error: any) {
-        console.error(`Error re-hydrating listing ${listing.id}:`, error);
-        totalFailed++;
-        totalProcessed++;
       }
     }
   } catch (error: any) {
@@ -194,9 +195,11 @@ export async function rehydrateListings(
   if (totalProcessed > 0) {
     try {
       await logEvent('system', 'rehydration_complete', {
-        processed: totalProcessed,
-        succeeded: totalSucceeded,
-        failed: totalFailed,
+        payload: {
+          processed: totalProcessed,
+          succeeded: totalSucceeded,
+          failed: totalFailed,
+        },
       });
     } catch (error) {
       // Non-fatal: telemetry failure shouldn't break re-hydration

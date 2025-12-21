@@ -4,6 +4,11 @@
  * Per-search scheduling is permanently removed.
  * Any attempt to reintroduce saved_searches or searchId-based logic
  * must be rejected by code review and guardrails.
+ *
+ * ELITE POOL GOVERNANCE:
+ * All Elite pool scheduling is subject to economic governance checks.
+ * Pools may be throttled or paused based on revenue coverage ratios.
+ * See services/elitePoolGovernance.ts for enforcement logic.
  */
 
 import { runScheduledScan } from "./scheduler";
@@ -12,6 +17,10 @@ import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketp
 import { runActivityFeedTTL } from "./services/ttl-cleanup";
 import { rehydrateListings } from "./hydration";
 import { runAlertDeliveryCycle } from "./alerts/alert-delivery-worker";
+import {
+  applyElitePoolGovernance,
+  type EliteGovernanceResult,
+} from "./services/elitePoolGovernance";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default
@@ -19,6 +28,9 @@ const TTL_CLEANUP_INTERVAL = parseInt(process.env.TTL_CLEANUP_INTERVAL || "86400
 
 // Track last TTL cleanup run to prevent over-execution
 let lastTTLCleanup = 0;
+
+// Elite pool governance result (updated on each scan cycle)
+let eliteGovernance: EliteGovernanceResult | null = null;
 
 // Worker heartbeat tracking
 const workerHeartbeat = {
@@ -31,13 +43,51 @@ const workerHeartbeat = {
 // Moved to main() function to avoid top-level await
 
 /**
- * Risk-tier aware scheduler
- * Schedules scans based on marketplace risk level and backoff status
+ * Risk-tier aware scheduler with Elite pool governance
+ * Schedules scans based on marketplace risk level, backoff status, and economic guardrails
  */
 async function scheduleScans() {
   console.log(`[${WORKER_ID}] Starting risk-tier aware scheduling...`);
 
   try {
+    // =========================================================================
+    // ELITE POOL GOVERNANCE: Apply economic guardrails BEFORE scheduling
+    // =========================================================================
+    console.log(`[${WORKER_ID}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`[${WORKER_ID}] Elite Pool Economic Governance Check`);
+    console.log(`[${WORKER_ID}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
+    try {
+      eliteGovernance = await applyElitePoolGovernance();
+
+      if (!eliteGovernance.allowed) {
+        console.error(
+          `[${WORKER_ID}] 🚫 Elite pool scheduling BLOCKED by governance. Skipping this cycle.`
+        );
+        return;
+      }
+
+      console.log(
+        `[${WORKER_ID}] ✅ Elite pool governance PASSED. Proceeding with scheduling.`
+      );
+    } catch (error) {
+      // Hard governance violation - halt execution
+      console.error(
+        `[${WORKER_ID}] 🚨 CRITICAL: Elite pool governance failed with error:`,
+        error instanceof Error ? error.message : String(error)
+      );
+      console.error(
+        `[${WORKER_ID}] 🚨 Scheduler execution HALTED. Fix governance violations before resuming.`
+      );
+      // Don't schedule anything if governance fails
+      return;
+    }
+
+    console.log(`[${WORKER_ID}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
+    // =========================================================================
+    // STANDARD MARKETPLACE SCHEDULING
+    // =========================================================================
     const schedule = await scheduleAllMarketplaces();
 
     console.log(`[${WORKER_ID}] Schedule generated for ${schedule.size} marketplaces:`);
@@ -106,6 +156,17 @@ async function main() {
           scanInterval: SCAN_INTERVAL,
           uptime: Date.now() - new Date(workerHeartbeat.startTime).getTime(),
           heartbeat: workerHeartbeat,
+          eliteGovernance: eliteGovernance ? {
+            allowed: eliteGovernance.allowed,
+            action: eliteGovernance.policy.action,
+            coverageRatio: eliteGovernance.coverage.coverageRatio,
+            monthlyRevenue: eliteGovernance.coverage.monthlyRevenue,
+            monthlyCost: eliteGovernance.coverage.monthlyCost,
+            headroomUSD: eliteGovernance.coverage.headroomUSD,
+            subscriberCount: eliteGovernance.config.subscriberCount,
+            activePools: eliteGovernance.governedPools.filter(p => !p.shouldSkip).length,
+            pausedPools: eliteGovernance.governedPools.filter(p => p.shouldSkip).length,
+          } : null,
         }));
       } else {
         res.writeHead(404);

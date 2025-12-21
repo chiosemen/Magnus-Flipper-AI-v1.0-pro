@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "../../../marketing-swoopa/components/ui/button";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 type Props = {
   onSearchCreated?: (search: any) => void;
@@ -49,7 +49,7 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
 
       // POOLED-ONLY: Write intent to saved_searches (Supabase)
       // Pooled scraper will populate public.scraped_listings independently
-      const supabase = createSupabaseBrowser();
+      const supabase = supabaseBrowser();
 
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData?.user) {

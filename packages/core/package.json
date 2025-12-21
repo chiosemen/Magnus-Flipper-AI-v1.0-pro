@@ -58,6 +58,14 @@
       "types": "./dist/services/scrapeRunService.d.ts",
       "import": "./dist/services/scrapeRunService.js"
     },
+    "./services/eliteCoverage": {
+      "types": "./dist/services/eliteCoverage.d.ts",
+      "import": "./dist/services/eliteCoverage.js"
+    },
+    "./services/eliteThrottlePolicy": {
+      "types": "./dist/services/eliteThrottlePolicy.d.ts",
+      "import": "./dist/services/eliteThrottlePolicy.js"
+    },
     "./healthcheck": {
       "types": "./dist/healthcheck.d.ts",
       "import": "./dist/healthcheck.js"
@@ -82,6 +90,7 @@
   },
   "dependencies": {
     "@magnus-flipper-ai/compliance-shield": "workspace:*",
+    "@magnus-flipper-ai/marketplace-config": "workspace:*",
     "@prisma/client": "7.0.1",
     "@prisma/adapter-pg": "7.0.1",
     "@supabase/supabase-js": "^2.87.1",

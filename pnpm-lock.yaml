@@ -488,6 +488,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.12
         version: 5.90.12(react@18.3.1)
+      apify-client:
+        specifier: ^2.9.2
+        version: 2.21.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -500,6 +503,9 @@ importers:
       cron-parser:
         specifier: ^4.9.0
         version: 4.9.0
+      dayjs:
+        specifier: ^1.11.19
+        version: 1.11.19
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@18.3.1)
@@ -732,46 +738,6 @@ importers:
         version: 4.5.0
       typescript:
         specifier: ^5.7.3
-        version: 5.9.3
-
-  apps/worker-ingest:
-    dependencies:
-      '@magnus-flipper-ai/apify-adapter':
-        specifier: workspace:*
-        version: link:../../packages/apify-adapter
-      '@magnus-flipper-ai/ingest-registry':
-        specifier: workspace:*
-        version: link:../../packages/ingest-registry
-      '@magnus-flipper-ai/queue':
-        specifier: workspace:*
-        version: link:../../packages/queue
-      '@magnus-flipper-ai/scrapers':
-        specifier: workspace:*
-        version: link:../../packages/scrapers
-      '@prisma/client':
-        specifier: ^7.0.1
-        version: 7.0.1(prisma@7.0.1(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(typescript@5.9.3)
-      bullmq:
-        specifier: ^5.0.0
-        version: 5.66.0
-      ioredis:
-        specifier: ^5.3.2
-        version: 5.8.2
-      p-queue:
-        specifier: ^8.0.1
-        version: 8.1.1
-    devDependencies:
-      '@types/ioredis':
-        specifier: ^5.0.0
-        version: 5.0.0
-      '@types/node':
-        specifier: ^20.11.0
-        version: 20.19.26
-      tsx:
-        specifier: ^4.19.2
-        version: 4.21.0
-      typescript:
-        specifier: ^5.6.3
         version: 5.9.3
 
   apps/worker-ingestion:
@@ -1027,6 +993,9 @@ importers:
       '@magnus-flipper-ai/compliance-shield':
         specifier: workspace:*
         version: link:../compliance-shield
+      '@magnus-flipper-ai/marketplace-config':
+        specifier: workspace:*
+        version: link:../marketplace-config
       '@prisma/adapter-pg':
         specifier: 7.0.1
         version: 7.0.1
@@ -4443,10 +4412,6 @@ packages:
   '@types/http-errors@2.0.5':
     resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
 
-  '@types/ioredis@5.0.0':
-    resolution: {integrity: sha512-zJbJ3FVE17CNl5KXzdeSPtdltc4tMT3TzC6fxQS0sQngkbFZ6h+0uTafsRqu+eSLIugf6Yb0Ea0SUuRr42Nk9g==}
-    deprecated: This is a stub types definition. ioredis provides its own type definitions, so you do not need this installed.
-
   '@types/istanbul-lib-coverage@2.0.6':
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
 
@@ -5649,6 +5614,9 @@ packages:
 
   dateformat@4.6.3:
     resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
+
+  dayjs@1.11.19:
+    resolution: {integrity: sha512-t5EcLVS6QPBNqM2z8fakk/NKel+Xzshgt8FFKAn+qwlD1pzZWxh0nVCrvFK7ZDb6XucZeF9z8C7CBWTRIVApAw==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -13797,12 +13765,6 @@ snapshots:
 
   '@types/http-errors@2.0.5': {}
 
-  '@types/ioredis@5.0.0':
-    dependencies:
-      ioredis: 5.8.2
-    transitivePeerDependencies:
-      - supports-color
-
   '@types/istanbul-lib-coverage@2.0.6': {}
 
   '@types/istanbul-lib-report@3.0.3':
@@ -15330,6 +15292,8 @@ snapshots:
   date-fns@4.1.0: {}
 
   dateformat@4.6.3: {}
+
+  dayjs@1.11.19: {}
 
   debug@2.6.9:
     dependencies:

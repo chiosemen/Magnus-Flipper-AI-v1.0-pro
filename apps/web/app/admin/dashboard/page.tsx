@@ -4,6 +4,13 @@ import { createSupabaseServer, getUser } from "@/lib/supabase/server";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import { ApifyKillSwitches } from "./_components/ApifyKillSwitches";
+import { ElitePoolActivationRequests } from "./_components/ElitePoolActivationRequests";
+import {
+  getEnabledElitePools,
+  getAllElitePools,
+  calculateTotalMonthlyCU
+} from "@magnus-flipper-ai/marketplace-config";
+import { calculateEliteCoverage } from "@magnus-flipper-ai/core";
 
 // Force dynamic rendering (no static generation)
 export const dynamic = "force-dynamic";
@@ -136,11 +143,60 @@ async function getAdminMetrics() {
 }
 
 /**
+ * Fetch Elite Pool Coverage metrics
+ * Uses environment variables to mock subscriber data
+ * READ-ONLY: No mutations or triggers
+ */
+async function getElitePoolCoverage() {
+  // Get all Elite pools from configuration
+  const allPools = getAllElitePools();
+  const enabledPools = getEnabledElitePools();
+  const disabledPools = allPools.filter(pool => !pool.enabled);
+
+  // Mock subscriber data from environment variables
+  // In production, this would query the database for actual subscriber counts
+  const eliteSubscriberCount = parseInt(process.env.ELITE_SUB_COUNT || '0', 10);
+  const elitePrice = parseFloat(process.env.ELITE_PRICE || '29.99');
+
+  // Calculate coverage metrics
+  const coverage = calculateEliteCoverage({
+    eliteSubscriberCount,
+    elitePrice,
+    enabledPools,
+  });
+
+  // Determine status based on coverage ratio
+  let status: 'SAFE' | 'WARNING' | 'BLOCKED';
+  let statusColor: string;
+
+  if (coverage.coverageRatio >= 1.15) {
+    status = 'SAFE';
+    statusColor = 'bg-green-500/20 text-green-400 border-green-500/30';
+  } else if (coverage.coverageRatio >= 0.9) {
+    status = 'WARNING';
+    statusColor = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+  } else {
+    status = 'BLOCKED';
+    statusColor = 'bg-red-500/20 text-red-400 border-red-500/30';
+  }
+
+  return {
+    eliteSubscriberCount,
+    elitePrice,
+    coverage,
+    status,
+    statusColor,
+    disabledPools,
+  };
+}
+
+/**
  * Admin Dashboard Content Component
  * Server Component that fetches and displays admin metrics
  */
 async function AdminDashboardContent() {
   const metrics = await getAdminMetrics();
+  const elitePoolCoverage = await getElitePoolCoverage();
 
   return (
     <div className="min-h-screen bg-[#0D1117] p-4 sm:p-6 lg:p-8">
@@ -198,6 +254,70 @@ async function AdminDashboardContent() {
               subtitle={metrics.financial.costPerDeal > 0 ? "Last 7 days average" : "No deals scraped"}
             />
           </div>
+        </section>
+
+        {/* Elite Pool Coverage Section */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-bold text-[#ededed]">
+              Elite Pool Coverage
+            </h2>
+            <Badge className={elitePoolCoverage.statusColor}>
+              {elitePoolCoverage.status}
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <MetricCard
+              label="Elite Subscribers"
+              value={elitePoolCoverage.eliteSubscriberCount}
+              icon="👥"
+              subtitle={elitePoolCoverage.eliteSubscriberCount === 0 ? "No subscribers yet" : "Active Elite tier"}
+            />
+            <MetricCard
+              label="Monthly Revenue"
+              value={`$${elitePoolCoverage.coverage.monthlyRevenue.toFixed(2)}`}
+              icon="💰"
+              subtitle={`${elitePoolCoverage.eliteSubscriberCount} × $${elitePoolCoverage.elitePrice}/mo`}
+            />
+            <MetricCard
+              label="Active Pool Cost"
+              value={`$${elitePoolCoverage.coverage.monthlyCost.toFixed(2)}`}
+              icon="🏊"
+              subtitle={`${elitePoolCoverage.coverage.enabledPoolCount} pool${elitePoolCoverage.coverage.enabledPoolCount !== 1 ? 's' : ''} enabled`}
+            />
+            <MetricCard
+              label="Coverage Ratio"
+              value={elitePoolCoverage.coverage.coverageRatio === Infinity
+                ? "∞"
+                : `${(elitePoolCoverage.coverage.coverageRatio * 100).toFixed(0)}%`}
+              icon={elitePoolCoverage.coverage.coverageRatio >= 1.15 ? "✅" : elitePoolCoverage.coverage.coverageRatio >= 0.9 ? "⚠️" : "🚫"}
+              subtitle={
+                elitePoolCoverage.coverage.coverageRatio >= 1.15
+                  ? "Healthy margin"
+                  : elitePoolCoverage.coverage.coverageRatio >= 1.0
+                  ? "Low margin"
+                  : elitePoolCoverage.coverage.coverageRatio >= 0.9
+                  ? "Needs throttle"
+                  : "Needs pause"
+              }
+            />
+            <MetricCard
+              label="Headroom"
+              value={`$${elitePoolCoverage.coverage.headroomUSD.toFixed(2)}`}
+              icon={elitePoolCoverage.coverage.headroomUSD >= 0 ? "💎" : "⚠️"}
+              subtitle={elitePoolCoverage.coverage.headroomUSD >= 0 ? "Monthly profit" : "Monthly deficit"}
+            />
+          </div>
+        </section>
+
+        {/* Elite Pool Activation Requests Section */}
+        <section>
+          <ElitePoolActivationRequests
+            disabledPools={elitePoolCoverage.disabledPools}
+            currentSubscriberCount={elitePoolCoverage.eliteSubscriberCount}
+            elitePrice={elitePoolCoverage.elitePrice}
+            apifyCuPriceUsd={0.30}
+          />
         </section>
 
         {/* Cost Per Pool Section */}

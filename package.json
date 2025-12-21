@@ -11,6 +11,7 @@
     "postinstall": "pnpm --filter @magnus-flipper-ai/core prisma generate",
     "dev": "turbo run dev --parallel",
     "verify:exports": "ts-node tools/verify-workspace-exports.ts",
+    "verify:elite-economics": "tsx scripts/verify-elite-pool-economics.ts",
     "prebuild": "pnpm verify:exports && pnpm --filter '@magnus-flipper-ai/*' build",
     "build": "turbo run build --filter=web",
     "build:packages": "pnpm --filter '@magnus-flipper-ai/*' build",

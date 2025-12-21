@@ -16,8 +16,10 @@ import { Badge } from "@/components/ui/badge";
  * SWITCHES:
  * =========
  * 1. Pause All Apify Scrapes - Global emergency stop
- * 2. Pause Elite Pools Only - Pause high-value pools (Facebook, eBay)
- * 3. Pause Pools Exceeding Budget - Pause pools over daily $ threshold
+ * 2. Pause Pools Exceeding Budget - Pause pools over daily $ threshold
+ *
+ * NOTE: Elite pool activation is NOT controlled via toggles.
+ * Elite pools require economic coverage validation before enabling.
  *
  * BEHAVIOR:
  * =========
@@ -46,15 +48,6 @@ export function ApifyKillSwitches() {
       warningMessage:
         "This will stop ALL data collection. No new deals will be discovered until scraping is resumed. Existing saved searches will not receive updates.",
       dangerLevel: "critical",
-    },
-    {
-      id: "pause_elite",
-      enabled: false,
-      label: "Pause Elite Pools Only",
-      description: "Pause high-value marketplace pools (Facebook, eBay) to reduce burn rate while maintaining standard pools.",
-      warningMessage:
-        "Elite pools (Facebook, eBay) will stop scraping. Users tracking these marketplaces will not receive new alerts until resumed.",
-      dangerLevel: "high",
     },
     {
       id: "pause_budget_exceeded",

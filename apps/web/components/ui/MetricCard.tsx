@@ -4,9 +4,10 @@ interface MetricCardProps {
   change?: string;
   icon?: string;
   locked?: boolean;
+  subtitle?: string;
 }
 
-export function MetricCard({ label, value, change, icon }: MetricCardProps) {
+export function MetricCard({ label, value, change, icon, subtitle }: MetricCardProps) {
   const isPositive = change?.startsWith('+');
 
   return (
@@ -16,6 +17,9 @@ export function MetricCard({ label, value, change, icon }: MetricCardProps) {
         {icon && <span className="text-2xl">{icon}</span>}
       </div>
       <div className="text-2xl font-bold text-[#ededed] mb-2">{value}</div>
+      {subtitle && (
+        <div className="text-xs text-[#6E7681]">{subtitle}</div>
+      )}
       {change && (
         <div className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
           {change}
