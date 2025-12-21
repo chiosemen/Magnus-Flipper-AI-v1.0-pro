@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import Link from "next/link";
 import { AdminMetricCard } from "./_components/AdminMetricCard";
+import { PoolHealthTable, PoolHealthData } from "./_components/PoolHealthTable";
+import { PoolHealthStatus } from "./_components/PoolStatusBadge";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -143,6 +145,105 @@ async function getDashboardData() {
     .eq("status", "SENT")
     .gte("created_at", yesterday.toISOString());
 
+  // ============================================================================
+  // POOL HEALTH METRICS (Read-only, grouped pooled data)
+  // ============================================================================
+  // Group scraped_listings by marketplace + region to infer "pools"
+  // Calculate health metrics without triggering any scraping or mutations
+  // SAFE: Read-only aggregation query, no cron, no polling, no side effects
+
+  const { data: poolData } = await supabase
+    .from("scraped_listings")
+    .select("marketplace, location, is_stale, last_seen_at")
+    .is("search_id", null); // Pooled-only
+
+  // Group by marketplace + region (location)
+  const poolGroups = new Map<string, {
+    marketplace: string;
+    region: string;
+    deals: Array<{ is_stale: boolean; last_seen_at: string }>;
+  }>();
+
+  (poolData || []).forEach((item) => {
+    const region = item.location || "Unknown";
+    const poolKey = `${item.marketplace}_${region}`;
+
+    if (!poolGroups.has(poolKey)) {
+      poolGroups.set(poolKey, {
+        marketplace: item.marketplace,
+        region,
+        deals: [],
+      });
+    }
+
+    poolGroups.get(poolKey)!.deals.push({
+      is_stale: item.is_stale,
+      last_seen_at: item.last_seen_at,
+    });
+  });
+
+  // Calculate health metrics for each pool
+  const calculatePoolHealth = (
+    deals: Array<{ is_stale: boolean; last_seen_at: string }>
+  ): {
+    lastScrapeAt: Date | null;
+    dealCount: number;
+    staleCount: number;
+    stalePercent: number;
+    status: PoolHealthStatus;
+  } => {
+    const dealCount = deals.length;
+    const staleCount = deals.filter((d) => d.is_stale).length;
+    const stalePercent = dealCount > 0 ? (staleCount / dealCount) * 100 : 0;
+
+    // Find most recent scrape timestamp
+    const lastScrapeAt = deals.length > 0
+      ? new Date(
+          Math.max(
+            ...deals.map((d) => new Date(d.last_seen_at).getTime())
+          )
+        )
+      : null;
+
+    // Calculate time since last scrape
+    const minutesSinceLastScrape = lastScrapeAt
+      ? (Date.now() - lastScrapeAt.getTime()) / 60000
+      : Infinity;
+
+    // Determine health status
+    // Healthy: last_scrape < 15 min AND stale < 20%
+    // Degraded: last_scrape < 1 hr OR stale 20–50%
+    // Stale: last_scrape > 1 hr OR stale > 50%
+    let status: PoolHealthStatus;
+    if (minutesSinceLastScrape < 15 && stalePercent < 20) {
+      status = "healthy";
+    } else if (minutesSinceLastScrape > 60 || stalePercent > 50) {
+      status = "stale";
+    } else {
+      status = "degraded";
+    }
+
+    return {
+      lastScrapeAt,
+      dealCount,
+      staleCount,
+      stalePercent,
+      status,
+    };
+  };
+
+  const poolHealthData: PoolHealthData[] = Array.from(poolGroups.entries()).map(
+    ([poolKey, group]) => {
+      const health = calculatePoolHealth(group.deals);
+      return {
+        poolId: poolKey,
+        marketplace: group.marketplace,
+        region: group.region,
+        ...health,
+      };
+    }
+  );
+
   return {
     overview: {
       totalDeals: totalDeals || 0,
@@ -161,6 +262,8 @@ async function getDashboardData() {
       activePoolsCount,
       alertsSent24h: alertsSent24h || 0,
     },
+    // Pool health data
+    poolHealthData,
   };
 }
 
@@ -245,6 +348,22 @@ async function DashboardContent() {
             subtitle="Notifications delivered to users"
           />
         </div>
+      </section>
+
+      {/* A.3) Pool Health (Read-Only Visualization) */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-xl font-bold text-[#ededed]">Pool Health</h2>
+            <p className="text-xs text-[#6E7681] mt-1">
+              Grouped by marketplace + region • Click columns to sort
+            </p>
+          </div>
+          <div className="text-xs text-[#6E7681]">
+            {data.poolHealthData.length} pool{data.poolHealthData.length !== 1 ? "s" : ""}
+          </div>
+        </div>
+        <PoolHealthTable pools={data.poolHealthData} />
       </section>
 
       {/* B) Marketplace Breakdown */}
