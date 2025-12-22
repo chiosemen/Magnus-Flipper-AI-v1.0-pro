@@ -29,6 +29,11 @@ export {
   groupAttributesByType,
   setDeviceRepository,
 } from './device-catalog';
+export type {
+  DeviceSearchResult,
+  TechDeviceWithAttributes,
+  DeviceAttributeGroup,
+} from './types';
 
 // Anchor Blending
 export {
