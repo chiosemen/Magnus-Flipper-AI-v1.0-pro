@@ -30,7 +30,14 @@ const Drawer = React.forwardRef<HTMLDivElement, DrawerProps>(
       };
     }, [open]);
 
-    if (!open) return null;
+    if (!open) {
+      return (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none h-0 opacity-0"
+        />
+      );
+    }
 
     const directionClasses = {
       left: "left-0 top-0 h-full",

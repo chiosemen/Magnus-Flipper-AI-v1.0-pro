@@ -114,7 +114,8 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
     const body = error ? String(error?.message) : children;
 
     if (!body) {
-      return null;
+      // FormMessage can be empty - render empty span to maintain layout
+      return <span ref={ref} aria-hidden="true" className="sr-only" />;
     }
 
     return (

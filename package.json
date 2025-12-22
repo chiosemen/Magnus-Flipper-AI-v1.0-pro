@@ -28,6 +28,8 @@
     "test:production:api-smoke": "bash tests/production/run-tests.sh --api-smoke",
     "test:production:worker-integration": "bash tests/production/run-tests.sh --worker-integration",
     "test:production:websocket": "bash tests/production/run-tests.sh --websocket",
+    "prove-e2e": "tsx scripts/prove-e2e.ts",
+    "flags-smoke-test": "tsx scripts/flags-smoke-test.ts",
     "test:production:ssr-isr": "bash tests/production/run-tests.sh --ssr-isr",
     "generate": "prisma generate --schema=packages/core/prisma/schema.prisma",
     "dev:web": "pnpm --filter web dev",

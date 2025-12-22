@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Button } from "../components/ui/button";
 import { Check, Play, Smartphone, Zap, TrendingUp, BarChart3 } from "lucide-react";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 
 const Hero = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -228,7 +228,7 @@ const Hero = () => {
                 
                 {/* Car image */}
                 <div className="relative h-48 rounded-2xl overflow-hidden">
-                  <Image 
+                  <SafeImage 
                     src="/marketing-swoopa/assets/magnus-hero.png" 
                     alt="Toyota Camry - Deal found by Magnus Flipper" 
                     fill

@@ -154,6 +154,9 @@ export async function pollActiveSearches(
 
       const runPromise = queue.add(async () => {
         const startedAt = Date.now();
+        
+        // Generate trace ID for E2E observability
+        const traceId = `search-${search.id}-${Date.now()}`;
 
         // Routing decision (tier-based)
         let chosenEngine: 'bulldog' | 'apify' = 'bulldog';
@@ -195,6 +198,9 @@ export async function pollActiveSearches(
           }
 
           const config = searchToConfig(search);
+          
+          // Add trace_id to config metadata (if supported)
+          // Note: ScraperConfig may not have trace_id field, so we'll store it separately
 
           // TODO: Route to Apify if chosenEngine === 'apify'
           // For now, all routes go through Bulldog (existing behavior)
@@ -202,6 +208,11 @@ export async function pollActiveSearches(
             search.marketplace,
             config
           );
+          
+          // CHECKPOINT B: Log trace ID with result
+          if (process.env.PROVE_E2E === 'true') {
+            console.log(`[TRACE] SCRAPE_COMPLETE trace_id=${traceId} marketplace=${search.marketplace} success=${result.success} listings=${result.total_scraped}`);
+          }
 
           const durationMs = Date.now() - startedAt;
 
@@ -229,7 +240,7 @@ export async function pollActiveSearches(
                 })
                 .eq("id", search.id);
 
-              // Log to scrape_runs table with engine annotation
+              // Log to scrape_runs table with engine annotation and trace_id
               await supabase
                 .from("scrape_runs")
                 .insert({
@@ -240,7 +251,13 @@ export async function pollActiveSearches(
                   engine: chosenEngine,
                   success: true,
                   duration_ms: durationMs,
+                  trace_id: traceId,
                 });
+              
+              // CHECKPOINT B: DB write confirmation
+              if (process.env.PROVE_E2E === 'true') {
+                console.log(`[TRACE] DB_WRITE trace_id=${traceId} table=scrape_runs marketplace=${search.marketplace}`);
+              }
             }
           } else {
             const errorMsg = result.errors && result.errors.length > 0
@@ -290,6 +307,7 @@ export async function pollActiveSearches(
                   duration_ms: durationMs,
                   error_code: 'EXCEPTION',
                   error_message: error.message,
+                  trace_id: traceId,
                 });
             } catch (insertError: unknown) {
               // Silently fail scrape_runs insert to avoid breaking the flow

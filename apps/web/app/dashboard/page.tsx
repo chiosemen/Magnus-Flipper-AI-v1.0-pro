@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServer, getUser } from "@/lib/supabase/server";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/badge";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { AdminMetricCard } from "./_components/AdminMetricCard";
 import { PoolHealthTable, PoolHealthData } from "./_components/PoolHealthTable";
@@ -426,7 +426,7 @@ async function DashboardContent() {
             >
               <div className="aspect-square relative bg-[#0a0a0a] overflow-hidden">
                 {deal.images?.[0] ? (
-                  <Image
+                  <SafeImage
                     src={deal.images[0]}
                     alt={deal.title || "Deal"}
                     fill

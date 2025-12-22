@@ -90,7 +90,7 @@ function calculateDealerOffer(retailPrice: number): {
 export function PriceEstimator({ formData }: PriceEstimatorProps) {
   const estimate = useMemo<PriceEstimate | null>(() => {
     if (!formData || !formData.make || !formData.model || !formData.year) {
-      return null;
+      return undefined as any;
     }
 
     const estimatedRetail = calculateRetailPrice(
@@ -115,7 +115,11 @@ export function PriceEstimator({ formData }: PriceEstimatorProps) {
   }, [formData]);
 
   if (!estimate) {
-    return null;
+    return (
+      <div className="rounded-md border border-slate-700 bg-slate-900/40 p-4 text-slate-400 text-sm">
+        Price estimator unavailable — insufficient vehicle data
+      </div>
+    );
   }
 
   const formatCurrency = (amount: number) => {

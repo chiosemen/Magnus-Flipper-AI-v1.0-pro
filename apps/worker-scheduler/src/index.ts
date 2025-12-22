@@ -23,6 +23,7 @@ import {
 } from "./services/elitePoolGovernance.js";
 import { dispatchElitePools, forceDispatchAllElitePools } from "./services/elitePoolDispatch.js";
 import { generateDiagnostics, logDiagnostics, verifyPoolExecution } from "./diagnostics.js";
+import { initFeatureFlags, getFlag, printFlagStatus } from "@magnus-flipper-ai/core";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default
@@ -76,18 +77,25 @@ async function scheduleScans() {
       // =========================================================================
       // ELITE POOL DISPATCH: Enqueue scraping jobs for active pools
       // =========================================================================
+      // Check feature flag
+      const elitePoolEnabled = await getFlag('FEATURE_ELITE_POOL_DISPATCH');
       let jobsDispatched = 0;
-      if (process.env.DEV_POOL_FORCE === "true") {
-        // Dev override: bypass governance and dispatch all enabled pools
-        console.log(`[${WORKER_ID}] 🔧 DEV MODE: Force dispatching all enabled pools...`);
-        jobsDispatched = await forceDispatchAllElitePools();
+      
+      if (!elitePoolEnabled) {
+        console.log(`[${WORKER_ID}] ⏸️  Elite pool dispatch disabled by feature flag (FEATURE_ELITE_POOL_DISPATCH=false)`);
       } else {
-        // Normal mode: dispatch only pools that passed governance
-        const activePools = eliteGovernance.governedPools.filter((p) => !p.shouldSkip);
-        if (activePools.length > 0) {
-          jobsDispatched = await dispatchElitePools(activePools);
+        if (process.env.DEV_POOL_FORCE === "true") {
+          // Dev override: bypass governance and dispatch all enabled pools
+          console.log(`[${WORKER_ID}] 🔧 DEV MODE: Force dispatching all enabled pools...`);
+          jobsDispatched = await forceDispatchAllElitePools();
         } else {
-          console.log(`[${WORKER_ID}] ⏸️  No active Elite pools to dispatch (all paused or skipped)`);
+          // Normal mode: dispatch only pools that passed governance
+          const activePools = eliteGovernance.governedPools.filter((p) => !p.shouldSkip);
+          if (activePools.length > 0) {
+            jobsDispatched = await dispatchElitePools(activePools);
+          } else {
+            console.log(`[${WORKER_ID}] ⏸️  No active Elite pools to dispatch (all paused or skipped)`);
+          }
         }
       }
 
@@ -174,6 +182,14 @@ async function runTTLCleanup() {
 
 async function main() {
   console.log(`Worker Scheduler ${WORKER_ID} starting...`);
+  
+  // Initialize feature flags
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    initFeatureFlags(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    await printFlagStatus();
+  } else {
+    console.warn(`[${WORKER_ID}] ⚠️  Feature flags not initialized (missing Supabase credentials)`);
+  }
 
   // Optional health check server (disabled by default, enable with ENABLE_HTTP=true)
   if (process.env.ENABLE_HTTP === "true") {

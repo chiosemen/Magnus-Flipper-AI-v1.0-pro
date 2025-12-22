@@ -94,6 +94,15 @@ export async function dispatchElitePools(
     );
 
     console.log(`[${WORKER_ID}] ✅ Successfully enqueued ${jobs.length} Elite pool job(s)`);
+    
+    // CHECKPOINT A: Dispatch logging with trace IDs
+    if (process.env.PROVE_E2E === 'true') {
+      console.log(`[TRACE] DISPATCH count=${jobs.length} queue=ingest`);
+      jobs.forEach((job) => {
+        console.log(`[TRACE] DISPATCH job=${job.jobId} trace_id=${job.traceId} marketplace=${job.marketplace}`);
+      });
+    }
+    
     return jobs.length;
   } catch (error) {
     console.error(`[${WORKER_ID}] ❌ Failed to enqueue Elite pool jobs:`, error);
