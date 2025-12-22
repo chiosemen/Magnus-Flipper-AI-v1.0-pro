@@ -1,5 +1,22 @@
 packages:
-  - "apps/*"
+  # === ACTIVE APPS ===
+  - "apps/web"
+  - "apps/api"
+  - "apps/mobile"
+
+  - "apps/worker-scheduler"
+  - "apps/worker-realtime"
+  - "apps/worker-scraper"
+  - "apps/worker-ingestion"
+  - "apps/worker-alerts"
+
+  # === ACTIVE PACKAGES ===
   - "packages/*"
+
+  # === EXPLICIT EXCLUSIONS ===
+  - "!apps/canary-*"
+  - "!apps/web_broken_backup"
+  - "!apps/worker"
   - "!packages/dealer-engine"
-  - "!apps/worker-dealer"
+  - "!_graveyard/**"
+
