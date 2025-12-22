@@ -1,0 +1,136 @@
+name: UI Governance Check
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**/*.tsx'
+      - 'apps/web/**/*.ts'
+  push:
+    branches:
+      - main
+      - 'claude/**'
+
+jobs:
+  ui-contract-enforcement:
+    name: Enforce Never-Disappear UI Contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for direct next/image usage
+        id: check_images
+        run: |
+          echo "🔍 Checking for direct next/image imports..."
+
+          # Find direct imports (excluding SafeImage.tsx itself)
+          VIOLATIONS=$(grep -r "from ['\"]next/image['\"]" apps/web \
+            --include="*.tsx" \
+            --exclude="SafeImage.tsx" \
+            | grep -v "components/ui/SafeImage.tsx" \
+            | grep -v "marketing-swoopa/components/Hero.tsx" \
+            || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "❌ VIOLATION: Direct next/image usage detected"
+            echo ""
+            echo "Files violating SafeImage contract:"
+            echo "$VIOLATIONS"
+            echo ""
+            echo "Fix: Replace 'import Image from \"next/image\"' with:"
+            echo "     'import { SafeImage } from \"@/components/ui/SafeImage\"'"
+            echo ""
+            echo "See: apps/web/UI_FREEZE_CONTRACT.md for details"
+            exit 1
+          fi
+
+          echo "✅ No direct next/image violations"
+
+      - name: Check for conditional section rendering
+        id: check_conditionals
+        run: |
+          echo "🔍 Checking for conditional section rendering..."
+
+          # Look for {data && <SomeSection />} patterns in page components
+          VIOLATIONS=$(grep -rE "\{[^}]*&&\s*<[A-Z][a-zA-Z]*Section" apps/web/app \
+            --include="*.tsx" \
+            || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "⚠️  WARNING: Potential conditional section rendering detected"
+            echo ""
+            echo "$VIOLATIONS"
+            echo ""
+            echo "Sections should always render via SectionShell, not conditional &&"
+            echo "See: apps/web/UI_FREEZE_CONTRACT.md#forbidden-patterns"
+            echo ""
+            echo "This is a WARNING - manual review required"
+          else
+            echo "✅ No obvious conditional rendering patterns"
+          fi
+
+      - name: Check for return null in section components
+        id: check_return_null
+        run: |
+          echo "🔍 Checking for 'return null' in app-level components..."
+
+          # Find return null in app directory (excluding low-level UI components)
+          VIOLATIONS=$(grep -r "return null" apps/web/app \
+            --include="*.tsx" \
+            | grep -v "components/ui/" \
+            | grep -v "// OK:" \
+            | grep -v "// SAFE:" \
+            || true)
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "⚠️  WARNING: 'return null' detected in app-level components"
+            echo ""
+            echo "$VIOLATIONS"
+            echo ""
+            echo "Section-level components should use SectionShell, not return null"
+            echo "Low-level components (tooltips, helpers) can return null with // OK: comment"
+            echo ""
+            echo "This is a WARNING - manual review required"
+          else
+            echo "✅ No problematic return null statements"
+          fi
+
+      - name: Check for SectionShell usage
+        id: check_section_shell
+        run: |
+          echo "📊 Analyzing SectionShell adoption..."
+
+          # Count section-level components
+          SECTION_FILES=$(find apps/web/app -type f -name "*Section*.tsx" | wc -l)
+
+          # Count SectionShell imports
+          USING_SHELL=$(grep -r "from.*SectionShell" apps/web/app --include="*.tsx" | wc -l)
+
+          echo ""
+          echo "Section files found: $SECTION_FILES"
+          echo "Using SectionShell: $USING_SHELL"
+
+          if [ "$SECTION_FILES" -gt 0 ]; then
+            ADOPTION=$(echo "scale=0; $USING_SHELL * 100 / $SECTION_FILES" | bc)
+            echo "SectionShell adoption: ${ADOPTION}%"
+
+            if [ "$ADOPTION" -lt 50 ]; then
+              echo "⚠️  SectionShell adoption is low. Consider migrating legacy sections."
+            else
+              echo "✅ Good SectionShell adoption"
+            fi
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "════════════════════════════════════════"
+          echo "UI Governance Check Complete"
+          echo "════════════════════════════════════════"
+          echo ""
+          echo "Contract: Never-Disappear UI"
+          echo "Reference: apps/web/UI_FREEZE_CONTRACT.md"
+          echo ""
+          echo "For questions, see the contract or ask the team."
