@@ -277,23 +277,25 @@ export async function pollActiveSearches(
 
           // Log exception to scrape_runs
           if (!IS_DB_LITE && supabase) {
-            await supabase
-              .from("scrape_runs")
-              .insert({
-                marketplace: search.marketplace,
-                user_id: search.userId,
-                saved_search_id: search.id,
-                tier: search.tier || 'free',
-                engine: chosenEngine,
-                success: false,
-                duration_ms: durationMs,
-                error_code: 'EXCEPTION',
-                error_message: error.message,
-              })
-              .catch((insertError) => {
-                // Silently fail scrape_runs insert to avoid breaking the flow
-                console.error('[INGEST] Failed to log scrape_run:', insertError);
-              });
+            try {
+              await supabase
+                .from("scrape_runs")
+                .insert({
+                  marketplace: search.marketplace,
+                  user_id: search.userId,
+                  saved_search_id: search.id,
+                  tier: search.tier || 'free',
+                  engine: chosenEngine,
+                  success: false,
+                  duration_ms: durationMs,
+                  error_code: 'EXCEPTION',
+                  error_message: error.message,
+                });
+            } catch (insertError: unknown) {
+              // Silently fail scrape_runs insert to avoid breaking the flow
+              const message = insertError instanceof Error ? insertError.message : String(insertError);
+              console.error('[INGEST] Failed to log scrape_run:', message);
+            }
           }
         }
       });
