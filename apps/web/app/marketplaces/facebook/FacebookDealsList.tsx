@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { ExternalLink, MapPin } from "lucide-react";
 import Image from "next/image";
 import { Card, CardContent } from "../../../marketing-swoopa/components/ui/card";
 import { Button } from "../../../marketing-swoopa/components/ui/button";
 import { getMockDeals } from "@/lib/utils/mockData";
 import { sanitizeImageUrl } from "@/lib/utils/imageResolver";
+import { fadeRiseVariants, prefersReducedMotion } from "@/lib/motion";
 
 interface Deal {
   id: string;
@@ -143,11 +145,17 @@ export default function FacebookDealsList() {
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {deals.map((deal) => (
-        <Card
+        {deals.map((deal, index) => (
+        <motion.div
           key={deal.id}
-          className="group relative flex h-full flex-col border border-white/10 bg-gradient-to-br from-[#121212] via-[#0A0A0A] to-[#121212] shadow-[0_0_25px_rgba(0,0,0,0.9)] transition hover:-translate-y-1 hover:border-[#00E5FF]/80 hover:shadow-[0_0_40px_rgba(0,229,255,0.8)]"
+          initial={prefersReducedMotion() ? false : "hidden"}
+          animate={prefersReducedMotion() ? false : "visible"}
+          variants={fadeRiseVariants}
+          transition={{ delay: index * 0.05 }}
         >
+          <Card
+            className="group relative flex h-full flex-col border border-white/10 bg-gradient-to-br from-[#121212] via-[#0A0A0A] to-[#121212] shadow-[0_0_25px_rgba(0,0,0,0.9)] transition hover:-translate-y-1 hover:border-[#00E5FF]/80 hover:shadow-[0_0_40px_rgba(0,229,255,0.8)]"
+          >
           <CardContent className="flex flex-1 flex-col justify-between gap-3 p-4">
             {deal.imageUrl && (
               <div className="w-full h-32 mb-2 rounded overflow-hidden relative">
@@ -210,6 +218,7 @@ export default function FacebookDealsList() {
             )}
           </CardContent>
         </Card>
+        </motion.div>
         ))}
       </div>
     </>

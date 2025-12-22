@@ -9,6 +9,9 @@ import { AdminMetricCard } from "./_components/AdminMetricCard";
 import { PoolHealthTable, PoolHealthData } from "./_components/PoolHealthTable";
 import { PoolHealthStatus } from "./_components/PoolStatusBadge";
 import { AdminControlsPanel } from "./_components/AdminControlsPanel";
+import { ScraperActivity } from "@/components/ScraperActivity";
+import { AdminBanner } from "@/components/AdminBanner";
+import { isAdmin } from "@/lib/admin/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -286,9 +289,13 @@ function getHealthBadge(status: string, lastRunAt: string | null) {
 
 async function DashboardContent() {
   const data = await getDashboardData();
+  const userIsAdmin = await isAdmin();
 
   return (
     <div className="space-y-6">
+      {/* Admin Banner */}
+      {userIsAdmin && <AdminBanner />}
+
       {/* Admin Kill-Switches (SAFE MODE) */}
       <AdminControlsPanel />
 
@@ -368,6 +375,14 @@ async function DashboardContent() {
           </div>
         </div>
         <PoolHealthTable pools={data.poolHealthData} />
+      </section>
+
+      {/* Scraper Activity Panel */}
+      <section>
+        <ScraperActivity
+          scraperHealth={data.scraperHealth}
+          discoveredListings24h={data.overview.new24h}
+        />
       </section>
 
       {/* B) Marketplace Breakdown */}
