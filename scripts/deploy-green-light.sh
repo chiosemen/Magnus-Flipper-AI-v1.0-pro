@@ -51,14 +51,8 @@ echo "🔍 Checking metrics endpoint file..."
 if [[ -f apps/web/app/api/metrics/route.ts ]]; then
   pass "Metrics endpoint file exists"
 else
-  # Metrics endpoint is optional - check if it exists in other locations
-  if [[ -f apps/canary-dashboard/app/api/metrics/route.ts ]] || \
-     grep -r "metrics" apps/web/app/api --include="*.ts" >/dev/null 2>&1; then
-    pass "Metrics endpoint found (alternative location)"
-  else
-    # Non-blocking: metrics endpoint may be implemented elsewhere
-    echo "⚠️  Metrics endpoint not found at apps/web/app/api/metrics/route.ts (non-blocking)"
-  fi
+  echo "⚠️  Metrics endpoint file not found: apps/web/app/api/metrics/route.ts (non-blocking)"
+  # Note: Metrics may be implemented in packages/api or other locations
 fi
 
 ############################################
