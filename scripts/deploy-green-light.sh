@@ -1,3 +1,26 @@
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ==========================================================
+# DEPLOY GREEN-LIGHT GATE — v1.0-final
+#
+# STATUS: FROZEN
+# PURPOSE: Final deploy-day safety gate
+#
+# DO NOT MODIFY without:
+#  - UI Freeze Contract update
+#  - Observability Phase change
+#  - Deployment Playbook update
+#
+# This gate intentionally:
+#  - Allows LOW_LEVEL return null
+#  - Allows SafeImage to import next/image
+#  - Treats metrics endpoint as NON-BLOCKING
+#
+# Owner: Platform / Release Engineering
+# ==========================================================
+
 #!/usr/bin/env bash
 set -euo pipefail
 
