@@ -39,6 +39,7 @@
     "start:worker": "pnpm --filter magnus-worker start",
     "spec:check": "ts-node scripts/validate-imports.ts",
     "deploy:check": "bash scripts/deploy-check.sh",
+    "doctor": "ts-node scripts/doctor.ts",
     "release:check": "pnpm lint && pnpm test && pnpm build",
     "secrets:gate": "node scripts/deploy/secrets-integrity-gate.mjs",
     "migrate:supabase": "bash scripts/run-supabase-migrations.sh",

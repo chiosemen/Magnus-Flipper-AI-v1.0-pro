@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { Card } from "@magnus-flipper-ai/ui/components";
 import { Badge } from "@magnus-flipper-ai/ui/components";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
+import { sanitizeImageUrl } from "@/lib/utils/imageResolver";
 
 interface FeedCardProps {
   listing: AggregatedListing;
@@ -37,13 +39,15 @@ export function FeedCard({ listing, onClick }: FeedCardProps) {
       <div className="flex gap-4">
         {/* Image */}
         {listing.imageUrl && (
-          <div className="flex-shrink-0">
-            <img
-              src={listing.imageUrl}
-              alt={listing.title}
-              className="w-24 h-24 object-cover rounded-md"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
+          <div className="flex-shrink-0 relative w-24 h-24">
+            <Image
+              src={sanitizeImageUrl(listing.imageUrl)}
+              alt={listing.title || "Listing"}
+              fill
+              className="object-cover rounded-md"
+              sizes="96px"
+              onError={() => {
+                // Image failed to load, component will handle fallback
               }}
             />
           </div>

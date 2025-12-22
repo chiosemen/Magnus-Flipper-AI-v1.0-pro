@@ -9,19 +9,33 @@ import { fetchLiveDeals } from "../lib/api";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
+import { getMockDeals } from "@/lib/utils/mockData";
 
 type LiveDealsGridProps = {
   marketplaceSlug?: string;
   limit?: number;
 };
 
+// DEV OVERRIDE: Force show Car Flipper section even with no data
+const forceShow =
+  process.env.NODE_ENV === "development" ||
+  process.env.NEXT_PUBLIC_SHOW_CAR_FLIPPER === "true";
+
 export default function LiveDealsGrid({
   marketplaceSlug,
   limit = 12,
 }: LiveDealsGridProps) {
-  const [deals] = useState<LiveDeal[]>([]);
+  const [deals, setDeals] = useState<LiveDeal[]>([]);
   const [loading] = useState(false);
   const [error] = useState<string | null>(null);
+
+  // DEV MODE: Use mock data if forceShow is enabled and no real deals
+  useEffect(() => {
+    if (forceShow && deals.length === 0) {
+      const mockDeals = getMockDeals(limit) as unknown as LiveDeal[];
+      setDeals(mockDeals);
+    }
+  }, [deals.length, limit]);
 
   if (loading) {
     return (
@@ -53,7 +67,8 @@ export default function LiveDealsGrid({
     );
   }
 
-  if (deals.length === 0) {
+  // DEV OVERRIDE: Don't hide section when forceShow is enabled
+  if (deals.length === 0 && !forceShow) {
     return (
       <div className="text-center py-12">
         <p className="text-white/70 font-medium mb-2">
@@ -67,9 +82,20 @@ export default function LiveDealsGrid({
     );
   }
 
+  // DEV MODE: Show placeholder message when using mock data
+  const usingMockData = forceShow && deals.length > 0 && deals[0]?.id?.startsWith("mock-");
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {deals.map((deal, index) => (
+    <>
+      {usingMockData && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <p className="text-xs text-yellow-400 font-medium">
+            🔧 DEV MODE: Showing mock data. Set NEXT_PUBLIC_SHOW_CAR_FLIPPER=true to enable.
+          </p>
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {deals.map((deal, index) => (
         <motion.div
           key={deal.id}
           initial={{ opacity: 0, y: 20 }}
@@ -136,7 +162,8 @@ export default function LiveDealsGrid({
             </CardContent>
           </Card>
         </motion.div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }

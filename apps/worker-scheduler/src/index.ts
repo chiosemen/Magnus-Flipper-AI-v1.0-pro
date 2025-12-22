@@ -21,6 +21,8 @@ import {
   applyElitePoolGovernance,
   type EliteGovernanceResult,
 } from "./services/elitePoolGovernance";
+import { dispatchElitePools, forceDispatchAllElitePools } from "./services/elitePoolDispatch";
+import { generateDiagnostics, logDiagnostics, verifyPoolExecution } from "./diagnostics";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default
@@ -70,6 +72,39 @@ async function scheduleScans() {
       console.log(
         `[${WORKER_ID}] ✅ Elite pool governance PASSED. Proceeding with scheduling.`
       );
+
+      // =========================================================================
+      // ELITE POOL DISPATCH: Enqueue scraping jobs for active pools
+      // =========================================================================
+      let jobsDispatched = 0;
+      if (process.env.DEV_POOL_FORCE === "true") {
+        // Dev override: bypass governance and dispatch all enabled pools
+        console.log(`[${WORKER_ID}] 🔧 DEV MODE: Force dispatching all enabled pools...`);
+        jobsDispatched = await forceDispatchAllElitePools();
+      } else {
+        // Normal mode: dispatch only pools that passed governance
+        const activePools = eliteGovernance.governedPools.filter((p) => !p.shouldSkip);
+        if (activePools.length > 0) {
+          jobsDispatched = await dispatchElitePools(activePools);
+        } else {
+          console.log(`[${WORKER_ID}] ⏸️  No active Elite pools to dispatch (all paused or skipped)`);
+        }
+      }
+
+      // Generate and log diagnostics
+      const diagnostics = generateDiagnostics(eliteGovernance, jobsDispatched);
+      logDiagnostics(diagnostics);
+      
+      // Verify execution is working
+      const verification = verifyPoolExecution(diagnostics);
+      if (!verification.isWorking && verification.issues.length > 0) {
+        console.warn(`[${WORKER_ID}] ⚠️  Pool execution verification failed:`);
+        verification.issues.forEach((issue) => {
+          console.warn(`[${WORKER_ID}]   - ${issue}`);
+        });
+      } else {
+        console.log(`[${WORKER_ID}] ✅ Pool execution verified: ${jobsDispatched} job(s) dispatched`);
+      }
     } catch (error) {
       // Hard governance violation - halt execution
       console.error(

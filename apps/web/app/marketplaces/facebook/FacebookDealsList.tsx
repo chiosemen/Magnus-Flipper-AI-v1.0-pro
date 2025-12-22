@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
+import Image from "next/image";
 import { Card, CardContent } from "../../../marketing-swoopa/components/ui/card";
 import { Button } from "../../../marketing-swoopa/components/ui/button";
+import { getMockDeals } from "@/lib/utils/mockData";
+import { sanitizeImageUrl } from "@/lib/utils/imageResolver";
 
 interface Deal {
   id: string;
@@ -15,6 +18,11 @@ interface Deal {
   imageUrl?: string;
   createdAt: string;
 }
+
+// DEV OVERRIDE: Force show Car Flipper section even with no data
+const forceShow =
+  process.env.NODE_ENV === "development" ||
+  process.env.NEXT_PUBLIC_SHOW_CAR_FLIPPER === "true";
 
 export default function FacebookDealsList() {
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -33,10 +41,43 @@ export default function FacebookDealsList() {
         }
 
         const data = await res.json();
-        setDeals(data.deals || []);
+        const fetchedDeals = data.deals || [];
+        
+        // DEV MODE: Use mock data if forceShow is enabled and no real deals
+        if (fetchedDeals.length === 0 && forceShow) {
+          const mockDeals = getMockDeals(6).map((mock) => ({
+            id: mock.id,
+            title: mock.title,
+            marketplace: mock.marketplace,
+            buyPrice: mock.currentPrice,
+            location: mock.location,
+            buyUrl: mock.url,
+            imageUrl: mock.imageUrl,
+            createdAt: new Date().toISOString(),
+          }));
+          setDeals(mockDeals);
+        } else {
+          setDeals(fetchedDeals);
+        }
       } catch (err: any) {
         console.error("Error fetching pooled deals:", err);
         setError(err.message || "Failed to load deals");
+        
+        // DEV MODE: Use mock data even on error if forceShow is enabled
+        if (forceShow) {
+          const mockDeals = getMockDeals(6).map((mock) => ({
+            id: mock.id,
+            title: mock.title,
+            marketplace: mock.marketplace,
+            buyPrice: mock.currentPrice,
+            location: mock.location,
+            buyUrl: mock.url,
+            imageUrl: mock.imageUrl,
+            createdAt: new Date().toISOString(),
+          }));
+          setDeals(mockDeals);
+          setError(null); // Clear error in dev mode
+        }
       } finally {
         setLoading(false);
       }
@@ -77,7 +118,8 @@ export default function FacebookDealsList() {
     );
   }
 
-  if (deals.length === 0) {
+  // DEV OVERRIDE: Don't hide section when forceShow is enabled
+  if (deals.length === 0 && !forceShow) {
     return (
       <div className="text-center py-12">
         <p className="text-white/70 font-medium mb-2">No live deals yet</p>
@@ -88,20 +130,36 @@ export default function FacebookDealsList() {
     );
   }
 
+  // DEV MODE: Show placeholder message when using mock data
+  const usingMockData = forceShow && deals.length > 0 && deals[0]?.id?.startsWith("mock-");
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {deals.map((deal) => (
+    <>
+      {usingMockData && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <p className="text-xs text-yellow-400 font-medium">
+            🔧 DEV MODE: Showing mock data. Real deals will appear when worker-scheduler dispatches jobs.
+          </p>
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {deals.map((deal) => (
         <Card
           key={deal.id}
           className="group relative flex h-full flex-col border border-white/10 bg-gradient-to-br from-[#121212] via-[#0A0A0A] to-[#121212] shadow-[0_0_25px_rgba(0,0,0,0.9)] transition hover:-translate-y-1 hover:border-[#00E5FF]/80 hover:shadow-[0_0_40px_rgba(0,229,255,0.8)]"
         >
           <CardContent className="flex flex-1 flex-col justify-between gap-3 p-4">
             {deal.imageUrl && (
-              <div className="w-full h-32 mb-2 rounded overflow-hidden">
-                <img
-                  src={deal.imageUrl}
-                  alt={deal.title}
-                  className="w-full h-full object-cover"
+              <div className="w-full h-32 mb-2 rounded overflow-hidden relative">
+                <Image
+                  src={sanitizeImageUrl(deal.imageUrl)}
+                  alt={deal.title || "Deal"}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  onError={() => {
+                    // Image failed to load, component will handle gracefully
+                  }}
                 />
               </div>
             )}
@@ -152,7 +210,8 @@ export default function FacebookDealsList() {
             )}
           </CardContent>
         </Card>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }
