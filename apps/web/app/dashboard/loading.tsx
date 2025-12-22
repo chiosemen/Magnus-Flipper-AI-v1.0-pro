@@ -42,7 +42,7 @@ export default function DashboardLoading() {
                 Market is warming up...
               </div>
               <div className="text-sm text-[#6E7681]">
-                Loading pooled marketplace intelligence
+                Loading live marketplace data
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,11 @@ export default function SignupPage() {
     });
 
     if (signupError) {
+      console.error("Signup failed:", signupError);
       setError(signupError.message);
+      toast.error("Signup failed", {
+        description: signupError.message,
+      });
       setLoading(false);
       return;
     }
