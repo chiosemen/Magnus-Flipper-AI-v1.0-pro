@@ -257,7 +257,7 @@ export async function getAdaptiveThrottleMultiplier(
 
   // Apply guardrails (import dynamically to avoid circular deps)
   try {
-    const guardrailsModule = await import('@magnus-flipper-ai/compliance-shield/guardrails');
+    const guardrailsModule = await import('@magnus-flipper-ai/compliance-shield');
     const guardrails = guardrailsModule.getGuardrails(profile);
     
     // Check emergency threshold
