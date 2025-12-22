@@ -1,200 +1,91 @@
-# UI Quick Reference — Never-Disappear Patterns
+# UI Governance Quick Reference
 
-**One-page reference for production-safe UI patterns.**
-
----
-
-## 🚨 The 4 Rules
-
-1. **Sections always render** — Never `{data && <Section />}`
-2. **Feature flags disable behavior, not visibility** — Use `<FeatureGate>`
-3. **All images go through resolver** — Use `<SafeImage>` or `resolveImage()`
-4. **All 4 states explicit** — loading, empty, error, ready
+**TL;DR:** Sections always render. Images use SafeImage. Feature flags use FeatureGate.
 
 ---
 
-## ✅ Section Pattern
+## ✅ DO This
+
+### Section-Level Components
 
 ```tsx
-import { SectionShell, fromReactQuery } from "@/lib/ui-contracts";
+import { SectionShell, fromReactQuery } from '@/lib/ui-contracts/SectionShell';
 
-const query = useQuery("key", fetchData);
-const state = fromReactQuery(query);
+function MySection() {
+  const query = useQuery({ queryKey: ['data'], queryFn: fetchData });
 
-<SectionShell
-  sectionId="section-name"
-  state={state}
-  renderLoading={() => <Skeleton />}
-  renderEmpty={() => <Empty />}
-  renderError={(err) => <Error error={err} />}
-  renderReady={(data) => <Content data={data} />}
-/>;
+  return (
+    <SectionShell
+      sectionId="my-section"
+      state={fromReactQuery(query)}
+      renderLoading={() => <MySkeleton />}
+      renderEmpty={() => <MyEmptyState />}
+      renderError={(err) => <MyErrorState error={err} />}
+      renderReady={(data) => <MyContent data={data} />}
+    />
+  );
+}
 ```
 
----
-
-## ✅ Image Pattern
+### Images
 
 ```tsx
-import { SafeImage } from "@/components/ui/SafeImage";
+import { SafeImage } from '@/components/ui/SafeImage';
 
 <SafeImage
-  src={item.imageUrl} // Can be null/undefined
-  alt={item.title}
+  src={listing.imageUrl}
+  alt={listing.title}
   fill
+  onError={(reason) => console.warn('Image failed:', reason)}
 />
+```
 
-// OR
+### Feature Flags
 
-import { resolveImage } from "@/lib/utils/imageResolver";
+```tsx
+import { FeatureGate } from '@/components/ui/FeatureGate';
 
-<Image
-  src={resolveImage(item.imageUrl)}
-  alt={item.title}
-  fill
-/>
+<FeatureGate feature="analytics" enabled={isEnabled}>
+  {(enabled) => enabled ? <Analytics /> : <AnalyticsDisabled />}
+</FeatureGate>
 ```
 
 ---
 
-## ✅ Feature Flag Pattern
+## ❌ DON'T Do This
+
+### Silent Null Returns
 
 ```tsx
-import { FeatureGate } from "@/components/ui/FeatureGate";
-
-<FeatureGate feature="feature-name" enabled={isEnabled}>
-  {(enabled) => (enabled ? <Active /> : <Disabled />)}
-</FeatureGate>;
+// ❌ BAD: Section disappears
+function MySection({ data }) {
+  if (!data) return null;
+  return <div>{data}</div>;
+}
 ```
 
----
-
-## ✅ State Components Template
-
-**Create these 4 components for each section:**
+### Conditional Rendering
 
 ```tsx
-// 1. Skeleton — Fixed count, deterministic
-export function Skeleton() {
+// ❌ BAD: Section appears/disappears
+function Page() {
   return (
-    <div className="space-y-4">
-      {[1, 2, 3].map((i) => (
-        <Card key={i} className="animate-pulse">
-          {/* ... */}
-        </Card>
-      ))}
+    <div>
+      {data && <MySection data={data} />}
     </div>
   );
 }
-
-// 2. Empty — Explain what will appear
-export function Empty() {
-  return (
-    <Card className="p-12 text-center">
-      <h3>No Items Yet</h3>
-      <p>Items will appear here when [condition].</p>
-      <Button>Setup</Button>
-    </Card>
-  );
-}
-
-// 3. Error — Provide retry
-export function Error({ error, onRetry }: { error: Error; onRetry?: () => void }) {
-  return (
-    <Alert variant="destructive">
-      <AlertTitle>Error</AlertTitle>
-      <AlertDescription>
-        {error.message}
-        <Button onClick={onRetry}>Retry</Button>
-      </AlertDescription>
-    </Alert>
-  );
-}
-
-// 4. Disabled — Feature flag off
-export function Disabled() {
-  return (
-    <Alert>
-      <AlertTitle>Feature Paused</AlertTitle>
-      <AlertDescription>This feature is temporarily disabled.</AlertDescription>
-    </Alert>
-  );
-}
 ```
 
----
-
-## ❌ Anti-Patterns (NEVER DO THIS)
+### Direct next/image
 
 ```tsx
-// ❌ Section disappears when no data
-{data && data.length > 0 && <Section data={data} />}
+// ❌ BAD: No centralized error handling
+import Image from 'next/image';
 
-// ❌ Feature flag hides section
-{isEnabled && <Section />}
-
-// ❌ Direct Image usage with nullable URL
-<Image src={listing.imageUrl} alt="..." />
-
-// ❌ Returning null from component
-if (!data) return null;
-
-// ❌ Random skeleton counts
-{Array(Math.random() * 5).map(...)}
+<Image src={user.avatar} alt="Avatar" />
 ```
 
 ---
 
-## 🧪 Test Checklist
-
-- [ ] **Empty data** — `[]` or `null`
-- [ ] **Loading** — Slow network
-- [ ] **Error** — 500 response
-- [ ] **Feature off** — Flag disabled
-- [ ] **Null images** — `imageUrl: null`
-- [ ] **Protocol-relative** — `imageUrl: "//cdn.com/img.jpg"`
-
----
-
-## 📦 Import Paths
-
-```tsx
-// UI Contracts
-import { SectionShell, fromReactQuery, fromRealtimeHook } from "@/lib/ui-contracts";
-import type { SectionState } from "@/lib/ui-contracts";
-
-// Image Handling
-import { SafeImage } from "@/components/ui/SafeImage";
-import { resolveImage, resolveImages } from "@/lib/utils/imageResolver";
-
-// Feature Flags
-import { FeatureGate, FeatureToggle, useFeature } from "@/components/ui/FeatureGate";
-```
-
----
-
-## 🔍 Debug Attributes
-
-**Inspect in DevTools:**
-
-```html
-<div
-  data-section-id="car-flipper"
-  data-section-state="empty"
-  data-feature="car-flipper"
-  data-feature-enabled="false"
-></div>
-```
-
----
-
-## 📚 Full Documentation
-
-- **UI Contracts**: `lib/ui-contracts/README.md`
-- **FeatureGate**: `components/ui/FEATURE_GATE_EXAMPLES.md`
-- **Full Checklist**: `/UI_POLISH_CHECKLIST.md` (project root)
-- **Car Flipper Example**: `components/flipbomb/CarFlipperSection.example.tsx`
-
----
-
-**Remember:** If users can't see it, they'll report it as broken.
+See UI_FREEZE_CONTRACT.md for complete documentation.
