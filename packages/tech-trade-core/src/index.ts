@@ -10,6 +10,18 @@
 // Type exports
 export * from './types';
 
+// Core type re-exports (explicit for Next.js/Webpack compatibility)
+export type {
+  Condition,
+  QuoteBreakdown,
+  MarketIndicators,
+  RiskControlConfig,
+} from './types';
+export {
+  PricingHaltedError,
+  DEFAULT_PRICING_POLICY,
+} from './types';
+
 // Pricing Engine
 export {
   calculateBasePrice,
@@ -29,6 +41,11 @@ export {
   groupAttributesByType,
   setDeviceRepository,
 } from './device-catalog';
+export type {
+  DeviceSearchResult,
+  TechDeviceWithAttributes,
+  DeviceAttributeGroup,
+} from './types';
 
 // Anchor Blending
 export {
