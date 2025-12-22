@@ -6,18 +6,20 @@ const __dirname = dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   // Set build-time env vars to prevent Redis/Queue connections during static analysis
   env: {
     SKIP_REDIS: process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV ? 'true' : 'false',
   },
   experimental: {
-    turbo: false, // Disable Turbopack for production builds on Vercel
     serverActions: {
       bodySizeLimit: "2mb",
     },
   },
   serverExternalPackages: ['pg', '@prisma/adapter-pg'],
   transpilePackages: [
+    "@magnus-flipper-ai/marketplace-config",
+    "@magnus-flipper-ai/tech-trade-core",
     "@magnus-flipper-ai/core",
     "@magnus-flipper-ai/agentic-engine",
     "@magnus-flipper-ai/arb-engine",
