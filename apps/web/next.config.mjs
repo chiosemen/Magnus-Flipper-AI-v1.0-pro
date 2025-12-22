@@ -9,17 +9,17 @@ const nextConfig = {
   // Standalone output for Vercel monorepo deployment
   output: "standalone",
 
+  // Tell Next.js the monorepo root (two levels up from apps/web)
+  outputFileTracingRoot: resolve(__dirname, '../../'),
+
   // Set build-time env vars to prevent Redis/Queue connections during static analysis
   env: {
     SKIP_REDIS: process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV ? 'true' : 'false',
   },
   experimental: {
-    turbo: false, // Disable Turbopack for production builds on Vercel
     serverActions: {
       bodySizeLimit: "2mb",
     },
-    // Tell Next.js the monorepo root (two levels up from apps/web)
-    outputFileTracingRoot: resolve(__dirname, '../../'),
   },
   serverExternalPackages: ['pg', '@prisma/adapter-pg'],
   transpilePackages: [

@@ -36,5 +36,9 @@ export * from "./contracts/mmListing.js";
 // Health check utilities
 export * from "./healthcheck.js";
 
+// Elite Pool Economics
+export * from "./services/eliteCoverage.js";
+export * from "./services/eliteThrottlePolicy.js";
+
 // Types exports
 export * from "./types/index.js";
