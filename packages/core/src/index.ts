@@ -42,3 +42,6 @@ export * from "./services/eliteThrottlePolicy.js";
 
 // Types exports
 export * from "./types/index.js";
+
+// Feature Flags
+export * from "./flags/index.js";

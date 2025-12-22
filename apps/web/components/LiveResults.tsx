@@ -15,7 +15,22 @@ export interface Deal {
 
 function mapApifyItemToDeal(item: any, marketplaceFallback?: string): Deal | null {
   const url = item?.url || item?.itemUrl;
-  if (!url) return null;
+  if (!url) {
+    // Log invalid item drop for observability
+    console.warn(
+      "[LiveResults] Dropped invalid item",
+      {
+        reason: "Missing URL",
+        item: {
+          id: item?.id,
+          title: item?.title || item?.name,
+          index: item?.index,
+        },
+      }
+    );
+    // LOW_LEVEL: Mapper functions may return null for invalid items
+    return null;
+  }
 
   const rawPrice =
     typeof item?.price === "number"

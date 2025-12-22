@@ -8,8 +8,20 @@ type Props = {
 };
 
 export function ApifyModeNotice({ message }: Props) {
-  if (!APIFY_ONLY_MODE) return null;
+  // Always render something visible
+  if (!APIFY_ONLY_MODE) {
+    // Disabled state - visible but non-interactive
+    return (
+      <div className="rounded-lg border border-slate-600/40 bg-slate-800/30 p-4 text-slate-400 opacity-60">
+        <div className="font-semibold mb-1">Apify mode is currently disabled</div>
+        <p className="text-sm text-slate-400/80">
+          Apify ingestion mode is not active. Legacy pipelines are running normally.
+        </p>
+      </div>
+    );
+  }
 
+  // Enabled state - normal content
   return (
     <div className="rounded-lg border border-sky-500/40 bg-sky-500/10 p-4 text-sky-100">
       <div className="font-semibold mb-1">Apify ingestion mode active</div>

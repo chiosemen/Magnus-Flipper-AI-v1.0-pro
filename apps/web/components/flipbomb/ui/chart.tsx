@@ -63,7 +63,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
 
   if (!colorConfig.length) {
-    return null;
+    return <></>;
   }
 
   return (
@@ -155,7 +155,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
 
   const tooltipLabel = React.useMemo(() => {
       if (hideLabel || !payload?.length) {
-        return null;
+        return undefined;
       }
 
       const [item] = payload;
@@ -175,14 +175,18 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
       }
 
       if (!value) {
-        return null;
+        return undefined;
       }
 
       return <div className={cn("font-medium", labelClassName)}>{value}</div>;
     }, [label, labelFormatter, rawPayload, hideLabel, labelClassName, config, labelKey]);
 
     if (!active || !payload?.length) {
-      return null;
+      return (
+        <div className="h-[240px] rounded-md border border-slate-700 bg-slate-900/40 flex items-center justify-center text-slate-400 text-sm">
+          Chart unavailable — awaiting data
+        </div>
+      );
     }
 
     const nestLabel = payload?.length === 1 && indicator !== "dot";
@@ -279,7 +283,11 @@ const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentPr
     const { config } = useChart();
 
     if (!payload?.length) {
-      return null;
+      return (
+        <div className="h-[240px] rounded-md border border-slate-700 bg-slate-900/40 flex items-center justify-center text-slate-400 text-sm">
+          Chart unavailable — awaiting data
+        </div>
+      );
     }
 
     return (

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { Card, CardContent } from "../../../marketing-swoopa/components/ui/card";
 import { Button } from "../../../marketing-swoopa/components/ui/button";
 import { getMockDeals } from "@/lib/utils/mockData";
@@ -151,7 +151,7 @@ export default function FacebookDealsList() {
           <CardContent className="flex flex-1 flex-col justify-between gap-3 p-4">
             {deal.imageUrl && (
               <div className="w-full h-32 mb-2 rounded overflow-hidden relative">
-                <Image
+                <SafeImage
                   src={sanitizeImageUrl(deal.imageUrl)}
                   alt={deal.title || "Deal"}
                   fill

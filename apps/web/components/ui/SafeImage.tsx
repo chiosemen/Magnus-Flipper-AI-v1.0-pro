@@ -1,5 +1,6 @@
 /**
  * SafeImage Component
+<<<<<<< HEAD
  *
  * Wrapper around next/image that ALWAYS uses resolveImage for src URLs.
  * This prevents ad-hoc image handling and ensures all images go through
@@ -118,6 +119,56 @@ export function SafeImage({
         imageProps.unoptimized !== undefined
           ? imageProps.unoptimized
           : resolvedSrc.startsWith("http") && !resolvedSrc.includes(process.env.NEXT_PUBLIC_APP_URL || "")
+      }
+    />
+  );
+}
+
+"use client";
+
+import Image from "next/image";
+import { resolveImage } from "@/lib/utils/imageResolver";
+import { useState } from "react";
+
+export interface SafeImageProps
+  extends React.ComponentProps<typeof Image> {
+  src: string;
+  alt: string;
+}
+
+export function SafeImage({
+  src,
+  alt,
+  ...imageProps
+}: SafeImageProps) {
+  const [hasError, setHasError] = useState(false);
+
+  const resolvedSrc = resolveImage(src);
+
+  if (!resolvedSrc || hasError) {
+    return (
+      <div className="flex items-center justify-center bg-slate-800/40 text-slate-500 text-sm rounded-md">
+        Image unavailable
+      </div>
+    );
+  }
+
+  function handleImageError() {
+    setHasError(true);
+  }
+
+  return (
+    <Image
+      {...imageProps}
+      src={resolvedSrc}
+      alt={alt}
+      onError={handleImageError}
+      unoptimized={
+        imageProps.unoptimized ??
+        (resolvedSrc.startsWith("http") &&
+          !resolvedSrc.includes(
+            process.env.NEXT_PUBLIC_APP_URL ?? ""
+          ))
       }
     />
   );

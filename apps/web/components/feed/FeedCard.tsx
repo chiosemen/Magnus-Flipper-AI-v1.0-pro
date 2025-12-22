@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { Card } from "@magnus-flipper-ai/ui/components";
 import { Badge } from "@magnus-flipper-ai/ui/components";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
@@ -40,7 +40,7 @@ export function FeedCard({ listing, onClick }: FeedCardProps) {
         {/* Image */}
         {listing.imageUrl && (
           <div className="flex-shrink-0 relative w-24 h-24">
-            <Image
+            <SafeImage
               src={sanitizeImageUrl(listing.imageUrl)}
               alt={listing.title || "Listing"}
               fill
