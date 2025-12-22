@@ -54,7 +54,10 @@ export function Header() {
           {/* Mobile Menu Button */}
           <button
             className="md:hidden p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => {
+              console.log("menu toggle");
+              setMobileMenuOpen(!mobileMenuOpen);
+            }}
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? (

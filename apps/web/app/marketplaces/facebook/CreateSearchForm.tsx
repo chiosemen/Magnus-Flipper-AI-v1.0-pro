@@ -321,7 +321,7 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
           </div>
 
           <div className="p-3 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-300 text-xs">
-            📌 Your search will be saved and monitored. Live deals appear below from our pooled marketplace scraper.
+            📌 Your search will be saved and monitored. Live deals appear here as they are discovered.
           </div>
 
           {error && (
@@ -332,7 +332,7 @@ export default function CreateSearchForm({ onSearchCreated, disabled }: Props) {
 
           {success && (
             <div className="p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 text-sm">
-              Search saved successfully! Pooled deals will appear below.
+              Search saved successfully! Live deals will appear below.
             </div>
           )}
 

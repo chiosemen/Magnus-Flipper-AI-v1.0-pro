@@ -124,7 +124,7 @@ export default function FacebookDealsList() {
       <div className="text-center py-12">
         <p className="text-white/70 font-medium mb-2">No live deals yet</p>
         <p className="text-white/50 text-sm">
-          Pooled deals from Facebook Marketplace will appear here. The worker scrapes continuously.
+          Live deals from Facebook Marketplace will appear here as they are discovered.
         </p>
       </div>
     );
