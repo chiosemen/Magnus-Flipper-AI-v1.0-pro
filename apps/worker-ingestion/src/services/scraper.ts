@@ -5,7 +5,7 @@
 
 import { ScraperOrchestrator } from "@magnus-flipper-ai/scraper-sync";
 import type { ScraperConfig, ScraperResult } from "@magnus-flipper-ai/scraper-sync";
-import { normalizeFacebookListing, type MMListing } from "@magnus-flipper-ai/core/contracts/mmListing";
+import { normalizeFacebookListing, type MMListing } from "@magnus-flipper-ai/core";
 import type { SearchResult, ListingItem } from "../types/schemas.js";
 import { concurrencyManager } from "./concurrency.js";
 

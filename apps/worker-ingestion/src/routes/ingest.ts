@@ -5,7 +5,7 @@
  * GET /ingest/results/:requestId
  */
 
-import express from "express";
+import express, { type Router } from "express";
 import { ScraperOrchestrator } from "@magnus-flipper-ai/scraper-sync";
 import {
   IngestRunRequestSchema,
@@ -15,7 +15,7 @@ import { requestRegistry } from "../registry/requestRegistry.js";
 import { runSearch } from "../services/scraper.js";
 import { concurrencyManager } from "../services/concurrency.js";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // Initialize orchestrator (db-lite mode, no Supabase needed)
 const orchestrator = new ScraperOrchestrator("", "");

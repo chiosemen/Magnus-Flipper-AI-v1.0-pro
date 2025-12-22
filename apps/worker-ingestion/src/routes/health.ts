@@ -3,10 +3,10 @@
  * GET /health
  */
 
-import express from "express";
+import express, { type Router } from "express";
 import { requestRegistry } from "../registry/requestRegistry.js";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 /**
  * GET /health
