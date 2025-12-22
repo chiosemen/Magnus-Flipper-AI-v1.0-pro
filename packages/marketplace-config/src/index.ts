@@ -14,3 +14,13 @@ export type {
   MarketplaceRiskConfig,
   RoutingPolicyConfig
 } from './routingPolicy';
+export {
+  ELITE_POOLS,
+  getAllElitePools,
+  getEnabledElitePools,
+  calculateTotalMonthlyCU
+} from './elitePools';
+export type {
+  ElitePoolConfig,
+  ElitePoolId
+} from './elitePools';
