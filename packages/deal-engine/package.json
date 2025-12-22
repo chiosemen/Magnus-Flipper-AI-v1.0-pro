@@ -47,6 +47,9 @@
       "import": "./dist/calibrator/llmConsensus.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

@@ -12,8 +12,10 @@
     "noImplicitAny": false
   },
   "include": [
+    "src/**/*",
     "components/**/*",
-    "providers/**/*"
+    "providers/**/*",
+    "theme/**/*"
   ],
   "exclude": [
     "**/*.test.ts",

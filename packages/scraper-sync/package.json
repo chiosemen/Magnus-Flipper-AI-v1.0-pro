@@ -6,9 +6,18 @@
   "types": "./dist/index.d.ts",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./orchestrator/scraperOrchestrator": "./dist/orchestrator/scraperOrchestrator.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./orchestrator/scraperOrchestrator": {
+      "types": "./dist/orchestrator/scraperOrchestrator.d.ts",
+      "import": "./dist/orchestrator/scraperOrchestrator.js"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

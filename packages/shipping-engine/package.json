@@ -43,6 +43,9 @@
       "import": "./dist/workflow/packagingAdvisor.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "prepare": "pnpm run build",

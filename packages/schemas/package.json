@@ -1,5 +1,11 @@
 {
   "name": "@magnus/schemas",
   "version": "1.0.0",
-  "main": "index.js"
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js"
+  ]
 }

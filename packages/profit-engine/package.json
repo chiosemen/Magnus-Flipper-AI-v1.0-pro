@@ -43,6 +43,9 @@
       "import": "./dist/schemas/SaleEvent.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "prepare": "pnpm run build",
