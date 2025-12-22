@@ -64,8 +64,10 @@ export async function hydrateListing(
 
       await logEvent(marketplace, 'listing_hydrated', {
         success: true,
-        listingId: updated.id,
-        action: 'updated',
+        payload: {
+          listingId: updated.id,
+          action: 'updated',
+        },
       });
 
       return {
@@ -99,8 +101,10 @@ export async function hydrateListing(
 
       await logEvent(marketplace, 'listing_hydrated', {
         success: true,
-        listingId: created.id,
-        action: 'created',
+        payload: {
+          listingId: created.id,
+          action: 'created',
+        },
       });
 
       return {
@@ -113,7 +117,9 @@ export async function hydrateListing(
     
     await logEvent(marketplace, 'listing_hydration_failed', {
       success: false,
-      error: error.message,
+      payload: {
+        error: error.message,
+      },
     });
 
     return {
