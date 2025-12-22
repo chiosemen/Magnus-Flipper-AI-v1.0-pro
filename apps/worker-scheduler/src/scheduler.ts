@@ -1,5 +1,5 @@
-import { getMarketplaceSettings } from "./services/supabase";
-import { scanMarketplace } from "./scanner";
+import { getMarketplaceSettings } from "./services/supabase.js";
+import { scanMarketplace } from "./scanner.js";
 
 export async function runScheduledScan() {
   console.log("Starting scheduled scan...");

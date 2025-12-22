@@ -5,7 +5,7 @@
  * Maps pool configurations to actual scraping jobs and enqueues them.
  */
 
-import type { GovernedElitePool } from "./elitePoolGovernance";
+import type { GovernedElitePool } from "./elitePoolGovernance.js";
 import { ingestQueue } from "@magnus-flipper-ai/queue";
 import type { ScrapeJob } from "@magnus-flipper-ai/queue";
 

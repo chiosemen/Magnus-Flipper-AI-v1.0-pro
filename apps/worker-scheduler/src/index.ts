@@ -11,18 +11,18 @@
  * See services/elitePoolGovernance.ts for enforcement logic.
  */
 
-import { runScheduledScan } from "./scheduler";
-import { scheduleAllMarketplaces } from "./scanner";
+import { runScheduledScan } from "./scheduler.js";
+import { scheduleAllMarketplaces } from "./scanner.js";
 import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
-import { runActivityFeedTTL } from "./services/ttl-cleanup";
-import { rehydrateListings } from "./hydration";
-import { runAlertDeliveryCycle } from "./alerts/alert-delivery-worker";
+import { runActivityFeedTTL } from "./services/ttl-cleanup.js";
+import { rehydrateListings } from "./hydration.js";
+import { runAlertDeliveryCycle } from "./alerts/alert-delivery-worker.js";
 import {
   applyElitePoolGovernance,
   type EliteGovernanceResult,
-} from "./services/elitePoolGovernance";
-import { dispatchElitePools, forceDispatchAllElitePools } from "./services/elitePoolDispatch";
-import { generateDiagnostics, logDiagnostics, verifyPoolExecution } from "./diagnostics";
+} from "./services/elitePoolGovernance.js";
+import { dispatchElitePools, forceDispatchAllElitePools } from "./services/elitePoolDispatch.js";
+import { generateDiagnostics, logDiagnostics, verifyPoolExecution } from "./diagnostics.js";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default

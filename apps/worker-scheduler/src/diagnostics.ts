@@ -5,7 +5,7 @@
  * Use this to verify pool logic is working vs just logging.
  */
 
-import type { EliteGovernanceResult } from "./services/elitePoolGovernance";
+import type { EliteGovernanceResult } from "./services/elitePoolGovernance.js";
 import { getEnabledElitePools } from "@magnus-flipper-ai/marketplace-config";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler";

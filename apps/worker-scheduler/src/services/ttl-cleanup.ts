@@ -4,7 +4,7 @@
  * Runs in batches to avoid long-running transactions
  */
 
-import { getPrisma } from "./prisma";
+import { getPrisma } from "./prisma.js";
 
 const TTL_DAYS = 30;
 const BATCH_SIZE = 1000;

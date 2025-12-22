@@ -1,4 +1,4 @@
-import type { Listing } from "./craigslist";
+import type { Listing } from "./craigslist.js";
 
 export async function scrapeListings(query: string = "furniture"): Promise<Listing[]> {
   console.warn("Facebook Marketplace requires authentication - using mock data");

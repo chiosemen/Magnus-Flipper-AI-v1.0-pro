@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Listing } from "./craigslist";
+import type { Listing } from "./craigslist.js";
 
 export async function scrapeListings(query: string = "clothing"): Promise<Listing[]> {
   try {

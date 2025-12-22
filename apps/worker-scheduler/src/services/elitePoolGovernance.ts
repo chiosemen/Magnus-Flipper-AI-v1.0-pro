@@ -14,12 +14,12 @@
  * This runs BEFORE any Elite pool scheduling occurs, acting as a gatekeeper.
  */
 
-import { calculateEliteCoverage } from "@magnus-flipper-ai/core/services/eliteCoverage";
 import {
+  calculateEliteCoverage,
   calculateEliteThrottlePolicy,
   formatThrottlePolicyLog,
   type EliteThrottlePolicyResult,
-} from "@magnus-flipper-ai/core/services/eliteThrottlePolicy";
+} from "@magnus-flipper-ai/core";
 import {
   ELITE_POOLS,
   getEnabledElitePools,

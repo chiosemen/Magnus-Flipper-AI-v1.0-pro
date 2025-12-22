@@ -1,4 +1,4 @@
-import { getMarketplaceSettings } from "./services/supabase";
+import { getMarketplaceSettings } from "./services/supabase.js";
 import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketplace-config';
 import { getCurrentBackoffSeconds } from '@magnus-flipper-ai/rate-limiter';
 

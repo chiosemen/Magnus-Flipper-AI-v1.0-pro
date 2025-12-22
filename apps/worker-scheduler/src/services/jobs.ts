@@ -1,5 +1,5 @@
-import { claimJob, completeJob, failJob } from "./queue";
-import { logEvent } from "./telemetry";
+import { claimJob, completeJob, failJob } from "./queue.js";
+import { logEvent } from "./telemetry.js";
 
 export async function processJob(workerId: string, handler: (job: any) => Promise<any>) {
   const job = await claimJob(workerId);

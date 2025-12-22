@@ -1,4 +1,4 @@
-import type { Listing } from "./craigslist";
+import type { Listing } from "./craigslist.js";
 
 export async function scrapeListings(query: string = "electronics"): Promise<Listing[]> {
   console.warn("OfferUp requires API access - using mock data");

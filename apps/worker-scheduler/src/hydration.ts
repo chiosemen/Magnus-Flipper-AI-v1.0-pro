@@ -1,6 +1,6 @@
-import { getPrisma } from '@magnus-flipper-ai/core/db';
+import { getPrisma } from '@magnus-flipper-ai/core';
 import { getAdapter, isMarketplaceLive } from '@magnus-flipper-ai/marketplaces';
-import { logEvent } from './services/telemetry';
+import { logEvent } from './services/telemetry.js';
 
 // Import hydrateListing from worker-realtime (or duplicate the logic)
 async function hydrateListing(

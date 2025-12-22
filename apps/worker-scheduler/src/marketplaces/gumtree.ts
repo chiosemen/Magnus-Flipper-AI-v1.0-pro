@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import type { Element } from "domhandler";
-import type { Listing } from "./craigslist";
+import type { Listing } from "./craigslist.js";
 
 export async function scrapeListings(query: string = "electronics"): Promise<Listing[]> {
   try {
