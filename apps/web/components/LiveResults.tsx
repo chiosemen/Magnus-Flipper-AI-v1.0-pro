@@ -28,8 +28,7 @@ function mapApifyItemToDeal(item: any, marketplaceFallback?: string): Deal | nul
         },
       }
     );
-    // LOW_LEVEL: Mapper functions may return null for invalid items
-    return null;
+    return null; // LOW_LEVEL: mapper-safe
   }
 
   const rawPrice =
