@@ -156,11 +156,7 @@ export default function FacebookDealsList() {
                   alt={deal.title || "Deal"}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  onError={() => {
-                    // Image failed to load, component will handle gracefully
-                  }}
-                />
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"/>
               </div>
             )}
 
