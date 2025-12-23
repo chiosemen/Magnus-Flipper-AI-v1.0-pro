@@ -7,32 +7,39 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./pricing-engine": {
-      "types": "./dist/pricing-engine.d.ts",
-      "import": "./dist/pricing-engine.js"
+      "import": "./dist/pricing-engine.js",
+      "require": "./dist/pricing-engine.js",
+      "types": "./dist/pricing-engine.d.ts"
     },
     "./device-catalog": {
-      "types": "./dist/device-catalog.d.ts",
-      "import": "./dist/device-catalog.js"
+      "import": "./dist/device-catalog.js",
+      "require": "./dist/device-catalog.js",
+      "types": "./dist/device-catalog.d.ts"
     },
     "./anchor-blending": {
-      "types": "./dist/anchor-blending.d.ts",
-      "import": "./dist/anchor-blending.js"
+      "import": "./dist/anchor-blending.js",
+      "require": "./dist/anchor-blending.js",
+      "types": "./dist/anchor-blending.d.ts"
     },
     "./market-indicators": {
-      "types": "./dist/market-indicators.d.ts",
-      "import": "./dist/market-indicators.js"
+      "import": "./dist/market-indicators.js",
+      "require": "./dist/market-indicators.js",
+      "types": "./dist/market-indicators.d.ts"
     },
     "./policy-enforcement": {
-      "types": "./dist/policy-enforcement.d.ts",
-      "import": "./dist/policy-enforcement.js"
+      "import": "./dist/policy-enforcement.js",
+      "require": "./dist/policy-enforcement.js",
+      "types": "./dist/policy-enforcement.d.ts"
     },
     "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js"
+      "import": "./dist/types.js",
+      "require": "./dist/types.js",
+      "types": "./dist/types.d.ts"
     }
   },
   "files": [
