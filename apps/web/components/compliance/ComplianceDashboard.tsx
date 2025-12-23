@@ -1,12 +1,12 @@
 "use client";
 
-import { Card } from "@magnus-flipper-ai/ui/components";
+import { Card } from "@/marketing-swoopa/components/ui/card";
 import { useComplianceRisk } from "@/hooks/useComplianceRisk";
 import { useComplianceGuardrails } from "@/hooks/useComplianceGuardrails";
 import { RiskScoreCard } from "./RiskScoreCard";
 import { MarketplaceRiskTable } from "./MarketplaceRiskTable";
 import { GuardrailsPanel } from "./GuardrailsPanel";
-import type { ComplianceSummary } from "@magnus-flipper-ai/core/types/compliance";
+import type { ComplianceSummary } from "@/lib/types/compliance";
 
 /**
  * ComplianceDashboard - Main compliance dashboard component

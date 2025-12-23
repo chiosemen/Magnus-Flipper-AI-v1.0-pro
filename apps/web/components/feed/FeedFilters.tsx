@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Input, Button } from "@magnus-flipper-ai/ui/components";
+import { Card, Input, Button } from "@/marketing-swoopa/components/ui/card";
 import type { FeedFilters } from "@magnus-flipper-ai/core/types/feed";
 
 interface FeedFiltersProps {

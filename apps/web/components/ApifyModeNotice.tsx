@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { APIFY_ONLY_MODE } from "../src/config/apify";
+import { APIFY_ONLY_MODE } from "@/config/apify";
 
 type Props = {
   message?: string;

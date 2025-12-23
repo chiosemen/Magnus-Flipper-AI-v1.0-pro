@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@magnus-flipper-ai/ui/components";
+import { Badge } from "@/marketing-swoopa/components/ui/card";
 import type { FeedConnectionStatus } from "@magnus-flipper-ai/core/types/feed";
 
 interface RealtimeIndicatorProps {

@@ -8,9 +8,9 @@ import { ElitePoolActivationRequests } from "./_components/ElitePoolActivationRe
 import {
   getEnabledElitePools,
   getAllElitePools,
-  calculateTotalMonthlyCU
-} from "@magnus-flipper-ai/marketplace-config";
-import { calculateEliteCoverage } from "@magnus-flipper-ai/core";
+  calculateTotalMonthlyCU,
+  calculateEliteCoverage
+} from "@/lib/server-adapters/marketplace-config";
 
 // Force dynamic rendering (no static generation)
 export const dynamic = "force-dynamic";

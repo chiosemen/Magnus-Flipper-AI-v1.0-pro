@@ -1,11 +1,7 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -15,87 +11,27 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "incremental": true,
-    "forceConsistentCasingInFileNames": true,
+    "rootDir": ".",
+    "outDir": ".next",
     "plugins": [
       {
         "name": "next"
       }
     ],
-    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./app/*"
-      ],
-      "@swoopa/*": [
-        "./marketing-swoopa/*"
-      ],
-      "@/lib/*": [
-        "./lib/*",
-        "./src/lib/*"
-      ],
-      "@/types/*": [
-        "./types/*",
-        "./src/types/*"
-      ],
-      "@/components/*": [
-        "./components/*"
-      ],
-      "@/providers/*": [
-        "./providers/*",
-        "./src/providers/*"
-      ],
-      "@/hooks/*": [
-        "./src/hooks/*"
-      ],
-      "@/utils/*": [
-        "./src/utils/*"
-      ],
-      "@/config/*": [
-        "./src/config/*"
-      ]
+      "@/*": ["./"],
+      "@/components/*": ["./components/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/types/*": ["./types/*"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/config/*": ["./config/*"],
+      "@/utils/*": ["./utils/*"],
+      "@/marketing-swoopa/*": ["./marketing-swoopa/*"],
+      "@magnus-flipper-ai/ui/*": ["./lib/@magnus-flipper-ai/ui/*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "react-cache.d.ts",
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "lib/**/*.ts",
-    "lib/**/*.tsx",
-    "components/**/*.ts",
-    "components/**/*.tsx",
-    "hooks/**/*.ts",
-    "hooks/**/*.tsx",
-    "utils/**/*.ts",
-    "utils/**/*.tsx",
-    "types/**/*.ts",
-    "types/**/*.tsx",
-    "providers/**/*.ts",
-    "providers/**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "*.ts",
-    "*.tsx",
-    "*.mts"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.disabled.ts",
-    "**/*.disabled.tsx",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/__tests__/**",
-    "**/__test__/**",
-    "app/(dashboard)/**",
-    "app/_api_off/**",
-    "app/_admin_off/**",
-    "app/_deals_off/**",
-    "_dashboard_off/**"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

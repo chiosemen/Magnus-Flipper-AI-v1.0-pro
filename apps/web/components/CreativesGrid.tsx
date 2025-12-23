@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@magnus-flipper-ai/ui/components";
+import { Card } from "@/marketing-swoopa/components/ui/card";
 
 interface CreativesGridProps {
   creatives?: any[];

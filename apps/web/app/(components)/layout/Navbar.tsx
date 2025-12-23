@@ -2,11 +2,12 @@
 
 import { Bell, Search, Moon, Sun } from "lucide-react";
 import Link from "next/link";
-import { useTheme } from "@magnus-flipper-ai/ui/providers";
-import { Button } from "@magnus-flipper-ai/ui/components";
+import { useTheme } from "next-themes";
+import { Button } from "../../../marketing-swoopa/components/ui/button";
 
 export function Navbar() {
-  const { resolvedTheme, toggleTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
 
   return (
     <header className="sticky top-0 z-sticky border-b border-border/60 bg-surface/80 backdrop-blur supports-[backdrop-filter]:bg-surface/60">

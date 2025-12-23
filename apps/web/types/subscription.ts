@@ -1,80 +1,64 @@
+// apps/web/types/subscription.ts
+
 export enum SubscriptionTier {
-  FREE = "FREE",
-  PRO = "PRO",
-  AGENCY = "AGENCY",
-  ADMIN = "ADMIN",
+  FREE = "free",
+  PRO = "pro",
+  PREMIUM = "premium",
+  ELITE = "elite",
+  AGENCY = "agency",
+  ADMIN = "admin",
 }
 
-export const TIER_HIERARCHY: Record<SubscriptionTier, number> = {
+export const TIER_HIERARCHY = {
   [SubscriptionTier.FREE]: 0,
   [SubscriptionTier.PRO]: 1,
-  [SubscriptionTier.AGENCY]: 2,
-  [SubscriptionTier.ADMIN]: 3,
+  [SubscriptionTier.PREMIUM]: 2,
+  [SubscriptionTier.ELITE]: 3,
+  [SubscriptionTier.AGENCY]: 4,
+  [SubscriptionTier.ADMIN]: 5,
 };
 
+/**
+ * Subscription metadata interface
+ */
 export interface SubscriptionMetadata {
-  tier: SubscriptionTier;
-  displayName: string;
-  priceMonthly: number;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
   features: string[];
-  searchLimit?: number;
+  limits: {
+    searches?: number;
+    alerts?: number;
+    apiCalls?: number;
+    teamMembers?: number;
+  };
+  stripePriceId?: string;
 }
 
-export const TIER_METADATA: Record<SubscriptionTier, SubscriptionMetadata> = {
-  [SubscriptionTier.FREE]: {
-    tier: SubscriptionTier.FREE,
-    displayName: "Free",
-    priceMonthly: 0,
-    searchLimit: 10,
-    features: [
-      "10 searches per month",
-      "Basic dashboard",
-      "Manual search only",
-    ],
-  },
-  [SubscriptionTier.PRO]: {
-    tier: SubscriptionTier.PRO,
-    displayName: "Pro",
-    priceMonthly: 29,
-    features: [
-      "Unlimited searches",
-      "Live feed",
-      "Advanced analytics",
-      "Price alerts",
-      "Export data",
-    ],
-  },
-  [SubscriptionTier.AGENCY]: {
-    tier: SubscriptionTier.AGENCY,
-    displayName: "Agency",
-    priceMonthly: 149,
-    features: [
-      "Everything in Pro",
-      "Team collaboration",
-      "Multi-user access",
-      "Team analytics",
-      "Priority support",
-      "White-label options",
-    ],
-  },
-  [SubscriptionTier.ADMIN]: {
-    tier: SubscriptionTier.ADMIN,
-    displayName: "Admin",
-    priceMonthly: 0,
-    features: [
-      "Full platform access",
-      "User management",
-      "System monitoring",
-      "Analytics dashboard",
-      "Scraper controls",
-    ],
-  },
-};
-
-export interface MockUser {
+export interface Subscription {
   id: string;
-  email: string;
-  name: string;
+  userId: string;
   tier: SubscriptionTier;
-  createdAt: Date;
+  status: "active" | "cancelled" | "expired";
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  cancelledAt?: Date;
+}
+
+/**
+ * User subscription interface
+ */
+export interface UserSubscription {
+  id: string;
+  user_id: string;
+  tier: SubscriptionTier;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  status: 'active' | 'canceled' | 'past_due' | 'trialing';
+  current_period_start?: string;
+  current_period_end?: string;
+  cancel_at_period_end?: boolean;
+  created_at: string;
+  updated_at: string;
 }

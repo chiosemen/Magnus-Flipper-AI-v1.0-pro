@@ -1,8 +1,8 @@
 "use client";
 
 import { FeedCard } from "./FeedCard";
-import { Button } from "@magnus-flipper-ai/ui/components";
-import { Card } from "@magnus-flipper-ai/ui/components";
+import { Button } from "@/marketing-swoopa/components/ui/card";
+import { Card } from "@/marketing-swoopa/components/ui/card";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
 
 interface FeedListProps {
