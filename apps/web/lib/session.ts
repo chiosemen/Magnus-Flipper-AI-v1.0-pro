@@ -33,7 +33,7 @@ export async function getSignedInUser(): Promise<SignedInUser | null> {
 
   const subscription = await getUserSubscription(user.id);
 
-  let tier = SubscriptionTier.FREE;
+  let tier: SubscriptionTier = "free";
 
   if (subscription && isActiveSubscription(subscription.status)) {
     tier = getTierFromPriceId(subscription.stripe_price_id);

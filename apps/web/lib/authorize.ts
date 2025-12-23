@@ -28,10 +28,10 @@ export function canAccessPath(
   user: MockUser | null
 ): AuthorizationResult {
   const pathToTierMap: Record<string, SubscriptionTier> = {
-    "/free": SubscriptionTier.FREE,
-    "/pro": SubscriptionTier.PRO,
-    "/agency": SubscriptionTier.AGENCY,
-    "/admin": SubscriptionTier.ADMIN,
+    "/free": "free",
+    "/pro": "pro",
+    "/agency": "elite",
+    "/admin": "ADMIN",
   };
 
   for (const [pathSegment, tier] of Object.entries(pathToTierMap)) {

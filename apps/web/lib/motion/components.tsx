@@ -52,9 +52,9 @@ export function MotionCard({
 
   return (
     <motion.div
-      initial={reduced ? false : "hidden"}
-      animate={reduced ? false : "visible"}
-      exit={reduced ? false : "exit"}
+      initial={reduced ? undefined : "hidden"}
+      animate={reduced ? undefined : "visible"}
+      exit={reduced ? undefined : "exit"}
       variants={fadeRiseVariants}
       transition={{ delay }}
       className={className}
@@ -77,9 +77,9 @@ export function MotionFade({
 
   return (
     <motion.div
-      initial={reduced ? false : "hidden"}
-      animate={reduced ? false : "visible"}
-      exit={reduced ? false : "exit"}
+      initial={reduced ? undefined : "hidden"}
+      animate={reduced ? undefined : "visible"}
+      exit={reduced ? undefined : "exit"}
       variants={fadeVariants}
       className={className}
       {...props}
