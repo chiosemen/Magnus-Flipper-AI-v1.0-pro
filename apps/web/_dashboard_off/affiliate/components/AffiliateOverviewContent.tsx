@@ -3,7 +3,7 @@
 import { Button } from "@magnus-flipper-ai/ui/components";
 import { Card } from "@magnus-flipper-ai/ui/components";
 import Link from "next/link";
-import { useAffiliateOverview } from "@/hooks/useAffiliateOverview";
+import { useAffiliateOverview } from "../../../src/hooks/useAffiliateOverview";
 
 /**
  * Affiliate Overview Content - Fetches and displays overview data

@@ -1,4 +1,4 @@
-import { useApifyDataset } from "../src/hooks/useApifyDataset";
+import { useApifyDataset } from "../hooks/useApifyDataset";
 import { saveDeal } from "../lib/supabase/saveDeal";
 
 export interface Deal {

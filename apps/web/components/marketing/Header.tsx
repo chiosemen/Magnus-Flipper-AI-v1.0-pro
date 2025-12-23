@@ -74,9 +74,9 @@ export function Header() {
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={prefersReducedMotion() ? false : "hidden"}
-              animate={prefersReducedMotion() ? false : "visible"}
-              exit={prefersReducedMotion() ? false : "exit"}
+              initial={prefersReducedMotion() ? undefined : "hidden"}
+              animate={prefersReducedMotion() ? undefined : "visible"}
+              exit={prefersReducedMotion() ? undefined : "exit"}
               variants={fadeVariants}
               className="md:hidden border-t border-border/50 py-4 space-y-4"
             >

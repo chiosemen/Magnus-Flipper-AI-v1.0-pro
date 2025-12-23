@@ -22,21 +22,7 @@ const nextConfig = {
     },
   },
   serverExternalPackages: ['pg', '@prisma/adapter-pg'],
-  transpilePackages: [
-    "@magnus-flipper-ai/core",
-    "@magnus-flipper-ai/marketplace-config",
-    "@magnus-flipper-ai/tech-trade-core",
-    "@magnus-flipper-ai/agentic-engine",
-    "@magnus-flipper-ai/arb-engine",
-    "@magnus-flipper-ai/compliance-shield",
-    "@magnus-flipper-ai/deal-engine",
-    "@magnus-flipper-ai/feed-engine",
-    "@magnus-flipper-ai/profit-engine",
-    "@magnus-flipper-ai/queue",
-    "@magnus-flipper-ai/scrapers",
-    "@magnus-flipper-ai/shipping-engine",
-    "@magnus-flipper-ai/ui"
-  ],
+  transpilePackages: [],
   // v1 build surface control
   typescript: {
     ignoreBuildErrors: false, // Keep strict - we fixed the real issues

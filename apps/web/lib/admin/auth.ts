@@ -1,7 +1,7 @@
 // apps/web/src/lib/admin/auth.ts
 
 import { createServerClient } from "@/lib/supabase";
-import { SubscriptionTier } from "@/types/subscription";
+import { SubscriptionTier } from "../../src/types/subscription";
 import { logWarn, logError } from "@/lib/observability/logger";
 
 /**
