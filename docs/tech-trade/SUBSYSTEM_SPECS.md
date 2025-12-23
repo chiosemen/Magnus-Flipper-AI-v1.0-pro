@@ -706,7 +706,7 @@ Expose REST endpoints for B2C quote generation, device catalog search, and admin
 // apps/web/app/api/tech-trade/quote/route.ts
 
 import { z } from 'zod';
-import { generateQuote } from '@magnus-flipper-ai/tech-trade-core';
+// DISABLED tech-trade-core
 
 const QuoteRequestSchema = z.object({
   deviceId: z.string().uuid(),
@@ -740,7 +740,7 @@ export async function POST(request: Request) {
 // apps/web/app/api/tech-trade/devices/route.ts
 
 import { z } from 'zod';
-import { searchDevices } from '@magnus-flipper-ai/tech-trade-core';
+// DISABLED tech-trade-core
 
 const SearchParamsSchema = z.object({
   q: z.string().optional(),
@@ -766,7 +766,7 @@ export async function GET(request: Request) {
 // apps/web/app/api/admin/tech-trade/anchors/route.ts
 
 import { z } from 'zod';
-import { approveAnchors, rejectAnchors } from '@magnus-flipper-ai/tech-trade-core';
+// DISABLED tech-trade-core
 import { requireAdmin } from '@/lib/auth';
 
 const ApprovalRequestSchema = z.object({
@@ -799,7 +799,7 @@ export async function POST(request: Request) {
 ```typescript
 // apps/web/app/api/admin/tech-trade/indicators/route.ts
 
-import { getMarketIndicators } from '@magnus-flipper-ai/tech-trade-core';
+// DISABLED tech-trade-core
 import { requireAdmin } from '@/lib/auth';
 
 export async function GET(request: Request) {
