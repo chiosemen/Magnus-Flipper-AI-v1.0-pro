@@ -108,7 +108,7 @@ export function FloatingParticles({
   }, [isMounted, layerCount, particlesPerLayer, speed, color]);
 
   if (!isMounted) {
-    return null;
+    return null; // LOW_LEVEL: visual-only component
   }
 
   return (
