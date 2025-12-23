@@ -46,9 +46,6 @@ export function FeedCard({ listing, onClick }: FeedCardProps) {
               fill
               className="object-cover rounded-md"
               sizes="96px"
-              onError={() => {
-                // Image failed to load, component will handle fallback
-              }}
             />
           </div>
         )}
