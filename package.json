@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "pnpm --filter @magnus-flipper-ai/core prisma generate",
+    "postinstall": "pnpm --filter @magnus-flipper-ai/core prisma generate && pnpm --filter @magnus-flipper-ai/tech-trade-core build",
     "dev": "turbo run dev --parallel",
     "verify:exports": "ts-node tools/verify-workspace-exports.ts",
     "verify:elite-economics": "tsx scripts/verify-elite-pool-economics.ts",
