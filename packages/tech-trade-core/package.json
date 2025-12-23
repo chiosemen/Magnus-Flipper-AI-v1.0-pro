@@ -46,7 +46,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "echo \"tech-trade-core quarantined\"",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
