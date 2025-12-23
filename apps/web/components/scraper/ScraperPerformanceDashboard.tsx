@@ -10,7 +10,7 @@ import { PerformanceMetrics } from "./PerformanceMetrics";
 import { VelocityChart } from "./VelocityChart";
 import { FingerprintStats } from "./FingerprintStats";
 import { ScraperHealth } from "./ScraperHealth";
-import type { PerformanceSummary } from "@magnus-flipper-ai/core/types/scraper";
+import type { PerformanceSummary } from "@/lib/types/scraper";
 
 /**
  * ScraperPerformanceDashboard - Main scraper performance dashboard component

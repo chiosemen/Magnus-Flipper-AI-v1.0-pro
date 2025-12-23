@@ -1,8 +1,8 @@
 "use client";
 
-import { Card } from "@/marketing-swoopa/components/ui/card";
-import { Badge } from "@/marketing-swoopa/components/ui/card";
-import type { PerformanceSnapshot } from "@magnus-flipper-ai/core/types/scraper";
+import { Card } from "@/marketing-swoopa/components/ui/badge";
+import { Badge } from "@/marketing-swoopa/components/ui/badge";
+import type { PerformanceSnapshot } from "@/lib/types/scraper";
 
 interface ScraperHealthProps {
   snapshots: PerformanceSnapshot[];

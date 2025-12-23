@@ -1,8 +1,8 @@
 "use client";
 
-import { Card } from "@/marketing-swoopa/components/ui/card";
-import { Badge } from "@/marketing-swoopa/components/ui/card";
-import type { FingerprintStats } from "@magnus-flipper-ai/core/types/scraper";
+import { Card } from "@/marketing-swoopa/components/ui/badge";
+import { Badge } from "@/marketing-swoopa/components/ui/badge";
+import type { FingerprintStats } from "@/lib/types/scraper";
 
 interface FingerprintStatsProps {
   fingerprints: FingerprintStats[];
