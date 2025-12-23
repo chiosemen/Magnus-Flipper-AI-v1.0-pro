@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { marketingNav } from "@/config/navigation";
 import { TrackedLink } from "./TrackedLink";
 import { Button } from "@/components/flipbomb/ui/button";
 import { Menu, X } from "lucide-react";
+import { fadeVariants, prefersReducedMotion } from "@/lib/motion";
 
 /**
  * Header Component
@@ -69,35 +71,43 @@ export function Header() {
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border/50 py-4 space-y-4">
-            <nav className="flex flex-col space-y-2">
-              {marketingNav.map((item) => (
-                <TrackedLink
-                  key={item.href}
-                  href={item.href}
-                  intent="header"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.label}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={prefersReducedMotion() ? false : "hidden"}
+              animate={prefersReducedMotion() ? false : "visible"}
+              exit={prefersReducedMotion() ? false : "exit"}
+              variants={fadeVariants}
+              className="md:hidden border-t border-border/50 py-4 space-y-4"
+            >
+              <nav className="flex flex-col space-y-2">
+                {marketingNav.map((item) => (
+                  <TrackedLink
+                    key={item.href}
+                    href={item.href}
+                    intent="header"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </TrackedLink>
+                ))}
+              </nav>
+              <div className="flex flex-col space-y-2 pt-4 border-t border-border/50">
+                <TrackedLink href="/login" intent="secondary">
+                  <Button variant="ghost" size="sm" className="w-full justify-start">
+                    Login
+                  </Button>
                 </TrackedLink>
-              ))}
-            </nav>
-            <div className="flex flex-col space-y-2 pt-4 border-t border-border/50">
-              <TrackedLink href="/login" intent="secondary">
-                <Button variant="ghost" size="sm" className="w-full justify-start">
-                  Login
-                </Button>
-              </TrackedLink>
-              <TrackedLink href="/upgrade" intent="primary">
-                <Button size="sm" className="w-full">
-                  Upgrade
-                </Button>
-              </TrackedLink>
-            </div>
-          </div>
-        )}
+                <TrackedLink href="/upgrade" intent="primary">
+                  <Button size="sm" className="w-full">
+                    Upgrade
+                  </Button>
+                </TrackedLink>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );
