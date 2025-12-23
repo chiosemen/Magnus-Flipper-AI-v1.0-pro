@@ -61,7 +61,7 @@ export function MarketplaceRiskTable({ risks }: MarketplaceRiskTableProps) {
                 className="border-b border-border hover:bg-surfaceSubtle transition-colors"
               >
                 <td className="py-4 px-4">
-                  <span className="text-body-m font-medium text-foreground">#{risk.rank}</span>
+                  <span className="text-body-m font-medium text-foreground">#{risk.rank ?? "-"}</span>
                 </td>
                 <td className="py-4 px-4">
                   <span className="text-body-m font-medium text-foreground capitalize">
