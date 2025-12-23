@@ -55,7 +55,7 @@ export interface FeedQueryParams {
   search?: string;
 }
 
-export type FeedConnectionStatus = 'connected' | 'disconnected' | 'connecting';
+export type FeedConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
 
 export interface RealtimeEvent {
   type: 'listing.new' | 'listing.updated' | 'listing.removed';

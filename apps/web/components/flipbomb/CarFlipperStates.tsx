@@ -9,7 +9,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/marketing-swoopa/components/ui/alert";
 import { AlertCircle, Car, RefreshCw } from "lucide-react";
 
 /**
