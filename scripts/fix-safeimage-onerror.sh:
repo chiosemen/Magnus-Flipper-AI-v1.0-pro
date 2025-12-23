@@ -1,0 +1,14 @@
+
+#!/usr/bin/env bash
+set -e
+
+FILE="apps/web/app/marketplaces/facebook/FacebookDealsList.tsx"
+
+echo "🩹 Removing onError prop from SafeImage usage in $FILE"
+
+# deletes lines from "onError={() => {" through the closing "}}" (best-effort)
+perl -0777 -i -pe 's/\s*onError=\{\(\)\s*=>\s*\{\s*[^}]*\}\s*\}\s*//gs' "$FILE"
+
+echo "✅ Patched. Running build..."
+pnpm --filter web build
+
