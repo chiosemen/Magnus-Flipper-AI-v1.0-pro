@@ -76,14 +76,14 @@ import { SubscriptionTier } from "@/types/subscription";
 export function getPriceIdForTier(tier: string | SubscriptionTier): string {
   const tierStr = typeof tier === "string" ? tier.toLowerCase() : tier;
   
-  if (tierStr === "pro" || tierStr === SubscriptionTier.PRO) {
+  if (tierStr === "pro") {
     if (!process.env.STRIPE_PRO_PRICE) {
       throw new Error("STRIPE_PRO_PRICE environment variable is not set");
     }
     return process.env.STRIPE_PRO_PRICE;
   }
 
-  if (tierStr === "agency" || tierStr === SubscriptionTier.AGENCY) {
+  if (tierStr === "agency" || tierStr === "elite") {
     if (!process.env.STRIPE_AGENCY_PRICE) {
       throw new Error("STRIPE_AGENCY_PRICE environment variable is not set");
     }

@@ -75,6 +75,7 @@
     "lib/_profit_off/**",
     "lib/_shipping_off/**",
     "src/lib/_profit_off/**",
-    "src/lib/_shipping_off/**"
+    "src/lib/_shipping_off/**",
+    "supabase/migrations/**"
   ]
 }

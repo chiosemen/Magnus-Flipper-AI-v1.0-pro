@@ -14,14 +14,14 @@ import type Stripe from "stripe";
  * Convert Stripe price ID to subscription tier
  */
 export function getTierFromPriceId(priceId: string): SubscriptionTier {
-  if (!priceId) return SubscriptionTier.FREE;
+  if (!priceId) return "free";
 
   const priceMap: Record<string, SubscriptionTier> = {
-    [process.env.STRIPE_PRO_PRICE || ""]: SubscriptionTier.PRO,
-    [process.env.STRIPE_AGENCY_PRICE || ""]: SubscriptionTier.AGENCY,
+    [process.env.STRIPE_PRO_PRICE || ""]: "pro",
+    [process.env.STRIPE_AGENCY_PRICE || ""]: "elite",
   };
 
-  return priceMap[priceId] || SubscriptionTier.FREE;
+  return priceMap[priceId] || "free";
 }
 
 /**
@@ -46,7 +46,7 @@ export async function getUserSubscriptionTier(userId: string): Promise<Subscript
       .single();
 
     if (error || !data) {
-      return SubscriptionTier.FREE;
+      return "free";
     }
 
     // Only return paid tier if subscription is active
@@ -54,10 +54,10 @@ export async function getUserSubscriptionTier(userId: string): Promise<Subscript
       return data.tier as SubscriptionTier;
     }
 
-    return SubscriptionTier.FREE;
+    return "free";
   } catch (error) {
     console.error("Error fetching subscription tier:", error);
-    return SubscriptionTier.FREE;
+    return "free";
   }
 }
 
@@ -143,7 +143,7 @@ export async function cancelUserSubscription(userId: string) {
       .from("user_subscriptions")
       .update({
         status: "canceled",
-        tier: SubscriptionTier.FREE,
+        tier: "free",
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
@@ -167,15 +167,21 @@ export async function hasFeatureAccess(
   const tier = await getUserSubscriptionTier(userId);
 
   const featureMap: Record<SubscriptionTier, string[]> = {
-    [SubscriptionTier.FREE]: ["basic_search", "limited_alerts"],
-    [SubscriptionTier.PRO]: [
+    ["free"]: ["basic_search", "limited_alerts"],
+    ["pro"]: [
       "basic_search",
       "limited_alerts",
       "advanced_search",
       "unlimited_alerts",
       "profit_calculator",
     ],
-    [SubscriptionTier.AGENCY]: [
+    ["premium"]: [
+      "basic_search",
+      "advanced_search",
+      "unlimited_alerts",
+      "profit_calculator",
+    ],
+    ["elite"]: [
       "basic_search",
       "limited_alerts",
       "advanced_search",
@@ -185,7 +191,7 @@ export async function hasFeatureAccess(
       "api_access",
       "white_label",
     ],
-    [SubscriptionTier.ADMIN]: ["*"],
+    ["ADMIN"]: ["*"],
   };
 
   const tierFeatures = featureMap[tier] || [];
