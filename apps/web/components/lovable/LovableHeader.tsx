@@ -4,9 +4,12 @@ import { Button } from "../flipbomb/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { slideDown, fadeIn, tapScale } from "@/lib/motion";
 
 const LovableHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   const navLinks = [
     { label: "Features", href: "/#features" },
@@ -92,43 +95,67 @@ const LovableHeader = () => {
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <>
-            {/* Overlay */}
-            <div
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-              onClick={() => setIsMenuOpen(false)}
-              aria-hidden="true"
-            />
-            {/* Menu */}
-            <div className="fixed left-0 right-0 top-16 bg-background border-t border-border/50 animate-fade-in z-50 lg:hidden max-h-[calc(100vh-4rem)] overflow-y-auto">
-              <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
-                {navLinks.map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    className="px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors duration-200 text-sm font-medium"
-                    onClick={() => setIsMenuOpen(false)}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <>
+              {/* Overlay */}
+              <motion.div
+                variants={fadeIn}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                onClick={() => setIsMenuOpen(false)}
+                aria-hidden="true"
+              />
+              {/* Menu */}
+              <motion.div
+                variants={slideDown}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                className="fixed left-0 right-0 top-16 bg-background border-t border-border/50 z-50 lg:hidden max-h-[calc(100vh-4rem)] overflow-y-auto"
+              >
+                <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
+                  {navLinks.map((link, index) => (
+                    <motion.a
+                      key={link.label}
+                      initial={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
+                      animate={shouldReduceMotion ? {} : { opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      href={link.href}
+                      className="px-4 py-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors duration-200 text-sm font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.label}
+                    </motion.a>
+                  ))}
+                  <motion.div
+                    initial={shouldReduceMotion ? {} : { opacity: 0, y: 10 }}
+                    animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
+                    transition={{ delay: navLinks.length * 0.05 }}
+                    className="flex flex-col gap-2 mt-4 px-4"
                   >
-                    {link.label}
-                  </a>
-                ))}
-                <div className="flex flex-col gap-2 mt-4 px-4">
-                  <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/register" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="default" className="w-full">
-                      Start Free Trial
-                    </Button>
-                  </Link>
-                </div>
-              </nav>
-            </div>
-          </>
-        )}
+                    <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                      <motion.div whileTap={shouldReduceMotion ? {} : tapScale} className="w-full">
+                        <Button variant="outline" className="w-full">
+                          Sign In
+                        </Button>
+                      </motion.div>
+                    </Link>
+                    <Link href="/register" onClick={() => setIsMenuOpen(false)}>
+                      <motion.div whileTap={shouldReduceMotion ? {} : tapScale} className="w-full">
+                        <Button variant="default" className="w-full">
+                          Start Free Trial
+                        </Button>
+                      </motion.div>
+                    </Link>
+                  </motion.div>
+                </nav>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );

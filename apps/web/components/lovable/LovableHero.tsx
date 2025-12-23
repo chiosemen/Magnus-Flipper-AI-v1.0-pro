@@ -3,8 +3,12 @@
 import { Button } from "../flipbomb/ui/button";
 import { Search, Bell, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
+import { fadeUp, hoverScale, tapScale, pulseOnce } from "@/lib/motion";
 
 const LovableHero = () => {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <section className="relative min-h-screen gradient-hero pt-20 lg:pt-24 overflow-hidden">
       {/* Background decoration */}
@@ -17,26 +21,49 @@ const LovableHero = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center pt-12 lg:pt-20">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full mb-6 animate-fade-up">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full mb-6"
+          >
             <div className="w-2 h-2 bg-accent rounded-full animate-pulse-slow" />
             <span className="text-sm font-medium text-accent">#1 Marketplace Monitoring Tool</span>
-          </div>
+          </motion.div>
 
           {/* Headline */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+          <motion.h1
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground mb-6"
+          >
             Instant Marketplace{" "}
             <span className="text-gradient">Alerts</span>.{" "}
             <br className="hidden sm:block" />
             Every Time.
-          </h1>
+          </motion.h1>
 
           {/* Subheadline */}
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.2 }}
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
+          >
             Magnus Flipper AI tracks listings across Gumtree, Facebook Marketplace, Vinted & more — get instant notifications on profitable items before anyone else.
-          </p>
+          </motion.p>
 
           {/* Search Demo */}
-          <div className="max-w-xl mx-auto mb-8 animate-fade-up" style={{ animationDelay: "0.3s" }}>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.3 }}
+            className="max-w-xl mx-auto mb-8"
+          >
             <div className="relative">
               <form
                 onSubmit={(e) => {
@@ -53,16 +80,30 @@ const LovableHero = () => {
                     className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground py-3"
                   />
                 </div>
-                <Button type="submit" variant="default" size="lg" className="shrink-0">
-                  Create Alert
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                <motion.div
+                  whileHover={shouldReduceMotion ? {} : hoverScale}
+                  whileTap={shouldReduceMotion ? {} : tapScale}
+                  variants={pulseOnce}
+                  initial="initial"
+                  animate="pulse"
+                >
+                  <Button type="submit" variant="default" size="lg" className="shrink-0">
+                    Create Alert
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </motion.div>
               </form>
             </div>
-          </div>
+          </motion.div>
 
           {/* Trust indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-up" style={{ animationDelay: "0.4s" }}>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground"
+          >
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-accent" />
               <span>Real-time alerts</span>
@@ -83,11 +124,17 @@ const LovableHero = () => {
               </div>
               <span>2,500+ active users</span>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Hero Image/Mockup */}
-        <div className="mt-12 lg:mt-16 max-w-5xl mx-auto animate-fade-up" style={{ animationDelay: "0.5s" }}>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ delay: 0.5 }}
+          className="mt-12 lg:mt-16 max-w-5xl mx-auto"
+        >
           <div className="relative">
             {/* Phone mockups */}
             <div className="flex items-end justify-center gap-4 md:gap-8">
@@ -149,7 +196,7 @@ const LovableHero = () => {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

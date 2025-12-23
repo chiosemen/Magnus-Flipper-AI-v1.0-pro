@@ -1,6 +1,8 @@
 "use client";
 
 import { Mail, MessageCircle, Twitter } from "lucide-react";
+import { motion } from "framer-motion";
+import { fadeIn } from "@/lib/motion";
 
 const footerLinks = {
   product: [
@@ -24,7 +26,13 @@ const footerLinks = {
 
 const LovableFooter = () => {
   return (
-    <footer className="bg-primary text-primary-foreground py-16 lg:py-20">
+    <motion.footer
+      variants={fadeIn}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+      className="bg-primary text-primary-foreground py-16 lg:py-20"
+    >
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-12">
           {/* Brand */}
@@ -130,7 +138,7 @@ const LovableFooter = () => {
           </div>
         </div>
       </div>
-    </footer>
+    </motion.footer>
   );
 };
 
