@@ -29,6 +29,18 @@ export interface GuardrailStatus {
   threshold: number;
   currentValue: number;
   lastCheck: string;
+  marketplace: string;
+  emergencyMode?: boolean;
+  guardrail: {
+    minMultiplier: number;
+    maxMultiplier: number;
+    emergencyThreshold: number;
+    recoveryThreshold: number;
+  };
+  currentMultiplier?: number;
+  violations: Array<{
+    message: string;
+  }>;
 }
 
 export interface ComplianceSummary {

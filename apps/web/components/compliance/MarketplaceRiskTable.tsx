@@ -1,8 +1,8 @@
 "use client";
 
 import { Card } from "@/marketing-swoopa/components/ui/card";
-import { Badge } from "@/marketing-swoopa/components/ui/card";
-import type { MarketplaceRisk } from "@magnus-flipper-ai/core/types/compliance";
+import { Badge } from "@/marketing-swoopa/components/ui/badge";
+import type { MarketplaceRisk } from "@/lib/types/compliance";
 
 interface MarketplaceRiskTableProps {
   risks: MarketplaceRisk[];
