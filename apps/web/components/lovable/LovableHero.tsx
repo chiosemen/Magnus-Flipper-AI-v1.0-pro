@@ -3,10 +3,12 @@
 import { Button } from "../flipbomb/ui/button";
 import { Search, Bell, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { fadeUp, hoverScale, tapScale, pulseOnce } from "@/lib/motion";
 
 const LovableHero = () => {
+  const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -68,7 +70,7 @@ const LovableHero = () => {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  window.location.href = "/register";
+                  router.push("/register");
                 }}
                 className="flex items-center bg-card rounded-2xl shadow-card border border-border/50 p-2"
               >
