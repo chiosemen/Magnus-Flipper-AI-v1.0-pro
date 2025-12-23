@@ -4,6 +4,7 @@ import { Button } from "../flipbomb/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { slideDown, fadeIn, tapScale } from "@/lib/motion";
 
@@ -47,25 +48,37 @@ const LovableHeader = () => {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
-            <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shadow-glow">
-              <span className="text-accent-foreground font-bold text-xl">M</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg text-foreground leading-tight">Magnus</span>
-              <span className="text-xs text-muted-foreground leading-tight">Flipper AI</span>
-            </div>
+            <Image
+              src="/logo/magnus-flipper-ai.png"
+              width={36}
+              height={36}
+              priority
+              alt="Magnus Flipper AI"
+              className="h-9 w-9 rounded-lg object-contain"
+            />
+            <span className="font-bold text-lg text-foreground leading-tight">Magnus Flipper AI</span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200 text-sm font-medium"
-              >
-                {link.label}
-              </a>
+              link.href.startsWith("#") ? (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors duration-200 text-sm font-medium"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors duration-200 text-sm font-medium"
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
           </nav>
 

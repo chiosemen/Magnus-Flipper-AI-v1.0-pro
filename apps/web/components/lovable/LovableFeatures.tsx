@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Filter, Zap, Shield, MapPin, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { staggerContainer, fadeUp, hoverLift, tapScale } from "@/lib/motion";
 
@@ -38,6 +39,7 @@ const features = [
 ];
 
 const LovableFeatures = () => {
+  const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -78,7 +80,7 @@ const LovableFeatures = () => {
               initial={hoverLift.rest}
               whileHover={shouldReduceMotion ? {} : "hover"}
               whileTap={shouldReduceMotion ? {} : tapScale}
-              onClick={() => window.location.href = "/register"}
+              onClick={() => router.push("/register")}
               className="group bg-card rounded-2xl p-6 lg:p-8 shadow-soft border border-border/50 hover:shadow-card hover:border-accent/30 transition-all duration-300 cursor-pointer text-left w-full"
             >
               {/* Icon */}

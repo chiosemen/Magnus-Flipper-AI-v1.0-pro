@@ -24,6 +24,8 @@ const footerLinks = {
   ],
 };
 
+const CURRENT_YEAR = 2024;
+
 const LovableFooter = () => {
   return (
     <motion.footer
@@ -130,7 +132,7 @@ const LovableFooter = () => {
         <div className="pt-8 border-t border-primary-foreground/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-primary-foreground/60 text-sm">
-              © {new Date().getFullYear()} Magnus Flipper AI. All rights reserved.
+              © {CURRENT_YEAR} Magnus Flipper AI. All rights reserved.
             </p>
             <p className="text-primary-foreground/60 text-sm">
               Made with ❤️ for marketplace flippers everywhere

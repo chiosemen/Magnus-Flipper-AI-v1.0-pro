@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { staggerContainer, scaleIn, tapScale } from "@/lib/motion";
 
@@ -18,6 +19,7 @@ const marketplaces = [
 ];
 
 const LovableMarketplaces = () => {
+  const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -53,7 +55,7 @@ const LovableMarketplaces = () => {
                 variants={scaleIn}
                 whileHover={shouldReduceMotion ? {} : { scale: 1.05 }}
                 whileTap={shouldReduceMotion ? {} : tapScale}
-                onClick={() => window.location.href = "/register"}
+                onClick={() => router.push("/register")}
                 className="group relative bg-card rounded-2xl p-6 shadow-soft border border-border/50 hover:shadow-card hover:border-accent/30 transition-all duration-300 text-center cursor-pointer"
               >
                 {/* Logo placeholder */}
