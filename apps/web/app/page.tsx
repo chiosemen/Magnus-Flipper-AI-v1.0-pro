@@ -1,7 +1,7 @@
 "use client";
 
-import IndexPage from "../marketing-swoopa/pages/Index";
+import LovableLanding from "./pages/LovableLanding";
 
 export default function Home() {
-  return <IndexPage />;
+  return <LovableLanding />;
 }

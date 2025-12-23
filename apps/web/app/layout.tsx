@@ -3,6 +3,7 @@
 import "./globals.css";
 import "../theme/theme.css";
 import "../marketing-swoopa/marketing.css";
+import "./lovable.css";
 import React from "react";
 import { Toaster } from "../marketing-swoopa/components/ui/toaster";
 import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
