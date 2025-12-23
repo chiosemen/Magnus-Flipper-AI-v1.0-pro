@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { Navbar } from "./Navbar";
 import { SideNav } from "./SideNav";
-import { FadeIn } from "@magnus-flipper-ai/ui/components";
 
 interface AppShellProps {
   children: ReactNode;
@@ -42,9 +41,6 @@ export function AppShell({
     </div>
   );
 
-  if (animate) {
-    return <FadeIn speed="normal">{content}</FadeIn>;
-  }
-
+  // Animation removed for simplicity - FadeIn component decoupled
   return content;
 }

@@ -15,17 +15,6 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@magnus-flipper-ai/agentic-engine": "workspace:*",
-    "@magnus-flipper-ai/arb-engine": "workspace:*",
-    "@magnus-flipper-ai/compliance-shield": "workspace:*",
-    "@magnus-flipper-ai/core": "workspace:*",
-    "@magnus-flipper-ai/deal-engine": "workspace:*",
-    "@magnus-flipper-ai/feed-engine": "workspace:*",
-    "@magnus-flipper-ai/marketplace-config": "workspace:*",
-    "@magnus-flipper-ai/profit-engine": "workspace:*",
-    "@magnus-flipper-ai/queue": "workspace:*",
-    "@magnus-flipper-ai/shipping-engine": "workspace:*",
-    "@magnus-flipper-ai/ui": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",

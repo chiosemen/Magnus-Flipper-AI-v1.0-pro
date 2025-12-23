@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@magnus-flipper-ai/ui/components";
-import { Input } from "@magnus-flipper-ai/ui/components";
-import { Button } from "@magnus-flipper-ai/ui/components";
+import { Card } from "@/marketing-swoopa/components/ui/card";
+import { Input } from "@/marketing-swoopa/components/ui/card";
+import { Button } from "@/marketing-swoopa/components/ui/card";
 
 /**
  * ProfitCalculator - UI shell for profit calculation

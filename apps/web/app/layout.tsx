@@ -8,7 +8,7 @@ import { Toaster } from "../marketing-swoopa/components/ui/toaster";
 import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
 import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "@magnus-flipper-ai/ui/providers";
+import { ThemeProvider } from "next-themes";
 
 const queryClient = new QueryClient();
 
