@@ -1,3 +1,4 @@
+// apps/web/lib/supabase/saveSearch.ts
 import { supabaseBrowser } from "./client";
 
 export type SavedSearch = {

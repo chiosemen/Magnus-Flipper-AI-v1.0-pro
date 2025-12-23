@@ -1,7 +1,10 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -11,7 +14,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -19,13 +22,43 @@
       }
     ],
     "paths": {
-      "@/*": ["./"],
-      "@/components/*": ["./components/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/types/*": ["./types/*"],
-      "@magnus-flipper-ai/ui/*": ["./lib/@magnus-flipper-ai/ui/*"]
-    }
+      "@/*": [
+        "./"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@/types/*": [
+        "./types/*",
+        "./src/types/*"
+      ],
+      "@magnus-flipper-ai/ui/*": [
+        "./lib/@magnus-flipper-ai/ui/*"
+      ],
+      "@/marketing-swoopa/*": [
+        "./marketing-swoopa/*"
+      ]
+    },
+    "target": "ES2017"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "_dashboard_off/**",
+    "app/_deals_off/**",
+    "app/_admin_off/**",
+    "**/_*off/**"
+  ]
 }
