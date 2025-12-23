@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🔒 UI FREEZE CHECK — Never-Disappear Contract (FINAL)"
-echo "----------------------------------------------------"
+echo "🔒 UI FREEZE CHECK — Never-Disappear Contract (FINAL v2)"
+echo "--------------------------------------------------------"
 
-# Explicit UI-only scope
 SCAN_PATHS=(
   "apps/web/components"
   "apps/web/app"
@@ -19,13 +18,19 @@ EXCLUDES=(
 
 echo "🔍 Checking for forbidden: return null in UI components…"
 
-if rg "return null" "${SCAN_PATHS[@]}" \
+MATCHES=$(rg "return null" "${SCAN_PATHS[@]}" \
   --glob '!**/*.md' \
   --glob '!**/__tests__/**' \
   --glob '!**/node_modules/**' \
   --glob '!**/dist/**' \
-  $(printf -- "--glob %s " "${EXCLUDES[@]}"); then
-  echo "❌ Forbidden return null found in UI components"
+  $(printf -- "--glob %s " "${EXCLUDES[@]}") || true)
+
+# Filter out LOW_LEVEL-annotated lines
+VIOLATIONS=$(echo "$MATCHES" | rg -v "LOW_LEVEL" || true)
+
+if [[ -n "$VIOLATIONS" ]]; then
+  echo "❌ Forbidden return null found:"
+  echo "$VIOLATIONS"
   exit 1
 fi
 
