@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 export async function requireAdmin(): Promise<SignedInUser> {
   const user = await getSignedInUser();
 
-  if (!user || user.tier !== SubscriptionTier.ADMIN) {
+  if (!user || user.tier !== "ADMIN") {
     redirect("/login");
   }
 

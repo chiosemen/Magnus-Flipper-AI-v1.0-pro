@@ -2,7 +2,7 @@
  * Subscription Types
  */
 
-export type SubscriptionTier = "free" | "pro" | "premium" | "elite";
+export type SubscriptionTier = "free" | "pro" | "premium" | "elite" | "ADMIN";
 
 export interface Subscription {
   id: string;

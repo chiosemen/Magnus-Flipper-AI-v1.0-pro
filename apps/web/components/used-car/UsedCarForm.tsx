@@ -74,7 +74,7 @@ function getYearOptions(): number[] {
 /**
  * Calculate price estimate from form data
  */
-function calculateEstimate(data: UsedCarFormData): PriceEstimate {
+function calculateEstimate(data: Pick<UsedCarFormData, 'make' | 'model' | 'year' | 'mileage' | 'condition' | 'zip'>): PriceEstimate {
   const baseMSRP: Record<string, number> = {
     "Toyota": 35000,
     "Honda": 32000,
@@ -116,6 +116,7 @@ function calculateEstimate(data: UsedCarFormData): PriceEstimate {
     good: 0.95,
     fair: 0.85,
     poor: 0.70,
+    salvage: 0.40,
   };
 
   const conditionMultiplier = conditionMultipliers[data.condition];
@@ -187,7 +188,7 @@ export function UsedCarForm({ onEstimate, onSubmit, isSubmitting = false }: Used
         year,
         mileage,
         condition,
-        zip: watchedValues.zip,
+        zip: watchedValues.zip || "00000",
       });
       setCurrentEstimate(estimate);
       onEstimate({

@@ -54,6 +54,7 @@ function calculateRetailPrice(
     good: 0.95,
     fair: 0.85,
     poor: 0.70,
+    salvage: 0.40,
   };
 
   const conditionMultiplier = conditionMultipliers[condition];

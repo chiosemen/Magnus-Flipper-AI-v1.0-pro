@@ -3,6 +3,8 @@
  * Re-exports from marketing-swoopa components
  */
 
+import React from "react";
+
 export { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/marketing-swoopa/components/ui/card";
 export { Button } from "@/marketing-swoopa/components/ui/button";
 export { Badge } from "@/marketing-swoopa/components/ui/badge";
@@ -10,4 +12,6 @@ export { Input } from "@/marketing-swoopa/components/ui/input";
 export { cn } from "@/lib/utils";
 
 // Stub components for missing exports
-export const FadeIn = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+export function FadeIn({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
