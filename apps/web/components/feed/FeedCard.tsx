@@ -1,8 +1,8 @@
 "use client";
 
 import { SafeImage } from "@/components/ui/SafeImage";
-import { Card } from "@magnus-flipper-ai/ui/components";
-import { Badge } from "@magnus-flipper-ai/ui/components";
+import { Card } from "@/marketing-swoopa/components/ui/card";
+import { Badge } from "@/marketing-swoopa/components/ui/card";
 import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
 import { sanitizeImageUrl } from "@/lib/utils/imageResolver";
 

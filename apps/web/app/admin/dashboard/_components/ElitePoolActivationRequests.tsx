@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import type { ElitePoolConfig } from "@magnus-flipper-ai/marketplace-config";
+import type { ElitePoolConfig } from "@/lib/types/marketplace";
 
 /**
  * ElitePoolActivationRequests - Informational component showing Elite pool activation requirements

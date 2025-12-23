@@ -1,23 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  return NextResponse.json(
-    {
-      status: "disabled",
-      reason: "tech-trade-core temporarily quarantined",
-    },
-    { status: 503 }
-  );
-}
-
+/**
+ * STUB: Decoupled from @magnus-flipper-ai/tech-trade-core
+ * Tech trade functionality disabled in web app
+ */
 export async function POST() {
   return NextResponse.json(
     {
-      status: "disabled",
-      reason: "tech-trade-core temporarily quarantined",
+      success: false,
+      error: "Tech trade quote service unavailable",
+      code: "SERVICE_DISABLED"
     },
     { status: 503 }
   );

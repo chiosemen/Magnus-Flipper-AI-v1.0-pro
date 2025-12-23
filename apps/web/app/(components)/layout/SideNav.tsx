@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ListChecks, Calculator, BarChart3 } from "lucide-react";
-import { cn } from "@magnus-flipper-ai/ui/components";
+import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },

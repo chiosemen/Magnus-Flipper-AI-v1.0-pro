@@ -101,11 +101,10 @@ function CarFlipperCards({ deals }: { deals: FlipOpportunity[] }) {
             {/* ✅ CORRECT: Using SafeImage with nullable imageUrl */}
             <div className="relative w-32 h-32 flex-shrink-0 rounded-md overflow-hidden">
               <SafeImage
-                src={deal.imageUrl}
+                src={deal.imageUrl ?? '/images/placeholder.png'}
                 alt={deal.title}
                 fill
                 className="object-cover"
-                wrapperClassName="w-full h-full"
               />
             </div>
 

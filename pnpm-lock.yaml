@@ -227,39 +227,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@magnus-flipper-ai/agentic-engine':
-        specifier: workspace:*
-        version: link:../../packages/agentic-engine
-      '@magnus-flipper-ai/arb-engine':
-        specifier: workspace:*
-        version: link:../../packages/arb-engine
-      '@magnus-flipper-ai/compliance-shield':
-        specifier: workspace:*
-        version: link:../../packages/compliance-shield
-      '@magnus-flipper-ai/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@magnus-flipper-ai/deal-engine':
-        specifier: workspace:*
-        version: link:../../packages/deal-engine
-      '@magnus-flipper-ai/feed-engine':
-        specifier: workspace:*
-        version: link:../../packages/feed-engine
-      '@magnus-flipper-ai/marketplace-config':
-        specifier: workspace:*
-        version: link:../../packages/marketplace-config
-      '@magnus-flipper-ai/profit-engine':
-        specifier: workspace:*
-        version: link:../../packages/profit-engine
-      '@magnus-flipper-ai/queue':
-        specifier: workspace:*
-        version: link:../../packages/queue
-      '@magnus-flipper-ai/shipping-engine':
-        specifier: workspace:*
-        version: link:../../packages/shipping-engine
-      '@magnus-flipper-ai/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@magnus-flipper-ai/ui/components";
-import { Card } from "@magnus-flipper-ai/ui/components";
+import { Button } from "@/marketing-swoopa/components/ui/card";
+import { Card } from "@/marketing-swoopa/components/ui/card";
 import { useState } from "react";
 import { useScraperPerformance } from "@/hooks/useScraperPerformance";
 import { useScraperVelocity } from "@/hooks/useScraperVelocity";
