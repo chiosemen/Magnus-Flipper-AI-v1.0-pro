@@ -1,40 +1,30 @@
 "use client";
 
 import { Mail, MessageCircle, Twitter } from "lucide-react";
-import { motion } from "framer-motion";
-import { fadeIn } from "@/lib/motion";
 
 const footerLinks = {
   product: [
-    { label: "Features", href: "/#features" },
-    { label: "How It Works", href: "/#how-it-works" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Marketplaces", href: "/#marketplaces" },
+    { label: "Features", href: "#features" },
+    { label: "How It Works", href: "#how-it-works" },
+    { label: "Pricing", href: "#pricing" },
+    { label: "Marketplaces", href: "#marketplaces" },
   ],
   company: [
-    { label: "About Us", href: "/" },
-    { label: "Blog", href: "/" },
-    { label: "Careers", href: "/" },
-    { label: "Contact", href: "/" },
+    { label: "About Us", href: "#" },
+    { label: "Blog", href: "#" },
+    { label: "Careers", href: "#" },
+    { label: "Contact", href: "#" },
   ],
   legal: [
-    { label: "Privacy Policy", href: "/" },
-    { label: "Terms of Service", href: "/" },
-    { label: "Cookie Policy", href: "/" },
+    { label: "Privacy Policy", href: "#" },
+    { label: "Terms of Service", href: "#" },
+    { label: "Cookie Policy", href: "#" },
   ],
 };
 
-const CURRENT_YEAR = 2024;
-
 const LovableFooter = () => {
   return (
-    <motion.footer
-      variants={fadeIn}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-100px" }}
-      className="bg-primary text-primary-foreground py-16 lg:py-20"
-    >
+    <footer className="bg-primary text-primary-foreground py-16 lg:py-20">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-12">
           {/* Brand */}
@@ -132,7 +122,7 @@ const LovableFooter = () => {
         <div className="pt-8 border-t border-primary-foreground/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-primary-foreground/60 text-sm">
-              © {CURRENT_YEAR} Magnus Flipper AI. All rights reserved.
+              © {new Date().getFullYear()} Magnus Flipper AI. All rights reserved.
             </p>
             <p className="text-primary-foreground/60 text-sm">
               Made with ❤️ for marketplace flippers everywhere
@@ -140,7 +130,7 @@ const LovableFooter = () => {
           </div>
         </div>
       </div>
-    </motion.footer>
+    </footer>
   );
 };
 

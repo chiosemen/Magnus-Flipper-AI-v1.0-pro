@@ -1,9 +1,6 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
-import { staggerContainer, scaleIn, tapScale } from "@/lib/motion";
 
 const marketplaces = [
   { name: "Facebook Marketplace", color: "hsl(214, 89%, 52%)", initial: "F" },
@@ -19,9 +16,6 @@ const marketplaces = [
 ];
 
 const LovableMarketplaces = () => {
-  const router = useRouter();
-  const shouldReduceMotion = useReducedMotion();
-
   return (
     <section id="marketplaces" className="py-20 lg:py-32 bg-background relative overflow-hidden">
       <div className="container mx-auto px-4">
@@ -42,21 +36,12 @@ const LovableMarketplaces = () => {
 
         {/* Marketplace grid */}
         <div className="max-w-4xl mx-auto">
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 lg:gap-6"
-          >
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 lg:gap-6">
             {marketplaces.map((marketplace, index) => (
-              <motion.button
+              <div
                 key={marketplace.name}
-                variants={scaleIn}
-                whileHover={shouldReduceMotion ? {} : { scale: 1.05 }}
-                whileTap={shouldReduceMotion ? {} : tapScale}
-                onClick={() => router.push("/register")}
-                className="group relative bg-card rounded-2xl p-6 shadow-soft border border-border/50 hover:shadow-card hover:border-accent/30 transition-all duration-300 text-center cursor-pointer"
+                className="group relative bg-card rounded-2xl p-6 shadow-soft border border-border/50 hover:shadow-card hover:border-accent/30 transition-all duration-300 text-center"
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 {/* Logo placeholder */}
                 <div
@@ -75,9 +60,9 @@ const LovableMarketplaces = () => {
                 <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-accent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-glow">
                   <Check className="w-4 h-4 text-accent-foreground" />
                 </div>
-              </motion.button>
+              </div>
             ))}
-          </motion.div>
+          </div>
 
           {/* Additional info */}
           <p className="text-center text-muted-foreground mt-8">
