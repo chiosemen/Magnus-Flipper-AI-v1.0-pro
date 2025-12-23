@@ -38,23 +38,26 @@ const LovableHero = () => {
           {/* Search Demo */}
           <div className="max-w-xl mx-auto mb-8 animate-fade-up" style={{ animationDelay: "0.3s" }}>
             <div className="relative">
-              <div className="flex items-center bg-card rounded-2xl shadow-card border border-border/50 p-2">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  window.location.href = "/register";
+                }}
+                className="flex items-center bg-card rounded-2xl shadow-card border border-border/50 p-2"
+              >
                 <div className="flex-1 flex items-center gap-3 px-4">
                   <Search className="w-5 h-5 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="What are you looking for? e.g., iPhone 15, Nintendo Switch..."
                     className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground py-3"
-                    readOnly
                   />
                 </div>
-                <Link href="/register">
-                  <Button variant="default" size="lg" className="shrink-0">
-                    Create Alert
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
+                <Button type="submit" variant="default" size="lg" className="shrink-0">
+                  Create Alert
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </form>
             </div>
           </div>
 

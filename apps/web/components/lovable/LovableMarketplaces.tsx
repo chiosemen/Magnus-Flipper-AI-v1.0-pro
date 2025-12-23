@@ -38,9 +38,10 @@ const LovableMarketplaces = () => {
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 lg:gap-6">
             {marketplaces.map((marketplace, index) => (
-              <div
+              <button
                 key={marketplace.name}
-                className="group relative bg-card rounded-2xl p-6 shadow-soft border border-border/50 hover:shadow-card hover:border-accent/30 transition-all duration-300 text-center"
+                onClick={() => window.location.href = "/register"}
+                className="group relative bg-card rounded-2xl p-6 shadow-soft border border-border/50 hover:shadow-card hover:border-accent/30 transition-all duration-300 text-center cursor-pointer"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 {/* Logo placeholder */}
@@ -60,7 +61,7 @@ const LovableMarketplaces = () => {
                 <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-accent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-glow">
                   <Check className="w-4 h-4 text-accent-foreground" />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 

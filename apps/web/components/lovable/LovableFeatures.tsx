@@ -62,9 +62,10 @@ const LovableFeatures = () => {
         {/* Features grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {features.map((feature, index) => (
-            <div
+            <button
               key={feature.title}
-              className="group bg-card rounded-2xl p-6 lg:p-8 shadow-soft border border-border/50 hover:shadow-card hover:border-accent/30 transition-all duration-300"
+              onClick={() => window.location.href = "/register"}
+              className="group bg-card rounded-2xl p-6 lg:p-8 shadow-soft border border-border/50 hover:shadow-card hover:border-accent/30 transition-all duration-300 cursor-pointer text-left w-full"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {/* Icon */}
@@ -79,7 +80,7 @@ const LovableFeatures = () => {
               <p className="text-muted-foreground leading-relaxed">
                 {feature.description}
               </p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
