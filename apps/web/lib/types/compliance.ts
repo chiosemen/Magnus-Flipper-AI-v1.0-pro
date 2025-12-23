@@ -37,6 +37,22 @@ export interface ComplianceSummary {
   guardrails: GuardrailStatus[];
   recentViolations: number;
   lastAudit: string;
+  total: number;
+  critical: number;
+  criticalRisk: number;
+  criticalRisks: number;
+  high: number;
+  highRisk: number;
+  highRisks: number;
+  medium: number;
+  mediumRisk: number;
+  mediumRisks: number;
+  low: number;
+  lowRisk: number;
+  lowRisks: number;
+  safe: number;
+  guardrailsEnabled: number;
+  lastUpdated: string;
 }
 
 export interface ComplianceSnapshot {

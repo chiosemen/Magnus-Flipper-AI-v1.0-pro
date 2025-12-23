@@ -1,8 +1,8 @@
 "use client";
 
 import { Card } from "@/marketing-swoopa/components/ui/card";
-import { Badge } from "@/marketing-swoopa/components/ui/card";
-import type { GuardrailStatus } from "@magnus-flipper-ai/core/types/compliance";
+import { Badge } from "@/marketing-swoopa/components/ui/badge";
+import type { GuardrailStatus } from "@/lib/types/compliance";
 
 interface GuardrailsPanelProps {
   guardrails: GuardrailStatus[];
