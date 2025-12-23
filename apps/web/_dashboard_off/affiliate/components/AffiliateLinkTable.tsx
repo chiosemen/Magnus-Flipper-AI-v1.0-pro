@@ -63,7 +63,7 @@ export function AffiliateLinkTable({
         <Input
           placeholder="Search links..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
           className="w-full sm:w-64"
         />
       </div>

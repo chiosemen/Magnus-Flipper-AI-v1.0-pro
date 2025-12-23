@@ -29,16 +29,18 @@ export interface FeedItem {
 
 export interface FeedFilters {
   marketplace?: string;
+  marketplaces?: string[];
   minPrice?: number;
   maxPrice?: number;
   location?: string;
   search?: string;
 }
 
-export type FeedViewMode = 'grid' | 'list';
+export type FeedViewMode = 'grid' | 'list' | 'paginated' | 'realtime' | 'hybrid';
 
 export interface FeedResponse {
   items: AggregatedListing[];
+  listings?: any[]; // Alias for items for compatibility
   total: number;
   page: number;
   pageSize: number;

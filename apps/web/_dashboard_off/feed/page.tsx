@@ -11,8 +11,7 @@ import { useFeed } from "@/hooks/useFeed";
 import { useRealtimeFeed } from "@/hooks/useRealtimeFeed";
 import { useInfiniteFeed } from "@/hooks/useFeed";
 import { useMemo } from "react";
-import type { FeedFilters as FeedFiltersType, FeedViewMode, FeedResponse } from "@magnus-flipper-ai/core/types/feed";
-import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
+import type { FeedFilters as FeedFiltersType, FeedViewMode, FeedResponse, AggregatedListing } from "@/lib/types/feed";
 import type { InfiniteData } from "@tanstack/react-query";
 import { normalizeFeedItemsToAggregated } from "@/utils/feedNormalizer";
 

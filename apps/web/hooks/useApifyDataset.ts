@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { APIFY_POLL_INTERVAL_MS } from "../config/apify";
+import { APIFY_POLL_INTERVAL_MS } from "@/config/apify";
 
 export function useApifyDataset(datasetIds: string[]) {
   const [items, setItems] = useState<any[]>([]);

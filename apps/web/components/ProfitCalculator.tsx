@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Card } from "@/marketing-swoopa/components/ui/card";
-import { Input } from "@/marketing-swoopa/components/ui/card";
-import { Button } from "@/marketing-swoopa/components/ui/card";
+import { Input } from "@/marketing-swoopa/components/ui/input";
+import { Button } from "@/marketing-swoopa/components/ui/button";
 
 /**
  * ProfitCalculator - UI shell for profit calculation

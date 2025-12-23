@@ -13,6 +13,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "rootDir": ".",
+    "outDir": ".next",
     "plugins": [
       {
         "name": "next"
@@ -23,6 +25,10 @@
       "@/components/*": ["./components/*"],
       "@/lib/*": ["./lib/*"],
       "@/types/*": ["./types/*"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/config/*": ["./config/*"],
+      "@/utils/*": ["./utils/*"],
+      "@/marketing-swoopa/*": ["./marketing-swoopa/*"],
       "@magnus-flipper-ai/ui/*": ["./lib/@magnus-flipper-ai/ui/*"]
     }
   },
