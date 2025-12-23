@@ -6,11 +6,14 @@
 export interface RiskScore {
   overall: number;
   category: 'low' | 'medium' | 'high' | 'critical';
+  complianceLevel: 'critical' | 'high-risk' | 'moderate' | 'low-risk' | 'compliant' | 'caution' | 'safe';
   factors: {
-    name: string;
-    score: number;
-    weight: number;
-  }[];
+    riskLevel: number;
+    jsChallengeRisk: number;
+    throttleBudget: number;
+    antiBotRequirements: number;
+  };
+  recommendations: string[];
   timestamp: string;
 }
 
@@ -20,6 +23,16 @@ export interface MarketplaceRisk {
   violations: number;
   lastCheck: string;
   issues: string[];
+  rank: number;
+  score: {
+    overall: number;
+    complianceLevel: string;
+    factors: {
+      jsChallengeRisk: number;
+      throttleBudget: number;
+      antiBotRequirements: number;
+    };
+  };
 }
 
 export interface GuardrailStatus {

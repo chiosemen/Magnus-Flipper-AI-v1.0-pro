@@ -2,8 +2,8 @@
 
 import { SafeImage } from "@/components/ui/SafeImage";
 import { Card } from "@/marketing-swoopa/components/ui/card";
-import { Badge } from "@/marketing-swoopa/components/ui/card";
-import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
+import { Badge } from "@/marketing-swoopa/components/ui/badge";
+import type { AggregatedListing } from "@/lib/types/feed";
 import { sanitizeImageUrl } from "@/lib/utils/imageResolver";
 
 interface FeedCardProps {
