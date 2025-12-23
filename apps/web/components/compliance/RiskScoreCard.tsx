@@ -1,8 +1,8 @@
 "use client";
 
 import { Card } from "@/marketing-swoopa/components/ui/card";
-import { Badge } from "@/marketing-swoopa/components/ui/card";
-import type { RiskScore } from "@magnus-flipper-ai/core/types/compliance";
+import { Badge } from "@/marketing-swoopa/components/ui/badge";
+import type { RiskScore } from "@/lib/types/compliance";
 
 interface RiskScoreCardProps {
   marketplace: string;
@@ -10,11 +10,21 @@ interface RiskScoreCardProps {
   rank?: number;
 }
 
+function getScoreFactors(score: RiskScore) {
+  return {
+    riskLevel: score.factors?.riskLevel ?? 0,
+    jsChallengeRisk: score.factors?.jsChallengeRisk ?? 0,
+    throttleBudget: score.factors?.throttleBudget ?? 0,
+    antiBotRequirements: score.factors?.antiBotRequirements ?? 0,
+  };
+}
+
 /**
  * RiskScoreCard - Displays risk score for a marketplace
  * Uses design tokens for consistent styling
  */
 export function RiskScoreCard({ marketplace, score, rank }: RiskScoreCardProps) {
+  const factors = getScoreFactors(score);
   const getComplianceLevelColor = () => {
     switch (score.complianceLevel) {
       case "critical":
@@ -72,30 +82,30 @@ export function RiskScoreCard({ marketplace, score, rank }: RiskScoreCardProps) 
       <div className="space-y-2 mb-4">
         <div className="flex items-center justify-between text-body-s">
           <span className="text-text-secondary">Risk Level</span>
-          <span className="text-foreground font-medium">{score.factors.riskLevel.toFixed(1)}</span>
+          <span className="text-foreground font-medium">{factors.riskLevel.toFixed(1)}</span>
         </div>
         <div className="flex items-center justify-between text-body-s">
           <span className="text-text-secondary">JS Challenge Risk</span>
           <span className="text-foreground font-medium">
-            {score.factors.jsChallengeRisk.toFixed(1)}
+            {factors.jsChallengeRisk.toFixed(1)}
           </span>
         </div>
         <div className="flex items-center justify-between text-body-s">
           <span className="text-text-secondary">Throttle Budget</span>
           <span className="text-foreground font-medium">
-            {score.factors.throttleBudget.toFixed(1)}
+            {factors.throttleBudget.toFixed(1)}
           </span>
         </div>
         <div className="flex items-center justify-between text-body-s">
           <span className="text-text-secondary">Anti-Bot Requirements</span>
           <span className="text-foreground font-medium">
-            {score.factors.antiBotRequirements.toFixed(1)}
+            {factors.antiBotRequirements.toFixed(1)}
           </span>
         </div>
       </div>
 
       {/* Recommendations */}
-      {score.recommendations.length > 0 && (
+      {score.recommendations && score.recommendations.length > 0 && (
         <div className="pt-4 border-t border-border">
           <h4 className="text-body-m font-semibold text-foreground mb-2">Recommendations</h4>
           <ul className="space-y-1">

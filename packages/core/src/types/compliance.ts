@@ -26,7 +26,7 @@ export type {
 export interface MarketplaceRisk {
   marketplace: string;
   score: RiskScore;
-  rank: number;
+  rank?: number;
 }
 
 /**

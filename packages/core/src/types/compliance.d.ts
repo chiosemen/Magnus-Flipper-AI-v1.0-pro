@@ -17,7 +17,7 @@ export type { RiskScore, ThrottleGuardrail, GuardrailViolation, ComplianceSnapsh
 export interface MarketplaceRisk {
     marketplace: string;
     score: RiskScore;
-    rank: number;
+    rank?: number;
 }
 /**
  * Compliance Summary

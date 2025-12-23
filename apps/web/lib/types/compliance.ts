@@ -6,12 +6,19 @@
 export interface RiskScore {
   overall: number;
   category: 'low' | 'medium' | 'high' | 'critical';
+  complianceLevel: 'safe' | 'caution' | 'high-risk' | 'critical';
   factors: {
-    name: string;
-    score: number;
-    weight: number;
-  }[];
-  timestamp: string;
+    name?: string;
+    score?: number;
+    weight?: number;
+    riskLevel?: number;
+    jsChallengeRisk?: number;
+    throttleBudget?: number;
+    antiBotRequirements?: number;
+    historicalBlockRate?: number;
+  };
+  recommendations?: string[];
+  timestamp?: string;
 }
 
 export interface MarketplaceRisk {
@@ -20,6 +27,8 @@ export interface MarketplaceRisk {
   violations: number;
   lastCheck: string;
   issues: string[];
+  rank?: number;
+  score: RiskScore; // Required score property matching core type structure
 }
 
 export interface GuardrailStatus {

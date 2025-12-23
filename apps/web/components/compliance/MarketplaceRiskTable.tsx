@@ -8,6 +8,20 @@ interface MarketplaceRiskTableProps {
   risks: MarketplaceRisk[];
 }
 
+function getRiskFactors(risk: MarketplaceRisk) {
+  return {
+    jsChallengeRisk: risk.score?.factors?.jsChallengeRisk ?? 0,
+    throttleBudget: risk.score?.factors?.throttleBudget ?? 0,
+    antiBotRequirements: risk.score?.factors?.antiBotRequirements ?? 0,
+  };
+}
+
+function getRiskBadgeVariant(score: number): "default" | "secondary" | "destructive" {
+  if (score >= 80) return "destructive";
+  if (score >= 50) return "secondary";
+  return "default";
+}
+
 /**
  * MarketplaceRiskTable - Displays risk scores in a table format
  * Uses design tokens for consistent styling
@@ -55,50 +69,53 @@ export function MarketplaceRiskTable({ risks }: MarketplaceRiskTableProps) {
             </tr>
           </thead>
           <tbody>
-            {risks.map((risk) => (
-              <tr
-                key={risk.marketplace}
-                className="border-b border-border hover:bg-surfaceSubtle transition-colors"
-              >
-                <td className="py-4 px-4">
-                  <span className="text-body-m font-medium text-foreground">#{risk.rank ?? "-"}</span>
-                </td>
-                <td className="py-4 px-4">
-                  <span className="text-body-m font-medium text-foreground capitalize">
-                    {risk.marketplace}
-                  </span>
-                </td>
-                <td className="py-4 px-4 text-right">
-                  <span className="text-body-m font-semibold text-foreground">
-                    {risk.score.overall.toFixed(1)}
-                  </span>
-                </td>
-                <td className="py-4 px-4 text-center">
-                  <Badge className={getComplianceLevelColor(risk.score.complianceLevel)}>
-                    {risk.score.complianceLevel}
-                  </Badge>
-                </td>
-                <td className="py-4 px-4">
-                  <div className="flex flex-wrap gap-2">
-                    {risk.score.factors.jsChallengeRisk > 50 && (
-                      <Badge variant="warning" className="text-xs">
-                        JS Challenge
-                      </Badge>
-                    )}
-                    {risk.score.factors.throttleBudget > 50 && (
-                      <Badge variant="info" className="text-xs">
-                        Low Budget
-                      </Badge>
-                    )}
-                    {risk.score.factors.antiBotRequirements > 50 && (
-                      <Badge variant="destructive" className="text-xs">
-                        Anti-Bot
-                      </Badge>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {risks.map((risk) => {
+              const factors = getRiskFactors(risk);
+              return (
+                <tr
+                  key={risk.marketplace}
+                  className="border-b border-border hover:bg-surfaceSubtle transition-colors"
+                >
+                  <td className="py-4 px-4">
+                    <span className="text-body-m font-medium text-foreground">#{risk.rank ?? "-"}</span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="text-body-m font-medium text-foreground capitalize">
+                      {risk.marketplace}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-right">
+                    <span className="text-body-m font-semibold text-foreground">
+                      {risk.score.overall.toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-center">
+                    <Badge className={getComplianceLevelColor(risk.score.complianceLevel)}>
+                      {risk.score.complianceLevel}
+                    </Badge>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex flex-wrap gap-2">
+                      {factors.jsChallengeRisk > 50 && (
+                        <Badge variant={getRiskBadgeVariant(factors.jsChallengeRisk)} className="text-xs">
+                          JS Challenge
+                        </Badge>
+                      )}
+                      {factors.throttleBudget > 50 && (
+                        <Badge variant={getRiskBadgeVariant(factors.throttleBudget)} className="text-xs">
+                          Low Budget
+                        </Badge>
+                      )}
+                      {factors.antiBotRequirements > 50 && (
+                        <Badge variant={getRiskBadgeVariant(factors.antiBotRequirements)} className="text-xs">
+                          Anti-Bot
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
