@@ -1,6 +1,8 @@
 "use client";
 
 import { UserPlus, Search, Bell, TrendingUp } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { sequentialFade, scaleIn } from "@/lib/motion";
 
 const steps = [
   {
@@ -30,6 +32,8 @@ const steps = [
 ];
 
 const LovableHowItWorks = () => {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <section id="how-it-works" className="py-20 lg:py-32 gradient-hero relative overflow-hidden">
       {/* Background decoration */}
@@ -56,7 +60,15 @@ const LovableHowItWorks = () => {
         {/* Steps */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
           {steps.map((step, index) => (
-            <div key={step.step} className="relative">
+            <motion.div
+              key={step.step}
+              custom={index}
+              variants={sequentialFade}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-50px" }}
+              className="relative"
+            >
               {/* Connector line */}
               {index < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-14 left-[60%] w-full h-0.5 bg-gradient-to-r from-accent/50 to-accent/10" />
@@ -65,12 +77,19 @@ const LovableHowItWorks = () => {
               <div className="text-center">
                 {/* Step number */}
                 <div className="relative inline-block mb-6">
-                  <div className="w-28 h-28 rounded-2xl bg-card shadow-card border border-border/50 flex items-center justify-center mx-auto">
+                  <motion.div
+                    variants={scaleIn}
+                    className="w-28 h-28 rounded-2xl bg-card shadow-card border border-border/50 flex items-center justify-center mx-auto"
+                  >
                     <step.icon className="w-12 h-12 text-accent" />
-                  </div>
-                  <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full gradient-accent flex items-center justify-center text-sm font-bold text-accent-foreground shadow-glow">
+                  </motion.div>
+                  <motion.div
+                    variants={scaleIn}
+                    transition={{ delay: 0.2 }}
+                    className="absolute -top-3 -right-3 w-10 h-10 rounded-full gradient-accent flex items-center justify-center text-sm font-bold text-accent-foreground shadow-glow"
+                  >
                     {step.step}
-                  </div>
+                  </motion.div>
                 </div>
 
                 {/* Content */}
@@ -81,7 +100,7 @@ const LovableHowItWorks = () => {
                   {step.description}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

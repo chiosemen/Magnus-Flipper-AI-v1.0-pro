@@ -3,6 +3,8 @@
 import { Button } from "../flipbomb/ui/button";
 import { Check, Zap } from "lucide-react";
 import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
+import { staggerContainer, fadeUp, hoverLift, hoverScale, tapScale } from "@/lib/motion";
 
 const plans = [
   {
@@ -53,6 +55,8 @@ const plans = [
 ];
 
 const LovablePricing = () => {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <section id="pricing" className="py-20 lg:py-32 gradient-hero relative overflow-hidden">
       {/* Background decoration */}
@@ -78,13 +82,22 @@ const LovablePricing = () => {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto"
+        >
           {plans.map((plan) => (
-            <div
+            <motion.div
               key={plan.name}
+              variants={fadeUp}
+              initial={hoverLift.rest}
+              whileHover={shouldReduceMotion ? {} : "hover"}
               className={`relative bg-card rounded-2xl p-6 lg:p-8 shadow-card border transition-all duration-300 hover:shadow-elevated ${
                 plan.popular
-                  ? "border-accent ring-2 ring-accent/20 scale-[1.02] lg:scale-105"
+                  ? "border-accent ring-2 ring-accent/20 scale-[1.01]"
                   : "border-border/50"
               }`}
             >
@@ -126,17 +139,22 @@ const LovablePricing = () => {
 
               {/* CTA */}
               <Link href="/register">
-                <Button
-                  variant={plan.popular ? "default" : "outline"}
-                  className="w-full"
-                  size="lg"
+                <motion.div
+                  whileHover={shouldReduceMotion ? {} : hoverScale}
+                  whileTap={shouldReduceMotion ? {} : tapScale}
                 >
-                  Start Free Trial
-                </Button>
+                  <Button
+                    variant={plan.popular ? "default" : "outline"}
+                    className="w-full"
+                    size="lg"
+                  >
+                    Start Free Trial
+                  </Button>
+                </motion.div>
               </Link>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
