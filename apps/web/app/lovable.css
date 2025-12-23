@@ -1,0 +1,108 @@
+/* Lovable UI Styles */
+
+/* Gradient utilities */
+.gradient-hero {
+  background: linear-gradient(135deg, hsl(215 50% 8%) 0%, hsl(215 45% 12%) 50%, hsl(215 50% 8%) 100%);
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, hsl(190 100% 45%) 0%, hsl(210 80% 50%) 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(180deg, hsl(215 45% 12%) 0%, hsl(215 40% 14%) 100%);
+}
+
+/* Shadow utilities */
+.shadow-soft {
+  box-shadow: 0 4px 20px -4px hsl(210 50% 20% / 0.1);
+}
+
+.shadow-card {
+  box-shadow: 0 8px 30px -8px hsl(210 50% 20% / 0.12);
+}
+
+.shadow-elevated {
+  box-shadow: 0 20px 60px -12px hsl(210 50% 20% / 0.2);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 40px hsl(190 100% 45% / 0.3);
+}
+
+/* Text gradient utility */
+.text-gradient {
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(135deg, hsl(190 100% 45%) 0%, hsl(210 80% 50%) 100%);
+}
+
+/* Animation utilities */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s ease-in-out infinite;
+}
+
+/* Keyframes */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
