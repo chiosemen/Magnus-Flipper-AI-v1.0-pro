@@ -48,6 +48,10 @@
       "@/config/*": [
         "./config/*",
         "./src/config/*"
+      ],
+      "@/providers/*": [
+        "./providers/*",
+        "./src/providers/*"
       ]
     },
     "target": "ES2017"

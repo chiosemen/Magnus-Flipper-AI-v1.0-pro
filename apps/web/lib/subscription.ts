@@ -34,14 +34,14 @@ export async function getUserSubscription(
 export function getTierFromPriceId(priceId: string): SubscriptionTier {
   const config = getStripeConfig();
   if (priceId === config.PRICE_PRO) {
-    return SubscriptionTier.PRO;
+    return "pro";
   }
 
   if (priceId === config.PRICE_AGENCY) {
-    return SubscriptionTier.AGENCY;
+    return "elite";
   }
 
-  return SubscriptionTier.FREE;
+  return "free";
 }
 
 export function isActiveSubscription(status: string): boolean {

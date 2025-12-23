@@ -56,8 +56,8 @@ export default function UpgradePage() {
     }
   };
 
-  const proTier = TIER_METADATA[SubscriptionTier.PRO];
-  const agencyTier = TIER_METADATA[SubscriptionTier.AGENCY];
+  const proTier = TIER_METADATA["pro"];
+  const agencyTier = TIER_METADATA["elite"];
 
   // helper: allow price from metadata without breaking TypeScript
   const proPrice =

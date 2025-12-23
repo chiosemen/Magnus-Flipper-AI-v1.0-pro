@@ -29,7 +29,7 @@ export default function DevTierPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <button
-            onClick={() => setTier(SubscriptionTier.FREE)}
+            onClick={() => setTier("free")}
             className="bg-[#1a1a1a] border border-gray-500/30 hover:border-gray-500 p-6 rounded-lg text-left transition-colors"
           >
             <div className="text-2xl font-bold mb-2">FREE</div>
@@ -39,7 +39,7 @@ export default function DevTierPage() {
           </button>
 
           <button
-            onClick={() => setTier(SubscriptionTier.PRO)}
+            onClick={() => setTier("pro")}
             className="bg-[#1a1a1a] border border-blue-500/30 hover:border-blue-500 p-6 rounded-lg text-left transition-colors"
           >
             <div className="text-2xl font-bold mb-2">PRO</div>
@@ -49,7 +49,7 @@ export default function DevTierPage() {
           </button>
 
           <button
-            onClick={() => setTier(SubscriptionTier.AGENCY)}
+            onClick={() => setTier("elite")}
             className="bg-[#1a1a1a] border border-purple-500/30 hover:border-purple-500 p-6 rounded-lg text-left transition-colors"
           >
             <div className="text-2xl font-bold mb-2">AGENCY</div>
@@ -59,7 +59,7 @@ export default function DevTierPage() {
           </button>
 
           <button
-            onClick={() => setTier(SubscriptionTier.ADMIN)}
+            onClick={() => setTier("ADMIN")}
             className="bg-[#1a1a1a] border border-red-500/30 hover:border-red-500 p-6 rounded-lg text-left transition-colors"
           >
             <div className="text-2xl font-bold mb-2">ADMIN</div>

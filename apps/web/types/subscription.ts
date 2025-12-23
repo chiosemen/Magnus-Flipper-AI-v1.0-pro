@@ -18,6 +18,14 @@ export interface MockUser {
   tier: SubscriptionTier;
 }
 
+export const TIER_METADATA = {
+  free: { name: "Free", price: "$0" },
+  pro: { name: "Pro", price: "$29" },
+  premium: { name: "Premium", price: "$49" },
+  elite: { name: "Elite", price: "$99" },
+  ADMIN: { name: "Admin", price: "N/A" },
+};
+
 export interface Subscription {
   id: string;
   userId: string;
