@@ -19,11 +19,11 @@ export interface MockUser {
 }
 
 export const TIER_METADATA = {
-  free: { name: "Free", price: "$0" },
-  pro: { name: "Pro", price: "$29" },
-  premium: { name: "Premium", price: "$49" },
-  elite: { name: "Elite", price: "$99" },
-  ADMIN: { name: "Admin", price: "N/A" },
+  free: { name: "Free", price: "$0", features: ["Basic search", "Limited alerts"] },
+  pro: { name: "Pro", price: "$29", features: ["Unlimited search", "Live feed", "Analytics"] },
+  premium: { name: "Premium", price: "$49", features: ["All Pro features", "Priority support"] },
+  elite: { name: "Elite", price: "$99", features: ["All Premium features", "Custom integrations", "Dedicated support"] },
+  ADMIN: { name: "Admin", price: "N/A", features: ["Full system access"] },
 };
 
 export interface Subscription {

@@ -37,7 +37,7 @@ export async function isAdmin(): Promise<boolean> {
       });
     }
 
-    const isAdminTier = subscription?.tier === SubscriptionTier.ADMIN;
+    const isAdminTier = subscription?.tier === "ADMIN";
     const isActive = subscription?.status === "active";
 
     // Require both admin tier AND active status
@@ -75,8 +75,8 @@ export async function checkAdminAccess(userId: string) {
     }
 
     // Check tier
-    const userTier = user.user_metadata?.tier || SubscriptionTier.FREE;
-    const isAdminUser = userTier === SubscriptionTier.ADMIN;
+    const userTier = user.user_metadata?.tier || "free";
+    const isAdminUser = userTier === "ADMIN";
 
     return {
       isAdmin: isAdminUser,

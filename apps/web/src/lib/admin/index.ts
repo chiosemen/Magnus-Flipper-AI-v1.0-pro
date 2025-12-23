@@ -11,27 +11,24 @@ export { requireAdmin, isAdmin, checkAdminAccess } from "./auth";
 // Jobs
 export { fetchAllJobs as getJobStats, getJobById } from "./jobs";
 
-// Scanners
-export { fetchScanners, getScannerMetrics, getScannerTelemetry } from "./scanners";
+// Scanners (quarantined - uses worker packages)
+// export { fetchScanners, getScannerMetrics, getScannerTelemetry } from "./scanners";
 
 // Marketplaces
 export { getMarketplaceSettings, toggleMarketplace } from "./marketplaces";
 
-// Telemetry metrics (aggregated)
+// Telemetry metrics (stub - scanners quarantined)
 export async function getTelemetryMetrics() {
-  const { getScannerMetrics } = await import("./scanners");
-  const metrics = await getScannerMetrics();
-  
   return {
-    totalUsers: 0, // TODO: Query from Supabase
-    activeUsers: 0, // TODO: Query from Supabase
-    apiRequests: 0, // TODO: Query from analytics
+    totalUsers: 0,
+    activeUsers: 0,
+    apiRequests: 0,
     systemHealth: 100,
-    activeScanners: metrics.activeScanners,
-    totalProcessed: metrics.totalProcessed,
-    errorsLast24h: metrics.errorsLast24h,
-    successRate: metrics.successRate,
-    avgLatency: metrics.avgLatency,
-    queueDepth: metrics.queueDepth,
+    activeScanners: 0,
+    totalProcessed: 0,
+    errorsLast24h: 0,
+    successRate: "100.0",
+    avgLatency: 0,
+    queueDepth: 0,
   };
 }

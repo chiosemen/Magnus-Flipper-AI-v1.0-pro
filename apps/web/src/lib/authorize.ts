@@ -49,5 +49,5 @@ export async function requireTier(requiredTier: SubscriptionTier): Promise<boole
  * Check if user is admin
  */
 export async function requireAdmin(): Promise<boolean> {
-  return requireTier(SubscriptionTier.ADMIN);
+  return requireTier("ADMIN");
 }
