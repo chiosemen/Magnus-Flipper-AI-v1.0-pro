@@ -231,7 +231,8 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(data.marketplaceBreakdown).map(([marketplace, stats]) => (
+          {Object.entries(data.marketplaceBreakdown as Record<string, MarketplaceStats>)
+            .map(([marketplace, stats]) => (
             <MarketplaceCard
               key={marketplace}
               marketplace={marketplace}
