@@ -21,21 +21,6 @@ import { isDemoUser } from "@/lib/demo/demoData";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type MarketplaceStats = {
-  count: number;
-  avgHeat: number;
-};
-
-type LiveDeal = {
-  id: string;
-  title: string;
-  marketplace: string;
-  price: number | string;
-  freshness_score: number;
-  link?: string;
-  images?: string[];
-};
-
 // Dashboard queries - uses demo data for demo users, real data for others
 async function getDashboardData() {
   // DEVELOPMENT MODE: Use null user for demo data
@@ -236,8 +221,7 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(data.marketplaceBreakdown as Record<string, MarketplaceStats>)
-            .map(([marketplace, stats]) => (
+          {Object.entries(data.marketplaceBreakdown).map(([marketplace, stats]) => (
             <MarketplaceCard
               key={marketplace}
               marketplace={marketplace}
@@ -264,7 +248,7 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
           <p className="text-sm text-[#a0a0a0]">Latest opportunities with visual confirmation</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {data.liveDeals.map((deal: LiveDeal, index: number) => {
+          {data.liveDeals.map((deal, index) => {
             const isNew = index < 3;
             const isHot = deal.freshness_score >= 85;
             return (
