@@ -35,7 +35,8 @@ const nextConfig = {
     "@magnus-flipper-ai/queue",
     "@magnus-flipper-ai/scrapers",
     "@magnus-flipper-ai/shipping-engine",
-    "@magnus-flipper-ai/ui"
+    "@magnus-flipper-ai/ui",
+    "@magnus-flipper-ai/operator-agent"
   ],
   // v1 build surface control
   typescript: {
