@@ -52,3 +52,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+// VERCEL-HARD-RESET Wed Dec 24 18:44:41 EST 2025
