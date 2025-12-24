@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FloatingParticles } from "../components/swoopa-motion/FloatingParticles";
-import { SwoopaAIOrb } from "../components/swoopa-ultra/SwoopaAIOrb";
-import { LiquidMetalButton } from "../components/swoopa-ultra/LiquidMetalButton";
-import { NeonCard } from "../components/swoopa-ultra/NeonCard";
+import { FloatingParticles } from "@/app/components/swoopa-motion/FloatingParticles";
+import { SwoopaAIOrb } from "@/app/components/swoopa-ultra/SwoopaAIOrb";
+import { LiquidMetalButton } from "@/app/components/swoopa-ultra/LiquidMetalButton";
+import { NeonCard } from "@/app/components/swoopa-ultra/NeonCard";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function LoginPage() {

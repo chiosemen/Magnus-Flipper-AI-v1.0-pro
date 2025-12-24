@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FloatingParticles } from "../components/swoopa-motion/FloatingParticles";
@@ -8,6 +9,13 @@ import { SwoopaAIOrb } from "../components/swoopa-ultra/SwoopaAIOrb";
 import { LiquidMetalButton } from "../components/swoopa-ultra/LiquidMetalButton";
 import { NeonCard } from "../components/swoopa-ultra/NeonCard";
 import { useAuth } from "@/providers/AuthProvider";
+=======
+import { useState } from "react";
+import { FloatingParticles } from "@/app/components/swoopa-motion/FloatingParticles";
+import { SwoopaAIOrb } from "@/app/components/swoopa-ultra/SwoopaAIOrb";
+import { LiquidMetalButton } from "@/app/components/swoopa-ultra/LiquidMetalButton";
+import { NeonCard } from "@/app/components/swoopa-ultra/NeonCard";
+>>>>>>> 260d718 (fix: finalize UI polish, import cleanup, and idempotent Supabase migrations)
 
 export default function RegisterPage() {
   const [isTyping, setIsTyping] = useState(false);

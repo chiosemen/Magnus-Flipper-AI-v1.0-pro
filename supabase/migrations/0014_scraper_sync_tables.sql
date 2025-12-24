@@ -63,18 +63,18 @@ CREATE TABLE IF NOT EXISTS scraped_listings (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_scraped_listings_marketplace ON scraped_listings(marketplace);
-CREATE INDEX idx_scraped_listings_freshness ON scraped_listings(freshness_score DESC);
-CREATE INDEX idx_scraped_listings_content_hash ON scraped_listings(content_hash);
-CREATE INDEX idx_scraped_listings_duplicate_group ON scraped_listings(duplicate_group_id) WHERE duplicate_group_id IS NOT NULL;
-CREATE INDEX idx_scraped_listings_anomaly ON scraped_listings(is_anomaly) WHERE is_anomaly = TRUE;
-CREATE INDEX idx_scraped_listings_last_seen ON scraped_listings(last_seen_at DESC);
-CREATE INDEX idx_scraped_listings_normalized_price ON scraped_listings(normalized_price);
-CREATE INDEX idx_scraped_listings_seller ON scraped_listings(seller_id);
-CREATE INDEX idx_scraped_listings_category ON scraped_listings(category);
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_marketplace ON scraped_listings(marketplace);
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_freshness ON scraped_listings(freshness_score DESC);
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_content_hash ON scraped_listings(content_hash);
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_duplicate_group ON scraped_listings(duplicate_group_id) WHERE duplicate_group_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_anomaly ON scraped_listings(is_anomaly) WHERE is_anomaly = TRUE;
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_last_seen ON scraped_listings(last_seen_at DESC);
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_normalized_price ON scraped_listings(normalized_price);
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_seller ON scraped_listings(seller_id);
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_category ON scraped_listings(category);
 
 -- Full-text search on normalized title
-CREATE INDEX idx_scraped_listings_title_search ON scraped_listings USING gin(to_tsvector('english', normalized_title));
+CREATE INDEX IF NOT EXISTS idx_scraped_listings_title_search ON scraped_listings USING gin(to_tsvector('english', normalized_title));
 
 -- =============================================================================
 -- SCRAPER HEALTH TABLE
@@ -105,8 +105,8 @@ CREATE TABLE IF NOT EXISTS scraper_health (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_scraper_health_status ON scraper_health(status);
-CREATE INDEX idx_scraper_health_last_run ON scraper_health(last_run_at DESC);
+CREATE INDEX IF NOT EXISTS idx_scraper_health_status ON scraper_health(status);
+CREATE INDEX IF NOT EXISTS idx_scraper_health_last_run ON scraper_health(last_run_at DESC);
 
 -- =============================================================================
 -- SCRAPER LOGS TABLE
@@ -124,9 +124,9 @@ CREATE TABLE IF NOT EXISTS scraper_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_scraper_logs_marketplace ON scraper_logs(marketplace);
-CREATE INDEX idx_scraper_logs_started_at ON scraper_logs(started_at DESC);
-CREATE INDEX idx_scraper_logs_success ON scraper_logs(success);
+CREATE INDEX IF NOT EXISTS idx_scraper_logs_marketplace ON scraper_logs(marketplace);
+CREATE INDEX IF NOT EXISTS idx_scraper_logs_started_at ON scraper_logs(started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_scraper_logs_success ON scraper_logs(success);
 
 -- =============================================================================
 -- SCRAPER CONFIGS TABLE
@@ -159,9 +159,9 @@ CREATE TABLE IF NOT EXISTS scraper_configs (
   UNIQUE(user_id, marketplace)
 );
 
-CREATE INDEX idx_scraper_configs_user ON scraper_configs(user_id);
-CREATE INDEX idx_scraper_configs_marketplace ON scraper_configs(marketplace);
-CREATE INDEX idx_scraper_configs_enabled ON scraper_configs(enabled);
+CREATE INDEX IF NOT EXISTS idx_scraper_configs_user ON scraper_configs(user_id);
+CREATE INDEX IF NOT EXISTS idx_scraper_configs_marketplace ON scraper_configs(marketplace);
+CREATE INDEX IF NOT EXISTS idx_scraper_configs_enabled ON scraper_configs(enabled);
 
 -- =============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -174,37 +174,45 @@ ALTER TABLE scraper_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scraper_configs ENABLE ROW LEVEL SECURITY;
 
 -- Scraped Listings: Public read access for searching
+DROP POLICY IF EXISTS "Anyone can view scraped listings" ON scraped_listings;
 CREATE POLICY "Anyone can view scraped listings"
   ON scraped_listings FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Service role can manage scraped listings" ON scraped_listings;
 CREATE POLICY "Service role can manage scraped listings"
   ON scraped_listings FOR ALL
   USING (true);
 
 -- Scraper Health: Public read access
+DROP POLICY IF EXISTS "Anyone can view scraper health" ON scraper_health;
 CREATE POLICY "Anyone can view scraper health"
   ON scraper_health FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Service role can manage scraper health" ON scraper_health;
 CREATE POLICY "Service role can manage scraper health"
   ON scraper_health FOR ALL
   USING (true);
 
 -- Scraper Logs: Service role only
+DROP POLICY IF EXISTS "Service role can manage scraper logs" ON scraper_logs;
 CREATE POLICY "Service role can manage scraper logs"
   ON scraper_logs FOR ALL
   USING (true);
 
 -- Scraper Configs: Users manage their own configs
+DROP POLICY IF EXISTS "Users can view their own scraper configs" ON scraper_configs;
 CREATE POLICY "Users can view their own scraper configs"
   ON scraper_configs FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can manage their own scraper configs" ON scraper_configs;
 CREATE POLICY "Users can manage their own scraper configs"
   ON scraper_configs FOR ALL
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage all scraper configs" ON scraper_configs;
 CREATE POLICY "Service role can manage all scraper configs"
   ON scraper_configs FOR ALL
   USING (true);
@@ -214,16 +222,19 @@ CREATE POLICY "Service role can manage all scraper configs"
 -- =============================================================================
 
 -- Update timestamp trigger
+DROP TRIGGER IF EXISTS scraped_listings_updated_at ON scraped_listings;
 CREATE TRIGGER scraped_listings_updated_at
   BEFORE UPDATE ON scraped_listings
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS scraper_configs_updated_at ON scraper_configs;
 CREATE TRIGGER scraper_configs_updated_at
   BEFORE UPDATE ON scraper_configs
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS scraper_health_updated_at ON scraper_health;
 CREATE TRIGGER scraper_health_updated_at
   BEFORE UPDATE ON scraper_health
   FOR EACH ROW

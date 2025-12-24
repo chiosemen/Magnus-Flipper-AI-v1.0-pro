@@ -51,10 +51,11 @@ export default function VintedDealsList() {
 
   if (deals.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-white/70 font-medium mb-2">No live deals yet</p>
-        <p className="text-white/50 text-sm">
-          Create a search above to start finding deals. The worker will scan Vinted every 10 minutes.
+      <div className="text-center py-12 max-w-md mx-auto">
+        <div className="text-4xl mb-4 opacity-40">🔍</div>
+        <p className="text-white/90 font-medium mb-2">No deals found yet</p>
+        <p className="text-white/60 text-sm leading-relaxed">
+          Set up a search above to start tracking opportunities. Vinted is scanned every 10 minutes for matching listings.
         </p>
       </div>
     );

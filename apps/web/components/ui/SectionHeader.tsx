@@ -8,12 +8,12 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, subtitle, action }: SectionHeaderProps) {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex items-start justify-between mb-5">
       <div>
-        <h1 className="text-3xl font-bold text-[#ededed]">{title}</h1>
-        {subtitle && <p className="text-[#a0a0a0] mt-1">{subtitle}</p>}
+        <h1 className="text-2xl font-bold text-[#ededed] tracking-tight">{title}</h1>
+        {subtitle && <p className="text-sm text-[#a0a0a0] mt-1.5 leading-relaxed">{subtitle}</p>}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="flex-shrink-0">{action}</div>}
     </div>
   );
 }

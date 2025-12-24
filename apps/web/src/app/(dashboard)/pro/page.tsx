@@ -6,19 +6,19 @@ import { ChartShell } from "@/components/ui/ChartShell";
 
 export default function ProDashboard() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <SectionHeader
         title="Pro Dashboard"
         subtitle="Real-time marketplace arbitrage opportunities"
         action={
-          <button className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a] px-4 py-2 rounded-lg text-sm text-[#ededed] transition-colors">
+          <button className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a] px-4 py-2 rounded-lg text-sm text-[#ededed] transition-smooth active-press font-medium">
             Refresh Feed
           </button>
         }
       />
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard label="Total Profit" value="£1,247" change="+12.3%" icon="💰" />
         <MetricCard label="Active Listings" value="34" change="+5" icon="📦" />
         <MetricCard label="ROI Average" value="18.5%" change="+2.1%" icon="📊" />
@@ -26,31 +26,31 @@ export default function ProDashboard() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard title="Best ROI Today" value="42.3%" variant="success" />
-        <StatCard title="Avg Response Time" value="2.3s" variant="default" />
-        <StatCard title="Markets Tracked" value="5" variant="default" />
-        <StatCard title="Saved Searches" value="12" variant="default" />
+        <StatCard title="Avg Response" value="2.3s" variant="default" />
+        <StatCard title="Markets" value="5" variant="default" />
+        <StatCard title="Saved" value="12" variant="default" />
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartShell title="7-Day Profit Trend" height={250} />
-        <ChartShell title="Marketplace Distribution" height={250} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ChartShell title="7-Day Profit Trend" height={220} />
+        <ChartShell title="Marketplace Distribution" height={220} />
       </div>
 
       {/* Live Feed */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-[#ededed]">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-semibold text-[#ededed]">
             Live Opportunities
           </h3>
-          <div className="flex items-center gap-2 text-sm text-[#a0a0a0]">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            Live
+          <div className="flex items-center gap-1.5 text-xs text-[#a0a0a0]">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+            <span className="font-medium">Live</span>
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <FeedCard
             title="PlayStation 5 Console Digital Edition"
             price={280}

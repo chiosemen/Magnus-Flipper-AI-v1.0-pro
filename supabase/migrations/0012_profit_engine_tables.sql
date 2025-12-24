@@ -45,11 +45,11 @@ CREATE TABLE IF NOT EXISTS sale_events (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_sale_events_inventory ON sale_events(inventory_item_id);
-CREATE INDEX idx_sale_events_user ON sale_events(user_id);
-CREATE INDEX idx_sale_events_marketplace ON sale_events(marketplace);
-CREATE INDEX idx_sale_events_status ON sale_events(status);
-CREATE INDEX idx_sale_events_sold_at ON sale_events(sold_at);
+CREATE INDEX IF NOT EXISTS idx_sale_events_inventory ON sale_events(inventory_item_id);
+CREATE INDEX IF NOT EXISTS idx_sale_events_user ON sale_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_sale_events_marketplace ON sale_events(marketplace);
+CREATE INDEX IF NOT EXISTS idx_sale_events_status ON sale_events(status);
+CREATE INDEX IF NOT EXISTS idx_sale_events_sold_at ON sale_events(sold_at);
 
 -- =============================================================================
 -- SOLD ITEMS TABLE
@@ -86,13 +86,13 @@ CREATE TABLE IF NOT EXISTS sold_items (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_sold_items_inventory ON sold_items(inventory_item_id);
-CREATE INDEX idx_sold_items_user ON sold_items(user_id);
-CREATE INDEX idx_sold_items_marketplace ON sold_items(marketplace);
-CREATE INDEX idx_sold_items_sold_at ON sold_items(sold_at);
-CREATE INDEX idx_sold_items_status ON sold_items(status);
-CREATE INDEX idx_sold_items_roi ON sold_items(roi);
-CREATE INDEX idx_sold_items_net_profit ON sold_items(net_profit);
+CREATE INDEX IF NOT EXISTS idx_sold_items_inventory ON sold_items(inventory_item_id);
+CREATE INDEX IF NOT EXISTS idx_sold_items_user ON sold_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_sold_items_marketplace ON sold_items(marketplace);
+CREATE INDEX IF NOT EXISTS idx_sold_items_sold_at ON sold_items(sold_at);
+CREATE INDEX IF NOT EXISTS idx_sold_items_status ON sold_items(status);
+CREATE INDEX IF NOT EXISTS idx_sold_items_roi ON sold_items(roi);
+CREATE INDEX IF NOT EXISTS idx_sold_items_net_profit ON sold_items(net_profit);
 
 -- =============================================================================
 -- LEDGER ENTRIES TABLE
@@ -114,12 +114,12 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_ledger_entries_user ON ledger_entries(user_id);
-CREATE INDEX idx_ledger_entries_type ON ledger_entries(type);
-CREATE INDEX idx_ledger_entries_date ON ledger_entries(transaction_date);
-CREATE INDEX idx_ledger_entries_sale ON ledger_entries(sale_id);
-CREATE INDEX idx_ledger_entries_marketplace ON ledger_entries(marketplace);
-CREATE INDEX idx_ledger_entries_category ON ledger_entries(category);
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_user ON ledger_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_type ON ledger_entries(type);
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_date ON ledger_entries(transaction_date);
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_sale ON ledger_entries(sale_id);
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_marketplace ON ledger_entries(marketplace);
+CREATE INDEX IF NOT EXISTS idx_ledger_entries_category ON ledger_entries(category);
 
 -- =============================================================================
 -- EV CORRECTIONS TABLE
@@ -142,9 +142,9 @@ CREATE TABLE IF NOT EXISTS ev_corrections (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_ev_corrections_category ON ev_corrections(category);
-CREATE INDEX idx_ev_corrections_marketplace ON ev_corrections(marketplace);
-CREATE INDEX idx_ev_corrections_created ON ev_corrections(created_at);
+CREATE INDEX IF NOT EXISTS idx_ev_corrections_category ON ev_corrections(category);
+CREATE INDEX IF NOT EXISTS idx_ev_corrections_marketplace ON ev_corrections(marketplace);
+CREATE INDEX IF NOT EXISTS idx_ev_corrections_created ON ev_corrections(created_at);
 
 -- =============================================================================
 -- HISTORICAL STATS TABLE
@@ -163,8 +163,8 @@ CREATE TABLE IF NOT EXISTS historical_stats (
   UNIQUE(category, marketplace)
 );
 
-CREATE INDEX idx_historical_stats_category ON historical_stats(category);
-CREATE INDEX idx_historical_stats_marketplace ON historical_stats(marketplace);
+CREATE INDEX IF NOT EXISTS idx_historical_stats_category ON historical_stats(category);
+CREATE INDEX IF NOT EXISTS idx_historical_stats_marketplace ON historical_stats(marketplace);
 
 -- =============================================================================
 -- PORTFOLIO SNAPSHOTS TABLE
@@ -189,8 +189,8 @@ CREATE TABLE IF NOT EXISTS portfolio_snapshots (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_portfolio_snapshots_user ON portfolio_snapshots(user_id);
-CREATE INDEX idx_portfolio_snapshots_date ON portfolio_snapshots(snapshot_date);
+CREATE INDEX IF NOT EXISTS idx_portfolio_snapshots_user ON portfolio_snapshots(user_id);
+CREATE INDEX IF NOT EXISTS idx_portfolio_snapshots_date ON portfolio_snapshots(snapshot_date);
 
 -- =============================================================================
 -- PLATFORM LOCK EVENTS TABLE
@@ -207,8 +207,8 @@ CREATE TABLE IF NOT EXISTS platform_lock_events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_platform_lock_events_inventory ON platform_lock_events(inventory_item_id);
-CREATE INDEX idx_platform_lock_events_sale ON platform_lock_events(sale_event_id);
+CREATE INDEX IF NOT EXISTS idx_platform_lock_events_inventory ON platform_lock_events(inventory_item_id);
+CREATE INDEX IF NOT EXISTS idx_platform_lock_events_sale ON platform_lock_events(sale_event_id);
 
 -- =============================================================================
 -- MARKETPLACE CREDENTIALS TABLE
@@ -231,8 +231,8 @@ CREATE TABLE IF NOT EXISTS marketplace_credentials (
   UNIQUE(user_id, marketplace)
 );
 
-CREATE INDEX idx_marketplace_credentials_user ON marketplace_credentials(user_id);
-CREATE INDEX idx_marketplace_credentials_marketplace ON marketplace_credentials(marketplace);
+CREATE INDEX IF NOT EXISTS idx_marketplace_credentials_user ON marketplace_credentials(user_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_credentials_marketplace ON marketplace_credentials(marketplace);
 
 -- =============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -248,76 +248,93 @@ ALTER TABLE platform_lock_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE marketplace_credentials ENABLE ROW LEVEL SECURITY;
 
 -- Sale Events Policies
+DROP POLICY IF EXISTS "Users can view their own sale events" ON sale_events;
 CREATE POLICY "Users can view their own sale events"
   ON sale_events FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can insert sale events" ON sale_events;
 CREATE POLICY "Service role can insert sale events"
   ON sale_events FOR INSERT
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role can update sale events" ON sale_events;
 CREATE POLICY "Service role can update sale events"
   ON sale_events FOR UPDATE
   USING (true);
 
 -- Sold Items Policies
+DROP POLICY IF EXISTS "Users can view their own sold items" ON sold_items;
 CREATE POLICY "Users can view their own sold items"
   ON sold_items FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can insert sold items" ON sold_items;
 CREATE POLICY "Service role can insert sold items"
   ON sold_items FOR INSERT
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role can update sold items" ON sold_items;
 CREATE POLICY "Service role can update sold items"
   ON sold_items FOR UPDATE
   USING (true);
 
 -- Ledger Entries Policies
+DROP POLICY IF EXISTS "Users can view their own ledger entries" ON ledger_entries;
 CREATE POLICY "Users can view their own ledger entries"
   ON ledger_entries FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own ledger entries" ON ledger_entries;
 CREATE POLICY "Users can insert their own ledger entries"
   ON ledger_entries FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage all ledger entries" ON ledger_entries;
 CREATE POLICY "Service role can manage all ledger entries"
   ON ledger_entries FOR ALL
   USING (true);
 
 -- EV Corrections Policies (read-only for users, admin access for analysis)
+DROP POLICY IF EXISTS "Service role can manage EV corrections" ON ev_corrections;
 CREATE POLICY "Service role can manage EV corrections"
   ON ev_corrections FOR ALL
   USING (true);
 
 -- Portfolio Snapshots Policies
+DROP POLICY IF EXISTS "Users can view their own portfolio snapshots" ON portfolio_snapshots;
 CREATE POLICY "Users can view their own portfolio snapshots"
   ON portfolio_snapshots FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage portfolio snapshots" ON portfolio_snapshots;
 CREATE POLICY "Service role can manage portfolio snapshots"
   ON portfolio_snapshots FOR ALL
   USING (true);
 
 -- Platform Lock Events Policies (audit only, service role access)
+DROP POLICY IF EXISTS "Service role can manage platform lock events" ON platform_lock_events;
 CREATE POLICY "Service role can manage platform lock events"
   ON platform_lock_events FOR ALL
   USING (true);
 
 -- Marketplace Credentials Policies (highly sensitive)
+DROP POLICY IF EXISTS "Users can view their own credentials" ON marketplace_credentials;
 CREATE POLICY "Users can view their own credentials"
   ON marketplace_credentials FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own credentials" ON marketplace_credentials;
 CREATE POLICY "Users can insert their own credentials"
   ON marketplace_credentials FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own credentials" ON marketplace_credentials;
 CREATE POLICY "Users can update their own credentials"
   ON marketplace_credentials FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own credentials" ON marketplace_credentials;
 CREATE POLICY "Users can delete their own credentials"
   ON marketplace_credentials FOR DELETE
   USING (auth.uid() = user_id);
@@ -336,16 +353,19 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply update triggers
+DROP TRIGGER IF EXISTS sale_events_updated_at ON sale_events;
 CREATE TRIGGER sale_events_updated_at
   BEFORE UPDATE ON sale_events
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS sold_items_updated_at ON sold_items;
 CREATE TRIGGER sold_items_updated_at
   BEFORE UPDATE ON sold_items
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS marketplace_credentials_updated_at ON marketplace_credentials;
 CREATE TRIGGER marketplace_credentials_updated_at
   BEFORE UPDATE ON marketplace_credentials
   FOR EACH ROW

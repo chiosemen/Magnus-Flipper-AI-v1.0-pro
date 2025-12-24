@@ -53,13 +53,13 @@ CREATE TABLE IF NOT EXISTS buy_opportunities (
 );
 
 -- Indexes for buy_opportunities
-CREATE INDEX idx_buy_opportunities_user ON buy_opportunities(user_id);
-CREATE INDEX idx_buy_opportunities_status ON buy_opportunities(status) WHERE status IN ('pending', 'queued');
-CREATE INDEX idx_buy_opportunities_roi ON buy_opportunities(estimated_roi DESC);
-CREATE INDEX idx_buy_opportunities_created ON buy_opportunities(created_at DESC);
-CREATE INDEX idx_buy_opportunities_marketplace ON buy_opportunities(marketplace);
-CREATE INDEX idx_buy_opportunities_risk ON buy_opportunities(risk_score);
-CREATE INDEX idx_buy_opportunities_confidence ON buy_opportunities(confidence_score DESC);
+CREATE INDEX IF NOT EXISTS idx_buy_opportunities_user ON buy_opportunities(user_id);
+CREATE INDEX IF NOT EXISTS idx_buy_opportunities_status ON buy_opportunities(status) WHERE status IN ('pending', 'queued');
+CREATE INDEX IF NOT EXISTS idx_buy_opportunities_roi ON buy_opportunities(estimated_roi DESC);
+CREATE INDEX IF NOT EXISTS idx_buy_opportunities_created ON buy_opportunities(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_buy_opportunities_marketplace ON buy_opportunities(marketplace);
+CREATE INDEX IF NOT EXISTS idx_buy_opportunities_risk ON buy_opportunities(risk_score);
+CREATE INDEX IF NOT EXISTS idx_buy_opportunities_confidence ON buy_opportunities(confidence_score DESC);
 
 -- =====================================================
 -- BUY EXECUTIONS (Purchase Attempts)
@@ -100,11 +100,11 @@ CREATE TABLE IF NOT EXISTS buy_executions (
 );
 
 -- Indexes for buy_executions
-CREATE INDEX idx_buy_executions_user ON buy_executions(user_id);
-CREATE INDEX idx_buy_executions_opportunity ON buy_executions(opportunity_id);
-CREATE INDEX idx_buy_executions_status ON buy_executions(status);
-CREATE INDEX idx_buy_executions_created ON buy_executions(created_at DESC);
-CREATE INDEX idx_buy_executions_marketplace ON buy_executions(marketplace);
+CREATE INDEX IF NOT EXISTS idx_buy_executions_user ON buy_executions(user_id);
+CREATE INDEX IF NOT EXISTS idx_buy_executions_opportunity ON buy_executions(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_buy_executions_status ON buy_executions(status);
+CREATE INDEX IF NOT EXISTS idx_buy_executions_created ON buy_executions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_buy_executions_marketplace ON buy_executions(marketplace);
 
 -- =====================================================
 -- LISTING DRAFTS (Auto-Generated Listings)
@@ -164,12 +164,12 @@ CREATE TABLE IF NOT EXISTS listing_drafts (
 );
 
 -- Indexes for listing_drafts
-CREATE INDEX idx_listing_drafts_user ON listing_drafts(user_id);
-CREATE INDEX idx_listing_drafts_status ON listing_drafts(status) WHERE status IN ('draft', 'approved');
-CREATE INDEX idx_listing_drafts_marketplace ON listing_drafts(target_marketplace);
-CREATE INDEX idx_listing_drafts_created ON listing_drafts(created_at DESC);
-CREATE INDEX idx_listing_drafts_buy_execution ON listing_drafts(buy_execution_id);
-CREATE INDEX idx_listing_drafts_inventory ON listing_drafts(inventory_item_id);
+CREATE INDEX IF NOT EXISTS idx_listing_drafts_user ON listing_drafts(user_id);
+CREATE INDEX IF NOT EXISTS idx_listing_drafts_status ON listing_drafts(status) WHERE status IN ('draft', 'approved');
+CREATE INDEX IF NOT EXISTS idx_listing_drafts_marketplace ON listing_drafts(target_marketplace);
+CREATE INDEX IF NOT EXISTS idx_listing_drafts_created ON listing_drafts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_listing_drafts_buy_execution ON listing_drafts(buy_execution_id);
+CREATE INDEX IF NOT EXISTS idx_listing_drafts_inventory ON listing_drafts(inventory_item_id);
 
 -- =====================================================
 -- LISTING EXECUTIONS (Actual Listing Attempts)
@@ -207,12 +207,12 @@ CREATE TABLE IF NOT EXISTS listing_executions (
 );
 
 -- Indexes for listing_executions
-CREATE INDEX idx_listing_executions_user ON listing_executions(user_id);
-CREATE INDEX idx_listing_executions_draft ON listing_executions(draft_id);
-CREATE INDEX idx_listing_executions_status ON listing_executions(status);
-CREATE INDEX idx_listing_executions_created ON listing_executions(created_at DESC);
-CREATE INDEX idx_listing_executions_marketplace ON listing_executions(marketplace);
-CREATE INDEX idx_listing_executions_marketplace_id ON listing_executions(marketplace_listing_id);
+CREATE INDEX IF NOT EXISTS idx_listing_executions_user ON listing_executions(user_id);
+CREATE INDEX IF NOT EXISTS idx_listing_executions_draft ON listing_executions(draft_id);
+CREATE INDEX IF NOT EXISTS idx_listing_executions_status ON listing_executions(status);
+CREATE INDEX IF NOT EXISTS idx_listing_executions_created ON listing_executions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_listing_executions_marketplace ON listing_executions(marketplace);
+CREATE INDEX IF NOT EXISTS idx_listing_executions_marketplace_id ON listing_executions(marketplace_listing_id);
 
 -- =====================================================
 -- MARKETPLACE ACCOUNTS
@@ -255,10 +255,10 @@ CREATE TABLE IF NOT EXISTS marketplace_accounts (
 );
 
 -- Indexes for marketplace_accounts
-CREATE INDEX idx_marketplace_accounts_user ON marketplace_accounts(user_id);
-CREATE INDEX idx_marketplace_accounts_marketplace ON marketplace_accounts(marketplace);
-CREATE INDEX idx_marketplace_accounts_status ON marketplace_accounts(account_status);
-CREATE INDEX idx_marketplace_accounts_active ON marketplace_accounts(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_marketplace_accounts_user ON marketplace_accounts(user_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_accounts_marketplace ON marketplace_accounts(marketplace);
+CREATE INDEX IF NOT EXISTS idx_marketplace_accounts_status ON marketplace_accounts(account_status);
+CREATE INDEX IF NOT EXISTS idx_marketplace_accounts_active ON marketplace_accounts(is_active) WHERE is_active = true;
 
 -- =====================================================
 -- QUEUED OPERATIONS
@@ -297,13 +297,13 @@ CREATE TABLE IF NOT EXISTS queued_operations (
 );
 
 -- Indexes for queued_operations
-CREATE INDEX idx_queued_operations_user ON queued_operations(user_id);
-CREATE INDEX idx_queued_operations_status ON queued_operations(status) WHERE status IN ('queued', 'processing');
-CREATE INDEX idx_queued_operations_scheduled ON queued_operations(scheduled_at) WHERE status = 'queued';
-CREATE INDEX idx_queued_operations_priority ON queued_operations(priority, scheduled_at);
-CREATE INDEX idx_queued_operations_type ON queued_operations(operation_type);
-CREATE INDEX idx_queued_operations_opportunity ON queued_operations(opportunity_id);
-CREATE INDEX idx_queued_operations_draft ON queued_operations(draft_id);
+CREATE INDEX IF NOT EXISTS idx_queued_operations_user ON queued_operations(user_id);
+CREATE INDEX IF NOT EXISTS idx_queued_operations_status ON queued_operations(status) WHERE status IN ('queued', 'processing');
+CREATE INDEX IF NOT EXISTS idx_queued_operations_scheduled ON queued_operations(scheduled_at) WHERE status = 'queued';
+CREATE INDEX IF NOT EXISTS idx_queued_operations_priority ON queued_operations(priority, scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_queued_operations_type ON queued_operations(operation_type);
+CREATE INDEX IF NOT EXISTS idx_queued_operations_opportunity ON queued_operations(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_queued_operations_draft ON queued_operations(draft_id);
 
 -- =====================================================
 -- RISK ASSESSMENTS
@@ -343,11 +343,11 @@ CREATE TABLE IF NOT EXISTS risk_assessments (
 );
 
 -- Indexes for risk_assessments
-CREATE INDEX idx_risk_assessments_user ON risk_assessments(user_id);
-CREATE INDEX idx_risk_assessments_opportunity ON risk_assessments(opportunity_id);
-CREATE INDEX idx_risk_assessments_risk_level ON risk_assessments(risk_level);
-CREATE INDEX idx_risk_assessments_overall_score ON risk_assessments(overall_risk_score);
-CREATE INDEX idx_risk_assessments_action ON risk_assessments(recommended_action);
+CREATE INDEX IF NOT EXISTS idx_risk_assessments_user ON risk_assessments(user_id);
+CREATE INDEX IF NOT EXISTS idx_risk_assessments_opportunity ON risk_assessments(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_risk_assessments_risk_level ON risk_assessments(risk_level);
+CREATE INDEX IF NOT EXISTS idx_risk_assessments_overall_score ON risk_assessments(overall_risk_score);
+CREATE INDEX IF NOT EXISTS idx_risk_assessments_action ON risk_assessments(recommended_action);
 
 -- =====================================================
 -- AGENTIC TELEMETRY
@@ -374,10 +374,10 @@ CREATE TABLE IF NOT EXISTS agentic_telemetry (
 );
 
 -- Indexes for agentic_telemetry
-CREATE INDEX idx_agentic_telemetry_user ON agentic_telemetry(user_id);
-CREATE INDEX idx_agentic_telemetry_event ON agentic_telemetry(event_type);
-CREATE INDEX idx_agentic_telemetry_created ON agentic_telemetry(created_at DESC);
-CREATE INDEX idx_agentic_telemetry_success ON agentic_telemetry(success);
+CREATE INDEX IF NOT EXISTS idx_agentic_telemetry_user ON agentic_telemetry(user_id);
+CREATE INDEX IF NOT EXISTS idx_agentic_telemetry_event ON agentic_telemetry(event_type);
+CREATE INDEX IF NOT EXISTS idx_agentic_telemetry_created ON agentic_telemetry(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agentic_telemetry_success ON agentic_telemetry(success);
 
 -- =====================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -394,113 +394,139 @@ ALTER TABLE risk_assessments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agentic_telemetry ENABLE ROW LEVEL SECURITY;
 
 -- buy_opportunities policies
+DROP POLICY IF EXISTS "Users can view their own buy opportunities" ON buy_opportunities;
 CREATE POLICY "Users can view their own buy opportunities"
   ON buy_opportunities FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own buy opportunities" ON buy_opportunities;
 CREATE POLICY "Users can insert their own buy opportunities"
   ON buy_opportunities FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own buy opportunities" ON buy_opportunities;
 CREATE POLICY "Users can update their own buy opportunities"
   ON buy_opportunities FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own buy opportunities" ON buy_opportunities;
 CREATE POLICY "Users can delete their own buy opportunities"
   ON buy_opportunities FOR DELETE
   USING (auth.uid() = user_id);
 
 -- buy_executions policies
+DROP POLICY IF EXISTS "Users can view their own buy executions" ON buy_executions;
 CREATE POLICY "Users can view their own buy executions"
   ON buy_executions FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own buy executions" ON buy_executions;
 CREATE POLICY "Users can insert their own buy executions"
   ON buy_executions FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own buy executions" ON buy_executions;
 CREATE POLICY "Users can update their own buy executions"
   ON buy_executions FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- listing_drafts policies
+DROP POLICY IF EXISTS "Users can view their own listing drafts" ON listing_drafts;
 CREATE POLICY "Users can view their own listing drafts"
   ON listing_drafts FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own listing drafts" ON listing_drafts;
 CREATE POLICY "Users can insert their own listing drafts"
   ON listing_drafts FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own listing drafts" ON listing_drafts;
 CREATE POLICY "Users can update their own listing drafts"
   ON listing_drafts FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own listing drafts" ON listing_drafts;
 CREATE POLICY "Users can delete their own listing drafts"
   ON listing_drafts FOR DELETE
   USING (auth.uid() = user_id);
 
 -- listing_executions policies
+DROP POLICY IF EXISTS "Users can view their own listing executions" ON listing_executions;
 CREATE POLICY "Users can view their own listing executions"
   ON listing_executions FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own listing executions" ON listing_executions;
 CREATE POLICY "Users can insert their own listing executions"
   ON listing_executions FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own listing executions" ON listing_executions;
 CREATE POLICY "Users can update their own listing executions"
   ON listing_executions FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- marketplace_accounts policies
+DROP POLICY IF EXISTS "Users can view their own marketplace accounts" ON marketplace_accounts;
 CREATE POLICY "Users can view their own marketplace accounts"
   ON marketplace_accounts FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own marketplace accounts" ON marketplace_accounts;
 CREATE POLICY "Users can insert their own marketplace accounts"
   ON marketplace_accounts FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own marketplace accounts" ON marketplace_accounts;
 CREATE POLICY "Users can update their own marketplace accounts"
   ON marketplace_accounts FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own marketplace accounts" ON marketplace_accounts;
 CREATE POLICY "Users can delete their own marketplace accounts"
   ON marketplace_accounts FOR DELETE
   USING (auth.uid() = user_id);
 
 -- queued_operations policies
+DROP POLICY IF EXISTS "Users can view their own queued operations" ON queued_operations;
 CREATE POLICY "Users can view their own queued operations"
   ON queued_operations FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own queued operations" ON queued_operations;
 CREATE POLICY "Users can insert their own queued operations"
   ON queued_operations FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own queued operations" ON queued_operations;
 CREATE POLICY "Users can update their own queued operations"
   ON queued_operations FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own queued operations" ON queued_operations;
 CREATE POLICY "Users can delete their own queued operations"
   ON queued_operations FOR DELETE
   USING (auth.uid() = user_id);
 
 -- risk_assessments policies
+DROP POLICY IF EXISTS "Users can view their own risk assessments" ON risk_assessments;
 CREATE POLICY "Users can view their own risk assessments"
   ON risk_assessments FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own risk assessments" ON risk_assessments;
 CREATE POLICY "Users can insert their own risk assessments"
   ON risk_assessments FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- agentic_telemetry policies
+DROP POLICY IF EXISTS "Users can view their own telemetry" ON agentic_telemetry;
 CREATE POLICY "Users can view their own telemetry"
   ON agentic_telemetry FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own telemetry" ON agentic_telemetry;
 CREATE POLICY "Users can insert their own telemetry"
   ON agentic_telemetry FOR INSERT
   WITH CHECK (auth.uid() = user_id);
@@ -519,21 +545,25 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply updated_at trigger to tables
+DROP TRIGGER IF EXISTS update_buy_opportunities_updated_at ON buy_opportunities;
 CREATE TRIGGER update_buy_opportunities_updated_at
   BEFORE UPDATE ON buy_opportunities
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_listing_drafts_updated_at ON listing_drafts;
 CREATE TRIGGER update_listing_drafts_updated_at
   BEFORE UPDATE ON listing_drafts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_marketplace_accounts_updated_at ON marketplace_accounts;
 CREATE TRIGGER update_marketplace_accounts_updated_at
   BEFORE UPDATE ON marketplace_accounts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_queued_operations_updated_at ON queued_operations;
 CREATE TRIGGER update_queued_operations_updated_at
   BEFORE UPDATE ON queued_operations
   FOR EACH ROW

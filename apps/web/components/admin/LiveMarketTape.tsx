@@ -104,12 +104,12 @@ function EmptyState() {
           </Badge>
         </div>
         <div className="flex h-[500px] flex-col items-center justify-center text-center">
-          <div className="text-4xl mb-4">📊</div>
-          <p className="text-sm text-muted-foreground">
-            No market activity yet
+          <div className="text-4xl mb-4 opacity-40">📊</div>
+          <p className="text-sm font-medium text-foreground mb-2">
+            Market feed is quiet
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            Listings will appear here in real-time
+          <p className="text-xs text-muted-foreground max-w-xs">
+            New listings will stream here as scrapers discover them. Typically updates every 2-10 minutes.
           </p>
         </div>
       </div>

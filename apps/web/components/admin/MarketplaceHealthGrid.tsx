@@ -123,12 +123,12 @@ function EmptyState() {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground">Marketplace Health</h3>
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="text-4xl mb-4">🏪</div>
-          <p className="text-sm text-muted-foreground">
-            No marketplaces configured
+          <div className="text-4xl mb-4 opacity-40">🏪</div>
+          <p className="text-sm font-medium text-foreground mb-2">
+            No active scrapers
           </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            Marketplace scrapers will appear here once configured
+          <p className="text-xs text-muted-foreground max-w-xs">
+            Marketplace health metrics will display here once scrapers are configured and running.
           </p>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { FeedCard } from "./FeedCard";
 import { Button } from "@/marketing-swoopa/components/ui/button";
 import { Card } from "@/marketing-swoopa/components/ui/card";
+import { SkeletonList } from "../ui/Skeleton";
 import type { AggregatedListing } from "@/lib/types/feed";
 
 interface FeedListProps {
@@ -27,28 +28,19 @@ export function FeedList({
   emptyMessage = "No listings found",
 }: FeedListProps) {
   if (isLoading && listings.length === 0) {
-    return (
-      <div className="space-y-4">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Card key={i} className="p-4 animate-pulse">
-            <div className="flex gap-4">
-              <div className="w-24 h-24 bg-surfaceSubtle rounded-md"></div>
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-surfaceSubtle rounded w-3/4"></div>
-                <div className="h-6 bg-surfaceSubtle rounded w-1/4"></div>
-                <div className="h-3 bg-surfaceSubtle rounded w-1/2"></div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    );
+    return <SkeletonList count={5} />;
   }
 
   if (listings.length === 0) {
     return (
-      <Card className="p-12 text-center">
-        <p className="text-body-m text-text-secondary">{emptyMessage}</p>
+      <Card className="p-12 text-center border-dashed">
+        <div className="max-w-md mx-auto space-y-3">
+          <div className="text-4xl opacity-50">📊</div>
+          <p className="text-sm font-medium text-foreground">{emptyMessage || "No deals found yet"}</p>
+          <p className="text-xs text-text-secondary">
+            Deals will appear here as they're discovered. Check back soon or refine your search criteria.
+          </p>
+        </div>
       </Card>
     );
   }

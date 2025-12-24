@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS public.users (
 );
 
 -- Indexes
-CREATE INDEX idx_users_email ON public.users(email);
-CREATE INDEX idx_users_created_at ON public.users(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON public.users(created_at DESC);
 
 -- =====================================================
 -- 2. SUBSCRIPTIONS TABLE
@@ -69,11 +69,11 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 );
 
 -- Indexes
-CREATE INDEX idx_subscriptions_user ON public.subscriptions(user_id);
-CREATE INDEX idx_subscriptions_tier ON public.subscriptions(tier);
-CREATE INDEX idx_subscriptions_active ON public.subscriptions(is_active) WHERE is_active = true;
-CREATE INDEX idx_subscriptions_stripe_customer ON public.subscriptions(stripe_customer_id);
-CREATE INDEX idx_subscriptions_stripe_subscription ON public.subscriptions(stripe_subscription_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON public.subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_tier ON public.subscriptions(tier);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_active ON public.subscriptions(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer ON public.subscriptions(stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_subscription ON public.subscriptions(stripe_subscription_id);
 
 -- =====================================================
 -- 3. SCRAPER EVENTS TABLE
@@ -105,12 +105,12 @@ CREATE TABLE IF NOT EXISTS public.scraper_events (
 );
 
 -- Indexes
-CREATE INDEX idx_scraper_events_user ON public.scraper_events(user_id);
-CREATE INDEX idx_scraper_events_marketplace ON public.scraper_events(marketplace);
-CREATE INDEX idx_scraper_events_type ON public.scraper_events(event_type);
-CREATE INDEX idx_scraper_events_created ON public.scraper_events(created_at DESC);
-CREATE INDEX idx_scraper_events_status ON public.scraper_events(status);
-CREATE INDEX idx_scraper_events_payload ON public.scraper_events USING gin(payload);
+CREATE INDEX IF NOT EXISTS idx_scraper_events_user ON public.scraper_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_scraper_events_marketplace ON public.scraper_events(marketplace);
+CREATE INDEX IF NOT EXISTS idx_scraper_events_type ON public.scraper_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_scraper_events_created ON public.scraper_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_scraper_events_status ON public.scraper_events(status);
+CREATE INDEX IF NOT EXISTS idx_scraper_events_payload ON public.scraper_events USING gin(payload);
 
 -- =====================================================
 -- 4. DEAL SCORES TABLE
@@ -154,13 +154,13 @@ CREATE TABLE IF NOT EXISTS public.deal_scores (
 );
 
 -- Indexes
-CREATE INDEX idx_deal_scores_user ON public.deal_scores(user_id);
-CREATE INDEX idx_deal_scores_deal ON public.deal_scores(deal_id);
-CREATE INDEX idx_deal_scores_listing ON public.deal_scores(listing_id);
-CREATE INDEX idx_deal_scores_marketplace ON public.deal_scores(marketplace);
-CREATE INDEX idx_deal_scores_adjusted ON public.deal_scores(adjusted_score DESC);
-CREATE INDEX idx_deal_scores_created ON public.deal_scores(created_at DESC);
-CREATE INDEX idx_deal_scores_confidence ON public.deal_scores(ai_confidence DESC);
+CREATE INDEX IF NOT EXISTS idx_deal_scores_user ON public.deal_scores(user_id);
+CREATE INDEX IF NOT EXISTS idx_deal_scores_deal ON public.deal_scores(deal_id);
+CREATE INDEX IF NOT EXISTS idx_deal_scores_listing ON public.deal_scores(listing_id);
+CREATE INDEX IF NOT EXISTS idx_deal_scores_marketplace ON public.deal_scores(marketplace);
+CREATE INDEX IF NOT EXISTS idx_deal_scores_adjusted ON public.deal_scores(adjusted_score DESC);
+CREATE INDEX IF NOT EXISTS idx_deal_scores_created ON public.deal_scores(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_deal_scores_confidence ON public.deal_scores(ai_confidence DESC);
 
 -- =====================================================
 -- 5. API KEYS TABLE
@@ -193,11 +193,11 @@ CREATE TABLE IF NOT EXISTS public.api_keys (
 );
 
 -- Indexes
-CREATE INDEX idx_api_keys_user ON public.api_keys(user_id);
-CREATE INDEX idx_api_keys_value ON public.api_keys(value);
-CREATE INDEX idx_api_keys_prefix ON public.api_keys(key_prefix);
-CREATE INDEX idx_api_keys_active ON public.api_keys(is_active) WHERE is_active = true;
-CREATE INDEX idx_api_keys_last_used ON public.api_keys(last_used_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user ON public.api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_value ON public.api_keys(value);
+CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON public.api_keys(key_prefix);
+CREATE INDEX IF NOT EXISTS idx_api_keys_active ON public.api_keys(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_api_keys_last_used ON public.api_keys(last_used_at DESC);
 
 -- =====================================================
 -- 6. USAGE LOGS TABLE (for rate limiting and analytics)
@@ -225,10 +225,10 @@ CREATE TABLE IF NOT EXISTS public.usage_logs (
 );
 
 -- Indexes
-CREATE INDEX idx_usage_logs_user ON public.usage_logs(user_id);
-CREATE INDEX idx_usage_logs_api_key ON public.usage_logs(api_key_id);
-CREATE INDEX idx_usage_logs_created ON public.usage_logs(created_at DESC);
-CREATE INDEX idx_usage_logs_endpoint ON public.usage_logs(endpoint);
+CREATE INDEX IF NOT EXISTS idx_usage_logs_user ON public.usage_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_usage_logs_api_key ON public.usage_logs(api_key_id);
+CREATE INDEX IF NOT EXISTS idx_usage_logs_created ON public.usage_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_usage_logs_endpoint ON public.usage_logs(endpoint);
 
 -- Partitioning (optional - for large scale)
 -- CREATE TABLE usage_logs_2024_12 PARTITION OF usage_logs
@@ -251,16 +251,19 @@ ALTER TABLE public.usage_logs ENABLE ROW LEVEL SECURITY;
 -- =====================================================
 
 -- Users can read only themselves
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.users;
 CREATE POLICY "Users can view their own profile"
   ON public.users FOR SELECT
   USING (auth.uid() = id);
 
 -- Users can update only themselves
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.users;
 CREATE POLICY "Users can update their own profile"
   ON public.users FOR UPDATE
   USING (auth.uid() = id);
 
 -- Insert policy (handled by auth trigger)
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.users;
 CREATE POLICY "Users can insert their own profile"
   ON public.users FOR INSERT
   WITH CHECK (auth.uid() = id);
@@ -270,11 +273,13 @@ CREATE POLICY "Users can insert their own profile"
 -- =====================================================
 
 -- Users can read only their own subscription
+DROP POLICY IF EXISTS "Users can view their own subscription" ON public.subscriptions;
 CREATE POLICY "Users can view their own subscription"
   ON public.subscriptions FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Only service role can insert/update subscriptions
+DROP POLICY IF EXISTS "Service role can manage subscriptions" ON public.subscriptions;
 CREATE POLICY "Service role can manage subscriptions"
   ON public.subscriptions FOR ALL
   USING (auth.role() = 'service_role');
@@ -284,6 +289,7 @@ CREATE POLICY "Service role can manage subscriptions"
 -- =====================================================
 
 -- Agency tier users can read all scraper events
+DROP POLICY IF EXISTS "Agency tier users can view all scraper events" ON public.scraper_events;
 CREATE POLICY "Agency tier users can view all scraper events"
   ON public.scraper_events FOR SELECT
   USING (
@@ -296,6 +302,7 @@ CREATE POLICY "Agency tier users can view all scraper events"
   );
 
 -- Pro tier users can view only their own events
+DROP POLICY IF EXISTS "Pro tier users can view their own scraper events" ON public.scraper_events;
 CREATE POLICY "Pro tier users can view their own scraper events"
   ON public.scraper_events FOR SELECT
   USING (
@@ -309,6 +316,7 @@ CREATE POLICY "Pro tier users can view their own scraper events"
   );
 
 -- Service role can insert events
+DROP POLICY IF EXISTS "Service role can insert scraper events" ON public.scraper_events;
 CREATE POLICY "Service role can insert scraper events"
   ON public.scraper_events FOR INSERT
   WITH CHECK (auth.role() = 'service_role');
@@ -318,6 +326,7 @@ CREATE POLICY "Service role can insert scraper events"
 -- =====================================================
 
 -- Paid tier users can read deal scores
+DROP POLICY IF EXISTS "Paid users can view deal scores" ON public.deal_scores;
 CREATE POLICY "Paid users can view deal scores"
   ON public.deal_scores FOR SELECT
   USING (
@@ -330,11 +339,13 @@ CREATE POLICY "Paid users can view deal scores"
   );
 
 -- Users can view their own deal scores
+DROP POLICY IF EXISTS "Users can view their own deal scores" ON public.deal_scores;
 CREATE POLICY "Users can view their own deal scores"
   ON public.deal_scores FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Service role can manage deal scores
+DROP POLICY IF EXISTS "Service role can manage deal scores" ON public.deal_scores;
 CREATE POLICY "Service role can manage deal scores"
   ON public.deal_scores FOR ALL
   USING (auth.role() = 'service_role');
@@ -344,21 +355,25 @@ CREATE POLICY "Service role can manage deal scores"
 -- =====================================================
 
 -- Users can read only their own API keys
+DROP POLICY IF EXISTS "Users can view their own API keys" ON public.api_keys;
 CREATE POLICY "Users can view their own API keys"
   ON public.api_keys FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Users can insert their own API keys
+DROP POLICY IF EXISTS "Users can create their own API keys" ON public.api_keys;
 CREATE POLICY "Users can create their own API keys"
   ON public.api_keys FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own API keys (e.g., revoke)
+DROP POLICY IF EXISTS "Users can update their own API keys" ON public.api_keys;
 CREATE POLICY "Users can update their own API keys"
   ON public.api_keys FOR UPDATE
   USING (auth.uid() = user_id);
 
 -- Users can delete their own API keys
+DROP POLICY IF EXISTS "Users can delete their own API keys" ON public.api_keys;
 CREATE POLICY "Users can delete their own API keys"
   ON public.api_keys FOR DELETE
   USING (auth.uid() = user_id);
@@ -368,11 +383,13 @@ CREATE POLICY "Users can delete their own API keys"
 -- =====================================================
 
 -- Users can view their own usage logs
+DROP POLICY IF EXISTS "Users can view their own usage logs" ON public.usage_logs;
 CREATE POLICY "Users can view their own usage logs"
   ON public.usage_logs FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Service role can insert usage logs
+DROP POLICY IF EXISTS "Service role can insert usage logs" ON public.usage_logs;
 CREATE POLICY "Service role can insert usage logs"
   ON public.usage_logs FOR INSERT
   WITH CHECK (auth.role() = 'service_role');
@@ -391,11 +408,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply updated_at triggers
+DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
 CREATE TRIGGER update_users_updated_at
   BEFORE UPDATE ON public.users
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_subscriptions_updated_at ON public.subscriptions;
 CREATE TRIGGER update_subscriptions_updated_at
   BEFORE UPDATE ON public.subscriptions
   FOR EACH ROW

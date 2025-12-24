@@ -45,9 +45,9 @@ CREATE TABLE IF NOT EXISTS shipping_requests (
   requested_by TEXT DEFAULT 'auto'
 );
 
-CREATE INDEX idx_shipping_requests_order ON shipping_requests(order_id);
-CREATE INDEX idx_shipping_requests_user ON shipping_requests(user_id);
-CREATE INDEX idx_shipping_requests_status ON shipping_requests(status);
+CREATE INDEX IF NOT EXISTS idx_shipping_requests_order ON shipping_requests(order_id);
+CREATE INDEX IF NOT EXISTS idx_shipping_requests_user ON shipping_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_shipping_requests_status ON shipping_requests(status);
 
 -- =============================================================================
 -- SHIPPING LABELS TABLE
@@ -87,10 +87,10 @@ CREATE TABLE IF NOT EXISTS shipping_labels (
   raw_response JSONB
 );
 
-CREATE INDEX idx_shipping_labels_request ON shipping_labels(shipping_request_id);
-CREATE INDEX idx_shipping_labels_order ON shipping_labels(order_id);
-CREATE INDEX idx_shipping_labels_tracking ON shipping_labels(tracking_number);
-CREATE INDEX idx_shipping_labels_status ON shipping_labels(status);
+CREATE INDEX IF NOT EXISTS idx_shipping_labels_request ON shipping_labels(shipping_request_id);
+CREATE INDEX IF NOT EXISTS idx_shipping_labels_order ON shipping_labels(order_id);
+CREATE INDEX IF NOT EXISTS idx_shipping_labels_tracking ON shipping_labels(tracking_number);
+CREATE INDEX IF NOT EXISTS idx_shipping_labels_status ON shipping_labels(status);
 
 -- =============================================================================
 -- TRACKING EVENTS TABLE
@@ -109,9 +109,9 @@ CREATE TABLE IF NOT EXISTS tracking_events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_tracking_events_tracking ON tracking_events(tracking_number);
-CREATE INDEX idx_tracking_events_status ON tracking_events(status);
-CREATE INDEX idx_tracking_events_timestamp ON tracking_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_tracking ON tracking_events(tracking_number);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_status ON tracking_events(status);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_timestamp ON tracking_events(timestamp);
 
 -- =============================================================================
 -- CARRIER CONFIGURATIONS TABLE
@@ -134,8 +134,8 @@ CREATE TABLE IF NOT EXISTS carrier_configs (
   UNIQUE(user_id, carrier)
 );
 
-CREATE INDEX idx_carrier_configs_user ON carrier_configs(user_id);
-CREATE INDEX idx_carrier_configs_carrier ON carrier_configs(carrier);
+CREATE INDEX IF NOT EXISTS idx_carrier_configs_user ON carrier_configs(user_id);
+CREATE INDEX IF NOT EXISTS idx_carrier_configs_carrier ON carrier_configs(carrier);
 
 -- =============================================================================
 -- PACKAGING RECOMMENDATIONS TABLE
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS packaging_recommendations (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_packaging_inventory ON packaging_recommendations(inventory_item_id);
+CREATE INDEX IF NOT EXISTS idx_packaging_inventory ON packaging_recommendations(inventory_item_id);
 
 -- =============================================================================
 -- FULFILLMENT WORKFLOWS TABLE
@@ -171,10 +171,10 @@ CREATE TABLE IF NOT EXISTS fulfillment_workflows (
   completed_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_fulfillment_workflows_sale ON fulfillment_workflows(sale_id);
-CREATE INDEX idx_fulfillment_workflows_order ON fulfillment_workflows(order_id);
-CREATE INDEX idx_fulfillment_workflows_user ON fulfillment_workflows(user_id);
-CREATE INDEX idx_fulfillment_workflows_status ON fulfillment_workflows(status);
+CREATE INDEX IF NOT EXISTS idx_fulfillment_workflows_sale ON fulfillment_workflows(sale_id);
+CREATE INDEX IF NOT EXISTS idx_fulfillment_workflows_order ON fulfillment_workflows(order_id);
+CREATE INDEX IF NOT EXISTS idx_fulfillment_workflows_user ON fulfillment_workflows(user_id);
+CREATE INDEX IF NOT EXISTS idx_fulfillment_workflows_status ON fulfillment_workflows(status);
 
 -- =============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -189,47 +189,57 @@ ALTER TABLE packaging_recommendations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fulfillment_workflows ENABLE ROW LEVEL SECURITY;
 
 -- Shipping Requests Policies
+DROP POLICY IF EXISTS "Users can view their own shipping requests" ON shipping_requests;
 CREATE POLICY "Users can view their own shipping requests"
   ON shipping_requests FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage shipping requests" ON shipping_requests;
 CREATE POLICY "Service role can manage shipping requests"
   ON shipping_requests FOR ALL
   USING (true);
 
 -- Shipping Labels Policies
+DROP POLICY IF EXISTS "Service role can manage shipping labels" ON shipping_labels;
 CREATE POLICY "Service role can manage shipping labels"
   ON shipping_labels FOR ALL
   USING (true);
 
 -- Tracking Events Policies (public read for tracking pages)
+DROP POLICY IF EXISTS "Anyone can view tracking events" ON tracking_events;
 CREATE POLICY "Anyone can view tracking events"
   ON tracking_events FOR SELECT
   USING (true);
 
+DROP POLICY IF EXISTS "Service role can insert tracking events" ON tracking_events;
 CREATE POLICY "Service role can insert tracking events"
   ON tracking_events FOR INSERT
   WITH CHECK (true);
 
 -- Carrier Configs Policies
+DROP POLICY IF EXISTS "Users can view their own carrier configs" ON carrier_configs;
 CREATE POLICY "Users can view their own carrier configs"
   ON carrier_configs FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can manage their own carrier configs" ON carrier_configs;
 CREATE POLICY "Users can manage their own carrier configs"
   ON carrier_configs FOR ALL
   USING (auth.uid() = user_id);
 
 -- Packaging Recommendations Policies
+DROP POLICY IF EXISTS "Service role can manage packaging recommendations" ON packaging_recommendations;
 CREATE POLICY "Service role can manage packaging recommendations"
   ON packaging_recommendations FOR ALL
   USING (true);
 
 -- Fulfillment Workflows Policies
+DROP POLICY IF EXISTS "Users can view their own workflows" ON fulfillment_workflows;
 CREATE POLICY "Users can view their own workflows"
   ON fulfillment_workflows FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage workflows" ON fulfillment_workflows;
 CREATE POLICY "Service role can manage workflows"
   ON fulfillment_workflows FOR ALL
   USING (true);
@@ -239,6 +249,7 @@ CREATE POLICY "Service role can manage workflows"
 -- =============================================================================
 
 -- Update timestamp trigger
+DROP TRIGGER IF EXISTS carrier_configs_updated_at ON carrier_configs;
 CREATE TRIGGER carrier_configs_updated_at
   BEFORE UPDATE ON carrier_configs
   FOR EACH ROW
