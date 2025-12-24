@@ -21,6 +21,11 @@ import { isDemoUser } from "@/lib/demo/demoData";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+type MarketplaceStats = {
+  count: number;
+  avgHeat: number;
+};
+
 type LiveDeal = {
   id: string;
   title: string;
