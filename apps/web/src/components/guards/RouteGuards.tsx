@@ -45,7 +45,7 @@
 
 import { ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/app/providers/AuthProvider';
 
 // ============================================================================
 // Loading Component (Shared)
@@ -72,12 +72,12 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, redirectTo = '/login' }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       // Store current path for post-auth redirect
       if (pathname && pathname !== '/login') {
         localStorage.setItem('post_auth_redirect', pathname);
@@ -88,10 +88,10 @@ export function ProtectedRoute({ children, redirectTo = '/login' }: ProtectedRou
       redirectUrl.searchParams.set('redirect', pathname || '/dashboard');
       router.push(redirectUrl.toString().replace(window.location.origin, ''));
     }
-  }, [isAuthenticated, loading, router, pathname, redirectTo]);
+  }, [isAuthenticated, isLoading, router, pathname, redirectTo]);
 
   // Show loading state while checking auth
-  if (loading) {
+  if (isLoading) {
     return <GuardLoadingState message="Verifying authentication..." />;
   }
 
@@ -113,19 +113,19 @@ interface OnboardingGuardProps {
 }
 
 export function OnboardingGuard({ children }: OnboardingGuardProps) {
-  const { profile, loading, isAuthenticated } = useAuth();
+  const { profile, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && isAuthenticated && profile) {
+    if (!isLoading && isAuthenticated && profile) {
       if (!profile.onboarding_completed) {
         router.push('/onboarding');
       }
     }
-  }, [profile, loading, isAuthenticated, router]);
+  }, [profile, isLoading, isAuthenticated, router]);
 
   // Show loading while checking profile
-  if (loading || !profile) {
+  if (isLoading || !profile) {
     return <GuardLoadingState message="Checking onboarding status..." />;
   }
 
@@ -158,11 +158,11 @@ interface PlanGuardProps {
 }
 
 export function PlanGuard({ children, requiredPlan, fallbackRoute = '/upgrade' }: PlanGuardProps) {
-  const { profile, loading, isAuthenticated } = useAuth();
+  const { profile, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && isAuthenticated && profile) {
+    if (!isLoading && isAuthenticated && profile) {
       const userPlanRank = PLAN_RANKS[profile.plan as Plan] || 0;
       const requiredPlanRank = PLAN_RANKS[requiredPlan] || 0;
 
@@ -173,10 +173,10 @@ export function PlanGuard({ children, requiredPlan, fallbackRoute = '/upgrade' }
         router.push(upgradeUrl.toString().replace(window.location.origin, ''));
       }
     }
-  }, [profile, loading, isAuthenticated, router, requiredPlan, fallbackRoute]);
+  }, [profile, isLoading, isAuthenticated, router, requiredPlan, fallbackRoute]);
 
   // Show loading while checking profile
-  if (loading || !profile) {
+  if (isLoading || !profile) {
     return <GuardLoadingState message="Checking plan access..." />;
   }
 
@@ -202,19 +202,19 @@ interface AdminGuardProps {
 }
 
 export function AdminGuard({ children, fallbackRoute = '/unauthorized' }: AdminGuardProps) {
-  const { profile, isAdmin, loading, isAuthenticated } = useAuth();
+  const { profile, isAdmin, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && isAuthenticated && profile) {
+    if (!isLoading && isAuthenticated && profile) {
       if (!isAdmin) {
         router.push(fallbackRoute);
       }
     }
-  }, [profile, isAdmin, loading, isAuthenticated, router, fallbackRoute]);
+  }, [profile, isAdmin, isLoading, isAuthenticated, router, fallbackRoute]);
 
   // Show loading while checking profile
-  if (loading || !profile) {
+  if (isLoading || !profile) {
     return <GuardLoadingState message="Verifying admin access..." />;
   }
 

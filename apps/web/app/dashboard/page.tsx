@@ -323,7 +323,7 @@ async function DashboardContent() {
                       {health.error_rate}%
                     </span>
                   </div>
-                  {isDelayed && health.status === "healthy" && (
+                  {isDelayed && (health.status as string) !== "down" && (health.status as string) !== "degraded" && (
                     <div className="text-xs text-yellow-400/80 mt-2 pt-2 border-t border-[#2a2a2a]">
                       ⚠ Last run &gt; 1 hour ago
                     </div>

@@ -19,13 +19,13 @@
  * - Handles race conditions with session hydration
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/client';
 
 const ALLOWED_REDIRECT_PATHS = ['/dashboard', '/admin', '/profile', '/settings'];
 
-export default function AuthCallback() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +145,21 @@ export default function AuthCallback() {
         <p className="text-[#6E7681] text-sm mt-2">Please wait while we redirect you</p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0D1117] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4FF0E6] border-t-transparent mb-4"></div>
+          <p className="text-[#ededed] text-lg">Loading...</p>
+        </div>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
 

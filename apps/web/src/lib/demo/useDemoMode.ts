@@ -26,7 +26,7 @@
  * 3. Remove conditional rendering
  */
 
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { getDemoDashboardData, isDemoUser } from './demoData';
 
 export function useDemoMode() {

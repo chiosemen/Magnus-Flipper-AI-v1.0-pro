@@ -7,7 +7,7 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/app/providers/AuthProvider';
 
 export default function UnauthorizedPage() {
   const router = useRouter();

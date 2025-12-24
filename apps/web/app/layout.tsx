@@ -10,12 +10,12 @@ import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
 import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { AppProviders } from "@/providers/AppProviders";
-import { AuthProvider } from "@/providers/AuthProvider";
+import { AuthProvider } from "@/app/providers/AuthProvider";
+import { AppProviders } from "@/app/providers/AppProviders";
 
 const queryClient = new QueryClient();
 
-export default function RootLayout({ children }: any) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning data-theme="dark">
       <head>
@@ -28,10 +28,10 @@ export default function RootLayout({ children }: any) {
         <meta name="twitter:title" content="Magnus Flipper – AI Marketplace Intelligence" />
         <meta name="twitter:description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
       </head>
-      <body 
+      <body
         className="font-body antialiased"
-        style={{ 
-          position: "relative", 
+        style={{
+          position: "relative",
           overflowX: "hidden"
         }}
       >
@@ -42,7 +42,7 @@ export default function RootLayout({ children }: any) {
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
-                  {children as React.ReactNode}
+                  {children}
                 </TooltipProvider>
               </QueryClientProvider>
             </ThemeProvider>

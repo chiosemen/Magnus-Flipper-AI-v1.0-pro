@@ -14,7 +14,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/app/providers/AuthProvider';
 
 interface GuardProps {
   children: React.ReactNode;

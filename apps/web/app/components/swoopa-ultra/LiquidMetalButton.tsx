@@ -10,6 +10,7 @@ interface LiquidMetalButtonProps {
   href?: string;
   className?: string;
   variant?: "primary" | "secondary" | "ghost";
+  disabled?: boolean;
 }
 
 export function LiquidMetalButton({
@@ -18,6 +19,7 @@ export function LiquidMetalButton({
   href,
   className = "",
   variant = "primary",
+  disabled = false,
 }: LiquidMetalButtonProps) {
   const baseClasses =
     variant === "primary"
@@ -26,14 +28,16 @@ export function LiquidMetalButton({
       ? "bg-gradient-to-r from-neutral-800 to-neutral-900 text-white border border-neutral-700"
       : "bg-transparent text-white border border-neutral-700";
 
+  const disabledClasses = disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer";
+
   const buttonContent = (
     <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className={`relative px-8 py-4 rounded-xl font-semibold overflow-hidden ${baseClasses} ${className} inline-block cursor-pointer`}
-      onClick={onClick}
+      whileHover={disabled ? {} : { scale: 1.05 }}
+      whileTap={disabled ? {} : { scale: 0.95 }}
+      className={`relative px-8 py-4 rounded-xl font-semibold overflow-hidden ${baseClasses} ${disabledClasses} ${className} inline-block`}
+      onClick={disabled ? undefined : onClick}
       style={{
-        boxShadow: "0 0 30px rgba(147, 51, 234, 0.4), 0 0 60px rgba(59, 130, 246, 0.2)",
+        boxShadow: disabled ? "none" : "0 0 30px rgba(147, 51, 234, 0.4), 0 0 60px rgba(59, 130, 246, 0.2)",
       }}
     >
       <motion.div

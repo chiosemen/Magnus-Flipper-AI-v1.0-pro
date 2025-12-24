@@ -21,7 +21,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
 
