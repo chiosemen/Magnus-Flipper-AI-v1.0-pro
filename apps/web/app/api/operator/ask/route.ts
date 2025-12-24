@@ -6,8 +6,59 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUser, createSupabaseServer } from '@/lib/supabase/server';
-import { explainAnomaly } from '@magnus-flipper-ai/operator-agent';
+// import { explainAnomaly } from '@magnus-flipper-ai/operator-agent';
 import { createClient } from '@supabase/supabase-js';
+
+// Stub function to unblock production build
+// TODO: Re-enable operator-agent once package build issues are resolved
+async function explainAnomaly(input: {
+  question: string;
+  marketplace?: string;
+  timeWindowHours?: number;
+}): Promise<{
+  severity: 'low' | 'medium' | 'high' | 'critical' | 'unknown';
+  confidence: number;
+  diagnosis: string;
+  evidence: {
+    anomalies: any[];
+    runs: any[];
+    decisions: any[];
+    kb_citations: string[];
+  };
+  reasoning_trace: {
+    signals_used: string[];
+    discarded_signals: string[];
+    hypotheses_considered: string[];
+    false_positive_risk: 'low' | 'medium' | 'high';
+  };
+  recommendations: string[];
+  health_snapshot?: {
+    marketplace: string;
+    score: number;
+    trend: 'improving' | 'stable' | 'degrading';
+    dominant_failure_mode?: string;
+  };
+  proposed_change_request_id?: string;
+}> {
+  return {
+    severity: 'unknown',
+    confidence: 0,
+    diagnosis: 'Operator agent temporarily disabled for production deploy',
+    evidence: {
+      anomalies: [],
+      runs: [],
+      decisions: [],
+      kb_citations: [],
+    },
+    reasoning_trace: {
+      signals_used: [],
+      discarded_signals: [],
+      hypotheses_considered: [],
+      false_positive_risk: 'low',
+    },
+    recommendations: ['Re-enable operator-agent package after build issues are resolved'],
+  };
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
