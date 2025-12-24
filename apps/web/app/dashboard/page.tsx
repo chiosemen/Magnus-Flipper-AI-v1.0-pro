@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { createSupabaseServer, getUser } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import { SafeImage } from "@/components/ui/SafeImage";
@@ -12,263 +12,16 @@ import { AdminControlsPanel } from "./_components/AdminControlsPanel";
 import { ScraperActivity } from "@/components/ScraperActivity";
 import { AdminBanner } from "@/components/AdminBanner";
 import { isAdmin } from "@/lib/admin/auth";
+import { getDashboardDataWithDemo } from "@/lib/demo/serverDemoMode";
+import { isDemoUser } from "@/lib/demo/demoData";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// Pooled-only dashboard queries
+// Dashboard queries - uses demo data for demo users, real data for others
 async function getDashboardData() {
-  const supabase = await createSupabaseServer();
-
-  // A) Market Overview - ALL queries filter for pooled deals (search_id IS NULL)
-  const now = new Date();
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-  // Total pooled deals (search_id IS NULL, not stale)
-  const { count: totalDeals } = await supabase
-    .from("scraped_listings")
-    .select("*", { count: "exact", head: true })
-    .is("search_id", null)
-    .eq("is_stale", false);
-
-  // New in 24h
-  const { count: new24h } = await supabase
-    .from("scraped_listings")
-    .select("*", { count: "exact", head: true })
-    .is("search_id", null)
-    .eq("is_stale", false)
-    .gte("first_seen_at", yesterday.toISOString());
-
-  // Hot deals (freshness_score >= 80)
-  const { count: hotDeals } = await supabase
-    .from("scraped_listings")
-    .select("*", { count: "exact", head: true })
-    .is("search_id", null)
-    .eq("is_stale", false)
-    .gte("freshness_score", 80);
-
-  // Freshness percentage (>= 70 score)
-  const { count: freshCount } = await supabase
-    .from("scraped_listings")
-    .select("*", { count: "exact", head: true })
-    .is("search_id", null)
-    .eq("is_stale", false)
-    .gte("freshness_score", 70);
-
-  const freshnessPercent = totalDeals ? Math.round((freshCount! / totalDeals) * 100) : 0;
-
-  // B) Marketplace Breakdown
-  const { data: marketplaceStats } = await supabase
-    .from("scraped_listings")
-    .select("marketplace, freshness_score")
-    .is("search_id", null)
-    .eq("is_stale", false);
-
-  // Group by marketplace
-  const marketplaceCounts: Record<string, { count: number; avgHeat: number }> = {};
-  (marketplaceStats || []).forEach((item) => {
-    const mp = item.marketplace || "unknown";
-    if (!marketplaceCounts[mp]) {
-      marketplaceCounts[mp] = { count: 0, avgHeat: 0 };
-    }
-    marketplaceCounts[mp].count++;
-    marketplaceCounts[mp].avgHeat += item.freshness_score || 0;
-  });
-
-  // Calculate averages
-  Object.keys(marketplaceCounts).forEach((mp) => {
-    marketplaceCounts[mp].avgHeat = Math.round(
-      marketplaceCounts[mp].avgHeat / marketplaceCounts[mp].count
-    );
-  });
-
-  // C) Live Snapshots - top 8 newest/hottest deals with images
-  const { data: liveDeals } = await supabase
-    .from("scraped_listings")
-    .select("id, title, marketplace, price, link, images, freshness_score")
-    .is("search_id", null)
-    .eq("is_stale", false)
-    .not("images", "is", null)
-    .order("freshness_score", { ascending: false })
-    .order("first_seen_at", { ascending: false })
-    .limit(8);
-
-  // D) Saved Searches Snapshot
-  const { data: savedSearches } = await supabase
-    .from("saved_searches")
-    .select("marketplaces")
-    .eq("active", true);
-
-  // Count by marketplace
-  const searchesByMarketplace: Record<string, number> = {};
-  (savedSearches || []).forEach((search) => {
-    (search.marketplaces || []).forEach((mp: string) => {
-      searchesByMarketplace[mp] = (searchesByMarketplace[mp] || 0) + 1;
-    });
-  });
-
-  // E) System Health
-  const { data: scraperHealth } = await supabase
-    .from("scraper_health")
-    .select("marketplace, status, last_run_at, last_success_at, error_rate")
-    .order("marketplace");
-
-  // ============================================================================
-  // ADMIN OPERATIONS METRICS (Read-only, pooled data)
-  // ============================================================================
-  // These metrics are admin-only and track system operations without triggering
-  // any scraping, scheduling, or queue operations.
-
-  // F) Deals marked stale in last 24h (pooled-only)
-  // SAFE: Read-only count query, no mutations
-  const { count: staleDeals24h } = await supabase
-    .from("scraped_listings")
-    .select("*", { count: "exact", head: true })
-    .is("search_id", null) // Pooled-only
-    .eq("is_stale", true)
-    .gte("updated_at", yesterday.toISOString());
-
-  // G) Active pools count (distinct marketplaces with pooled deals)
-  // SAFE: Aggregation query, no mutations or job triggers
-  const { data: activePools } = await supabase
-    .from("scraped_listings")
-    .select("marketplace")
-    .is("search_id", null) // Pooled-only
-    .eq("is_stale", false);
-
-  const activePoolsCount = new Set(
-    (activePools || []).map((item) => item.marketplace)
-  ).size;
-
-  // H) Alerts sent in last 24h (all users, read-only)
-  // SAFE: Read-only count from alert_notifications table
-  // NOTE: This table exists if alert system is enabled, otherwise returns 0
-  const { count: alertsSent24h } = await supabase
-    .from("alert_notifications")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "SENT")
-    .gte("created_at", yesterday.toISOString());
-
-  // ============================================================================
-  // POOL HEALTH METRICS (Read-only, grouped pooled data)
-  // ============================================================================
-  // Group scraped_listings by marketplace + region to infer "pools"
-  // Calculate health metrics without triggering any scraping or mutations
-  // SAFE: Read-only aggregation query, no cron, no polling, no side effects
-
-  const { data: poolData } = await supabase
-    .from("scraped_listings")
-    .select("marketplace, location, is_stale, last_seen_at")
-    .is("search_id", null); // Pooled-only
-
-  // Group by marketplace + region (location)
-  const poolGroups = new Map<string, {
-    marketplace: string;
-    region: string;
-    deals: Array<{ is_stale: boolean; last_seen_at: string }>;
-  }>();
-
-  (poolData || []).forEach((item) => {
-    const region = item.location || "Unknown";
-    const poolKey = `${item.marketplace}_${region}`;
-
-    if (!poolGroups.has(poolKey)) {
-      poolGroups.set(poolKey, {
-        marketplace: item.marketplace,
-        region,
-        deals: [],
-      });
-    }
-
-    poolGroups.get(poolKey)!.deals.push({
-      is_stale: item.is_stale,
-      last_seen_at: item.last_seen_at,
-    });
-  });
-
-  // Calculate health metrics for each pool
-  const calculatePoolHealth = (
-    deals: Array<{ is_stale: boolean; last_seen_at: string }>
-  ): {
-    lastScrapeAt: Date | null;
-    dealCount: number;
-    staleCount: number;
-    stalePercent: number;
-    status: PoolHealthStatus;
-  } => {
-    const dealCount = deals.length;
-    const staleCount = deals.filter((d) => d.is_stale).length;
-    const stalePercent = dealCount > 0 ? (staleCount / dealCount) * 100 : 0;
-
-    // Find most recent scrape timestamp
-    const lastScrapeAt = deals.length > 0
-      ? new Date(
-          Math.max(
-            ...deals.map((d) => new Date(d.last_seen_at).getTime())
-          )
-        )
-      : null;
-
-    // Calculate time since last scrape
-    const minutesSinceLastScrape = lastScrapeAt
-      ? (Date.now() - lastScrapeAt.getTime()) / 60000
-      : Infinity;
-
-    // Determine health status
-    // Healthy: last_scrape < 15 min AND stale < 20%
-    // Degraded: last_scrape < 1 hr OR stale 20–50%
-    // Stale: last_scrape > 1 hr OR stale > 50%
-    let status: PoolHealthStatus;
-    if (minutesSinceLastScrape < 15 && stalePercent < 20) {
-      status = "healthy";
-    } else if (minutesSinceLastScrape > 60 || stalePercent > 50) {
-      status = "stale";
-    } else {
-      status = "degraded";
-    }
-
-    return {
-      lastScrapeAt,
-      dealCount,
-      staleCount,
-      stalePercent,
-      status,
-    };
-  };
-
-  const poolHealthData: PoolHealthData[] = Array.from(poolGroups.entries()).map(
-    ([poolKey, group]) => {
-      const health = calculatePoolHealth(group.deals);
-      return {
-        poolId: poolKey,
-        marketplace: group.marketplace,
-        region: group.region,
-        ...health,
-      };
-    }
-  );
-
-  return {
-    overview: {
-      totalDeals: totalDeals || 0,
-      new24h: new24h || 0,
-      hotDeals: hotDeals || 0,
-      freshnessPercent,
-    },
-    marketplaceBreakdown: marketplaceCounts,
-    liveDeals: liveDeals || [],
-    savedSearchesCount: savedSearches?.length || 0,
-    searchesByMarketplace,
-    scraperHealth: scraperHealth || [],
-    // Admin operations metrics
-    adminMetrics: {
-      staleDeals24h: staleDeals24h || 0,
-      activePoolsCount,
-      alertsSent24h: alertsSent24h || 0,
-    },
-    // Pool health data
-    poolHealthData,
-  };
+  const user = await getUser();
+  return await getDashboardDataWithDemo(user);
 }
 
 function getHeatBadge(avgHeat: number) {
@@ -290,14 +43,31 @@ function getHealthBadge(status: string, lastRunAt: string | null) {
 async function DashboardContent() {
   const data = await getDashboardData();
   const userIsAdmin = await isAdmin();
+  const user = await getUser();
+  const isDemo = isDemoUser(user?.email);
 
   return (
     <div className="space-y-6">
+      {/* Demo Mode Banner */}
+      {isDemo && (
+        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">🎭</div>
+            <div>
+              <h3 className="text-blue-400 font-semibold">Demo Mode Active</h3>
+              <p className="text-sm text-blue-300/80">
+                You're viewing demo data. Sign up with a real email to access live marketplace intelligence.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin Banner */}
       {userIsAdmin && <AdminBanner />}
 
       {/* Admin Kill-Switches (SAFE MODE) */}
-      <AdminControlsPanel />
+      {userIsAdmin && <AdminControlsPanel />}
 
       {/* A) Market Overview */}
       <section>
@@ -579,27 +349,25 @@ async function DashboardContent() {
 
 export default async function DashboardPage() {
   // ============================================================================
-  // ADMIN GUARD: Server-side authentication enforcement
+  // AUTH CHECK: Server-side authentication enforcement
   // ============================================================================
-  // This check runs BEFORE any data fetching or component rendering.
-  // Non-admin users are redirected immediately, preventing unauthorized access
-  // to pooled marketplace data and system metrics.
+  // Layout guards (ProtectedRoute + OnboardingGuard) provide client-side protection
+  // This is the server-side verification layer
   const user = await getUser();
 
-  // Check 1: User must be authenticated
+  // Check: User must be authenticated
   if (!user) {
-    redirect("/");
+    redirect("/login");
   }
 
-  // Check 2: User must have admin role in app_metadata
-  // app_metadata.role is set by Supabase Auth and cannot be modified by users
-  const userRole = user.app_metadata?.role as string | undefined;
-  if (userRole !== "admin") {
-    redirect("/");
-  }
+  // Note: Admin-specific features are gated within components
+  // Demo users and regular users can see dashboard, but with different data
+  // Admin users see pooled data + admin controls
+  // Demo users (@demo.* emails) see seeded demo data
+  // Regular users see their personal saved searches and deals
 
   // ============================================================================
-  // Admin user verified - proceed with dashboard render
+  // Render dashboard for authenticated users
   // ============================================================================
 
   return (
