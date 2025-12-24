@@ -1,14 +1,49 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FloatingParticles } from "../components/swoopa-motion/FloatingParticles";
 import { SwoopaAIOrb } from "../components/swoopa-ultra/SwoopaAIOrb";
 import { LiquidMetalButton } from "../components/swoopa-ultra/LiquidMetalButton";
 import { NeonCard } from "../components/swoopa-ultra/NeonCard";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function LoginPage() {
   const [isTyping, setIsTyping] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { signIn, isAuthenticated } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      router.push(redirect);
+    }
+  }, [isAuthenticated, router, searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error: signInError } = await signIn(email, password);
+
+    if (signInError) {
+      setError(signInError.message || 'Invalid email or password');
+      setLoading(false);
+      return;
+    }
+
+    // Success - auth state will update and useEffect will redirect
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-purple-950/30 via-blue-950/20 to-black text-white flex items-center justify-center px-6 relative overflow-hidden">
@@ -60,11 +95,20 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="text-neutral-300 mb-8">Sign in to your Magnus account</p>
-          <form className="flex flex-col gap-5">
+          {error && (
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 mb-4">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <motion.input
               type="email"
               placeholder="Email address"
-              className="bg-black/50 border border-purple-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+              className="bg-black/50 border border-purple-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
               whileFocus={{ scale: 1.02 }}
               onFocus={() => setIsTyping(true)}
@@ -74,7 +118,11 @@ export default function LoginPage() {
             <motion.input
               type="password"
               placeholder="Password"
-              className="bg-black/50 border border-purple-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+              className="bg-black/50 border border-purple-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
               whileFocus={{ scale: 1.02 }}
               onFocus={() => setIsTyping(true)}
@@ -82,8 +130,8 @@ export default function LoginPage() {
               animate={isTyping ? { boxShadow: "0 0 20px rgba(59, 130, 246, 0.5)" } : {}}
             />
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <LiquidMetalButton variant="primary" className="w-full">
-                Sign In
+              <LiquidMetalButton variant="primary" className="w-full" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
               </LiquidMetalButton>
             </motion.div>
           </form>

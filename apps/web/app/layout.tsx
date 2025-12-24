@@ -10,6 +10,7 @@ import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
 import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
+import { AppProviders } from "@/providers/AppProviders";
 
 const queryClient = new QueryClient();
 
@@ -33,15 +34,17 @@ export default function RootLayout({ children }: any) {
           overflowX: "hidden"
         }}
       >
-        <ThemeProvider defaultTheme="dark">
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              {children as React.ReactNode}
-            </TooltipProvider>
-          </QueryClientProvider>
-        </ThemeProvider>
+        <AppProviders>
+          <ThemeProvider defaultTheme="dark">
+            <QueryClientProvider client={queryClient}>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                {children as React.ReactNode}
+              </TooltipProvider>
+            </QueryClientProvider>
+          </ThemeProvider>
+        </AppProviders>
       </body>
     </html>
   );

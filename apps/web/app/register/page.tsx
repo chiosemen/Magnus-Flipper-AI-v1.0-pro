@@ -1,14 +1,60 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FloatingParticles } from "../components/swoopa-motion/FloatingParticles";
 import { SwoopaAIOrb } from "../components/swoopa-ultra/SwoopaAIOrb";
 import { LiquidMetalButton } from "../components/swoopa-ultra/LiquidMetalButton";
 import { NeonCard } from "../components/swoopa-ultra/NeonCard";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function RegisterPage() {
   const [isTyping, setIsTyping] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { signUp, isAuthenticated } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      router.push(redirect);
+    }
+  }, [isAuthenticated, router, searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    // Basic validation
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    const { error: signUpError } = await signUp(email, password, fullName);
+
+    if (signUpError) {
+      setError(signUpError.message || 'Failed to create account. Please try again.');
+      setLoading(false);
+      return;
+    }
+
+    // Success - show confirmation message
+    setSuccess(true);
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-950 via-purple-950/40 via-blue-950/30 to-black text-white flex items-center justify-center px-6 relative overflow-hidden">
@@ -62,11 +108,46 @@ export default function RegisterPage() {
           <p className="text-neutral-300 mb-8">
             Start flipping with real-time AI power.
           </p>
-          <form className="flex flex-col gap-5">
+
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-4">
+              <p className="text-green-400 text-sm font-medium mb-2">✓ Account created!</p>
+              <p className="text-green-300 text-sm">
+                Please check your email to verify your account, then sign in.
+              </p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 mb-4">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <motion.input
+              type="text"
+              placeholder="Full Name (optional)"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              disabled={loading || success}
+              className="bg-black/50 border border-blue-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition disabled:opacity-50"
+              whileHover={{ scale: 1.02 }}
+              whileFocus={{ scale: 1.02 }}
+              onFocus={() => setIsTyping(true)}
+              onBlur={() => setIsTyping(false)}
+              animate={isTyping ? { boxShadow: "0 0 20px rgba(59, 130, 246, 0.5)" } : {}}
+            />
             <motion.input
               type="email"
               placeholder="Email"
-              className="bg-black/50 border border-blue-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading || success}
+              className="bg-black/50 border border-blue-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
               whileFocus={{ scale: 1.02 }}
               onFocus={() => setIsTyping(true)}
@@ -75,19 +156,26 @@ export default function RegisterPage() {
             />
             <motion.input
               type="password"
-              placeholder="Password"
-              className="bg-black/50 border border-blue-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition"
+              placeholder="Password (min 6 characters)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading || success}
+              minLength={6}
+              className="bg-black/50 border border-blue-500/30 p-4 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
               whileFocus={{ scale: 1.02 }}
               onFocus={() => setIsTyping(true)}
               onBlur={() => setIsTyping(false)}
               animate={isTyping ? { boxShadow: "0 0 20px rgba(147, 51, 234, 0.5)" } : {}}
             />
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <LiquidMetalButton variant="primary" className="w-full">
-                Create Account
-              </LiquidMetalButton>
-            </motion.div>
+            {!success && (
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <LiquidMetalButton variant="primary" className="w-full" disabled={loading}>
+                  {loading ? 'Creating Account...' : 'Create Account'}
+                </LiquidMetalButton>
+              </motion.div>
+            )}
           </form>
           <p className="text-neutral-300 mt-8 text-center">
             Already have an account?{" "}
