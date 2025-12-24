@@ -437,8 +437,13 @@ export default async function DashboardPage() {
     return (
       <div className="min-h-screen bg-[#0D1117] p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
+          {/* VISUAL VERIFICATION MARKER - If you see this, the dashboard IS mounting */}
+          <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-2 z-50 font-bold text-xl animate-pulse">
+            ✅ DASHBOARD PAGE IS RENDERING - apps/web/app/dashboard/page.tsx
+          </div>
+
           {/* Prominent Development Mode Banner */}
-          <div className="mb-6 relative overflow-hidden">
+          <div className="mb-6 mt-16 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 animate-pulse" />
             <div className="relative bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-2 border-yellow-500/50 rounded-lg p-4 shadow-lg shadow-yellow-500/20">
               <div className="flex items-center gap-3">
