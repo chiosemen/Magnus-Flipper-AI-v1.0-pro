@@ -23,6 +23,12 @@ export const revalidate = 0;
 
 // Dashboard queries - uses demo data for demo users, real data for others
 async function getDashboardData() {
+  // DEVELOPMENT MODE: Use null user for demo data
+  if (process.env.DISABLE_AUTH_GUARD === 'true') {
+    console.log('[getDashboardData] 🚫 AUTH DISABLED - Using demo data');
+    return await getDashboardDataWithDemo(null);
+  }
+
   const user = await getUser();
   return await getDashboardDataWithDemo(user);
 }
@@ -39,9 +45,23 @@ function getHealthBadge(status: string, lastRunAt: string | null) {
 
 async function DashboardContent() {
   const data = await getDashboardData();
+
+  // DEVELOPMENT MODE: Assume non-admin, non-demo user
+  if (process.env.DISABLE_AUTH_GUARD === 'true') {
+    const userIsAdmin = false;
+    const isDemo = false;
+
+    return renderDashboard(data, userIsAdmin, isDemo);
+  }
+
   const userIsAdmin = await isAdmin();
   const user = await getUser();
   const isDemo = isDemoUser(user?.email);
+
+  return renderDashboard(data, userIsAdmin, isDemo);
+}
+
+function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
 
   return (
     <div className="space-y-6">
@@ -409,6 +429,57 @@ export default async function DashboardPage() {
   // ============================================================================
   // AUTH CHECK: Server-side authentication enforcement
   // ============================================================================
+
+  // DEVELOPMENT MODE: Bypass server-side auth check
+  if (process.env.DISABLE_AUTH_GUARD === 'true') {
+    console.log('[dashboard/page] 🚫 AUTH DISABLED - Rendering without user check');
+    // Render directly without auth - with prominent warning banner
+    return (
+      <div className="min-h-screen bg-[#0D1117] p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Prominent Development Mode Banner */}
+          <div className="mb-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 animate-pulse" />
+            <div className="relative bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-2 border-yellow-500/50 rounded-lg p-4 shadow-lg shadow-yellow-500/20">
+              <div className="flex items-center gap-3">
+                <div className="text-4xl animate-bounce">🚫</div>
+                <div className="flex-1">
+                  <div className="text-yellow-300 text-lg font-bold mb-1">
+                    ⚠️ DEVELOPMENT MODE ACTIVE
+                  </div>
+                  <div className="text-yellow-200/80 text-sm">
+                    All authentication checks DISABLED • Dashboard rendering without user verification
+                  </div>
+                  <div className="text-yellow-400/60 text-xs mt-1 font-mono">
+                    DISABLE_AUTH_GUARD=true
+                  </div>
+                </div>
+                <div className="hidden sm:block">
+                  <div className="bg-yellow-500/20 rounded-full px-4 py-2 text-yellow-300 text-xs font-bold uppercase tracking-wide">
+                    No Auth
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <header className="mb-8">
+            <h1 className="text-4xl sm:text-5xl font-bold text-[#ededed] mb-2">
+              Command Center
+            </h1>
+            <p className="text-base text-[#a0a0a0]">
+              Live marketplace intelligence • Multi-platform arbitrage signals
+            </p>
+          </header>
+
+          <Suspense fallback={<LoadingSkeleton />}>
+            <DashboardContent />
+          </Suspense>
+        </div>
+      </div>
+    );
+  }
+
   // Layout guards (ProtectedRoute + OnboardingGuard) provide client-side protection
   // This is the server-side verification layer
   const user = await getUser();

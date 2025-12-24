@@ -64,6 +64,14 @@ function isAdminAPIRoute(pathname: string): boolean {
 // ============================================================================
 
 export async function middleware(request: NextRequest) {
+  // ============================================================================
+  // DEVELOPMENT MODE: Bypass ALL auth checks
+  // ============================================================================
+  if (process.env.DISABLE_AUTH_GUARD === 'true') {
+    console.log('[middleware] 🚫 AUTH DISABLED - Bypassing all checks');
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
 
   // Skip non-admin routes

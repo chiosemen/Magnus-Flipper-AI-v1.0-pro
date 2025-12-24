@@ -25,6 +25,12 @@ interface GuardProps {
  * Redirects to /login if not authenticated
  */
 export function ProtectedRoute({ children }: GuardProps) {
+  // DEVELOPMENT MODE: Bypass auth check
+  if (process.env.NEXT_PUBLIC_DISABLE_AUTH_GUARD === 'true') {
+    console.log('[ProtectedRoute] 🚫 AUTH DISABLED - Rendering without check');
+    return <>{children}</>;
+  }
+
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
@@ -59,6 +65,12 @@ export function ProtectedRoute({ children }: GuardProps) {
  * Redirects to /onboarding if not completed
  */
 export function OnboardingGuard({ children }: GuardProps) {
+  // DEVELOPMENT MODE: Bypass onboarding check
+  if (process.env.NEXT_PUBLIC_DISABLE_AUTH_GUARD === 'true') {
+    console.log('[OnboardingGuard] 🚫 AUTH DISABLED - Rendering without check');
+    return <>{children}</>;
+  }
+
   const { profile, isLoading } = useAuth();
   const router = useRouter();
 
@@ -86,6 +98,12 @@ export function OnboardingGuard({ children }: GuardProps) {
  * Redirects to /unauthorized if not admin
  */
 export function AdminGuard({ children }: GuardProps) {
+  // DEVELOPMENT MODE: Bypass admin check
+  if (process.env.NEXT_PUBLIC_DISABLE_AUTH_GUARD === 'true') {
+    console.log('[AdminGuard] 🚫 AUTH DISABLED - Rendering without check');
+    return <>{children}</>;
+  }
+
   const { isAdmin, isLoading } = useAuth();
   const router = useRouter();
 
