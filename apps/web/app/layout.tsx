@@ -11,6 +11,7 @@ import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { AppProviders } from "@/providers/AppProviders";
+import { AuthProvider } from "@/providers/AuthProvider";
 
 const queryClient = new QueryClient();
 
@@ -34,17 +35,19 @@ export default function RootLayout({ children }: any) {
           overflowX: "hidden"
         }}
       >
-        <AppProviders>
-          <ThemeProvider defaultTheme="dark">
-            <QueryClientProvider client={queryClient}>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                {children as React.ReactNode}
-              </TooltipProvider>
-            </QueryClientProvider>
-          </ThemeProvider>
-        </AppProviders>
+        <AuthProvider>
+          <AppProviders>
+            <ThemeProvider defaultTheme="dark">
+              <QueryClientProvider client={queryClient}>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  {children as React.ReactNode}
+                </TooltipProvider>
+              </QueryClientProvider>
+            </ThemeProvider>
+          </AppProviders>
+        </AuthProvider>
       </body>
     </html>
   );
