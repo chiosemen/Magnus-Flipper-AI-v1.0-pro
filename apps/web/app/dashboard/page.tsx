@@ -248,7 +248,7 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
           <p className="text-sm text-[#a0a0a0]">Latest opportunities with visual confirmation</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {data.liveDeals.map((deal, index) => {
+          {data.liveDeals.map((deal: any, index: number) => {
             const isNew = index < 3;
             const isHot = deal.freshness_score >= 85;
             return (
