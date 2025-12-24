@@ -30,7 +30,7 @@ type LiveDeal = {
   id: string;
   title: string;
   marketplace: string;
-  price: number;
+  price: number | string;
   freshness_score: number;
   link?: string;
   images?: string[];
