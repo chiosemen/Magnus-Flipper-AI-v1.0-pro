@@ -62,3 +62,65 @@ export interface UserSubscription {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * Mock user interface for authorization
+ */
+export interface MockUser {
+  id: string;
+  tier: SubscriptionTier;
+}
+
+/**
+ * Tier metadata mapping
+ */
+export const TIER_METADATA: Record<SubscriptionTier, SubscriptionMetadata> = {
+  [SubscriptionTier.FREE]: {
+    name: "Free",
+    description: "Basic features",
+    price: 0,
+    currency: "USD",
+    features: [],
+    limits: {},
+  },
+  [SubscriptionTier.PRO]: {
+    name: "Pro",
+    description: "Professional features",
+    price: 29,
+    currency: "USD",
+    features: [],
+    limits: {},
+  },
+  [SubscriptionTier.PREMIUM]: {
+    name: "Premium",
+    description: "Premium features",
+    price: 99,
+    currency: "USD",
+    features: [],
+    limits: {},
+  },
+  [SubscriptionTier.ELITE]: {
+    name: "Elite",
+    description: "Elite features",
+    price: 299,
+    currency: "USD",
+    features: [],
+    limits: {},
+  },
+  [SubscriptionTier.AGENCY]: {
+    name: "Agency",
+    description: "Agency features",
+    price: 999,
+    currency: "USD",
+    features: [],
+    limits: {},
+  },
+  [SubscriptionTier.ADMIN]: {
+    name: "Admin",
+    description: "Admin features",
+    price: 0,
+    currency: "USD",
+    features: [],
+    limits: {},
+  },
+};

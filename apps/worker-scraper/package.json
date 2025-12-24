@@ -10,13 +10,17 @@
     "prestart": "npm run build",
     "start": "func start",
     "clean": "rm -rf dist",
-    "scrape": "node dist/scraper/index.js"
+    "scrape": "node dist/scraper/index.js",
+    "sandbox": "tsx manual-sandbox-run.ts",
+    "debug": "tsx debug-craigslist.ts"
   },
   "dependencies": {
     "@azure/functions": "^4.5.1",
     "@magnus-flipper-ai/core": "workspace:*",
     "@magnus-flipper-ai/scraper-sync": "workspace:*",
-    "@supabase/supabase-js": "^2.86.0"
+    "@supabase/supabase-js": "^2.86.0",
+    "dotenv": "^16.4.5",
+    "playwright": "^1.57.0"
   },
   "devDependencies": {
     "@types/node": "^20.17.12",

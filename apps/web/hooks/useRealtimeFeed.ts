@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import type { RealtimeEvent, FeedConnectionStatus } from "@magnus-flipper-ai/core/types/feed";
-import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
+import type { RealtimeEvent, FeedConnectionStatus } from "@/lib/types/feed";
+import type { AggregatedListing } from "@/lib/types/feed";
 import { normalizeFeedItemsToAggregated } from "@/utils/feedNormalizer";
 
 interface UseRealtimeFeedOptions {

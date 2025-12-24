@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/marketing-swoopa/components/ui/card";
-import type { VelocityMetrics } from "@magnus-flipper-ai/core/types/scraper";
+import type { VelocityMetrics } from "@/lib/types/scraper";
 
 interface VelocityChartProps {
   velocity: VelocityMetrics;

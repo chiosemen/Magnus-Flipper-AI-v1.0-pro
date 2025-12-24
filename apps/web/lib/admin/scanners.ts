@@ -8,10 +8,32 @@
  */
 
 import { cache } from "@/lib/react-cache";
-import { ScraperMonitor } from "@magnus-flipper-ai/core";
 import { withTrace, logError } from "@/lib/observability/logger";
 import { createTraceContext } from "@/lib/observability/correlation";
 import { recordLatency } from "@/lib/observability/metrics";
+
+// Local stub for ScraperMonitor (core package not available in web build)
+interface ScraperHealthMetrics {
+  marketplace: string;
+  status: "healthy" | "degraded" | "down";
+  last_run_at: string;
+  total_runs: number;
+  successful_runs: number;
+  failed_runs: number;
+  avg_items_per_run: number;
+  avg_duration_ms: number;
+  last_error?: string;
+}
+
+class ScraperMonitor {
+  constructor(private supabaseUrl: string, private supabaseKey: string) {}
+  async getAllHealthMetrics(): Promise<ScraperHealthMetrics[]> {
+    return [];
+  }
+  async getRecentLogs(marketplace?: string, limit?: number): Promise<any[]> {
+    return [];
+  }
+}
 
 // Lazy initialization of monitor instance
 let monitor: ScraperMonitor | null = null;

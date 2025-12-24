@@ -30,11 +30,27 @@ export function ComplianceDashboard() {
   }
 
   const summary: ComplianceSummary = riskData?.summary || {
+    overallScore: 0,
+    marketplaceRisks: [],
+    guardrails: [],
+    recentViolations: 0,
+    lastAudit: new Date().toISOString(),
     total: 0,
     critical: 0,
+    criticalRisk: 0,
+    criticalRisks: 0,
+    high: 0,
     highRisk: 0,
-    caution: 0,
+    highRisks: 0,
+    medium: 0,
+    mediumRisk: 0,
+    mediumRisks: 0,
+    low: 0,
+    lowRisk: 0,
+    lowRisks: 0,
     safe: 0,
+    guardrailsEnabled: 0,
+    lastUpdated: new Date().toISOString(),
   };
 
   const marketplaceRisks = riskData?.marketplaceRisks || [];

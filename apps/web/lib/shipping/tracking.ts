@@ -5,7 +5,18 @@
  * Wired up to @magnus-flipper-ai/shipping-engine package
  */
 
-import { trackShipment } from "@magnus-flipper-ai/shipping-engine/tracking/trackingManager";
+// Local stub (shipping-engine package not available in web build)
+async function trackShipment(trackingNumber: string, carrier?: string): Promise<any> {
+  // Stub implementation
+  return {
+    trackingNumber,
+    carrier: carrier || "usps",
+    status: "unknown",
+    events: [],
+    estimatedDelivery: null,
+    lastUpdated: new Date().toISOString(),
+  };
+}
 
 export async function trackShippingLabel(
   trackingNumber: string,

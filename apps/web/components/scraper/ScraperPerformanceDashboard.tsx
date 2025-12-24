@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/marketing-swoopa/components/ui/card";
+import { Button } from "@/marketing-swoopa/components/ui/button";
 import { Card } from "@/marketing-swoopa/components/ui/card";
 import { useState } from "react";
 import { useScraperPerformance } from "@/hooks/useScraperPerformance";
@@ -10,7 +10,7 @@ import { PerformanceMetrics } from "./PerformanceMetrics";
 import { VelocityChart } from "./VelocityChart";
 import { FingerprintStats } from "./FingerprintStats";
 import { ScraperHealth } from "./ScraperHealth";
-import type { PerformanceSummary } from "@magnus-flipper-ai/core/types/scraper";
+import type { PerformanceSummary } from "@/lib/types/scraper";
 
 /**
  * ScraperPerformanceDashboard - Main scraper performance dashboard component
@@ -33,13 +33,19 @@ export function ScraperPerformanceDashboard() {
   );
 
   const summary: PerformanceSummary = performanceData?.summary || {
+    totalItems: 0,
+    totalScrapers: 0,
+    averageSuccessRate: 0,
+    activeScrapers: 0,
+    totalErrors: 0,
+    snapshots: [],
+    marketplaces: [],
     totalRuns: 0,
     successfulRuns: 0,
     failedRuns: 0,
+    avgSuccessRate: 0,
     avgDuration: 0,
     avgListingsPerRun: 0,
-    avgSuccessRate: 0,
-    marketplaces: [],
   };
 
   const snapshots = performanceData?.snapshots || [];
@@ -75,7 +81,7 @@ export function ScraperPerformanceDashboard() {
               {window}
             </Button>
           ))}
-          {summary.marketplaces.length > 0 && (
+          {summary.marketplaces && summary.marketplaces.length > 0 && (
             <>
               <span className="text-body-m font-semibold text-foreground ml-4">Marketplace:</span>
               <Button

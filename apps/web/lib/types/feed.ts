@@ -14,17 +14,43 @@ export interface AggregatedListing {
   firstSeen: Date | string;
   lastSeen?: Date | string;
   listingId?: string;
+  rankingScore?: {
+    listingId: string;
+    velocityScore: number;
+    freshnessScore: number;
+    priceScore: number;
+    engagementScore: number;
+    finalScore: number;
+  };
+  fingerprint?: {
+    contentHash: string;
+    combinedHash: string;
+  };
 }
 
 export interface FeedItem {
   id: string;
-  title: string;
-  price: number;
-  imageUrl?: string;
-  location?: string;
+  title: string | null;
+  price: number | null;
+  imageUrl?: string | null;
+  location?: string | null;
   marketplace: string;
-  url: string;
-  createdAt: string;
+  url: string | null;
+  createdAt?: string;
+  firstSeen?: Date | string;
+  lastSeen?: Date | string;
+  rankingScore?: {
+    listingId: string;
+    velocityScore: number;
+    freshnessScore: number;
+    priceScore: number;
+    engagementScore: number;
+    finalScore: number;
+  };
+  fingerprint?: {
+    contentHash: string;
+    combinedHash: string;
+  };
 }
 
 export interface FeedFilters {
@@ -44,21 +70,33 @@ export interface FeedResponse {
   total: number;
   page: number;
   pageSize: number;
+  pagination?: {
+    cursor?: string;
+    nextCursor?: string;
+    hasMore?: boolean;
+  };
 }
 
 export interface FeedQueryParams {
   page?: number;
   pageSize?: number;
+  limit?: number | string;
+  cursor?: string;
+  deduplicate?: string;
+  rank?: string;
+  marketplaces?: string;
   marketplace?: string;
-  minPrice?: number;
-  maxPrice?: number;
+  minPrice?: number | string;
+  maxPrice?: number | string;
   search?: string;
 }
 
-export type FeedConnectionStatus = 'connected' | 'disconnected' | 'connecting';
+export type FeedConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';
 
 export interface RealtimeEvent {
-  type: 'listing.new' | 'listing.updated' | 'listing.removed';
-  data: AggregatedListing;
+  type: 'listing.new' | 'listing.updated' | 'listing.removed' | 'connected' | 'listings' | 'error' | 'closed';
+  data?: AggregatedListing;
+  listings?: AggregatedListing[];
+  error?: string;
   timestamp: string;
 }

@@ -24,14 +24,20 @@
       "@/*": ["./"],
       "@/components/*": ["./components/*"],
       "@/lib/*": ["./lib/*"],
+      "@/lib/types/*": ["./lib/types/*"],
+      "@/lib/hooks/*": ["./lib/hooks/*"],
+      "@/lib/utils/*": ["./lib/utils/*"],
       "@/types/*": ["./types/*"],
       "@/hooks/*": ["./hooks/*"],
       "@/config/*": ["./config/*"],
       "@/utils/*": ["./utils/*"],
       "@/marketing-swoopa/*": ["./marketing-swoopa/*"],
-      "@magnus-flipper-ai/ui/*": ["./lib/@magnus-flipper-ai/ui/*"]
+      "@magnus-flipper-ai/ui/*": ["./lib/@magnus-flipper-ai/ui/*"],
+      "@magnus-flipper-ai/core/*": ["./__forbidden__"],
+      "@magnus-flipper-ai/feed-engine": ["./__forbidden__"],
+      "@magnus-flipper-ai/feed-engine/*": ["./__forbidden__"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "supabase/migrations/**/*"]
 }

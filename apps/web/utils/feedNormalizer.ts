@@ -5,8 +5,8 @@
  * This ensures UI components always receive AggregatedListing with required fields.
  */
 
-import type { FeedItem } from "@magnus-flipper-ai/core/contracts/feed";
-import type { AggregatedListing } from "@magnus-flipper-ai/feed-engine";
+import type { FeedItem } from "@/lib/types/feed";
+import type { AggregatedListing } from "@/lib/types/feed";
 
 /**
  * Normalize FeedItem to AggregatedListing
@@ -17,13 +17,20 @@ export function normalizeFeedItemToAggregated(
   item: FeedItem
 ): AggregatedListing {
   // Convert date strings to Date objects if needed
-  const firstSeen = item.firstSeen instanceof Date ? item.firstSeen : new Date(item.firstSeen);
-  const lastSeen = item.lastSeen instanceof Date ? item.lastSeen : new Date(item.lastSeen);
+  const firstSeen = item.firstSeen 
+    ? (item.firstSeen instanceof Date ? item.firstSeen : new Date(item.firstSeen))
+    : new Date();
+  const lastSeen = item.lastSeen 
+    ? (item.lastSeen instanceof Date ? item.lastSeen : new Date(item.lastSeen))
+    : undefined;
 
   return {
     ...item,
     firstSeen,
     lastSeen,
+    imageUrl: item.imageUrl ?? null,
+    location: item.location ?? null,
+    url: item.url ?? null,
     rankingScore: item.rankingScore ?? {
       listingId: item.id,
       velocityScore: 0,

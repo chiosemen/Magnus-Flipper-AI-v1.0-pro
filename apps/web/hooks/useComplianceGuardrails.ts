@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation } from "@tanstack/react-query";
-import type { GuardrailStatus } from "@magnus-flipper-ai/core/types/compliance";
+import type { GuardrailStatus } from "@/lib/types/compliance";
 
 interface GuardrailsResponse {
   guardrails: GuardrailStatus | GuardrailStatus[];

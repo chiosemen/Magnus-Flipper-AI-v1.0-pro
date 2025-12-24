@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { MarketplaceRisk, ComplianceSummary } from "@magnus-flipper-ai/core/types/compliance";
+import type { MarketplaceRisk, ComplianceSummary } from "@/lib/types/compliance";
 
 interface ComplianceRiskResponse {
   summary: ComplianceSummary;

@@ -1,7 +1,9 @@
 "use client";
 
-import { Card, Input, Button } from "@/marketing-swoopa/components/ui/card";
-import type { FeedFilters } from "@magnus-flipper-ai/core/types/feed";
+import { Card } from "@/marketing-swoopa/components/ui/card";
+import { Input } from "@/marketing-swoopa/components/ui/input";
+import { Button } from "@/marketing-swoopa/components/ui/button";
+import type { FeedFilters } from "@/lib/types/feed";
 
 interface FeedFiltersProps {
   filters: FeedFilters;
@@ -28,9 +30,10 @@ export function FeedFilters({
   availableMarketplaces = DEFAULT_MARKETPLACES,
 }: FeedFiltersProps) {
   const toggleMarketplace = (marketplace: string) => {
-    const newMarketplaces = filters.marketplaces.includes(marketplace)
-      ? filters.marketplaces.filter((m) => m !== marketplace)
-      : [...filters.marketplaces, marketplace];
+    const currentMarketplaces = filters.marketplaces ?? [];
+    const newMarketplaces = currentMarketplaces.includes(marketplace)
+      ? currentMarketplaces.filter((m) => m !== marketplace)
+      : [...currentMarketplaces, marketplace];
 
     onFiltersChange({
       ...filters,
@@ -72,7 +75,7 @@ export function FeedFilters({
           </h3>
           <div className="flex flex-wrap gap-2">
             {availableMarketplaces.map((marketplace) => {
-              const isSelected = filters.marketplaces.includes(marketplace);
+              const isSelected = (filters.marketplaces ?? []).includes(marketplace);
               return (
                 <Button
                   key={marketplace}
@@ -119,7 +122,7 @@ export function FeedFilters({
         </div>
 
         {/* Clear Filters */}
-        {(filters.marketplaces.length > 0 ||
+        {((filters.marketplaces?.length ?? 0) > 0 ||
           filters.minPrice !== undefined ||
           filters.maxPrice !== undefined) && (
           <div>

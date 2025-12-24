@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { ComplianceSnapshot } from "@magnus-flipper-ai/core/types/compliance";
+import type { ComplianceSnapshot } from "@/lib/types/compliance";
 
 interface ComplianceMetricsResponse {
   snapshots: ComplianceSnapshot | ComplianceSnapshot[];

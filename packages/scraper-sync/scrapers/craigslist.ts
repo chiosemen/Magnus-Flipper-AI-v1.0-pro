@@ -129,12 +129,17 @@ export class CraigslistScraper {
 
   /**
    * Extract listings from current page
+   * Phase 3: Updated for new Craigslist grid layout (li.cl-static-search-result)
    */
   private async extractListingsFromPage(page: Page): Promise<ScrapedListing[]> {
     const listings: ScrapedListing[] = [];
 
-    // Get all listing rows
-    const listingElements = await page.$$("li.cl-search-result");
+    // Phase 3: Updated selector for new layout
+    // Old: li.cl-search-result (deprecated)
+    // New: li.cl-static-search-result (current as of Dec 2025)
+    const listingElements = await page.$$("li.cl-static-search-result");
+
+    console.log(`[CRAIGSLIST] Found ${listingElements.length} listing elements`);
 
     for (const element of listingElements) {
       try {
@@ -152,14 +157,17 @@ export class CraigslistScraper {
 
   /**
    * Extract data from a listing element
+   * Phase 3: Updated for new Craigslist DOM structure
    */
   private async extractListingData(
     page: Page,
     element: any
   ): Promise<ScrapedListing | null> {
     try {
-      // Get link
-      const linkElement = await element.$("a.cl-app-anchor");
+      // Phase 3: Updated - get any link with .html (new structure)
+      // Old: a.cl-app-anchor
+      // New: a[href*='.html'] (more flexible)
+      const linkElement = await element.$("a[href*='.html']");
       if (!linkElement) return null;
 
       const href = await linkElement.getAttribute("href");
@@ -169,31 +177,35 @@ export class CraigslistScraper {
         ? href
         : `https://www.craigslist.org${href}`;
 
-      // Get title
-      const titleElement = await element.$("div.title");
-      const title = titleElement
-        ? (await titleElement.textContent())?.trim() || "Untitled"
-        : "Untitled";
+      // Phase 3: Get title from link text (new structure)
+      const title = (await linkElement.textContent())?.trim() || "Untitled";
 
-      // Get price
-      const priceElement = await element.$("span.priceinfo");
+      // Skip if title is empty or just whitespace
+      if (!title || title === "Untitled") {
+        return null;
+      }
+
+      // Phase 3: Updated price selector
+      // Old: span.priceinfo
+      // New: .price (simplified class)
+      const priceElement = await element.$(".price");
       const priceText = priceElement
         ? await priceElement.textContent()
         : "$0";
       const price = this.parsePrice(priceText || "$0");
 
-      // Get location
-      const locationElement = await element.$("div.location");
+      // Get location (structure unchanged)
+      const locationElement = await element.$(".location, [class*='location']");
       const location = locationElement
         ? (await locationElement.textContent())?.trim()
         : undefined;
 
-      // Get image
+      // Get image (structure unchanged)
       const imgElement = await element.$("img");
       const imgSrc = imgElement ? await imgElement.getAttribute("src") : null;
       const images = imgSrc ? [imgSrc] : [];
 
-      // Get timestamp
+      // Get timestamp (structure unchanged)
       const timeElement = await element.$("time");
       const timestamp = timeElement
         ? await timeElement.getAttribute("datetime")

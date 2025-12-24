@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { FingerprintStats } from "@magnus-flipper-ai/core/types/scraper";
+import type { FingerprintStats } from "@/lib/types/scraper";
 
 interface ScraperFingerprintsResponse {
   fingerprints: FingerprintStats | FingerprintStats[];

@@ -1,6 +1,6 @@
 import { createServerClient } from './supabase/server';
 import { SubscriptionTier, TIER_HIERARCHY, type MockUser } from '@/types/subscription';
-import { getUserSubscriptionTier } from './subscription';
+import { getUserSubscription, getTierFromPriceId } from '@/lib/subscription';
 import { logWarn, logError } from '@/lib/observability/logger';
 
 /**
@@ -22,7 +22,10 @@ export async function requireTier(requiredTier: SubscriptionTier): Promise<boole
     }
 
     // Get actual subscription tier from database (source of truth)
-    const userTier = await getUserSubscriptionTier(user.id);
+    const subscription = await getUserSubscription(user.id);
+    const userTier = subscription?.stripe_price_id 
+      ? getTierFromPriceId(subscription.stripe_price_id)
+      : SubscriptionTier.FREE;
 
     const userTierLevel = TIER_HIERARCHY[userTier] || 0;
     const requiredTierLevel = TIER_HIERARCHY[requiredTier];

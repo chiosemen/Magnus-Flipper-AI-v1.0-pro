@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { VelocityMetrics } from "@magnus-flipper-ai/core/types/scraper";
+import type { VelocityMetrics } from "@/lib/types/scraper";
 
 interface ScraperVelocityResponse {
   velocity: VelocityMetrics | VelocityMetrics[];

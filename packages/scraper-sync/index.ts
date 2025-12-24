@@ -12,6 +12,15 @@ export type {
   ScraperHealthMetrics,
 } from "./types/ScrapedListing.js";
 
+// Phase 1: Pooled ingestion types
+export type {
+  ScrapeSource,
+  SourcedScrapeResult,
+  ResolvedScrapeResult,
+  ZeroResultsAnomaly,
+  PooledScraperConfig,
+} from "./types/pooling.js";
+
 // Re-export monitoring types from core
 export type { ScraperHealthMetrics as CoreScraperHealthMetrics } from "@magnus-flipper-ai/core/types/scraper";
 

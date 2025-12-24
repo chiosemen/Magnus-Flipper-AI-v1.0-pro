@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { PerformanceSnapshot, PerformanceSummary } from "@magnus-flipper-ai/core/types/scraper";
+import type { PerformanceSnapshot, PerformanceSummary } from "@/lib/types/scraper";
 
 interface ScraperPerformanceResponse {
   summary: PerformanceSummary;

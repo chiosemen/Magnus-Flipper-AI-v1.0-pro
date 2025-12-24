@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import type { FeedResponse, FeedQueryParams } from "@magnus-flipper-ai/core/types/feed";
+import type { FeedResponse, FeedQueryParams } from "@/lib/types/feed";
 
 interface UseFeedOptions {
   marketplaces?: string[];
@@ -135,7 +135,7 @@ export function useInfiniteFeed(options: UseFeedOptions = {}) {
       return response.json();
     },
     getNextPageParam: (lastPage) => {
-      return lastPage.pagination.hasMore ? lastPage.pagination.nextCursor : undefined;
+      return lastPage.pagination?.hasMore ? lastPage.pagination?.nextCursor : undefined;
     },
     enabled,
     staleTime: 30 * 1000,

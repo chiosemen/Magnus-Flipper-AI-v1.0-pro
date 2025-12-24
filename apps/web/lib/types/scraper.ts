@@ -4,14 +4,21 @@
  */
 
 export interface PerformanceSnapshot {
-  scraperId: string;
   marketplace: string;
   timestamp: string;
-  itemsScraped: number;
-  successRate: number;
-  averageResponseTime: number;
-  errorCount: number;
-  status: 'active' | 'idle' | 'error';
+  metrics: {
+    duration: number;
+    listingsSaved: number;
+    requestsMade: number;
+    rateLimitHits: number;
+    errors: number;
+  };
+  health: {
+    status: "healthy" | "degraded" | "down";
+    successRate: number;
+    avgLatency: number;
+    errorRate: number;
+  };
 }
 
 export interface PerformanceSummary {
@@ -21,6 +28,13 @@ export interface PerformanceSummary {
   activeScrapers: number;
   totalErrors: number;
   snapshots: PerformanceSnapshot[];
+  marketplaces?: string[];
+  totalRuns: number;
+  successfulRuns?: number;
+  failedRuns?: number;
+  avgSuccessRate: number;
+  avgDuration: number;
+  avgListingsPerRun: number;
 }
 
 export interface VelocityMetrics {
@@ -29,12 +43,23 @@ export interface VelocityMetrics {
   itemsPerHour: number;
   peakVelocity: number;
   timestamp: string;
+  avgVelocityScore: number;
+  topVelocityListings: number;
+  velocityTrend: Array<{
+    timestamp: string;
+    avgVelocity: number;
+    count: number;
+  }>;
 }
 
 export interface FingerprintStats {
-  total: number;
-  unique: number;
-  duplicates: number;
-  successRate: number;
-  lastUpdated: string;
+  marketplace: string;
+  totalFingerprints: number;
+  uniqueFingerprints: number;
+  duplicateRate: number;
+  fingerprintDistribution: Array<{
+    hashPrefix: string;
+    count: number;
+  }>;
+  lastUpdated?: string;
 }

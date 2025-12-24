@@ -15,6 +15,103 @@ import type {
   ScraperConfig,
   ScraperResult,
 } from "../types/ScrapedListing.js";
+import type { SourcedScrapeResult } from "../types/pooling.js";
+import {
+  resolvePooledResult,
+  detectAndLogAnomalies,
+} from "./pooledResolver.js";
+import { ApifySource } from "../sources/apifySource.js";
+
+/**
+ * Persist resolver decision to Supabase (non-blocking)
+ */
+async function persistResolverDecision(params: {
+  marketplace: string;
+  query?: string;
+  apifyItems: number;
+  diyItems: number;
+  chosenSource: string;
+  reason: string;
+  confidence: number;
+}): Promise<void> {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return;
+  }
+
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get the most recent run_id for this marketplace (if available)
+    const { data: recentRun } = await supabase
+      .from("scrape_runs")
+      .select("id")
+      .eq("marketplace", params.marketplace)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    const { error } = await supabase.from("resolver_decisions").insert({
+      run_id: recentRun?.id || null,
+      marketplace: params.marketplace,
+      query: params.query || null,
+      apify_items: params.apifyItems,
+      diy_items: params.diyItems,
+      chosen_source: params.chosenSource as "apify" | "diy" | "none",
+      reason: params.reason,
+      confidence: params.confidence,
+    });
+
+    if (error) {
+      console.error("[RESOLVER] DB write error:", error);
+    }
+  } catch (error) {
+    console.error("[RESOLVER] Error persisting decision:", error);
+  }
+}
+
+/**
+ * Get human-readable reason for resolver decision
+ */
+function getResolverReason(
+  resolved: any,
+  apifyResult: any,
+  diyResult: any
+): string {
+  if (resolved.source === "apify" && apifyResult.listings.length > 0) {
+    return "Apify returned items, preferred source";
+  }
+  if (resolved.source === "diy" && diyResult.listings.length > 0) {
+    return "Apify returned zero, DIY fallback successful";
+  }
+  if (resolved.isDegraded) {
+    return "Both sources returned zero results";
+  }
+  return "Default selection";
+}
+
+/**
+ * Calculate confidence in resolver decision
+ */
+function calculateConfidence(
+  resolved: any,
+  apifyResult: any,
+  diyResult: any
+): number {
+  if (resolved.isDegraded) {
+    return 0.7; // Lower confidence when both fail
+  }
+  if (resolved.source === "apify" && apifyResult.listings.length > 0) {
+    return 0.95; // High confidence when preferred source works
+  }
+  if (resolved.source === "diy" && diyResult.listings.length > 0) {
+    return 0.8; // Good confidence in fallback
+  }
+  return 0.7; // Default confidence
+}
 
 // Lazy import ScraperMonitor to avoid loading Prisma in db-lite mode
 type ScraperMonitorInstance = InstanceType<typeof import("@magnus-flipper-ai/core").ScraperMonitor>;
@@ -55,20 +152,82 @@ export class ScraperOrchestrator {
   }
 
   /**
-   * Run a specific marketplace scraper
+   * Run a specific marketplace scraper with pooled resolution
+   *
+   * Phase 2: Runs both Apify (Source A) and DIY (Source B)
+   * Resolver prefers Apify, falls back to DIY
    */
   async runScraper(
     marketplace: string,
     config: ScraperConfig
   ): Promise<ScraperResult> {
-    let result: ScraperResult;
+    const query = config.search_queries?.[0]; // Track first query for anomaly logging
+    const sourcedResults: SourcedScrapeResult[] = [];
 
     try {
-      // Select appropriate scraper
-      const scraper = this.getScraperForMarketplace(marketplace, config);
+      // Phase 2: Run BOTH sources (Apify + DIY)
+      // Run in parallel for performance (both are independent)
+      const [apifyResult, diyResult] = await Promise.all([
+        this.runApifyScraper(marketplace, config),
+        this.runDiyScraper(marketplace, config),
+      ]);
 
-      // Execute scraper
-      result = await scraper.scrape();
+      // Tag with source metadata
+      const sourcedApifyResult: SourcedScrapeResult = {
+        ...apifyResult,
+        source: "apify",
+        query,
+      };
+      const sourcedDiyResult: SourcedScrapeResult = {
+        ...diyResult,
+        source: "diy",
+        query,
+      };
+
+      sourcedResults.push(sourcedApifyResult, sourcedDiyResult);
+
+      // Log source results
+      console.log(
+        `[SOURCE] apify returned ${apifyResult.listings.length} items for ${marketplace}`
+      );
+      console.log(
+        `[SOURCE] diy returned ${diyResult.listings.length} items for ${marketplace}`
+      );
+
+      // Detect and log zero-results anomalies
+      detectAndLogAnomalies(sourcedResults);
+
+      // Resolve which source to use (Phase 1 logic - unchanged)
+      const resolved = resolvePooledResult(sourcedResults);
+
+      // Log degraded marketplace warning
+      if (resolved.isDegraded) {
+        console.warn(
+          `[DEGRADED] Marketplace ${marketplace} returned zero results from all sources`
+        );
+      }
+
+      console.log(
+        `[RESOLVER] Selected source: ${resolved.source} for ${marketplace}`
+      );
+
+      // Persist resolver decision to database
+      if (!IS_DB_LITE) {
+        persistResolverDecision({
+          marketplace,
+          query,
+          apifyItems: apifyResult.listings.length,
+          diyItems: diyResult.listings.length,
+          chosenSource: resolved.source,
+          reason: getResolverReason(resolved, apifyResult, diyResult),
+          confidence: calculateConfidence(resolved, apifyResult, diyResult),
+        }).catch((error) => {
+          console.error("[RESOLVER] Failed to persist decision:", error);
+        });
+      }
+
+      // Use resolved result for ingestion
+      const result = resolved.result;
 
       // If successful, ingest listings (only in db-full mode)
       if (!IS_DB_LITE && result.success && result.listings.length > 0 && this.ingestion) {
@@ -90,10 +249,12 @@ export class ScraperOrchestrator {
         const monitor = await this.ensureMonitor();
         await monitor.logScraperRun(result);
       }
+
+      return result;
     } catch (error: any) {
       console.error(`Error running ${marketplace} scraper:`, error);
 
-      result = {
+      const errorResult: ScraperResult = {
         marketplace,
         success: false,
         listings: [],
@@ -107,11 +268,40 @@ export class ScraperOrchestrator {
       // Log result to telemetry (only in db-full mode)
       if (!IS_DB_LITE) {
         const monitor = await this.ensureMonitor();
-        await monitor.logScraperRun(result);
+        await monitor.logScraperRun(errorResult);
       }
-    }
 
-    return result;
+      return errorResult;
+    }
+  }
+
+  /**
+   * Run DIY (in-house) scraper
+   * Phase 1/2: Wraps existing scraper execution
+   * NO SCRAPER LOGIC CHANGES - just execution wrapper
+   */
+  private async runDiyScraper(
+    marketplace: string,
+    config: ScraperConfig
+  ): Promise<ScraperResult> {
+    // Select appropriate scraper (existing logic - unchanged)
+    const scraper = this.getScraperForMarketplace(marketplace, config);
+
+    // Execute scraper (existing behavior - unchanged)
+    return await scraper.scrape();
+  }
+
+  /**
+   * Run Apify scraper (Source A)
+   * Phase 2: New - wraps Apify Actor execution
+   * NO DIY SCRAPER CHANGES - separate source
+   */
+  private async runApifyScraper(
+    marketplace: string,
+    config: ScraperConfig
+  ): Promise<ScraperResult> {
+    const apifySource = new ApifySource(config);
+    return await apifySource.scrape();
   }
 
   /**

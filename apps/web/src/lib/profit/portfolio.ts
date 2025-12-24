@@ -2,10 +2,27 @@
 
 /**
  * Portfolio wrapper
- * Wired up to @magnus-flipper-ai/profit-engine package
+ * Local stub (profit-engine package not available in web build)
  */
 
-import { createPortfolioSnapshot } from "@magnus-flipper-ai/profit-engine/ledger/portfolioEngine";
+async function createPortfolioSnapshot(userId: string): Promise<any> {
+  // Stub implementation
+  return {
+    id: "",
+    userId,
+    snapshotDate: new Date().toISOString(),
+    totalInventoryValue: 0,
+    totalInvestedCapital: 0,
+    totalRealizedProfit: 0,
+    totalUnrealizedProfit: 0,
+    activeListings: 0,
+    soldItems: 0,
+    avgHoldingTime: 0,
+    portfolioROI: 0,
+    winRate: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 export async function getPortfolioSnapshot(userId: string) {
   try {

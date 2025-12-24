@@ -230,6 +230,7 @@ export class FacebookMarketplaceScraper {
 
   /**
    * Extract data from a listing element
+   * Phase 3: Added noise filtering for UI elements
    */
   private async extractListingData(
     page: Page,
@@ -259,6 +260,24 @@ export class FacebookMarketplaceScraper {
         ? await priceElement.textContent()
         : "$0";
       const price = this.parsePrice(priceText || "$0");
+
+      // Phase 3: Filter out UI noise (more conservative approach)
+      // Only filter if ALL these conditions match (likely UI element):
+      // 1. Price is $0
+      // 2. NOT explicitly marked as "free"
+      // 3. Title suggests UI element ("Find", "See more", etc.)
+      const isUIElement =
+        price === 0 &&
+        !priceText.toLowerCase().includes("free") &&
+        (title?.toLowerCase().includes("find") ||
+          title?.toLowerCase().includes("see more") ||
+          title?.toLowerCase().includes("suggested") ||
+          link === "https://www.facebook.com");
+
+      if (isUIElement) {
+        console.log(`[FACEBOOK] Filtered UI noise: "${title}" @ $${price}`);
+        return null;
+      }
 
       // Get location
       const locationElement = await element.$('span[class*="x1lliihq"]:nth-child(2)');
