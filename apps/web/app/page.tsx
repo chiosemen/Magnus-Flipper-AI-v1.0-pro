@@ -9,6 +9,11 @@ import LiveScanStatusBadge from '@/components/marketing/LiveScanStatusBadge';
 import WhyTimingMatters from '@/components/marketing/WhyTimingMatters';
 import ScansThisWindow from '@/components/marketing/ScansThisWindow';
 import { usePageView } from '@/hooks/usePageView';
+import {
+  EstimatedExecutionTime,
+  NextScanETA,
+  UserScanCount,
+} from '@/components/marketing/ExecutionMetrics';
 
 /* -----------------------------
    A/B HERO HEADLINES
@@ -400,6 +405,13 @@ export default function HomePage() {
 
           {/* Scans Executed This Window */}
           <ScansThisWindow />
+
+          {/* Execution Metrics */}
+          <div className="space-y-1 mb-8">
+            <EstimatedExecutionTime />
+            <NextScanETA />
+            <UserScanCount />
+          </div>
 
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-3">
