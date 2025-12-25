@@ -7,6 +7,8 @@ import CarFlippingSection from '@/components/marketing/CarFlippingSection';
 import MarketplaceMonitorSection from '@/components/marketing/MarketplaceMonitorSection';
 import LiveScanStatusBadge from '@/components/marketing/LiveScanStatusBadge';
 import WhyTimingMatters from '@/components/marketing/WhyTimingMatters';
+import ScansThisWindow from '@/components/marketing/ScansThisWindow';
+import { usePageView } from '@/hooks/usePageView';
 
 /* -----------------------------
    A/B HERO HEADLINES
@@ -77,6 +79,9 @@ export default function HomePage() {
   const [variant, setVariant] = useState(HERO_VARIANTS[0]);
   const [workerStatus, setWorkerStatus] = useState<'live' | 'idle'>('live');
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  // Track page view (privacy-safe, session-scoped)
+  usePageView('landing');
 
   // Simple A/B rotation with localStorage persistence
   useEffect(() => {
@@ -392,6 +397,9 @@ export default function HomePage() {
 
           {/* Live Scan Status Badge */}
           <LiveScanStatusBadge />
+
+          {/* Scans Executed This Window */}
+          <ScansThisWindow />
 
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-3">
