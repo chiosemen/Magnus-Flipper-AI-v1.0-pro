@@ -43,9 +43,7 @@
  *   </ProtectedRoute>
  */
 
-import { ReactNode, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/app/providers/AuthProvider';
+import { ReactNode } from 'react';
 
 // ============================================================================
 // Loading Component (Shared)
@@ -72,35 +70,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, redirectTo = '/login' }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      // Store current path for post-auth redirect
-      if (pathname && pathname !== '/login') {
-        localStorage.setItem('post_auth_redirect', pathname);
-      }
-
-      // Redirect to login with redirect param
-      const redirectUrl = new URL(redirectTo, window.location.origin);
-      redirectUrl.searchParams.set('redirect', pathname || '/dashboard');
-      router.push(redirectUrl.toString().replace(window.location.origin, ''));
-    }
-  }, [isAuthenticated, isLoading, router, pathname, redirectTo]);
-
-  // Show loading state while checking auth
-  if (isLoading) {
-    return <GuardLoadingState message="Verifying authentication..." />;
-  }
-
-  // Not authenticated - will redirect (show loading during redirect)
-  if (!isAuthenticated) {
-    return <GuardLoadingState message="Redirecting to login..." />;
-  }
-
-  // Authenticated - render children
+  // UI-ONLY DEPLOYMENT: Always render children
   return <>{children}</>;
 }
 
@@ -113,28 +83,7 @@ interface OnboardingGuardProps {
 }
 
 export function OnboardingGuard({ children }: OnboardingGuardProps) {
-  const { profile, isLoading, isAuthenticated } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && profile) {
-      if (!profile.onboarding_completed) {
-        router.push('/onboarding');
-      }
-    }
-  }, [profile, isLoading, isAuthenticated, router]);
-
-  // Show loading while checking profile
-  if (isLoading || !profile) {
-    return <GuardLoadingState message="Checking onboarding status..." />;
-  }
-
-  // Onboarding not completed - will redirect
-  if (!profile.onboarding_completed) {
-    return <GuardLoadingState message="Redirecting to onboarding..." />;
-  }
-
-  // Onboarding completed - render children
+  // UI-ONLY DEPLOYMENT: Always render children
   return <>{children}</>;
 }
 
@@ -158,37 +107,7 @@ interface PlanGuardProps {
 }
 
 export function PlanGuard({ children, requiredPlan, fallbackRoute = '/upgrade' }: PlanGuardProps) {
-  const { profile, isLoading, isAuthenticated } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && profile) {
-      const userPlanRank = PLAN_RANKS[profile.plan as Plan] || 0;
-      const requiredPlanRank = PLAN_RANKS[requiredPlan] || 0;
-
-      if (userPlanRank < requiredPlanRank) {
-        // User's plan is insufficient - redirect to upgrade
-        const upgradeUrl = new URL(fallbackRoute, window.location.origin);
-        upgradeUrl.searchParams.set('required', requiredPlan);
-        router.push(upgradeUrl.toString().replace(window.location.origin, ''));
-      }
-    }
-  }, [profile, isLoading, isAuthenticated, router, requiredPlan, fallbackRoute]);
-
-  // Show loading while checking profile
-  if (isLoading || !profile) {
-    return <GuardLoadingState message="Checking plan access..." />;
-  }
-
-  const userPlanRank = PLAN_RANKS[profile.plan as Plan] || 0;
-  const requiredPlanRank = PLAN_RANKS[requiredPlan] || 0;
-
-  // Insufficient plan - will redirect
-  if (userPlanRank < requiredPlanRank) {
-    return <GuardLoadingState message={`Redirecting to upgrade (${requiredPlan} required)...`} />;
-  }
-
-  // Plan sufficient - render children
+  // UI-ONLY DEPLOYMENT: Always render children
   return <>{children}</>;
 }
 
@@ -202,28 +121,7 @@ interface AdminGuardProps {
 }
 
 export function AdminGuard({ children, fallbackRoute = '/unauthorized' }: AdminGuardProps) {
-  const { profile, isAdmin, isLoading, isAuthenticated } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && profile) {
-      if (!isAdmin) {
-        router.push(fallbackRoute);
-      }
-    }
-  }, [profile, isAdmin, isLoading, isAuthenticated, router, fallbackRoute]);
-
-  // Show loading while checking profile
-  if (isLoading || !profile) {
-    return <GuardLoadingState message="Verifying admin access..." />;
-  }
-
-  // Not admin - will redirect
-  if (!isAdmin) {
-    return <GuardLoadingState message="Access denied. Redirecting..." />;
-  }
-
-  // Admin verified - render children
+  // UI-ONLY DEPLOYMENT: Always render children
   return <>{children}</>;
 }
 

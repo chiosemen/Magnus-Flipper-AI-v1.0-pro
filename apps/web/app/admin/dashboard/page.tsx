@@ -1,16 +1,8 @@
 import { Suspense } from "react";
-import { redirect, notFound } from "next/navigation";
-import { createSupabaseServer, getUser } from "@/lib/supabase/server";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import { ApifyKillSwitches } from "./_components/ApifyKillSwitches";
 import { ElitePoolActivationRequests } from "./_components/ElitePoolActivationRequests";
-import {
-  getEnabledElitePools,
-  getAllElitePools,
-  calculateTotalMonthlyCU,
-  calculateEliteCoverage
-} from "@/lib/server-adapters/marketplace-config";
 
 // Force dynamic rendering (no static generation)
 export const dynamic = "force-dynamic";
@@ -36,157 +28,60 @@ export const revalidate = 0;
 
 /**
  * Fetch admin-only financial and operational metrics
- * READ-ONLY: All queries are SELECT only, no mutations
+ * UI-ONLY MODE: Returns hardcoded demo data
  */
 async function getAdminMetrics() {
-  const supabase = await createSupabaseServer();
-
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  // ========================================================================
-  // Apify Burn Rate Metrics (from apify_usage_events table)
-  // ========================================================================
-
-  // 1. Today's spend
-  const { data: todayEvents } = await supabase
-    .from("apify_usage_events")
-    .select("cost_usd")
-    .gte("started_at", startOfToday.toISOString())
-    .eq("status", "SUCCEEDED");
-
-  const todaySpend = todayEvents?.reduce((sum, e) => sum + (e.cost_usd || 0), 0) || 0;
-
-  // 2. Last 7 days spend
-  const { data: week7Events } = await supabase
-    .from("apify_usage_events")
-    .select("cost_usd")
-    .gte("started_at", sevenDaysAgo.toISOString())
-    .eq("status", "SUCCEEDED");
-
-  const week7Spend = week7Events?.reduce((sum, e) => sum + (e.cost_usd || 0), 0) || 0;
-
-  // 3. Cost per pool (last 7 days)
-  const { data: poolEvents } = await supabase
-    .from("apify_usage_events")
-    .select("marketplace, region, cost_usd, items_scraped")
-    .gte("started_at", sevenDaysAgo.toISOString())
-    .eq("status", "SUCCEEDED");
-
-  interface PoolStats {
-    marketplace: string;
-    region: string | null;
-    totalCost: number;
-    totalItems: number;
-  }
-
-  const poolStats: Record<string, PoolStats> = {};
-
-  poolEvents?.forEach((event) => {
-    const poolKey = `${event.marketplace}_${event.region || "global"}`;
-    if (!poolStats[poolKey]) {
-      poolStats[poolKey] = {
-        marketplace: event.marketplace,
-        region: event.region,
-        totalCost: 0,
-        totalItems: 0,
-      };
-    }
-    poolStats[poolKey].totalCost += event.cost_usd || 0;
-    poolStats[poolKey].totalItems += event.items_scraped || 0;
-  });
-
-  const poolCostBreakdown = Object.entries(poolStats)
-    .map(([poolId, stats]) => ({
-      poolId,
-      ...stats,
-      costPerItem: stats.totalItems > 0 ? stats.totalCost / stats.totalItems : 0,
-    }))
-    .sort((a, b) => b.totalCost - a.totalCost); // Sort by cost descending
-
-  // 4. Cost per deal (overall, last 7 days)
-  const totalCost7d = week7Events?.reduce((sum, e) => sum + (e.cost_usd || 0), 0) || 0;
-  const totalItems7d = poolEvents?.reduce((sum, e) => sum + (e.items_scraped || 0), 0) || 0;
-  const costPerDeal = totalItems7d > 0 ? totalCost7d / totalItems7d : 0;
-
-  // ========================================================================
-  // Operational Metrics
-  // ========================================================================
-
-  // Total pooled deals (read-only)
-  const { count: totalDeals } = await supabase
-    .from("scraped_listings")
-    .select("*", { count: "exact", head: true })
-    .is("search_id", null)
-    .eq("is_stale", false);
-
-  // Active users count (read-only)
-  const { count: activeUsers } = await supabase
-    .from("saved_searches")
-    .select("user_id", { count: "exact", head: true })
-    .eq("active", true);
-
+  // UI-ONLY DEPLOYMENT: Return demo data
   return {
     financial: {
-      todaySpend,
-      week7Spend,
-      costPerDeal,
-      poolCostBreakdown,
+      todaySpend: 12.45,
+      week7Spend: 87.23,
+      costPerDeal: 0.0034,
+      poolCostBreakdown: [
+        {
+          poolId: 'facebook_US',
+          marketplace: 'facebook',
+          region: 'US',
+          totalCost: 45.67,
+          totalItems: 12500,
+          costPerItem: 0.0037,
+        },
+        {
+          poolId: 'vinted_UK',
+          marketplace: 'vinted',
+          region: 'UK',
+          totalCost: 28.34,
+          totalItems: 8900,
+          costPerItem: 0.0032,
+        },
+      ],
     },
     operational: {
-      totalPooledDeals: totalDeals || 0,
-      activeUsersCount: activeUsers || 0,
+      totalPooledDeals: 1250,
+      activeUsersCount: 42,
     },
   };
 }
 
 /**
  * Fetch Elite Pool Coverage metrics
- * Uses environment variables to mock subscriber data
- * READ-ONLY: No mutations or triggers
+ * UI-ONLY MODE: Returns hardcoded demo data
  */
 async function getElitePoolCoverage() {
-  // Get all Elite pools from configuration
-  const allPools = getAllElitePools();
-  const enabledPools = getEnabledElitePools();
-  const disabledPools = allPools.filter(pool => !pool.enabled);
-
-  // Mock subscriber data from environment variables
-  // In production, this would query the database for actual subscriber counts
-  const eliteSubscriberCount = parseInt(process.env.ELITE_SUB_COUNT || '0', 10);
-  const elitePrice = parseFloat(process.env.ELITE_PRICE || '29.99');
-
-  // Calculate coverage metrics
-  const coverage = calculateEliteCoverage({
-    eliteSubscriberCount,
-    elitePrice,
-    enabledPools,
-  });
-
-  // Determine status based on coverage ratio
-  let status: 'SAFE' | 'WARNING' | 'BLOCKED';
-  let statusColor: string;
-
-  if (coverage.coverageRatio >= 1.15) {
-    status = 'SAFE';
-    statusColor = 'bg-green-500/20 text-green-400 border-green-500/30';
-  } else if (coverage.coverageRatio >= 0.9) {
-    status = 'WARNING';
-    statusColor = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-  } else {
-    status = 'BLOCKED';
-    statusColor = 'bg-red-500/20 text-red-400 border-red-500/30';
-  }
-
+  // UI-ONLY DEPLOYMENT: Return demo data
   return {
-    eliteSubscriberCount,
-    elitePrice,
-    coverage,
-    status,
-    statusColor,
-    disabledPools,
+    eliteSubscriberCount: 15,
+    elitePrice: 29.99,
+    coverage: {
+      monthlyRevenue: 449.85,
+      monthlyCost: 350.00,
+      coverageRatio: 1.28,
+      headroomUSD: 99.85,
+      enabledPoolCount: 5,
+    },
+    status: 'SAFE' as const,
+    statusColor: 'bg-green-500/20 text-green-400 border-green-500/30',
+    disabledPools: [],
   };
 }
 
@@ -498,28 +393,7 @@ function LoadingSkeleton() {
  * Fail-closed: Non-admins are redirected before any data fetching
  */
 export default async function AdminDashboardPage() {
-  // ========================================================================
-  // ADMIN GUARD: Server-side enforcement (PRIMARY SECURITY LAYER)
-  // ========================================================================
-  // This check runs BEFORE any data fetching or component rendering
-  // Non-admins are immediately redirected (fail-closed)
-  const user = await getUser();
-
-  // Unauthorized: No user session
-  if (!user) {
-    redirect("/login");
-  }
-
-  // Forbidden: User exists but is not admin
-  const userRole = user.app_metadata?.role as string | undefined;
-  if (userRole !== "admin") {
-    // Fail-closed: Return 404 to non-admins (hides route existence)
-    notFound();
-  }
-
-  // ========================================================================
-  // Admin verified - proceed with dashboard rendering
-  // ========================================================================
+  // UI-ONLY DEPLOYMENT: Always render admin dashboard
   return (
     <Suspense fallback={<LoadingSkeleton />}>
       <AdminDashboardContent />
