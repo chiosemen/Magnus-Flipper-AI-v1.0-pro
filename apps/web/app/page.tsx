@@ -15,6 +15,7 @@ import {
   UserScanCount,
 } from '@/components/marketing/ExecutionMetrics';
 import ExecutionConfidenceBadge from '@/components/marketing/ExecutionConfidenceBadge';
+import MarketplaceETA from '@/components/marketing/MarketplaceETA';
 
 /* -----------------------------
    A/B HERO HEADLINES
@@ -416,6 +417,9 @@ export default function HomePage() {
             <NextScanETA />
             <UserScanCount />
           </div>
+
+          {/* Per-Marketplace ETA */}
+          <MarketplaceETA />
 
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-3">
