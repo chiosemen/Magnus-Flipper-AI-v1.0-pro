@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSystemStatus } from '@/hooks/useSystemStatus';
+import { useSystemStatus } from '@/lib/useSystemStatus';
 
 /* -----------------------------
    A/B HERO HEADLINES
@@ -45,7 +45,7 @@ const getDecayStyles = (ageMinutes: number) => {
 ----------------------------- */
 export default function HomePage() {
   const [variant, setVariant] = useState(HERO_VARIANTS[0]);
-  const { status } = useSystemStatus(5000); // Poll every 5s
+  const { status, error } = useSystemStatus(30000); // Poll every 30s
 
   // Simple A/B rotation (no infra, buyer-safe)
   useEffect(() => {
@@ -61,6 +61,7 @@ export default function HomePage() {
   // Derive scan window info
   const scanWindow = status?.scan_window;
   const isWindowActive = scanWindow?.status === 'active';
+  const isWindowScheduled = scanWindow?.status === 'scheduled';
   const nextWindowSeconds = status?.next_window_in_seconds;
   const closesInSeconds = status?.closes_in_seconds;
 
@@ -193,25 +194,40 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-4">
-            {isWindowActive ? (
-              <span className="px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-300 text-xs">
-                ● Active window
-              </span>
+            {error ? (
+              <>
+                <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-400 text-xs">
+                  ● Status unavailable
+                </span>
+                <span className="text-xs text-white/40">
+                  Reconnecting...
+                </span>
+              </>
+            ) : isWindowActive ? (
+              <>
+                <span className="px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-300 text-xs transition-all duration-300">
+                  ● Active window
+                </span>
+                {closesInSeconds !== null && (
+                  <span className="text-xs text-white/50">
+                    Window closes in <strong className="text-white">{formatCountdown(closesInSeconds)}</strong>
+                  </span>
+                )}
+              </>
+            ) : isWindowScheduled ? (
+              <>
+                <span className="px-3 py-1 rounded-full bg-cyan-400/10 text-cyan-300 text-xs transition-all duration-300">
+                  ● Scheduled
+                </span>
+                {nextWindowSeconds !== null && (
+                  <span className="text-xs text-white/50">
+                    Next scan opens in <strong className="text-white">{formatCountdown(nextWindowSeconds)}</strong>
+                  </span>
+                )}
+              </>
             ) : (
-              <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-400 text-xs">
+              <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-400 text-xs transition-all duration-300">
                 ● No active window
-              </span>
-            )}
-
-            {isWindowActive && closesInSeconds !== null && (
-              <span className="text-xs text-white/50">
-                Closes in <strong className="text-white">{formatCountdown(closesInSeconds)}</strong>
-              </span>
-            )}
-
-            {!isWindowActive && nextWindowSeconds !== null && (
-              <span className="text-xs text-white/50">
-                Next scan opens in <strong className="text-white">{formatCountdown(nextWindowSeconds)}</strong>
               </span>
             )}
           </div>
@@ -228,27 +244,48 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {status && status.workers.active > 0 ? (
+            {error ? (
               <>
-                <span className="flex items-center gap-2 text-xs text-emerald-300">
+                <span className="flex items-center gap-2 text-xs text-zinc-400">
+                  <span className="h-2 w-2 rounded-full bg-zinc-500" />
+                  Status unavailable
+                </span>
+              </>
+            ) : status && status.workers.active > 0 ? (
+              <>
+                <span className="flex items-center gap-2 text-xs text-emerald-300 transition-all duration-300">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                   Workers scanning
                 </span>
 
                 <span className="text-white/40">
                   {status.workers.active} active
+                  {status.workers.idle > 0 && ` · ${status.workers.idle} idle`}
+                  {status.workers.error > 0 && ` · ${status.workers.error} error`}
                   {scanWindow?.marketplace && ` · ${scanWindow.marketplace}`}
                 </span>
               </>
-            ) : (
+            ) : status && totalWorkers > 0 ? (
               <>
-                <span className="flex items-center gap-2 text-xs text-zinc-400">
+                <span className="flex items-center gap-2 text-xs text-zinc-400 transition-all duration-300">
                   <span className="h-2 w-2 rounded-full bg-zinc-500" />
                   Workers idle
                 </span>
 
                 <span className="text-white/40">
-                  {status ? `${totalWorkers} total` : 'Loading...'}
+                  {status.workers.idle} idle
+                  {status.workers.error > 0 && ` · ${status.workers.error} error`}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="flex items-center gap-2 text-xs text-zinc-400 transition-all duration-300">
+                  <span className="h-2 w-2 rounded-full bg-zinc-500" />
+                  No workers
+                </span>
+
+                <span className="text-white/40">
+                  {status ? 'System idle' : 'Loading...'}
                 </span>
               </>
             )}
