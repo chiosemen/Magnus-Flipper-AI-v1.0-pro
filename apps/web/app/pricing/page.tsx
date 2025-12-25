@@ -1,6 +1,12 @@
+'use client';
+
 import Link from "next/link";
+import { useSystemStatus } from "@/hooks/useSystemStatus";
 
 export default function PricingPage() {
+  const { status } = useSystemStatus(5000);
+  const isWindowActive = status?.scan_window?.status === 'active';
+
   return (
     <main className="min-h-screen bg-[#070B12] text-white">
       {/* Header */}
@@ -68,15 +74,18 @@ export default function PricingPage() {
               <li>• Pooled + personal searches</li>
             </ul>
 
-            <div className="mb-6">
-              <span className="inline-flex items-center gap-2 text-xs text-cyan-300">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75 animate-ping"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-300"></span>
+            {isWindowActive && (
+              <div className="mb-6">
+                <span className="inline-flex items-center gap-2 text-xs text-cyan-300">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75 animate-ping"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-300"></span>
+                  </span>
+                  Live scan window active
+                  {status?.scan_window?.marketplace && ` · ${status.scan_window.marketplace}`}
                 </span>
-                Live scan window active
-              </span>
-            </div>
+              </div>
+            )}
 
             <Link
               href="/register"

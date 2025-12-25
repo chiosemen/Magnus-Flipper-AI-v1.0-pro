@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSystemStatus } from '@/hooks/useSystemStatus';
 
 /* -----------------------------
    A/B HERO HEADLINES
@@ -44,13 +45,32 @@ const getDecayStyles = (ageMinutes: number) => {
 ----------------------------- */
 export default function HomePage() {
   const [variant, setVariant] = useState(HERO_VARIANTS[0]);
-  const [workerStatus, setWorkerStatus] = useState<'live' | 'idle'>('live');
+  const { status } = useSystemStatus(5000); // Poll every 5s
 
   // Simple A/B rotation (no infra, buyer-safe)
   useEffect(() => {
     const pick = HERO_VARIANTS[Math.floor(Math.random() * HERO_VARIANTS.length)];
     setVariant(pick);
   }, []);
+
+  // Derive worker status
+  const totalWorkers = status ? status.workers.active + status.workers.idle + status.workers.error : 0;
+  const hasActiveWorkers = status ? status.workers.active > 0 || status.workers.idle > 0 : false;
+  const workerStatus: 'live' | 'idle' = hasActiveWorkers ? 'live' : 'idle';
+
+  // Derive scan window info
+  const scanWindow = status?.scan_window;
+  const isWindowActive = scanWindow?.status === 'active';
+  const nextWindowSeconds = status?.next_window_in_seconds;
+  const closesInSeconds = status?.closes_in_seconds;
+
+  // Format countdown
+  const formatCountdown = (seconds: number | null) => {
+    if (seconds === null) return null;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h}h ${m}m`;
+  };
 
   return (
     <main className="min-h-screen bg-[#070B12] text-white">
@@ -173,13 +193,27 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-300 text-xs">
-              ● Active window
-            </span>
+            {isWindowActive ? (
+              <span className="px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-300 text-xs">
+                ● Active window
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded-full bg-zinc-500/10 text-zinc-400 text-xs">
+                ● No active window
+              </span>
+            )}
 
-            <span className="text-xs text-white/50">
-              Next scan opens in <strong className="text-white">3h 12m</strong>
-            </span>
+            {isWindowActive && closesInSeconds !== null && (
+              <span className="text-xs text-white/50">
+                Closes in <strong className="text-white">{formatCountdown(closesInSeconds)}</strong>
+              </span>
+            )}
+
+            {!isWindowActive && nextWindowSeconds !== null && (
+              <span className="text-xs text-white/50">
+                Next scan opens in <strong className="text-white">{formatCountdown(nextWindowSeconds)}</strong>
+              </span>
+            )}
           </div>
 
         </div>
@@ -194,14 +228,30 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2 text-xs text-emerald-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Workers scanning
-            </span>
+            {status && status.workers.active > 0 ? (
+              <>
+                <span className="flex items-center gap-2 text-xs text-emerald-300">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Workers scanning
+                </span>
 
-            <span className="text-white/40">
-              4 active · Facebook
-            </span>
+                <span className="text-white/40">
+                  {status.workers.active} active
+                  {scanWindow?.marketplace && ` · ${scanWindow.marketplace}`}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="flex items-center gap-2 text-xs text-zinc-400">
+                  <span className="h-2 w-2 rounded-full bg-zinc-500" />
+                  Workers idle
+                </span>
+
+                <span className="text-white/40">
+                  {status ? `${totalWorkers} total` : 'Loading...'}
+                </span>
+              </>
+            )}
           </div>
 
         </div>
