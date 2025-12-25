@@ -31,6 +31,15 @@ const MARKETPLACES = [
 ];
 
 /* -----------------------------
+   DECAY HELPERS
+----------------------------- */
+const getDecayStyles = (ageMinutes: number) => {
+  if (ageMinutes < 15) return 'opacity-100';
+  if (ageMinutes < 60) return 'opacity-70 blur-[0.3px]';
+  return 'opacity-40 grayscale blur-[0.6px]';
+};
+
+/* -----------------------------
    PAGE
 ----------------------------- */
 export default function HomePage() {
@@ -176,6 +185,28 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ================= WORKER STATUS ================= */}
+      <section className="px-6 py-6 border-y border-white/10 bg-black">
+        <div className="mx-auto max-w-6xl flex items-center justify-between text-sm">
+
+          <div className="text-white/60">
+            Scan engine
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-2 text-xs text-emerald-300">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              Workers scanning
+            </span>
+
+            <span className="text-white/40">
+              4 active · Facebook
+            </span>
+          </div>
+
+        </div>
+      </section>
+
       {/* ================= LIVE LISTING SNAPSHOTS ================= */}
       <section className="px-6 py-24 border-t border-white/10">
         <div className="mx-auto max-w-6xl">
@@ -198,6 +229,7 @@ export default function HomePage() {
                 marketplace: 'Facebook',
                 location: 'London',
                 img: '/listings/iphone.jpg',
+                ageMinutes: 8,
                 expired: false,
               },
               {
@@ -206,6 +238,7 @@ export default function HomePage() {
                 marketplace: 'Facebook',
                 location: 'Manchester',
                 img: '/listings/ps5.jpg',
+                ageMinutes: 45,
                 expired: false,
               },
               {
@@ -214,16 +247,18 @@ export default function HomePage() {
                 marketplace: 'Vinted',
                 location: 'Berlin',
                 img: '/listings/jordan.jpg',
+                ageMinutes: 75,
                 expired: true,
               },
             ].map((item, i) => (
               <div
                 key={i}
-                className={`relative rounded-2xl border border-white/10 overflow-hidden bg-white/5 transition ${
-                  item.expired
-                    ? 'opacity-50 grayscale blur-[1px]'
-                    : 'hover:scale-[1.02] hover:border-cyan-300/40'
+                className={`relative rounded-2xl border border-white/10 overflow-hidden bg-white/5 transition-all duration-700 ${getDecayStyles(item.ageMinutes)} ${
+                  !item.expired && 'hover:scale-[1.02] hover:border-cyan-300/40'
                 }`}
+                style={{
+                  animation: item.expired ? 'decayPulse 4s ease-in-out infinite' : undefined,
+                }}
               >
                 {/* Image */}
                 <div className="aspect-square bg-black/40">
@@ -259,8 +294,10 @@ export default function HomePage() {
 
                 {/* Expired overlay */}
                 {item.expired && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-sm font-medium">
-                    Missed signal
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="text-xs uppercase tracking-wide text-white/70">
+                      Scan expired
+                    </span>
                   </div>
                 )}
               </div>
@@ -349,6 +386,10 @@ export default function HomePage() {
         @keyframes scroll {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
+        }
+        @keyframes decayPulse {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.45; }
         }
       `}</style>
     </main>
