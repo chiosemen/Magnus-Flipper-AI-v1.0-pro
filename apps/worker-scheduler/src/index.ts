@@ -24,6 +24,7 @@ import {
 import { dispatchElitePools, forceDispatchAllElitePools } from "./services/elitePoolDispatch.js";
 import { generateDiagnostics, logDiagnostics, verifyPoolExecution } from "./diagnostics.js";
 import { initFeatureFlags, getFlag, printFlagStatus } from "@magnus-flipper-ai/core";
+import { createHeartbeat } from "@magnus-flipper-ai/sdk";
 
 const WORKER_ID = process.env.WORKER_ID || "worker-scheduler-001";
 const SCAN_INTERVAL = parseInt(process.env.SCAN_INTERVAL || "300000"); // 5 minutes default
@@ -42,6 +43,15 @@ const workerHeartbeat = {
   totalJobsProcessed: 0,
 };
 
+// Initialize system heartbeat for landing page visibility
+const systemHeartbeat = createHeartbeat({
+  workerId: WORKER_ID,
+  workerType: 'scheduler',
+  marketplace: undefined, // Scheduler works across all marketplaces
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || process.env.API_URL,
+  token: process.env.HEARTBEAT_TOKEN,
+});
+
 // Optional health check server (disabled by default, enable with ENABLE_HTTP=true)
 // Moved to main() function to avoid top-level await
 
@@ -51,6 +61,12 @@ const workerHeartbeat = {
  */
 async function scheduleScans() {
   console.log(`[${WORKER_ID}] Starting risk-tier aware scheduling...`);
+
+  // Report scanning state to system
+  await systemHeartbeat.startScanning({
+    cycle: 'scheduling',
+    timestamp: new Date().toISOString(),
+  }).catch((err) => console.warn(`[${WORKER_ID}] Heartbeat failed:`, err.message));
 
   try {
     // =========================================================================
@@ -153,8 +169,19 @@ async function scheduleScans() {
         await runScheduledScan();
       }, delayMs);
     }
+
+    // Report idle state after scheduling completes
+    await systemHeartbeat.goIdle({
+      lastCycle: new Date().toISOString(),
+    }).catch((err) => console.warn(`[${WORKER_ID}] Heartbeat failed:`, err.message));
   } catch (error) {
     console.error(`[${WORKER_ID}] Scheduling error:`, error);
+
+    // Report error state
+    await systemHeartbeat.reportError(
+      error instanceof Error ? error : new Error(String(error)),
+      { context: 'scheduling' }
+    ).catch((err) => console.warn(`[${WORKER_ID}] Heartbeat failed:`, err.message));
   }
 }
 
@@ -182,7 +209,11 @@ async function runTTLCleanup() {
 
 async function main() {
   console.log(`Worker Scheduler ${WORKER_ID} starting...`);
-  
+
+  // Start system heartbeat (report to landing page every 30s)
+  systemHeartbeat.startInterval(30000);
+  console.log(`[${WORKER_ID}] System heartbeat started (30s interval)`);
+
   // Initialize feature flags
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     initFeatureFlags(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -308,13 +339,19 @@ async function main() {
 }
 
 // Clean shutdown handlers
-process.on("SIGTERM", () => {
+process.on("SIGTERM", async () => {
   console.log(`[${WORKER_ID}] SIGTERM received, shutting down gracefully...`);
+  await systemHeartbeat.shutdown().catch((err) =>
+    console.warn(`[${WORKER_ID}] Failed to send shutdown heartbeat:`, err.message)
+  );
   process.exit(0);
 });
 
-process.on("SIGINT", () => {
+process.on("SIGINT", async () => {
   console.log(`[${WORKER_ID}] SIGINT received, shutting down gracefully...`);
+  await systemHeartbeat.shutdown().catch((err) =>
+    console.warn(`[${WORKER_ID}] Failed to send shutdown heartbeat:`, err.message)
+  );
   process.exit(0);
 });
 
