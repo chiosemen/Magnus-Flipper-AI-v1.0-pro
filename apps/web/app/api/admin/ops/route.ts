@@ -1,53 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { requireAdminAPI } from '@/lib/auth/admin-guard';
+import { NextResponse } from 'next/server';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Simple admin check
-async function isAdmin(): Promise<boolean> {
-  try {
-    const cookieStore = cookies();
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-        },
-      }
-    );
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return false;
-
-    // Check if user has admin role
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    return profile?.role === 'admin';
-  } catch (error) {
-    return false;
-  }
-}
-
 export async function GET() {
+  // Check admin authorization
+  const authResult = await requireAdminAPI();
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
   try {
-    // Check admin authorization
-    const admin = await isAdmin();
-    if (!admin) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const now = new Date();
     const startOfToday = new Date(now);

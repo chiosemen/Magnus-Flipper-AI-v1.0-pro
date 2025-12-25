@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,7 +10,7 @@ interface ReceiptData {
   tier: string;
 }
 
-export default function CheckoutSuccess() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
 
@@ -153,5 +153,17 @@ export default function CheckoutSuccess() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function CheckoutSuccess() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-[#070B12] text-white flex items-center justify-center">
+        <div className="text-white/50">Loading...</div>
+      </main>
+    }>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }
