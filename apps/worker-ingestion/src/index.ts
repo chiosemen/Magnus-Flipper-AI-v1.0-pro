@@ -14,6 +14,16 @@ import { requestRegistry } from "./registry/requestRegistry.js";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+if (process.env.EXECUTION_MODE === "off") {
+  console.log("[worker] execution off — exiting safely");
+  process.exit(0);
+}
+
+if (process.env.EXECUTION_MODE === "admin") {
+  console.log("[worker] admin-only execution — exiting safely");
+  process.exit(0);
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));

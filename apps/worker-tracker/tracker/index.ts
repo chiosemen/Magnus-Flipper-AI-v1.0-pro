@@ -7,16 +7,21 @@ import { app, InvocationContext, Timer } from "@azure/functions";
 import { createClient } from "@supabase/supabase-js";
 import { batchTrackShipments } from "@magnus-flipper-ai/shipping-engine/tracking/trackingManager";
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 export async function trackerTimer(
   myTimer: Timer,
   context: InvocationContext
 ): Promise<void> {
   const startTime = new Date();
   context.log(`Shipment Tracker worker started at ${startTime.toISOString()}`);
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    context.error("Missing Supabase environment variables");
+    return;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     // Step 1: Get all active shipments that need tracking updates

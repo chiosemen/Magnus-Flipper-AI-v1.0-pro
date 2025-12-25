@@ -8,6 +8,16 @@ const HEARTBEAT_INTERVAL = parseInt(process.env.WORKER_HEARTBEAT_INTERVAL || "60
 const SCAN_INTERVAL = 10 * 60 * 1000; // 10 minutes
 
 async function main() {
+  if (process.env.EXECUTION_MODE === "off") {
+    console.log("[worker] execution off — exiting safely");
+    process.exit(0);
+  }
+
+  if (process.env.EXECUTION_MODE === "admin") {
+    console.log("[worker] admin-only execution — exiting safely");
+    process.exit(0);
+  }
+
   console.log(`Worker ${WORKER_ID} starting...`);
 
   // Send initial heartbeat

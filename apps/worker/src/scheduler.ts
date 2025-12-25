@@ -15,6 +15,7 @@ import {
 import {
   getMarketplaceEffectiveControl
 } from '@magnus-flipper-ai/core/services/marketplaceControlService';
+import { ensureScanEntitlement } from "./lib/entitlements.js";
 import * as craigslist from "./marketplaces/craigslist.js";
 import * as gumtree from "./marketplaces/gumtree.js";
 import * as ebay from "./marketplaces/ebay.js";
@@ -149,7 +150,35 @@ export async function scanMarketplace(marketplaceName: string) {
     return;
   }
 
-  // C. Verify marketplace config exists
+  // C. Entitlement gate (hard stop)
+  const entitlementUserId = process.env.WORKER_ENTITLEMENT_USER_ID;
+  const entitlement = await ensureScanEntitlement(
+    entitlementUserId,
+    marketplaceName
+  );
+
+  if (!entitlement.ok) {
+    console.log(
+      `Entitlement blocked for ${marketplaceName}: ${entitlement.reason}`
+    );
+    await logEvent(marketplaceName, "scan_entitlement_blocked", {
+      success: false,
+      latency_ms: 0,
+      payload: { reason: entitlement.reason },
+    });
+
+    await recordScrapeRun({
+      marketplace: marketplaceName,
+      tier: tier,
+      durationMs: Date.now() - startTime,
+      outcome: "ERROR",
+      errorMessage: `Entitlement blocked: ${entitlement.reason}`,
+    });
+
+    return;
+  }
+
+  // D. Verify marketplace config exists
   let profile;
   try {
     profile = getMarketplaceProfile(marketplaceName as MarketplaceId);

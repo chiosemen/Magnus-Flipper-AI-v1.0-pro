@@ -5,6 +5,16 @@ import { processPendingListings } from "./jobs/hydrateListing";
 import { hydrateListing } from "./jobs/hydrateListing";
 import http from "http";
 
+if (process.env.EXECUTION_MODE === "off") {
+  console.log("[worker] execution off — exiting safely");
+  process.exit(0);
+}
+
+if (process.env.EXECUTION_MODE === "admin") {
+  console.log("[worker] admin-only execution — exiting safely");
+  process.exit(0);
+}
+
 const WORKER_ID = process.env.WORKER_ID || "worker-realtime-001";
 const HEARTBEAT_INTERVAL = parseInt(process.env.WORKER_HEARTBEAT_INTERVAL || "60000");
 const PORT = parseInt(process.env.PORT || "3000");

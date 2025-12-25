@@ -1,35 +1,32 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET() {
-  try {
-    const now = new Date();
-
-    const { data } = await supabaseAdmin
-      .from('scan_windows')
-      .select('opens_at, closes_at, status')
-      .in('status', ['active', 'scheduled'])
-      .order('opens_at', { ascending: true })
-      .limit(1)
-      .single();
-
-    if (!data) {
-      return Response.json({ etaMinutes: null });
-    }
-
-    const target = data.status === 'active' ? now : new Date(data.opens_at);
-
-    const etaMinutes = Math.max(
-      0,
-      Math.floor((target.getTime() - now.getTime()) / 60000)
-    );
-
-    return Response.json({ etaMinutes });
-  } catch (error) {
-    return Response.json({ etaMinutes: null });
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return NextResponse.json({ etaMinutes: null }, { status: 200 })
   }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data } = await supabase
+    .from('scan_windows')
+    .select('window_started_at')
+    .gt('window_started_at', new Date().toISOString())
+    .order('window_started_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (!data) {
+    return NextResponse.json({ etaMinutes: null })
+  }
+
+  const etaMs =
+    new Date(data.window_started_at).getTime() - Date.now()
+
+  return NextResponse.json({
+    etaMinutes: Math.max(1, Math.ceil(etaMs / 60000)),
+  })
 }

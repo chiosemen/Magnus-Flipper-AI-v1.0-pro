@@ -2,18 +2,46 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { CanarySummaryResponse, CanaryEnvironment } from '@/lib/types/canary';
 
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
   const envParam = (searchParams.get('env') || 'production') as CanaryEnvironment;
   const worker = searchParams.get('worker') || 'mf-worker-realtime';
+
+  const defaultResponse: CanarySummaryResponse = {
+    env: envParam,
+    worker,
+    canary: {
+      revision: '-',
+      errorRate: 0,
+      latencyP95: 0,
+      healthPassRate: 0,
+      traffic: {
+        canary: 0,
+        stable: 1,
+      },
+      mlDecision: {
+        decision: 'DEGRADED',
+        severity: 'UNKNOWN',
+        confidence: 0,
+        anomalies: [],
+      },
+    },
+    stable: {
+      revision: '-',
+      errorRate: 0,
+      latencyP95: 0,
+      healthPassRate: 0,
+    },
+    traffic: {
+      totalRequestsLast15m: 0,
+      errorCountLast15m: 0,
+    },
+    timestamps: {
+      lastAnalysisAt: new Date().toISOString(),
+      lastDeploymentAt: new Date().toISOString(),
+    },
+  };
 
   // Validate environment
   if (!['production', 'staging', 'local'].includes(envParam)) {
@@ -24,6 +52,16 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(defaultResponse, { status: 200 });
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { persistSession: false } }
+    );
+
     // Query the summary view
     // If view doesn't exist, fall back to querying tables directly
     let { data, error } = await supabase
@@ -91,41 +129,6 @@ export async function GET(req: NextRequest) {
 
     if (!data) {
       // Return a default response if no data exists
-      const defaultResponse: CanarySummaryResponse = {
-        env: envParam,
-        worker,
-        canary: {
-          revision: '-',
-          errorRate: 0,
-          latencyP95: 0,
-          healthPassRate: 0,
-          traffic: {
-            canary: 0,
-            stable: 1,
-          },
-          mlDecision: {
-            decision: 'DEGRADED',
-            severity: 'UNKNOWN',
-            confidence: 0,
-            anomalies: [],
-          },
-        },
-        stable: {
-          revision: '-',
-          errorRate: 0,
-          latencyP95: 0,
-          healthPassRate: 0,
-        },
-        traffic: {
-          totalRequestsLast15m: 0,
-          errorCountLast15m: 0,
-        },
-        timestamps: {
-          lastAnalysisAt: new Date().toISOString(),
-          lastDeploymentAt: new Date().toISOString(),
-        },
-      };
-
       return NextResponse.json(defaultResponse, { status: 200 });
     }
 

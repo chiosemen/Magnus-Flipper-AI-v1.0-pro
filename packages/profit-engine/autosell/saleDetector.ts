@@ -3,14 +3,27 @@
  * Polls marketplaces for sale events and normalizes them
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
 import type { SaleEvent } from "../schemas/SaleEvent.js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 export interface MarketplaceSalePoller {
   marketplace: string;
@@ -365,7 +378,7 @@ async function initializeDetectors(): Promise<MarketplaceSalePoller[]> {
   const detectors: MarketplaceSalePoller[] = [];
 
   // Load marketplace credentials from Supabase
-  const { data: credentials } = await supabase
+  const { data: credentials } = await getSupabaseClient()
     .from("marketplace_credentials")
     .select("*")
     .eq("active", true);
@@ -408,7 +421,7 @@ async function initializeDetectors(): Promise<MarketplaceSalePoller[]> {
 async function deduplicateSales(sales: SaleEvent[]): Promise<SaleEvent[]> {
   const saleIds = sales.map((s) => s.id);
 
-  const { data: existing } = await supabase
+  const { data: existing } = await getSupabaseClient()
     .from("sold_items")
     .select("sale_event_id")
     .in("sale_event_id", saleIds);
@@ -439,7 +452,9 @@ async function storeSaleEvents(sales: SaleEvent[]): Promise<void> {
     created_at: new Date().toISOString(),
   }));
 
-  const { error } = await supabase.from("sale_events").insert(records);
+  const { error } = await getSupabaseClient()
+    .from("sale_events")
+    .insert(records);
 
   if (error) {
     console.error("Failed to store sale events:", error);

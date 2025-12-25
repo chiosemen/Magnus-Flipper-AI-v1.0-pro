@@ -3,7 +3,7 @@
  * Calculates marketplace health scores and detects degradation
  */
 
-import { supabase } from '../services/supabase';
+import { getSupabaseClient } from '../services/supabase';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 
@@ -22,6 +22,19 @@ export interface HealthScore {
  * Calculate health score for a marketplace
  */
 async function calculateHealthScore(marketplace: string): Promise<HealthScore> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    logger.warn({ marketplace }, 'Supabase not configured for health scoring');
+    return {
+      marketplace,
+      score: 100,
+      successRate: 1.0,
+      anomalyRate: 0.0,
+      runCount: 0,
+      anomalyCount: 0,
+    };
+  }
+
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   // Query runs
@@ -167,4 +180,3 @@ async function proposeMarketplaceDisable(
     logger.info({ marketplace }, 'Created change request to disable marketplace');
   }
 }
-

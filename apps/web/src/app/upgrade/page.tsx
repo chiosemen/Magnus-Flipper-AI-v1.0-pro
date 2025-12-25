@@ -8,6 +8,9 @@ export default function UpgradePage() {
   const [selectedTier, setSelectedTier] = useState<"PRO" | "AGENCY" | null>(null);
 
   const handleUpgrade = async (tier: "PRO" | "AGENCY") => {
+    if (process.env.NEXT_PUBLIC_MARKETING_ONLY === 'true') {
+      return alert('Paid access opening shortly');
+    }
     setLoading(true);
     setSelectedTier(tier);
 

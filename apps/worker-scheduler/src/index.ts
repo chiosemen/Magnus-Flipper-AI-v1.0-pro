@@ -181,6 +181,16 @@ async function runTTLCleanup() {
 }
 
 async function main() {
+  if (process.env.EXECUTION_MODE === "off") {
+    console.log("[worker] execution off — exiting safely");
+    process.exit(0);
+  }
+
+  if (process.env.EXECUTION_MODE === "admin") {
+    console.log("[worker] admin-only execution — exiting safely");
+    process.exit(0);
+  }
+
   console.log(`Worker Scheduler ${WORKER_ID} starting...`);
   
   // Initialize feature flags

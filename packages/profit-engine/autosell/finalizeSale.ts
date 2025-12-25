@@ -3,15 +3,28 @@
  * Calculates P&L, creates ledger entries, and updates inventory
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { SaleEvent, FinalizedSale } from "../schemas/SaleEvent.js";
 import { lockListingAcrossPlatforms } from "./crossPlatformLock.js";
 import { calculateMarketplaceFees } from "../ledger/feeModel.js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 export interface FinalizationResult {
   success: boolean;
@@ -33,7 +46,7 @@ export async function finalizeSale(
 ): Promise<FinalizationResult> {
   try {
     // Get inventory item details
-    const { data: item, error: itemError } = await supabase
+    const { data: item, error: itemError } = await getSupabaseClient()
       .from("inventory")
       .select("*")
       .eq("id", saleEvent.inventoryItemId)
@@ -99,7 +112,9 @@ export async function finalizeSale(
     };
 
     // Store finalized sale
-    const { error: saleError } = await supabase.from("sold_items").insert({
+    const { error: saleError } = await getSupabaseClient()
+      .from("sold_items")
+      .insert({
       id: finalizedSale.id,
       sale_event_id: finalizedSale.saleEventId,
       listing_id: finalizedSale.listingId,
@@ -140,7 +155,7 @@ export async function finalizeSale(
     await createLedgerEntries(finalizedSale, item.user_id);
 
     // Update inventory status
-    await supabase
+    await getSupabaseClient()
       .from("inventory")
       .update({
         status: "sold",
@@ -152,7 +167,7 @@ export async function finalizeSale(
       .eq("id", saleEvent.inventoryItemId);
 
     // Update sale event status
-    await supabase
+    await getSupabaseClient()
       .from("sale_events")
       .update({
         status: "finalized",
@@ -265,7 +280,7 @@ async function createLedgerEntries(
     },
   ];
 
-  await supabase.from("ledger_entries").insert(entries);
+  await getSupabaseClient().from("ledger_entries").insert(entries);
 }
 
 /**
@@ -307,7 +322,7 @@ export async function updateSaleStatus(
       updateData.completed_at = new Date().toISOString();
     }
 
-    const { error } = await supabase
+    const { error } = await getSupabaseClient()
       .from("sold_items")
       .update(updateData)
       .eq("id", saleId);
@@ -331,7 +346,7 @@ export async function processRefund(
   reason: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data: sale, error: saleError } = await supabase
+    const { data: sale, error: saleError } = await getSupabaseClient()
       .from("sold_items")
       .select("*")
       .eq("id", saleId)
@@ -342,7 +357,7 @@ export async function processRefund(
     }
 
     // Update sale status
-    await supabase
+    await getSupabaseClient()
       .from("sold_items")
       .update({
         status: "refunded",
@@ -353,7 +368,7 @@ export async function processRefund(
       .eq("id", saleId);
 
     // Create refund ledger entry
-    await supabase.from("ledger_entries").insert({
+    await getSupabaseClient().from("ledger_entries").insert({
       id: `ledger_${Date.now()}_refund`,
       user_id: sale.user_id,
       inventory_item_id: sale.inventory_item_id,
@@ -368,7 +383,7 @@ export async function processRefund(
     });
 
     // Update inventory status back to available
-    await supabase
+    await getSupabaseClient()
       .from("inventory")
       .update({
         status: "available",

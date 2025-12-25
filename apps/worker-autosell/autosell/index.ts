@@ -9,16 +9,21 @@ import { detectSales } from "@magnus-flipper-ai/profit-engine/autosell/saleDetec
 import { finalizeSale } from "@magnus-flipper-ai/profit-engine/autosell/finalizeSale";
 import { lockListingAcrossPlatforms } from "@magnus-flipper-ai/profit-engine/autosell/crossPlatformLock";
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 export async function autoSellTimer(
   myTimer: Timer,
   context: InvocationContext
 ): Promise<void> {
   const startTime = new Date();
   context.log(`Auto-Sell worker started at ${startTime.toISOString()}`);
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    context.error("Missing Supabase environment variables");
+    return;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     // Step 1: Detect new sales across all marketplaces

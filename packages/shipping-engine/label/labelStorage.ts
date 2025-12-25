@@ -3,12 +3,25 @@
  * Manages shipping label file storage in Supabase Storage
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 const STORAGE_BUCKET = "shipping-labels";
 
@@ -46,7 +59,7 @@ export async function uploadLabelToStorage(
     const contentType = getContentType(format);
 
     // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
+    const { data, error } = await getSupabaseClient().storage
       .from(STORAGE_BUCKET)
       .upload(filePath, buffer, {
         contentType,
@@ -59,7 +72,7 @@ export async function uploadLabelToStorage(
     }
 
     // Generate signed URL (valid for 7 days)
-    const { data: urlData, error: urlError } = await supabase.storage
+    const { data: urlData, error: urlError } = await getSupabaseClient().storage
       .from(STORAGE_BUCKET)
       .createSignedUrl(filePath, 7 * 24 * 60 * 60); // 7 days
 
@@ -79,12 +92,12 @@ export async function uploadLabelToStorage(
  * Ensure storage bucket exists
  */
 async function ensureBucketExists(): Promise<void> {
-  const { data: buckets } = await supabase.storage.listBuckets();
+  const { data: buckets } = await getSupabaseClient().storage.listBuckets();
 
   const exists = buckets?.some((bucket) => bucket.name === STORAGE_BUCKET);
 
   if (!exists) {
-    await supabase.storage.createBucket(STORAGE_BUCKET, {
+    await getSupabaseClient().storage.createBucket(STORAGE_BUCKET, {
       public: false,
       fileSizeLimit: 5242880, // 5MB
       allowedMimeTypes: ["application/pdf", "image/png", "text/plain"],
@@ -122,7 +135,9 @@ export async function deleteLabelFromStorage(
       return { success: false, error: "Invalid label URL" };
     }
 
-    const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([path]);
+    const { error } = await getSupabaseClient().storage
+      .from(STORAGE_BUCKET)
+      .remove([path]);
 
     if (error) {
       return { success: false, error: error.message };
@@ -148,7 +163,7 @@ export async function getLabelFromStorage(
       return { data: null, error: "Invalid label URL" };
     }
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await getSupabaseClient().storage
       .from(STORAGE_BUCKET)
       .download(path);
 
@@ -177,7 +192,7 @@ export async function regenerateSignedUrl(
       return { url: null, error: "Invalid label URL" };
     }
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await getSupabaseClient().storage
       .from(STORAGE_BUCKET)
       .createSignedUrl(path, expiresInSeconds);
 
@@ -198,7 +213,7 @@ export async function listLabelsForOrder(
   orderId: string
 ): Promise<{ files: string[]; error?: string }> {
   try {
-    const { data, error } = await supabase.storage
+    const { data, error } = await getSupabaseClient().storage
       .from(STORAGE_BUCKET)
       .list(`labels`, {
         limit: 100,
@@ -230,7 +245,7 @@ export async function cleanupOldLabels(
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await getSupabaseClient().storage
       .from(STORAGE_BUCKET)
       .list("labels", {
         limit: 1000,
@@ -252,7 +267,7 @@ export async function cleanupOldLabels(
       return { deleted: 0 };
     }
 
-    const { error: deleteError } = await supabase.storage
+    const { error: deleteError } = await getSupabaseClient().storage
       .from(STORAGE_BUCKET)
       .remove(filesToDelete);
 

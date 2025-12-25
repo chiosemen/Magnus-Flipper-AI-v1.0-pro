@@ -3,7 +3,7 @@
  * Orchestrates shipping label creation across all carriers
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type {
   ShippingRequest,
   ShippingLabel,
@@ -17,10 +17,23 @@ import { generateFedExLabel } from "../carrier/carrierClient_FedEx.js";
 import { generateGenericLabel } from "../carrier/carrierClient_Generic.js";
 import { uploadLabelToStorage } from "./labelStorage.js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 export interface LabelGenerationResult {
   success: boolean;
@@ -179,7 +192,7 @@ async function loadCarrierConfigs(userId: string): Promise<CarrierConfig[]> {
  * Store label in database
  */
 async function storeLabel(label: ShippingLabel): Promise<void> {
-  await supabase.from("shipping_labels").insert({
+  await getSupabaseClient().from("shipping_labels").insert({
     id: label.id,
     shipping_request_id: label.shippingRequestId,
     order_id: label.orderId,
@@ -210,7 +223,7 @@ async function createFulfillmentEvent(event: {
   description: string;
   metadata?: any;
 }): Promise<void> {
-  await supabase.from("fulfillment_events").insert({
+  await getSupabaseClient().from("fulfillment_events").insert({
     id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     order_id: event.orderId,
     type: event.type,
@@ -228,7 +241,7 @@ export async function voidShippingLabel(
   labelId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data: label } = await supabase
+    const { data: label } = await getSupabaseClient()
       .from("shipping_labels")
       .select("*")
       .eq("id", labelId)
@@ -245,7 +258,7 @@ export async function voidShippingLabel(
     // Call carrier API to void label (carrier-specific implementation)
     // For now, just update database
 
-    await supabase
+    await getSupabaseClient()
       .from("shipping_labels")
       .update({
         status: "voided",
@@ -265,7 +278,7 @@ export async function voidShippingLabel(
 export async function regenerateLabel(
   shippingRequestId: string
 ): Promise<LabelGenerationResult> {
-  const { data: request } = await supabase
+  const { data: request } = await getSupabaseClient()
     .from("shipping_requests")
     .select("*")
     .eq("id", shippingRequestId)
@@ -284,7 +297,7 @@ export async function regenerateLabel(
 export async function getLabelByTrackingNumber(
   trackingNumber: string
 ): Promise<ShippingLabel | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("shipping_labels")
     .select("*")
     .eq("tracking_number", trackingNumber)

@@ -6,10 +6,7 @@
 import { app, InvocationContext, Timer } from "@azure/functions";
 import { createClient } from "@supabase/supabase-js";
 import { ScraperOrchestrator } from "@magnus-flipper-ai/scraper-sync";
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { ensureScanEntitlement } from "./entitlements";
 
 export async function scraperTimer(
   myTimer: Timer,
@@ -17,6 +14,15 @@ export async function scraperTimer(
 ): Promise<void> {
   const startTime = Date.now();
   context.log(`Marketplace Scraper worker started at ${new Date().toISOString()}`);
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    context.error("Missing Supabase environment variables");
+    return;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     // Initialize orchestrator
@@ -49,6 +55,19 @@ export async function scraperTimer(
     for (const [marketplace, marketplaceConfigs] of configsByMarketplace.entries()) {
       try {
         context.log(`Starting scraper for ${marketplace}...`);
+
+        const entitlementUserId = process.env.WORKER_ENTITLEMENT_USER_ID;
+        const entitlement = await ensureScanEntitlement(
+          entitlementUserId,
+          marketplace
+        );
+
+        if (!entitlement.ok) {
+          context.log(
+            `Entitlement blocked for ${marketplace}: ${entitlement.reason}`
+          );
+          continue;
+        }
 
         // Merge all search queries from all user configs for this marketplace
         const allQueries = new Set<string>();

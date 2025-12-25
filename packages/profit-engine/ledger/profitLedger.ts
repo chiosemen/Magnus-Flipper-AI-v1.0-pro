@@ -3,13 +3,26 @@
  * Comprehensive P&L tracking and analytics
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@getSupabaseClient()/getSupabaseClient()-js";
 import type { LedgerEntry, PnLSummary } from "../schemas/SaleEvent.js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 /**
  * Calculate P&L for a given time period
@@ -20,7 +33,7 @@ export async function calculatePnL(
   endDate: string
 ): Promise<PnLSummary> {
   // Fetch all ledger entries for the period
-  const { data: entries, error } = await supabase
+  const { data: entries, error } = await getSupabaseClient()
     .from("ledger_entries")
     .select("*")
     .eq("user_id", userId)
@@ -153,7 +166,7 @@ export async function calculatePnL(
   }
 
   // Fetch sold items to calculate holding time and win rate
-  const { data: soldItems } = await supabase
+  const { data: soldItems } = await getSupabaseClient()
     .from("sold_items")
     .select("holding_time, net_profit, acquired_price")
     .eq("user_id", userId)
@@ -212,7 +225,7 @@ export async function getLedgerEntries(
   endDate?: string,
   limit: number = 100
 ): Promise<LedgerEntry[]> {
-  let query = supabase
+  let query = getSupabaseClient()
     .from("ledger_entries")
     .select("*")
     .eq("user_id", userId)
@@ -248,7 +261,7 @@ export async function createLedgerEntry(
     created_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("ledger_entries")
     .insert(newEntry)
     .select()
@@ -350,7 +363,7 @@ export async function getTopPerformingItems(
     salePrice: number;
   }>
 > {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("sold_items")
     .select("inventory_item_id, marketplace, net_profit, roi, sale_price")
     .eq("user_id", userId)
@@ -363,7 +376,7 @@ export async function getTopPerformingItems(
 
   // Fetch inventory item details
   const itemIds = data.map((item) => item.inventory_item_id);
-  const { data: inventoryItems } = await supabase
+  const { data: inventoryItems } = await getSupabaseClient()
     .from("inventory")
     .select("id, title")
     .in("id", itemIds);
@@ -398,7 +411,7 @@ export async function getWorstPerformingItems(
     salePrice: number;
   }>
 > {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("sold_items")
     .select("inventory_item_id, marketplace, net_profit, roi, sale_price")
     .eq("user_id", userId)
@@ -413,7 +426,7 @@ export async function getWorstPerformingItems(
 
   // Fetch inventory item details
   const itemIds = data.map((item) => item.inventory_item_id);
-  const { data: inventoryItems } = await supabase
+  const { data: inventoryItems } = await getSupabaseClient()
     .from("inventory")
     .select("id, title")
     .in("id", itemIds);
@@ -446,7 +459,7 @@ export async function calculateLTV(userId: string): Promise<{
   const pnl = await getAllTimePnL(userId);
 
   // Get current inventory value
-  const { data: inventory } = await supabase
+  const { data: inventory } = await getSupabaseClient()
     .from("inventory")
     .select("acquired_price, estimated_resale_value, status")
     .eq("user_id", userId)

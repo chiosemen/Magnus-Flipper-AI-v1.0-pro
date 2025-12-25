@@ -2,15 +2,19 @@
  * Supabase service client (service role)
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { config } from '../config';
 
-if (!config.supabaseUrl || !config.supabaseServiceKey) {
-  throw new Error('Missing Supabase configuration (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)');
+let supabaseClient: SupabaseClient | null = null;
+
+export function getSupabaseClient(): SupabaseClient | null {
+  if (supabaseClient) return supabaseClient;
+  if (!config.supabaseUrl || !config.supabaseServiceKey) {
+    return null;
+  }
+  supabaseClient = createClient(
+    config.supabaseUrl,
+    config.supabaseServiceKey
+  );
+  return supabaseClient;
 }
-
-export const supabase = createClient(
-  config.supabaseUrl,
-  config.supabaseServiceKey
-);
-

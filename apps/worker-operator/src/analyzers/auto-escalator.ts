@@ -3,7 +3,7 @@
  * Automatically escalates severity for repeated anomalies
  */
 
-import { supabase } from '../services/supabase';
+import { getSupabaseClient } from '../services/supabase';
 import { logger } from '../utils/logger';
 
 /**
@@ -11,6 +11,12 @@ import { logger } from '../utils/logger';
  */
 export async function autoEscalate(): Promise<void> {
   logger.info('Starting auto-escalation check');
+
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    logger.warn('Supabase not configured for auto-escalation');
+    return;
+  }
 
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -83,4 +89,3 @@ export async function autoEscalate(): Promise<void> {
     }
   }
 }
-

@@ -3,16 +3,29 @@
  * Monitors shipment status and normalizes tracking events
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { TrackingEvent } from "../schemas/ShippingRequest.js";
 import { trackUSPSShipment } from "../carrier/carrierClient_USPS.js";
 import { trackUPSShipment } from "../carrier/carrierClient_UPS.js";
 import { trackFedExShipment } from "../carrier/carrierClient_FedEx.js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 /**
  * Track shipment and update database
@@ -121,7 +134,7 @@ function normalizeStatus(
  */
 async function storeTrackingEvent(event: TrackingEvent): Promise<void> {
   // Check if event already exists
-  const { data: existing } = await supabase
+  const { data: existing } = await getSupabaseClient()
     .from("tracking_events")
     .select("id")
     .eq("tracking_number", event.trackingNumber)
@@ -130,7 +143,7 @@ async function storeTrackingEvent(event: TrackingEvent): Promise<void> {
 
   if (existing) return; // Skip duplicates
 
-  await supabase.from("tracking_events").insert({
+  await getSupabaseClient().from("tracking_events").insert({
     id: event.id,
     tracking_number: event.trackingNumber,
     carrier: event.carrier,
@@ -151,7 +164,7 @@ async function updateOrderStatus(
   trackingNumber: string,
   latestEvent: TrackingEvent
 ): Promise<void> {
-  const { data: label } = await supabase
+  const { data: label } = await getSupabaseClient()
     .from("shipping_labels")
     .select("order_id")
     .eq("tracking_number", trackingNumber)
@@ -169,7 +182,7 @@ async function updateOrderStatus(
     orderStatus = "returned";
   }
 
-  await supabase
+  await getSupabaseClient()
     .from("sold_items")
     .update({
       status: orderStatus,
@@ -178,7 +191,7 @@ async function updateOrderStatus(
     .eq("id", label.order_id);
 
   // Create fulfillment event
-  await supabase.from("fulfillment_events").insert({
+  await getSupabaseClient().from("fulfillment_events").insert({
     id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     order_id: label.order_id,
     type: latestEvent.status,
@@ -215,7 +228,7 @@ export async function batchTrackShipments(
 export async function getTrackingHistory(
   trackingNumber: string
 ): Promise<TrackingEvent[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("tracking_events")
     .select("*")
     .eq("tracking_number", trackingNumber)
@@ -252,7 +265,7 @@ async function getCarrierConfig(carrier: string): Promise<any> {
  * Poll all active shipments for updates
  */
 export async function pollActiveShipments(): Promise<void> {
-  const { data: activeLabels } = await supabase
+  const { data: activeLabels } = await getSupabaseClient()
     .from("shipping_labels")
     .select("tracking_number, carrier")
     .in("status", ["purchased", "shipped"])

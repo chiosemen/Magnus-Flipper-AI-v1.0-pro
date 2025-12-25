@@ -1,11 +1,40 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
 export async function GET() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const now = new Date();
+    return Response.json({
+      timestamp: now.toISOString(),
+      workers: {
+        total: 0,
+        byType: {},
+        byMarketplace: {},
+        byState: {},
+      },
+      windows: {
+        active: 0,
+        scheduled: 0,
+        list: [],
+      },
+      today: {
+        scans: 0,
+        deals: 0,
+        blockedCredits: 0,
+        blockedBudget: 0,
+        terminated: 0,
+      },
+      activeWindow: {
+        scans: 0,
+        deals: 0,
+      },
+    });
+  }
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
   try {
     // Admin authorization is handled by middleware
     // This route is only accessible to verified admins

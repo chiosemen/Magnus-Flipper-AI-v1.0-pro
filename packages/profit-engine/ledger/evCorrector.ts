@@ -3,13 +3,26 @@
  * Learning loop that improves resale predictions over time
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@getSupabaseClient()/getSupabaseClient()-js";
 import type { EVCorrection, HistoricalStats, FinalizedSale } from "../schemas/SaleEvent.js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 /**
  * Correct EV based on actual sale outcome
@@ -66,7 +79,7 @@ export async function correctEV(
   };
 
   // Store correction in database
-  await supabase.from("ev_corrections").insert({
+  await getSupabaseClient().from("ev_corrections").insert({
     id: correction.id,
     sale_id: correction.saleId,
     inventory_item_id: correction.inventoryItemId,
@@ -165,7 +178,7 @@ async function getHistoricalStats(
   category: string,
   marketplace: string
 ): Promise<HistoricalStats | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("historical_stats")
     .select("*")
     .eq("category", category)
@@ -200,7 +213,7 @@ async function updateHistoricalStats(
 
   if (!stats) {
     // Create initial stats
-    await supabase.from("historical_stats").insert({
+    await getSupabaseClient().from("historical_stats").insert({
       category,
       marketplace,
       avg_expected_value: correction.expectedValue,
@@ -232,7 +245,7 @@ async function updateHistoricalStats(
     const m2 = Math.pow(stats.stdDeviation, 2) * n + delta * delta2;
     const newStdDev = Math.sqrt(m2 / newN);
 
-    await supabase
+    await getSupabaseClient()
       .from("historical_stats")
       .update({
         avg_expected_value: newAvgExpected,
@@ -253,7 +266,7 @@ async function updateHistoricalStats(
 async function getCategoryFromInventory(
   inventoryItemId: string
 ): Promise<string> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("inventory")
     .select("category")
     .eq("id", inventoryItemId)
@@ -285,7 +298,7 @@ export async function getCorrectionInsights(
     .toISOString()
     .split("T")[0];
 
-  const { data: corrections } = await supabase
+  const { data: corrections } = await getSupabaseClient()
     .from("ev_corrections")
     .select("*")
     .eq("category", category)
@@ -384,7 +397,7 @@ export async function applyEVCorrection(
  * Get all historical stats (for admin dashboard)
  */
 export async function getAllHistoricalStats(): Promise<HistoricalStats[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("historical_stats")
     .select("*")
     .order("sample_size", { ascending: false });
@@ -414,7 +427,7 @@ export async function calculateModelAccuracy(): Promise<{
   r2: number; // R-squared
   sampleSize: number;
 }> {
-  const { data: corrections } = await supabase
+  const { data: corrections } = await getSupabaseClient()
     .from("ev_corrections")
     .select("expected_value, actual_value")
     .limit(1000);

@@ -1,12 +1,38 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function GET() {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({
+      revisions: {
+        stable: '-',
+        canary: '-',
+        traffic: '-',
+      },
+      ml: {
+        decision: 'UNKNOWN',
+        confidence: 0,
+        severity: 'UNKNOWN',
+        summary: 'No ML analysis yet',
+        anomalies: [],
+      },
+      health: {
+        success_rate: 0,
+        total: 0,
+        failures: 0,
+        checks: [],
+      },
+      latency: [],
+      error_rate: [],
+      ml_confidence: [],
+    });
+  }
+
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
   try {
     // Fetch latest metrics from Supabase
     const { data: metrics } = await supabase

@@ -9,7 +9,7 @@
 
 import { DefaultAzureCredential } from '@azure/identity';
 import { ContainerAppsAPIClient } from '@azure/arm-appcontainers';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import WebSocket from 'ws';
 
 const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID || '';
@@ -19,10 +19,22 @@ const appName = process.env.CANARY_APP_NAME || 'mf-worker-realtime';
 const credential = new DefaultAzureCredential();
 const client = new ContainerAppsAPIClient(credential, subscriptionId);
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient | null {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Supabase not configured for canary streamer');
+    return null;
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 // WebSocket server for dashboard connections
 const WS_PORT = parseInt(process.env.WS_PORT || '8080');
@@ -43,6 +55,8 @@ function broadcastToClients(data: any) {
 
 async function fetchAndStreamLogs() {
   try {
+    const supabase = getSupabaseClient();
+
     const revisions = await client.containerAppsRevisions.listRevisions(
       resourceGroup,
       appName
@@ -84,13 +98,15 @@ async function fetchAndStreamLogs() {
       });
 
       // Write to Supabase
-      await supabase.from('canary_logs').insert({
-        app_name: appName,
-        revision: latestRevision.name,
-        level: log.level,
-        message: log.message,
-        timestamp: log.timestamp,
-      });
+      if (supabase) {
+        await supabase.from('canary_logs').insert({
+          app_name: appName,
+          revision: latestRevision.name,
+          level: log.level,
+          message: log.message,
+          timestamp: log.timestamp,
+        });
+      }
     }
 
     console.log(`✅ Streamed ${logEntries.length} logs`);

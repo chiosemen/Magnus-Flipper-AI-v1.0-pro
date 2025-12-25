@@ -3,14 +3,27 @@
  * Bloomberg Terminal-style portfolio tracking and analytics
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@getSupabaseClient()/getSupabaseClient()-js";
 import type { PortfolioSnapshot } from "../schemas/SaleEvent.js";
 import { calculatePnL, getAllTimePnL } from "./profitLedger.js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 /**
  * Create portfolio snapshot
@@ -20,7 +33,7 @@ export async function createPortfolioSnapshot(
   userId: string
 ): Promise<PortfolioSnapshot> {
   // Get current inventory stats
-  const { data: inventory } = await supabase
+  const { data: inventory } = await getSupabaseClient()
     .from("inventory")
     .select("*")
     .eq("user_id", userId);
@@ -50,14 +63,14 @@ export async function createPortfolioSnapshot(
   const totalRealizedProfit = pnl.netProfit;
 
   // Get active listings count
-  const { count: activeListings } = await supabase
+  const { count: activeListings } = await getSupabaseClient()
     .from("listings")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("status", "active");
 
   // Calculate average holding time from sold items
-  const { data: soldData } = await supabase
+  const { data: soldData } = await getSupabaseClient()
     .from("sold_items")
     .select("holding_time, net_profit")
     .eq("user_id", userId);
@@ -113,7 +126,7 @@ export async function createPortfolioSnapshot(
   };
 
   // Store snapshot
-  await supabase.from("portfolio_snapshots").insert({
+  await getSupabaseClient().from("portfolio_snapshots").insert({
     id: snapshot.id,
     user_id: snapshot.userId,
     snapshot_date: snapshot.snapshotDate,
@@ -148,7 +161,7 @@ async function getCategoryPerformance(
     itemsSold: number;
   }>
 > {
-  const { data: soldItems } = await supabase
+  const { data: soldItems } = await getSupabaseClient()
     .from("sold_items")
     .select("inventory_item_id, net_profit")
     .eq("user_id", userId);
@@ -157,7 +170,7 @@ async function getCategoryPerformance(
 
   // Get inventory items to get categories
   const itemIds = soldItems.map((item) => item.inventory_item_id);
-  const { data: inventory } = await supabase
+  const { data: inventory } = await getSupabaseClient()
     .from("inventory")
     .select("id, category, acquired_price")
     .in("id", itemIds);
@@ -212,7 +225,7 @@ export async function getPortfolioHistory(
     .toISOString()
     .split("T")[0];
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from("portfolio_snapshots")
     .select("*")
     .eq("user_id", userId)
@@ -271,7 +284,7 @@ export async function getCurrentPortfolio(userId: string): Promise<{
   };
 }> {
   // Get inventory breakdown
-  const { data: inventory } = await supabase
+  const { data: inventory } = await getSupabaseClient()
     .from("inventory")
     .select("status, acquired_price, estimated_resale_value")
     .eq("user_id", userId);
@@ -299,7 +312,7 @@ export async function getCurrentPortfolio(userId: string): Promise<{
   const unrealized = current - invested;
 
   // Get performance metrics
-  const { data: soldItems } = await supabase
+  const { data: soldItems } = await getSupabaseClient()
     .from("sold_items")
     .select("holding_time, net_profit, sale_price")
     .eq("user_id", userId);
@@ -328,7 +341,7 @@ export async function getCurrentPortfolio(userId: string): Promise<{
   const roi = totalCapital > 0 ? (totalProfit / totalCapital) * 100 : 0;
 
   // Get listings stats
-  const { count: activeListings } = await supabase
+  const { count: activeListings } = await getSupabaseClient()
     .from("listings")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId)
@@ -367,7 +380,7 @@ export async function getInventoryAging(userId: string): Promise<
     avgValue: number;
   }>
 > {
-  const { data: inventory } = await supabase
+  const { data: inventory } = await getSupabaseClient()
     .from("inventory")
     .select("acquired_at, acquired_price, estimated_resale_value")
     .eq("user_id", userId)
@@ -421,14 +434,14 @@ export async function getMarketplaceDistribution(userId: string): Promise<
   }>
 > {
   // Get active listings by marketplace
-  const { data: listings } = await supabase
+  const { data: listings } = await getSupabaseClient()
     .from("listings")
     .select("marketplace")
     .eq("user_id", userId)
     .eq("status", "active");
 
   // Get sold items by marketplace
-  const { data: sold } = await supabase
+  const { data: sold } = await getSupabaseClient()
     .from("sold_items")
     .select("marketplace, sale_price")
     .eq("user_id", userId);
@@ -497,7 +510,7 @@ export async function calculateCashFlowProjection(
   basedOnItems: number;
 }> {
   // Get average sale velocity
-  const { data: recentSales } = await supabase
+  const { data: recentSales } = await getSupabaseClient()
     .from("sold_items")
     .select("sold_at, net_profit, sale_price")
     .eq("user_id", userId)
@@ -510,7 +523,7 @@ export async function calculateCashFlowProjection(
     recentSales && recentSales.length > 0 ? recentSales.length / 30 : 0;
 
   // Get current inventory value
-  const { data: inventory } = await supabase
+  const { data: inventory } = await getSupabaseClient()
     .from("inventory")
     .select("acquired_price, estimated_resale_value")
     .eq("user_id", userId)

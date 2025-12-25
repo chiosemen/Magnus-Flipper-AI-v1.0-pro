@@ -3,13 +3,15 @@ import { mlCanaryCommittee } from '@/lib/ml';
 import { getContainerAppLogs } from '@/lib/azure';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(request: NextRequest) {
   try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabase =
+      supabaseUrl && supabaseKey
+        ? createClient(supabaseUrl, supabaseKey)
+        : null;
+
     const { appName, revisionName } = await request.json();
 
     if (!appName) {
@@ -27,16 +29,18 @@ export async function POST(request: NextRequest) {
     const decision = await mlCanaryCommittee(logText);
 
     // Save to Supabase
-    await supabase.from('canary_ml_decisions').insert({
-      app_name: appName,
-      revision: revisionName || 'latest',
-      decision: decision.decision,
-      confidence: decision.confidence,
-      severity: decision.severity,
-      summary: decision.summary,
-      anomalies: decision.anomalies,
-      timestamp: new Date().toISOString(),
-    });
+    if (supabase) {
+      await supabase.from('canary_ml_decisions').insert({
+        app_name: appName,
+        revision: revisionName || 'latest',
+        decision: decision.decision,
+        confidence: decision.confidence,
+        severity: decision.severity,
+        summary: decision.summary,
+        anomalies: decision.anomalies,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     // Broadcast via WebSocket (if implemented)
     // await broadcastEvent('ml_decision', decision);

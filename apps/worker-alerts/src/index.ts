@@ -4,6 +4,16 @@ import { config } from "./config";
 import { alertsLoop } from "./alertsLoop";
 
 async function main() {
+  if (process.env.EXECUTION_MODE === "off") {
+    logger.info("[worker] execution off — exiting safely");
+    process.exit(0);
+  }
+
+  if (process.env.EXECUTION_MODE === "admin") {
+    logger.info("[worker] admin-only execution — exiting safely");
+    process.exit(0);
+  }
+
   logger.info({ workerId: config.workerId, pollInterval: config.pollIntervalMs }, "🔔 worker-alerts starting…");
 
   // 1) Health check for container probes

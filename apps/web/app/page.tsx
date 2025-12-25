@@ -5,10 +5,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import CarFlippingSection from '@/components/marketing/CarFlippingSection';
 import MarketplaceMonitorSection from '@/components/marketing/MarketplaceMonitorSection';
+import { LiveExecutionStrip } from '@/components/marketing/LiveExecutionStrip';
 import LiveScanStatusBadge from '@/components/marketing/LiveScanStatusBadge';
+import { UserScanPromise } from '@/components/marketing/UserScanPromise';
 import WhyTimingMatters from '@/components/marketing/WhyTimingMatters';
 import ScansThisWindow from '@/components/marketing/ScansThisWindow';
 import { usePageView } from '@/hooks/usePageView';
+import { startCheckout } from '@/lib/checkout';
 import {
   EstimatedExecutionTime,
   NextScanETA,
@@ -108,30 +111,13 @@ export default function HomePage() {
 
   // Stripe checkout handler
   const handleCheckout = async (priceId: string, tierName: string) => {
-    if (!priceId) {
-      alert('Stripe price ID not configured');
-      return;
+    if (process.env.NEXT_PUBLIC_MARKETING_ONLY === 'true') {
+      return alert('Paid access opening shortly');
     }
 
     setCheckoutLoading(tierName);
     try {
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, source: 'pricing' }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Checkout failed');
-      }
-
-      const data = await res.json();
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Failed to start checkout. Please try again.');
+      await startCheckout(priceId);
     } finally {
       setCheckoutLoading(null);
     }
@@ -421,6 +407,8 @@ export default function HomePage() {
           {/* Per-Marketplace ETA */}
           <MarketplaceETA />
 
+          <UserScanPromise />
+
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-3">
               Activate scan windows
@@ -432,6 +420,14 @@ export default function HomePage() {
 
           {/* Why Timing Matters Explainer */}
           <WhyTimingMatters />
+
+          {/* --- ABOVE PRICING --- */}
+          <section className="mx-auto max-w-3xl px-6 py-10">
+            <LiveExecutionStrip />
+            <p className="mt-3 text-xs text-white/50">
+              Scans execute automatically during active windows. You always stay in control.
+            </p>
+          </section>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 

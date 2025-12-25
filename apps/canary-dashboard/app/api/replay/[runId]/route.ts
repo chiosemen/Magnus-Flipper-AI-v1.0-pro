@@ -1,16 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function GET(
   request: NextRequest,
   { params }: { params: { runId: string } }
 ) {
   try {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({
+        timestamp: null,
+        ml: null,
+        health: {
+          success_rate: 0,
+          total: 0,
+          failures: 0,
+          checks: [],
+        },
+        logs: [],
+        revisions: {
+          stable: '-',
+          canary: '-',
+          traffic: '-',
+        },
+      });
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
     const { runId } = params;
 
     // Fetch ML decision for this run

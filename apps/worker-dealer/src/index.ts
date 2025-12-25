@@ -1,5 +1,15 @@
 import { FEATURE_FLAGS } from "./config/featureFlags";
 
+if (process.env.EXECUTION_MODE === "off") {
+  console.log("[worker] execution off — exiting safely");
+  process.exit(0);
+}
+
+if (process.env.EXECUTION_MODE === "admin") {
+  console.log("[worker] admin-only execution — exiting safely");
+  process.exit(0);
+}
+
 // Hard kill switch - exit cleanly if dealer engine is disabled
 if (!FEATURE_FLAGS.DEALER_ENGINE_ENABLED) {
   console.log("Dealer engine disabled — exiting cleanly.");

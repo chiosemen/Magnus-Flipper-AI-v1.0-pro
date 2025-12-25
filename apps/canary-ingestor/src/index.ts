@@ -7,15 +7,27 @@
  * writes normalized metrics to Supabase.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient | null {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn("Supabase not configured for canary ingestor");
+    return null;
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 interface MLArtifact {
   decision: string;
@@ -57,6 +69,9 @@ async function ingestMLDecision() {
   }
 
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
     const mlData = JSON.parse(fs.readFileSync(mlResultPath, 'utf-8'));
     
     // Extract decision from OpenAI/DeepSeek response
@@ -97,6 +112,9 @@ async function ingestHealthChecks() {
   }
 
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
     const healthData = JSON.parse(fs.readFileSync(healthPath, 'utf-8'));
     
     if (Array.isArray(healthData)) {
@@ -124,6 +142,9 @@ async function ingestLogs() {
   }
 
   try {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
     const logsData = JSON.parse(fs.readFileSync(logsPath, 'utf-8'));
     
     if (Array.isArray(logsData)) {

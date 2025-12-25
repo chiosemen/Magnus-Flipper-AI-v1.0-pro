@@ -1,6 +1,11 @@
-import { supabase } from "./supabase";
+import { getSupabaseClient } from "./supabase";
 
 export async function createJob(jobType: string, marketplace?: string, payload?: any) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error("Supabase not configured for job queue");
+  }
+
   const { data, error } = await supabase
     .from("job_queue")
     .insert({
@@ -21,6 +26,11 @@ export async function createJob(jobType: string, marketplace?: string, payload?:
 }
 
 export async function claimJob(workerId: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return null;
+  }
+
   const { data: job, error } = await supabase
     .from("job_queue")
     .select("*")
@@ -51,6 +61,12 @@ export async function claimJob(workerId: string) {
 }
 
 export async function completeJob(jobId: string, result?: any) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.error("Supabase not configured for job completion");
+    return;
+  }
+
   const { error } = await supabase
     .from("job_queue")
     .update({
@@ -66,6 +82,12 @@ export async function completeJob(jobId: string, result?: any) {
 }
 
 export async function failJob(jobId: string, errorMessage: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.error("Supabase not configured for job failure");
+    return;
+  }
+
   const { error } = await supabase
     .from("job_queue")
     .update({

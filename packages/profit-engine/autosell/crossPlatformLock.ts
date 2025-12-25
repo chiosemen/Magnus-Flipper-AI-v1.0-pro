@@ -3,13 +3,26 @@
  * Prevents double-sells by locking/removing listings across all platforms
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Supabase not configured (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing)"
+    );
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseKey);
+  return supabaseClient;
+}
 
 export interface ActiveListing {
   id: string;
@@ -40,7 +53,7 @@ export async function lockListingAcrossPlatforms(
   const failedListings: Array<{ marketplace: string; error: string }> = [];
 
   // Get all active listings for this inventory item
-  const { data: activeListings, error } = await supabase
+  const { data: activeListings, error } = await getSupabaseClient()
     .from("listings")
     .select("*")
     .eq("inventory_item_id", inventoryItemId)
@@ -87,7 +100,7 @@ export async function lockListingAcrossPlatforms(
 
   // Update database to mark listings as locked
   if (lockedListings.length > 0) {
-    await supabase
+    await getSupabaseClient()
       .from("listings")
       .update({
         status: "locked",
@@ -99,7 +112,7 @@ export async function lockListingAcrossPlatforms(
   }
 
   // Log the lock action
-  await supabase.from("platform_lock_events").insert({
+  await getSupabaseClient().from("platform_lock_events").insert({
     inventory_item_id: inventoryItemId,
     sale_event_id: saleEventId,
     sold_marketplace: soldMarketplace,
@@ -151,7 +164,7 @@ async function lockSingleListing(
 async function lockEbayListing(
   listing: ActiveListing
 ): Promise<{ success: boolean; error?: string }> {
-  const { data: cred } = await supabase
+  const { data: cred } = await getSupabaseClient()
     .from("marketplace_credentials")
     .select("*")
     .eq("marketplace", "ebay")
@@ -194,7 +207,7 @@ async function lockEbayListing(
 async function lockVintedListing(
   listing: ActiveListing
 ): Promise<{ success: boolean; error?: string }> {
-  const { data: cred } = await supabase
+  const { data: cred } = await getSupabaseClient()
     .from("marketplace_credentials")
     .select("*")
     .eq("marketplace", "vinted")
@@ -231,7 +244,7 @@ async function lockVintedListing(
 async function lockDepopListing(
   listing: ActiveListing
 ): Promise<{ success: boolean; error?: string }> {
-  const { data: cred } = await supabase
+  const { data: cred } = await getSupabaseClient()
     .from("marketplace_credentials")
     .select("*")
     .eq("marketplace", "depop")
@@ -265,7 +278,7 @@ async function lockDepopListing(
 async function lockFacebookListing(
   listing: ActiveListing
 ): Promise<{ success: boolean; error?: string }> {
-  const { data: cred } = await supabase
+  const { data: cred } = await getSupabaseClient()
     .from("marketplace_credentials")
     .select("*")
     .eq("marketplace", "facebook")
@@ -302,7 +315,7 @@ async function lockFacebookListing(
 async function lockOfferUpListing(
   listing: ActiveListing
 ): Promise<{ success: boolean; error?: string }> {
-  const { data: cred } = await supabase
+  const { data: cred } = await getSupabaseClient()
     .from("marketplace_credentials")
     .select("*")
     .eq("marketplace", "offerup")
@@ -339,7 +352,7 @@ async function lockOfferUpListing(
 async function lockPoshmarkListing(
   listing: ActiveListing
 ): Promise<{ success: boolean; error?: string }> {
-  const { data: cred } = await supabase
+  const { data: cred } = await getSupabaseClient()
     .from("marketplace_credentials")
     .select("*")
     .eq("marketplace", "poshmark")
@@ -376,7 +389,7 @@ async function lockPoshmarkListing(
 export async function unlockListingAcrossPlatforms(
   inventoryItemId: string
 ): Promise<LockResult> {
-  const { data: lockedListings, error } = await supabase
+  const { data: lockedListings, error } = await getSupabaseClient()
     .from("listings")
     .select("*")
     .eq("inventory_item_id", inventoryItemId)
@@ -394,7 +407,7 @@ export async function unlockListingAcrossPlatforms(
   // Re-activate listings
   const listingIds = lockedListings.map((l) => l.id);
 
-  await supabase
+  await getSupabaseClient()
     .from("listings")
     .update({
       status: "active",
