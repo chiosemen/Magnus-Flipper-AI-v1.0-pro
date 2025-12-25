@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import CarFlippingSection from '@/components/marketing/CarFlippingSection';
+import MarketplaceMonitorSection from '@/components/marketing/MarketplaceMonitorSection';
 
 /* -----------------------------
    A/B HERO HEADLINES
@@ -10,13 +12,13 @@ import Link from 'next/link';
 const HERO_VARIANTS = [
   {
     id: 'A',
-    headline: 'Find underpriced listings before the market catches them',
-    sub: 'Timed marketplace scans across Facebook and beyond. No noise. No guessing.',
+    headline: 'Find Underpriced Cars Before Dealers See Them',
+    sub: 'Real-time scan windows surface profitable used car deals while everyone else is still searching.',
   },
   {
     id: 'B',
-    headline: 'Turn live marketplace listings into actionable trade signals',
-    sub: 'We scan. We surface. You decide — within the window that matters.',
+    headline: 'Find Underpriced Cars Before Dealers See Them',
+    sub: 'Magnus scans live car marketplaces during active windows. You get first look at mispriced vehicles — and decide what to flip.',
   },
 ];
 
@@ -29,6 +31,33 @@ const MARKETPLACES = [
   { name: 'Gumtree', src: '/logos/gumtree.png' },
   { name: 'eBay', src: '/logos/ebay.png' },
 ];
+
+/* -----------------------------
+   STRIPE PRICING TIERS
+----------------------------- */
+const PRICING_TIERS = {
+  short: {
+    label: "Short Window Access",
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SHORT || '',
+    scans: 3,
+    marketplaces: ['facebook'],
+    durationMinutes: 5,
+  },
+  active: {
+    label: "Active Window Access",
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ACTIVE || '',
+    scans: 5,
+    marketplaces: ['facebook'],
+    durationMinutes: 720,
+  },
+  wide: {
+    label: "Wide Window Access",
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_WIDE || '',
+    scans: 5,
+    marketplaces: ['facebook', 'gumtree', 'vinted', 'ebay', 'offerup'],
+    durationMinutes: 720,
+  },
+};
 
 /* -----------------------------
    DECAY HELPERS
@@ -101,6 +130,12 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ================= CAR FLIPPING SECTION ================= */}
+      <CarFlippingSection />
+
+      {/* ================= MARKETPLACE MONITOR ================= */}
+      <MarketplaceMonitorSection />
 
       {/* ================= LOGO STRIP ================= */}
       <section className="border-t border-white/10 py-10 overflow-hidden">
@@ -316,7 +351,7 @@ export default function HomePage() {
               Activate scan windows
             </h2>
             <p className="text-white/70 max-w-2xl">
-              Pricing reflects scan intensity, duration, and marketplace coverage.
+              Choose how aggressively Magnus monitors the market for you.
             </p>
           </div>
 
@@ -324,47 +359,62 @@ export default function HomePage() {
 
             {/* OFFER 1 */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <div className="text-sm text-white/50 mb-1">Facebook only</div>
-              <h3 className="text-xl font-semibold mb-2">Short scan</h3>
+              <div className="text-sm text-white/50 mb-1">Targeted scans when timing matters</div>
+              <h3 className="text-xl font-semibold mb-2">Short Window</h3>
 
               <div className="text-3xl font-bold mb-4">£30</div>
 
               <ul className="space-y-2 text-sm text-white/70">
-                <li>• 3 searches</li>
-                <li>• 5 minute window</li>
-                <li>• Real-time listings</li>
+                <li>• Limited scan coverage</li>
+                <li>• Best for testing flips</li>
+                <li>• Manual decision required</li>
               </ul>
+              <div className="mt-4 text-xs text-white/50">
+                Best for testing & casual flipping
+              </div>
             </div>
 
             {/* OFFER 2 */}
             <div className="rounded-2xl border border-cyan-300/30 bg-cyan-300/5 p-6">
-              <div className="text-sm text-cyan-200 mb-1">Facebook only</div>
-              <h3 className="text-xl font-semibold mb-2">Active window</h3>
+              <div className="text-sm text-cyan-200 mb-1">Automated monitoring during peak hours</div>
+              <h3 className="text-xl font-semibold mb-2">Active Window</h3>
 
               <div className="text-3xl font-bold mb-4">£100</div>
 
               <ul className="space-y-2 text-sm text-white/70">
-                <li>• 5 instant searches</li>
-                <li>• 12 hour window</li>
-                <li>• Faster refresh cadence</li>
+                <li>• Balanced scan duration</li>
+                <li>• Ideal for consistent flippers</li>
+                <li>• Most common execution tier</li>
               </ul>
+              <div className="mt-4 text-xs text-white/50">
+                Best for consistent flippers
+              </div>
             </div>
 
             {/* OFFER 3 */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <div className="text-sm text-white/50 mb-1">All marketplaces</div>
-              <h3 className="text-xl font-semibold mb-2">Wide scan</h3>
+              <div className="text-sm text-white/50 mb-1">Maximum coverage, maximum opportunity</div>
+              <h3 className="text-xl font-semibold mb-2">Wide Window</h3>
 
               <div className="text-3xl font-bold mb-4">£250–£300</div>
 
               <ul className="space-y-2 text-sm text-white/70">
-                <li>• 5 instant searches</li>
-                <li>• 12 hour window</li>
-                <li>• Facebook, Vinted, Gumtree, more</li>
+                <li>• Maximum scan allocation</li>
+                <li>• Best for high-volume flippers</li>
+                <li>• Highest chance of first contact</li>
               </ul>
+              <div className="mt-4 text-xs text-white/50">
+                Best for high-frequency or professional flippers
+              </div>
             </div>
 
           </div>
+
+          {/* Inline Comparison */}
+          <div className="mt-12 text-center text-sm text-white/60">
+            Short = Precision · Active = Consistency · Wide = Coverage
+          </div>
+
         </div>
       </section>
 
