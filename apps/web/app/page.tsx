@@ -156,6 +156,100 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ================= LIVE LISTING SNAPSHOTS ================= */}
+      <section className="px-6 py-24 border-t border-white/10">
+        <div className="mx-auto max-w-6xl">
+
+          <div className="mb-10">
+            <h2 className="text-3xl font-bold mb-3">
+              Live listing snapshots
+            </h2>
+            <p className="text-white/70 max-w-2xl">
+              What our scanners surface during active windows.
+              When the window closes, the signal fades.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                title: 'iPhone 13 · 128GB',
+                price: '£320',
+                marketplace: 'Facebook',
+                location: 'London',
+                img: '/listings/iphone.jpg',
+                expired: false,
+              },
+              {
+                title: 'PlayStation 5 · Disc',
+                price: '£410',
+                marketplace: 'Facebook',
+                location: 'Manchester',
+                img: '/listings/ps5.jpg',
+                expired: false,
+              },
+              {
+                title: 'Air Jordan 1 · Size 10',
+                price: '£180',
+                marketplace: 'Vinted',
+                location: 'Berlin',
+                img: '/listings/jordan.jpg',
+                expired: true,
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className={`relative rounded-2xl border border-white/10 overflow-hidden bg-white/5 transition ${
+                  item.expired
+                    ? 'opacity-50 grayscale blur-[1px]'
+                    : 'hover:scale-[1.02] hover:border-cyan-300/40'
+                }`}
+              >
+                {/* Image */}
+                <div className="aspect-square bg-black/40">
+                  <img
+                    src={item.img}
+                    alt={item.title}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+
+                {/* Overlay */}
+                <div className="p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">{item.price}</span>
+                    <span className="text-xs text-white/50">
+                      {item.marketplace}
+                    </span>
+                  </div>
+
+                  <div className="text-sm text-white/80">
+                    {item.title}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-white/50">
+                    <span>{item.location}</span>
+                    {item.expired ? (
+                      <span className="text-red-400">Scan expired</span>
+                    ) : (
+                      <span className="text-emerald-300">Active window</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expired overlay */}
+                {item.expired && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-sm font-medium">
+                    Missed signal
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
       {/* ================= CTA ================= */}
       <section className="border-t border-white/10 px-6 py-20 text-center">
         <h3 className="text-2xl font-bold mb-4">
