@@ -124,15 +124,14 @@ export default function HomePage() {
               Timing beats volume
             </h2>
             <p className="text-white/70 mb-6">
-              Magnus Flipper doesn't scrape endlessly.
-              Each search runs inside a **defined scan window** — minutes or hours —
-              when price inefficiencies actually exist.
+              Each scan runs for a fixed window.
+              When the window closes, the signal degrades.
             </p>
 
             <ul className="space-y-3 text-sm text-white/70">
-              <li>• Instant scans for fast-moving listings</li>
-              <li>• Time-boxed windows to control cost & noise</li>
-              <li>• Signals disappear when the window closes</li>
+              <li>• No scraping overload</li>
+              <li>• No permanent monitoring</li>
+              <li>• Scans run when you activate them</li>
             </ul>
           </div>
 
@@ -151,6 +150,27 @@ export default function HomePage() {
                 Scan window · 12h remaining
               </div>
             </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ================= SCAN STATUS ================= */}
+      <section className="px-6 py-10 border-y border-white/10 bg-white/5">
+        <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+
+          <div className="text-sm text-white/70">
+            Current scan status
+          </div>
+
+          <div className="flex items-center gap-4">
+            <span className="px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-300 text-xs">
+              ● Active window
+            </span>
+
+            <span className="text-xs text-white/50">
+              Next scan opens in <strong className="text-white">3h 12m</strong>
+            </span>
           </div>
 
         </div>
@@ -247,6 +267,67 @@ export default function HomePage() {
             ))}
           </div>
 
+        </div>
+      </section>
+
+      {/* ================= SCAN WINDOW PRICING ================= */}
+      <section className="px-6 py-28 border-t border-white/10">
+        <div className="mx-auto max-w-6xl">
+
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold mb-3">
+              Activate scan windows
+            </h2>
+            <p className="text-white/70 max-w-2xl">
+              Pricing reflects scan intensity, duration, and marketplace coverage.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* OFFER 1 */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="text-sm text-white/50 mb-1">Facebook only</div>
+              <h3 className="text-xl font-semibold mb-2">Short scan</h3>
+
+              <div className="text-3xl font-bold mb-4">£30</div>
+
+              <ul className="space-y-2 text-sm text-white/70">
+                <li>• 3 searches</li>
+                <li>• 5 minute window</li>
+                <li>• Real-time listings</li>
+              </ul>
+            </div>
+
+            {/* OFFER 2 */}
+            <div className="rounded-2xl border border-cyan-300/30 bg-cyan-300/5 p-6">
+              <div className="text-sm text-cyan-200 mb-1">Facebook only</div>
+              <h3 className="text-xl font-semibold mb-2">Active window</h3>
+
+              <div className="text-3xl font-bold mb-4">£100</div>
+
+              <ul className="space-y-2 text-sm text-white/70">
+                <li>• 5 instant searches</li>
+                <li>• 12 hour window</li>
+                <li>• Faster refresh cadence</li>
+              </ul>
+            </div>
+
+            {/* OFFER 3 */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="text-sm text-white/50 mb-1">All marketplaces</div>
+              <h3 className="text-xl font-semibold mb-2">Wide scan</h3>
+
+              <div className="text-3xl font-bold mb-4">£250–£300</div>
+
+              <ul className="space-y-2 text-sm text-white/70">
+                <li>• 5 instant searches</li>
+                <li>• 12 hour window</li>
+                <li>• Facebook, Vinted, Gumtree, more</li>
+              </ul>
+            </div>
+
+          </div>
         </div>
       </section>
 
