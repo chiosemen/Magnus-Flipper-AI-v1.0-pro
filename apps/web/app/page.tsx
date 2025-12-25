@@ -14,6 +14,7 @@ import {
   NextScanETA,
   UserScanCount,
 } from '@/components/marketing/ExecutionMetrics';
+import ExecutionConfidenceBadge from '@/components/marketing/ExecutionConfidenceBadge';
 
 /* -----------------------------
    A/B HERO HEADLINES
@@ -399,6 +400,9 @@ export default function HomePage() {
       {/* ================= SCAN WINDOW PRICING ================= */}
       <section className="px-6 py-28 border-t border-white/10">
         <div className="mx-auto max-w-6xl">
+
+          {/* Execution Confidence Badge */}
+          <ExecutionConfidenceBadge />
 
           {/* Live Scan Status Badge */}
           <LiveScanStatusBadge />
