@@ -5,6 +5,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import CarFlippingSection from '@/components/marketing/CarFlippingSection';
 import MarketplaceMonitorSection from '@/components/marketing/MarketplaceMonitorSection';
+import LiveScanStatusBadge from '@/components/marketing/LiveScanStatusBadge';
+import WhyTimingMatters from '@/components/marketing/WhyTimingMatters';
+import ScansThisWindow from '@/components/marketing/ScansThisWindow';
+import { usePageView } from '@/hooks/usePageView';
+import {
+  EstimatedExecutionTime,
+  NextScanETA,
+  UserScanCount,
+} from '@/components/marketing/ExecutionMetrics';
+import ExecutionConfidenceBadge from '@/components/marketing/ExecutionConfidenceBadge';
+import MarketplaceETA from '@/components/marketing/MarketplaceETA';
 
 /* -----------------------------
    A/B HERO HEADLINES
@@ -12,7 +23,7 @@ import MarketplaceMonitorSection from '@/components/marketing/MarketplaceMonitor
 const HERO_VARIANTS = [
   {
     id: 'A',
-    headline: 'Find Underpriced Cars Before Dealers See Them',
+    headline: 'Get Real-Time Used Car Deals Before Anyone Else',
     sub: 'Real-time scan windows surface profitable used car deals while everyone else is still searching.',
   },
   {
@@ -74,12 +85,57 @@ const getDecayStyles = (ageMinutes: number) => {
 export default function HomePage() {
   const [variant, setVariant] = useState(HERO_VARIANTS[0]);
   const [workerStatus, setWorkerStatus] = useState<'live' | 'idle'>('live');
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
-  // Simple A/B rotation (no infra, buyer-safe)
+  // Track page view (privacy-safe, session-scoped)
+  usePageView('landing');
+
+  // Simple A/B rotation with localStorage persistence
   useEffect(() => {
+    const stored = localStorage.getItem('hero_variant_id');
+    if (stored) {
+      const found = HERO_VARIANTS.find(v => v.id === stored);
+      if (found) {
+        setVariant(found);
+        return;
+      }
+    }
+    // No stored variant or invalid - pick random and store
     const pick = HERO_VARIANTS[Math.floor(Math.random() * HERO_VARIANTS.length)];
+    localStorage.setItem('hero_variant_id', pick.id);
     setVariant(pick);
   }, []);
+
+  // Stripe checkout handler
+  const handleCheckout = async (priceId: string, tierName: string) => {
+    if (!priceId) {
+      alert('Stripe price ID not configured');
+      return;
+    }
+
+    setCheckoutLoading(tierName);
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId, source: 'pricing' }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Checkout failed');
+      }
+
+      const data = await res.json();
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Failed to start checkout. Please try again.');
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#070B12] text-white">
@@ -346,6 +402,25 @@ export default function HomePage() {
       <section className="px-6 py-28 border-t border-white/10">
         <div className="mx-auto max-w-6xl">
 
+          {/* Execution Confidence Badge */}
+          <ExecutionConfidenceBadge />
+
+          {/* Live Scan Status Badge */}
+          <LiveScanStatusBadge />
+
+          {/* Scans Executed This Window */}
+          <ScansThisWindow />
+
+          {/* Execution Metrics */}
+          <div className="space-y-1 mb-8">
+            <EstimatedExecutionTime />
+            <NextScanETA />
+            <UserScanCount />
+          </div>
+
+          {/* Per-Marketplace ETA */}
+          <MarketplaceETA />
+
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-3">
               Activate scan windows
@@ -354,6 +429,9 @@ export default function HomePage() {
               Choose how aggressively Magnus monitors the market for you.
             </p>
           </div>
+
+          {/* Why Timing Matters Explainer */}
+          <WhyTimingMatters />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
@@ -372,6 +450,14 @@ export default function HomePage() {
               <div className="mt-4 text-xs text-white/50">
                 Best for testing & casual flipping
               </div>
+
+              <button
+                onClick={() => handleCheckout(PRICING_TIERS.short.stripePriceId, 'short')}
+                disabled={checkoutLoading === 'short'}
+                className="mt-6 w-full rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {checkoutLoading === 'short' ? 'Loading...' : 'Activate Short Window'}
+              </button>
             </div>
 
             {/* OFFER 2 */}
@@ -389,6 +475,14 @@ export default function HomePage() {
               <div className="mt-4 text-xs text-white/50">
                 Best for consistent flippers
               </div>
+
+              <button
+                onClick={() => handleCheckout(PRICING_TIERS.active.stripePriceId, 'active')}
+                disabled={checkoutLoading === 'active'}
+                className="mt-6 w-full rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {checkoutLoading === 'active' ? 'Loading...' : 'Activate Active Window'}
+              </button>
             </div>
 
             {/* OFFER 3 */}
@@ -406,6 +500,14 @@ export default function HomePage() {
               <div className="mt-4 text-xs text-white/50">
                 Best for high-frequency or professional flippers
               </div>
+
+              <button
+                onClick={() => handleCheckout(PRICING_TIERS.wide.stripePriceId, 'wide')}
+                disabled={checkoutLoading === 'wide'}
+                className="mt-6 w-full rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {checkoutLoading === 'wide' ? 'Loading...' : 'Activate Wide Window'}
+              </button>
             </div>
 
           </div>
