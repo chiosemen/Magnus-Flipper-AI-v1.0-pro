@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export default function LandingPage() {
@@ -35,15 +34,28 @@ export default function LandingPage() {
       {/* MARKETPLACES */}
       <section className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-14">
-          <p className="text-sm text-white/50 mb-6">
-            Currently monitored marketplaces
+          <p className="mb-6 text-xs uppercase tracking-widest text-white/50">
+            Monitoring across major resale marketplaces
           </p>
 
-          <div className="flex flex-wrap items-center gap-8">
-            <Image src="/logos/facebook.png" alt="Facebook Marketplace" width={140} height={40} />
-            <Image src="/logos/vinted.png" alt="Vinted" width={120} height={40} className="opacity-40" />
-            <Image src="/logos/gumtree.png" alt="Gumtree" width={120} height={40} className="opacity-40" />
-            <Image src="/logos/cex.png" alt="CeX" width={80} height={40} className="opacity-40" />
+          <div className="flex flex-wrap items-center gap-8 opacity-90">
+            {[
+              { name: "Facebook Marketplace", src: "/logos/facebook.svg" },
+              { name: "Vinted", src: "/logos/vinted.svg" },
+              { name: "Gumtree", src: "/logos/gumtree.svg" },
+              { name: "CeX", src: "/logos/cex.svg" },
+            ].map((logo) => (
+              <div
+                key={logo.name}
+                className="transition-all duration-300 hover:opacity-100 hover:scale-[1.05]"
+              >
+                <img
+                  src={logo.src}
+                  alt={logo.name}
+                  className="h-8 grayscale hover:grayscale-0"
+                />
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -51,65 +63,61 @@ export default function LandingPage() {
       {/* LISTINGS PREVIEW */}
       <section className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-20">
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold">Recent marketplace listings</h2>
-            <p className="text-white/60 mt-2">
-              Example listings detected during monitored scans.
-            </p>
-          </div>
+          <h2 className="text-2xl font-black tracking-tight mb-2">
+            Live opportunities detected
+          </h2>
+          <p className="text-sm text-white/60 mb-6">
+            Example listings surfaced during active scan windows
+          </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               {
+                title: "iPhone 14 Pro · 128GB",
+                price: "£620",
                 img: "/listings/iphone.jpg",
-                title: "iPhone 13 Pro",
-                price: "£420",
-                meta: "London · 12m ago",
+                tag: "NEW",
               },
               {
+                title: "MacBook Pro M1",
+                price: "£780",
                 img: "/listings/macbook.jpg",
-                title: "MacBook Air M1",
-                price: "£610",
-                meta: "Manchester · 27m ago",
+                tag: "HOT",
               },
               {
-                img: "/listings/playstation.jpg",
                 title: "PlayStation 5",
-                price: "£380",
-                meta: "Birmingham · 41m ago",
+                price: "£410",
+                img: "/listings/ps5.jpg",
               },
               {
-                img: "/listings/samsung.jpg",
-                title: "Samsung S23 Ultra",
-                price: "£500",
-                meta: "Leeds · 1h ago",
+                title: "Nike Dunk Low",
+                price: "£95",
+                img: "/listings/nike.jpg",
               },
             ].map((item, i) => (
               <div
                 key={i}
-                className="rounded-xl border border-white/10 bg-white/5 transition-all duration-300 ease-out hover:bg-white/10 hover:border-cyan-300/40 hover:-translate-y-[2px] hover:shadow-[0_8px_30px_rgba(79,240,230,0.12)] overflow-hidden"
+                className="relative rounded-xl overflow-hidden border border-white/10 bg-white/5 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/40"
               >
-                <div className="aspect-square bg-black/30">
-                  <Image
-                    src={item.img}
-                    alt={item.title}
-                    width={400}
-                    height={400}
-                    className="object-cover w-full h-full"
-                  />
-                </div>
-                <div className="p-4">
-                  <p className="font-medium">{item.title}</p>
+                <img
+                  src={item.img}
+                  alt={item.title}
+                  className="aspect-square object-cover"
+                />
+
+                {item.tag && (
+                  <span className="absolute top-2 right-2 text-xs bg-cyan-300 text-black px-2 py-1 rounded">
+                    {item.tag}
+                  </span>
+                )}
+
+                <div className="p-3 text-sm">
+                  <p className="font-medium truncate">{item.title}</p>
                   <p className="text-cyan-300 font-semibold">{item.price}</p>
-                  <p className="text-xs text-white/50 mt-1">{item.meta}</p>
                 </div>
               </div>
             ))}
           </div>
-
-          <p className="text-xs text-white/40 mt-6">
-            Example data shown for demonstration.
-          </p>
         </div>
       </section>
 
@@ -142,15 +150,28 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-          <h2 className="text-3xl font-bold">
-            Ready to monitor Facebook Marketplace automatically?
-          </h2>
-          <div className="mt-8">
+          <h3 className="text-3xl font-black tracking-tight mb-4">
+            Start monitoring live markets
+          </h3>
+
+          <p className="text-white/60 max-w-xl mx-auto mb-8">
+            Open limited scan windows across resale platforms.
+            See opportunities before they disappear.
+          </p>
+
+          <div className="flex justify-center gap-4">
             <Link
               href="/pricing"
-              className="inline-flex items-center justify-center rounded-lg bg-cyan-300 px-8 py-4 font-semibold text-black transition-all duration-200 hover:bg-cyan-200 hover:shadow-[0_0_0_4px_rgba(79,240,230,0.15)] active:scale-[0.98]"
+              className="rounded-lg bg-cyan-300 px-8 py-4 text-black font-semibold transition-all duration-200 hover:bg-cyan-200 hover:shadow-[0_0_0_4px_rgba(79,240,230,0.15)] active:scale-[0.98]"
             >
               View pricing
+            </Link>
+
+            <Link
+              href="/dashboard"
+              className="rounded-lg border border-white/20 px-8 py-4 text-white transition-all duration-200 hover:bg-white/10 active:scale-[0.98]"
+            >
+              Preview dashboard
             </Link>
           </div>
         </div>
