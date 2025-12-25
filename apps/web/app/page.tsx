@@ -18,7 +18,7 @@ export default function LandingPage() {
           <div className="mt-10 flex items-center gap-4">
             <Link
               href="/pricing"
-              className="rounded-lg bg-cyan-300 px-6 py-3 text-black font-semibold hover:bg-cyan-200 transition"
+              className="inline-flex items-center justify-center rounded-lg bg-cyan-300 px-6 py-3 font-semibold text-black transition-all duration-200 hover:bg-cyan-200 hover:shadow-[0_0_0_4px_rgba(79,240,230,0.15)] active:scale-[0.98]"
             >
               View pricing
             </Link>
@@ -87,7 +87,7 @@ export default function LandingPage() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden"
+                className="rounded-xl border border-white/10 bg-white/5 transition-all duration-300 ease-out hover:bg-white/10 hover:border-cyan-300/40 hover:-translate-y-[2px] hover:shadow-[0_8px_30px_rgba(79,240,230,0.12)] overflow-hidden"
               >
                 <div className="aspect-square bg-black/30">
                   <Image
@@ -148,7 +148,7 @@ export default function LandingPage() {
           <div className="mt-8">
             <Link
               href="/pricing"
-              className="inline-block rounded-lg bg-cyan-300 px-8 py-4 text-black font-semibold hover:bg-cyan-200 transition"
+              className="inline-flex items-center justify-center rounded-lg bg-cyan-300 px-8 py-4 font-semibold text-black transition-all duration-200 hover:bg-cyan-200 hover:shadow-[0_0_0_4px_rgba(79,240,230,0.15)] active:scale-[0.98]"
             >
               View pricing
             </Link>
