@@ -69,12 +69,12 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
     <div className="space-y-6">
       {/* Demo Mode Banner */}
       {isDemo && (
-        <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/30 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-white/10 rounded-xl p-4 backdrop-blur">
           <div className="flex items-center gap-3">
             <div className="text-2xl">⚡</div>
             <div>
-              <h3 className="text-blue-400 font-semibold">Intelligence Preview Mode</h3>
-              <p className="text-sm text-blue-300/80">
+              <h3 className="text-cyan-200 font-semibold">Intelligence Preview Mode</h3>
+              <p className="text-sm text-white/70">
                 Experiencing simulated signals. Upgrade to live access for real-time marketplace intelligence.
               </p>
             </div>
@@ -91,8 +91,8 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
       {/* A) Market Overview */}
       <section>
         <div className="mb-4">
-          <h2 className="text-2xl font-bold text-[#ededed] mb-1">Market Intelligence</h2>
-          <p className="text-sm text-[#a0a0a0]">Real-time signals across all monitored marketplaces</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Market Intelligence</h2>
+          <p className="text-sm text-white/70">Real-time signals across all monitored marketplaces</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <SignalMetricCard
@@ -132,7 +132,7 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
       {/* A.2) Admin Operations (Read-Only Metrics) */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold text-[#ededed]">Admin Operations</h2>
+          <h2 className="text-xl font-bold text-white">Admin Operations</h2>
           <span className="text-xs text-[#6E7681]">
             As of {new Date().toLocaleString(undefined, {
               month: 'short',
@@ -168,7 +168,7 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
       <section>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-xl font-bold text-[#ededed]">Pool Health</h2>
+            <h2 className="text-xl font-bold text-white">Pool Health</h2>
             <p className="text-xs text-[#6E7681] mt-1">
               Grouped by marketplace + region • Click columns to sort
             </p>
@@ -211,8 +211,8 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-[#ededed] mb-1">Marketplace Heatmap</h2>
-            <p className="text-sm text-[#a0a0a0]">Activity intensity across platforms</p>
+            <h2 className="text-2xl font-bold text-white mb-1">Marketplace Heatmap</h2>
+            <p className="text-sm text-white/70">Activity intensity across platforms</p>
           </div>
           {/* Heat Legend */}
           <div className="hidden sm:flex items-center gap-2 text-xs">
@@ -232,11 +232,11 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
             />
           ))}
           {Object.keys(data.marketplaceBreakdown).length === 0 && (
-            <div className="col-span-full bg-[#0a0a0a]/50 border border-dashed border-[#2a2a2a] rounded-lg py-16 px-4">
+            <div className="col-span-full bg-[#0a0a0a]/50 border border-dashed border-white/10 rounded-xl py-16 px-4">
               <div className="text-center">
                 <div className="text-5xl mb-3 opacity-30">📊</div>
-                <div className="text-sm text-[#a0a0a0]">Scanners warming up</div>
-                <div className="text-xs text-[#6E7681]/60 mt-1">First signals incoming...</div>
+                <div className="text-sm text-white/70">Scanners warming up</div>
+                <div className="text-xs text-white/50 mt-1">First signals incoming...</div>
               </div>
             </div>
           )}
@@ -246,8 +246,8 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
       {/* C) Live Snapshots */}
       <section>
         <div className="mb-4">
-          <h2 className="text-2xl font-bold text-[#ededed] mb-1">Live Deal Feed</h2>
-          <p className="text-sm text-[#a0a0a0]">Latest opportunities with visual confirmation</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Live Deal Feed</h2>
+          <p className="text-sm text-white/70">Latest opportunities with visual confirmation</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {data.liveDeals.map((deal: any, index: number) => {
@@ -259,7 +259,7 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
                 href={deal.link || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden hover:border-[#4FF0E6] transition-all duration-200 hover:shadow-lg hover:shadow-[#4FF0E6]/10 hover:-translate-y-1"
+                className="group bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden hover:border-cyan-300/40 transition-all duration-200 hover:shadow-lg hover:shadow-cyan-300/10 hover:-translate-y-1 backdrop-blur"
               >
                 <div className="aspect-square relative bg-[#0a0a0a] overflow-hidden">
                   {deal.images?.[0] ? (
@@ -318,11 +318,11 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
             );
           })}
           {data.liveDeals.length === 0 && (
-            <div className="col-span-full bg-[#0a0a0a]/50 border border-dashed border-[#2a2a2a] rounded-lg py-16 px-4">
+            <div className="col-span-full bg-[#0a0a0a]/50 border border-dashed border-white/10 rounded-xl py-16 px-4">
               <div className="text-center">
                 <div className="text-6xl mb-3 opacity-30">📸</div>
-                <div className="text-sm text-[#a0a0a0]">Feed initializing</div>
-                <div className="text-xs text-[#6E7681]/60 mt-1">Visual confirmations loading...</div>
+                <div className="text-sm text-white/70">Feed initializing</div>
+                <div className="text-xs text-white/50 mt-1">Visual confirmations loading...</div>
               </div>
             </div>
           )}
@@ -332,30 +332,30 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
       {/* D) Active Intelligence Feeds */}
       <section>
         <div className="mb-4">
-          <h2 className="text-2xl font-bold text-[#ededed] mb-1">Active Intelligence Feeds</h2>
-          <p className="text-sm text-[#a0a0a0]">Your personalized tracking parameters</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Active Intelligence Feeds</h2>
+          <p className="text-sm text-white/70">Your personalized tracking parameters</p>
         </div>
-        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-6">
+        <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-white/10 rounded-xl p-6 backdrop-blur">
           {data.savedSearchesCount > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-              <div className="bg-[#0a0a0a]/50 rounded-lg p-4 border border-[#2a2a2a]">
-                <div className="text-xs text-[#a0a0a0] mb-2 font-medium">TOTAL ACTIVE</div>
-                <div className="text-3xl font-bold text-[#4FF0E6]">
+              <div className="bg-[#0a0a0a]/50 rounded-xl p-4 border border-white/10">
+                <div className="text-xs text-white/60 mb-2 font-medium">TOTAL ACTIVE</div>
+                <div className="text-3xl font-bold text-cyan-200">
                   {data.savedSearchesCount}
                 </div>
               </div>
               {Object.entries(data.searchesByMarketplace).map(([marketplace, count]) => (
-                <div key={marketplace} className="bg-[#0a0a0a]/30 rounded-lg p-4">
-                  <div className="text-xs text-[#a0a0a0] mb-2 font-medium capitalize">{marketplace}</div>
-                  <div className="text-3xl font-bold text-[#ededed]">{count}</div>
+                <div key={marketplace} className="bg-[#0a0a0a]/30 rounded-xl p-4 border border-white/10">
+                  <div className="text-xs text-white/60 mb-2 font-medium capitalize">{marketplace}</div>
+                  <div className="text-3xl font-bold text-white">{count}</div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-12">
               <div className="text-5xl mb-3 opacity-30">🎯</div>
-              <div className="text-sm text-[#a0a0a0]">No intelligence feeds configured</div>
-              <div className="text-xs text-[#6E7681]/60 mt-1">Set up custom filters to track high-value opportunities</div>
+              <div className="text-sm text-white/70">No intelligence feeds configured</div>
+              <div className="text-xs text-white/50 mt-1">Set up custom filters to track high-value opportunities</div>
             </div>
           )}
         </div>
@@ -364,8 +364,8 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
       {/* E) Platform Status Monitor */}
       <section>
         <div className="mb-4">
-          <h2 className="text-2xl font-bold text-[#ededed] mb-1">Platform Status Monitor</h2>
-          <p className="text-sm text-[#a0a0a0]">Real-time health tracking across data sources</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Platform Status Monitor</h2>
+          <p className="text-sm text-white/70">Real-time health tracking across data sources</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {data.scraperHealth.map((health) => {
@@ -379,12 +379,12 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
             return (
               <div
                 key={health.marketplace}
-                className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 hover:border-[#3a3a3a] transition-all duration-200"
+                className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all duration-200 backdrop-blur"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <MarketplaceLogo marketplace={health.marketplace} size="sm" />
-                    <h3 className="text-base font-semibold text-[#ededed] capitalize">
+                    <h3 className="text-base font-semibold text-white capitalize">
                       {health.marketplace}
                     </h3>
                   </div>
@@ -392,19 +392,19 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
                 </div>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-[#a0a0a0]">Last Scan:</span>
-                    <span className="text-[#ededed] text-right ml-2 truncate font-medium">
+                    <span className="text-white/60">Last Scan:</span>
+                    <span className="text-white text-right ml-2 truncate font-medium">
                       {lastRun ? lastRun.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Initializing"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#a0a0a0]">Reliability:</span>
+                    <span className="text-white/60">Reliability:</span>
                     <span className={health.error_rate > 10 ? "text-red-400 font-medium" : "text-green-400 font-medium"}>
                       {health.error_rate > 10 ? `${health.error_rate}% errors` : `${100 - health.error_rate}% uptime`}
                     </span>
                   </div>
                   {isDelayed && (health.status as string) !== "down" && (health.status as string) !== "degraded" && (
-                    <div className="text-xs text-yellow-400/90 mt-2 pt-2 border-t border-[#2a2a2a] font-medium">
+                    <div className="text-xs text-yellow-400/90 mt-2 pt-2 border-t border-white/10 font-medium">
                       ⚠ Delayed scan detected
                     </div>
                   )}
@@ -413,11 +413,11 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
             );
           })}
           {data.scraperHealth.length === 0 && (
-            <div className="col-span-full bg-[#0a0a0a]/50 border border-dashed border-[#2a2a2a] rounded-lg py-16 px-4">
+            <div className="col-span-full bg-[#0a0a0a]/50 border border-dashed border-white/10 rounded-xl py-16 px-4">
               <div className="text-center">
                 <div className="text-5xl mb-3 opacity-30">🔧</div>
-                <div className="text-sm text-[#a0a0a0]">Platform monitors booting up</div>
-                <div className="text-xs text-[#6E7681]/60 mt-1">Health metrics will appear momentarily</div>
+                <div className="text-sm text-white/70">Platform monitors booting up</div>
+                <div className="text-xs text-white/50 mt-1">Health metrics will appear momentarily</div>
               </div>
             </div>
           )}
@@ -437,7 +437,7 @@ export default async function DashboardPage() {
     console.log('[dashboard/page] 🚫 AUTH DISABLED - Rendering without user check');
     // Render directly without auth - with prominent warning banner
     return (
-      <div className="min-h-screen bg-[#0D1117] p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-[#070B12] p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           {/* VISUAL VERIFICATION MARKER - If you see this, the dashboard IS mounting */}
           <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-2 z-50 font-bold text-xl animate-pulse">
@@ -447,7 +447,7 @@ export default async function DashboardPage() {
           {/* Prominent Development Mode Banner */}
           <div className="mb-6 mt-16 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 animate-pulse" />
-            <div className="relative bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-2 border-yellow-500/50 rounded-lg p-4 shadow-lg shadow-yellow-500/20">
+            <div className="relative bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border border-white/10 rounded-xl p-4 shadow-lg backdrop-blur">
               <div className="flex items-center gap-3">
                 <div className="text-4xl animate-bounce">🚫</div>
                 <div className="flex-1">
@@ -471,10 +471,10 @@ export default async function DashboardPage() {
           </div>
 
           <header className="mb-8">
-            <h1 className="text-4xl sm:text-5xl font-bold text-[#ededed] mb-2">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-2">
               Command Center
             </h1>
-            <p className="text-base text-[#a0a0a0]">
+            <p className="text-base text-white/70">
               Live marketplace intelligence • Multi-platform arbitrage signals
             </p>
           </header>
@@ -507,13 +507,13 @@ export default async function DashboardPage() {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-[#0D1117] p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#070B12] p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-[#ededed] mb-2">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-2">
             Command Center
           </h1>
-          <p className="text-base text-[#a0a0a0]">
+          <p className="text-base text-white/70">
             Live marketplace intelligence • Multi-platform arbitrage signals
           </p>
         </header>
@@ -532,7 +532,7 @@ function LoadingSkeleton() {
       {/* Market Intelligence Skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-6 h-32" />
+          <div key={i} className="bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-white/10 rounded-xl p-6 h-32 backdrop-blur" />
         ))}
       </div>
 
@@ -540,12 +540,12 @@ function LoadingSkeleton() {
       <div className="text-center py-12">
         <div className="relative inline-block">
           <div className="text-6xl mb-4 animate-bounce">⚡</div>
-          <div className="absolute inset-0 bg-[#4FF0E6]/20 blur-xl rounded-full" />
+          <div className="absolute inset-0 bg-cyan-300/20 blur-xl rounded-full" />
         </div>
-        <div className="text-xl font-semibold text-[#4FF0E6] mb-2">
+        <div className="text-xl font-semibold text-cyan-200 mb-2">
           Intelligence Systems Initializing
         </div>
-        <div className="text-sm text-[#a0a0a0]">
+        <div className="text-sm text-white/70">
           Connecting to marketplace data streams...
         </div>
       </div>
@@ -553,18 +553,18 @@ function LoadingSkeleton() {
       {/* Marketplace Heatmap Skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 h-36" />
+          <div key={i} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 h-36 backdrop-blur" />
         ))}
       </div>
 
       {/* Live Feed Skeleton */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden">
+          <div key={i} className="bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden backdrop-blur">
             <div className="aspect-square bg-[#0a0a0a]" />
             <div className="p-3 space-y-2">
-              <div className="h-3 bg-[#2a2a2a] rounded w-3/4" />
-              <div className="h-3 bg-[#2a2a2a] rounded w-1/2" />
+              <div className="h-3 bg-white/10 rounded w-3/4" />
+              <div className="h-3 bg-white/10 rounded w-1/2" />
             </div>
           </div>
         ))}
