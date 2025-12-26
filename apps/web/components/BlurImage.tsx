@@ -12,6 +12,9 @@ export function BlurImage({
   className?: string;
 }) {
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const fallbackSrc = "/placeholders/listing.png";
+  const imageSrc = failed ? fallbackSrc : src;
 
   return (
     <div className="relative overflow-hidden bg-gray-100 rounded-lg">
@@ -21,7 +24,7 @@ export function BlurImage({
       )}
 
       <img
-        src={src}
+        src={imageSrc}
         alt={alt}
         referrerPolicy="no-referrer"
         loading="lazy"
@@ -32,7 +35,11 @@ export function BlurImage({
           className,
         ].join(" ")}
         onError={(e) => {
-          (e.currentTarget as HTMLImageElement).style.display = "none";
+          if (!failed) {
+            setFailed(true);
+          } else {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }
         }}
       />
     </div>

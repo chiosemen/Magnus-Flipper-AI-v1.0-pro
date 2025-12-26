@@ -39,6 +39,7 @@ export default function SearchStatsPanel({ searchId, searchName }: SearchStatsPa
   const [data, setData] = useState<SearchStatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const fallbackImage = "/placeholders/listing.png";
 
   useEffect(() => {
     setLoading(false);
@@ -187,13 +188,16 @@ export default function SearchStatsPanel({ searchId, searchName }: SearchStatsPa
                 rel="noopener noreferrer"
                 className="flex items-start gap-3 p-2 bg-white rounded border border-gray-200 hover:border-blue-400 hover:shadow-sm transition-all"
               >
-                {item.imageUrl && (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-12 h-12 object-cover rounded flex-shrink-0"
-                  />
-                )}
+                <img
+                  src={item.imageUrl || fallbackImage}
+                  alt={item.title}
+                  className="w-12 h-12 object-cover rounded flex-shrink-0"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== fallbackImage) {
+                      e.currentTarget.src = fallbackImage;
+                    }
+                  }}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-gray-900 truncate">
                     {item.title}

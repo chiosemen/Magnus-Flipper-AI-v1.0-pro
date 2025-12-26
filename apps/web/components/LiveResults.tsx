@@ -70,6 +70,7 @@ type Props = {
 
 export function LiveResults({ datasetIds }: Props) {
   const items = useApifyDataset(datasetIds);
+  const fallbackImage = "/placeholders/listing.png";
 
   let warned = false;
   const deals: Deal[] = items
@@ -115,19 +116,18 @@ export function LiveResults({ datasetIds }: Props) {
         <span className="uppercase tracking-wide">{marketplace}</span>
         <span className="font-semibold text-emerald-400">{price}</span>
       </div>
-      {image ? (
-        <div className="mb-3 h-36 overflow-hidden rounded">
-          <img
-            src={image}
-            alt={title}
-            className="h-full w-full object-cover"
-          />
-        </div>
-      ) : (
-        <div className="mb-3 h-36 bg-slate-800 rounded flex items-center justify-center text-slate-500 text-xs">
-          No image
-        </div>
-      )}
+      <div className="mb-3 h-36 overflow-hidden rounded bg-slate-800">
+        <img
+          src={image || fallbackImage}
+          alt={title}
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            if (e.currentTarget.src !== fallbackImage) {
+              e.currentTarget.src = fallbackImage;
+            }
+          }}
+        />
+      </div>
       <div className="text-sm font-semibold line-clamp-2">{title}</div>
       <div className="text-xs text-slate-400 mt-1">{location}</div>
       {url && (

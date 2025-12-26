@@ -40,10 +40,10 @@ const HERO_VARIANTS = [
    MARKETPLACE LOGOS
 ----------------------------- */
 const MARKETPLACES = [
-  { name: 'Facebook Marketplace', src: '/logos/facebook.png' },
-  { name: 'Vinted', src: '/logos/vinted.png' },
-  { name: 'Gumtree', src: '/logos/gumtree.png' },
-  { name: 'eBay', src: '/logos/ebay.png' },
+  { name: 'Facebook Marketplace', src: '/marketplaces/facebook.svg' },
+  { name: 'Vinted', src: '/marketplaces/vinted.svg' },
+  { name: 'Gumtree', src: '/marketplaces/gumtree.svg' },
+  { name: 'eBay', src: '/marketplaces/ebay.svg' },
 ];
 
 /* -----------------------------
@@ -343,6 +343,12 @@ export default function HomePage() {
                     src={item.img}
                     alt={item.title}
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      const fallback = '/placeholders/listing.png';
+                      if (e.currentTarget.src !== fallback) {
+                        e.currentTarget.src = fallback;
+                      }
+                    }}
                   />
                 </div>
 

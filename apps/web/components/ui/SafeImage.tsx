@@ -11,14 +11,16 @@ export interface SafeImageProps
 
 export function SafeImage({ src, ...props }: SafeImageProps) {
   const [error, setError] = useState(false);
+  const fallbackSrc = "/placeholders/listing.png";
 
-  const resolvedSrc = error 
-    ? "/assets/placeholder-image.png" 
+  const resolvedSrc = error
+    ? fallbackSrc
     : resolveImage(src, {
+        fallback: fallbackSrc,
         onError: (reason) => {
           console.warn("[SafeImage] Image resolution failed:", reason);
           setError(true);
-        }
+        },
       });
 
   return (

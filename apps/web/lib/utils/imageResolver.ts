@@ -10,7 +10,7 @@
  * @rule ALL <Image> components must use resolveImage() - no direct src assignment
  */
 
-const DEFAULT_FALLBACK = "/assets/placeholder-image.png";
+const DEFAULT_FALLBACK = "/placeholders/listing.png";
 const MAX_URL_LENGTH = 2048; // Reasonable URL length limit
 
 /**
@@ -189,4 +189,3 @@ export function resolveImages(
 ): string[] {
   return srcs.map((src) => resolveImage(src, options));
 }
-

@@ -13,6 +13,12 @@ const nextConfig = {
     ignoreBuildErrors: false,
     tsconfigPath: './tsconfig.json',
   },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**" },
+      { protocol: "http", hostname: "**" },
+    ],
+  },
   // Exclude _dashboard_off from Next.js file system scanning
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   turbopack: {
