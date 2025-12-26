@@ -38,6 +38,9 @@ pnpm dev
 # Build
 pnpm build
 
+# Run unit tests (build output)
+pnpm test
+
 # Run production build
 pnpm start
 ```

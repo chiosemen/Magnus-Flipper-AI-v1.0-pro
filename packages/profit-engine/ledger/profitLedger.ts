@@ -3,8 +3,32 @@
  * Comprehensive P&L tracking and analytics
  */
 
-import { createClient, SupabaseClient } from "@getSupabaseClient()/getSupabaseClient()-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { LedgerEntry, PnLSummary } from "../schemas/SaleEvent.js";
+
+interface LedgerEntryRow {
+  readonly amount?: number | null;
+  readonly type?: string | null;
+  readonly sale_id?: string | null;
+  readonly marketplace?: string | null;
+  readonly category?: string | null;
+  readonly acquired_price?: number | null;
+  readonly net_profit?: number | null;
+  readonly holding_time?: number | null;
+  readonly sale_price?: number | null;
+  readonly inventory_item_id?: string | null;
+  readonly roi?: number | null;
+}
+
+interface InventoryTitleRow {
+  readonly id: string;
+  readonly title?: string | null;
+}
+
+interface InventoryValueRow {
+  readonly estimated_resale_value?: number | null;
+  readonly acquired_price?: number | null;
+}
 
 let supabaseClient: SupabaseClient | null = null;
 
@@ -44,10 +68,10 @@ export async function calculatePnL(
     throw new Error(`Failed to fetch ledger entries: ${error?.message}`);
   }
 
-  let totalRevenue = 0;
-  let totalCosts = 0;
-  let totalFees = 0;
-  let totalShipping = 0;
+  let totalRevenue: number = 0;
+  let totalCosts: number = 0;
+  let totalFees: number = 0;
+  let totalShipping: number = 0;
 
   const byMarketplace: Record<
     string,
@@ -72,10 +96,12 @@ export async function calculatePnL(
     }
   > = {};
 
-  const saleIds = new Set<string>();
+  const saleIds: Set<string | null | undefined> = new Set();
 
   // Process ledger entries
-  for (const entry of entries) {
+  const entryRows = entries as LedgerEntryRow[];
+
+  for (const entry of entryRows) {
     const amount = entry.amount || 0;
 
     switch (entry.type) {
@@ -173,29 +199,32 @@ export async function calculatePnL(
     .gte("sold_at", startDate)
     .lte("sold_at", endDate);
 
-  let avgHoldingTime = 0;
-  let profitableItems = 0;
+  const soldRows = soldItems as LedgerEntryRow[] | null;
+  let avgHoldingTime: number = 0;
+  let profitableItems: number = 0;
 
-  if (soldItems && soldItems.length > 0) {
+  if (soldRows && soldRows.length > 0) {
     avgHoldingTime =
-      soldItems.reduce((sum, item) => sum + (item.holding_time || 0), 0) /
-      soldItems.length;
-    profitableItems = soldItems.filter((item) => item.net_profit > 0).length;
+      soldRows.reduce(
+        (sum: number, item) => sum + (item.holding_time || 0),
+        0
+      ) / soldRows.length;
+    profitableItems = soldRows.filter((item) => (item.net_profit || 0) > 0).length;
   }
 
   const winRate =
-    soldItems && soldItems.length > 0
-      ? (profitableItems / soldItems.length) * 100
+    soldRows && soldRows.length > 0
+      ? (profitableItems / soldRows.length) * 100
       : 0;
   const avgROIPerItem =
-    soldItems && soldItems.length > 0
-      ? soldItems.reduce((sum, item) => {
+    soldRows && soldRows.length > 0
+      ? soldRows.reduce((sum: number, item) => {
           const itemRoi =
             item.net_profit && item.acquired_price
               ? (item.net_profit / item.acquired_price) * 100
               : 0;
           return sum + itemRoi;
-        }, 0) / soldItems.length
+        }, 0) / soldRows.length
       : 0;
 
   return {
@@ -246,7 +275,7 @@ export async function getLedgerEntries(
     throw new Error(`Failed to fetch ledger entries: ${error.message}`);
   }
 
-  return data || [];
+  return (data as LedgerEntry[]) || [];
 }
 
 /**
@@ -271,7 +300,7 @@ export async function createLedgerEntry(
     throw new Error(`Failed to create ledger entry: ${error.message}`);
   }
 
-  return data;
+  return data as LedgerEntry;
 }
 
 /**
@@ -322,7 +351,7 @@ export async function getMonthlyPnLTrend(
 ): Promise<
   Array<{ month: string; revenue: number; profit: number; roi: number }>
 > {
-  const trend = [];
+  const trend: Array<{ month: string; revenue: number; profit: number; roi: number }> = [];
   const now = new Date();
 
   for (let i = 11; i >= 0; i--) {
@@ -375,23 +404,25 @@ export async function getTopPerformingItems(
   }
 
   // Fetch inventory item details
-  const itemIds = data.map((item) => item.inventory_item_id);
+  const soldRows = data as LedgerEntryRow[];
+  const itemIds = soldRows.map((item) => item.inventory_item_id);
   const { data: inventoryItems } = await getSupabaseClient()
     .from("inventory")
     .select("id, title")
     .in("id", itemIds);
 
+  const inventoryRows = inventoryItems as InventoryTitleRow[] | null;
   const titleMap = new Map(
-    inventoryItems?.map((item) => [item.id, item.title]) || []
+    inventoryRows?.map((item) => [item.id, item.title]) || []
   );
 
-  return data.map((item) => ({
-    inventoryItemId: item.inventory_item_id,
-    title: titleMap.get(item.inventory_item_id) || "Unknown",
-    marketplace: item.marketplace,
-    netProfit: item.net_profit,
-    roi: item.roi,
-    salePrice: item.sale_price,
+  return soldRows.map((item) => ({
+    inventoryItemId: item.inventory_item_id as string,
+    title: titleMap.get(item.inventory_item_id as string) || "Unknown",
+    marketplace: item.marketplace as string,
+    netProfit: item.net_profit as number,
+    roi: item.roi as number,
+    salePrice: item.sale_price as number,
   }));
 }
 
@@ -425,23 +456,25 @@ export async function getWorstPerformingItems(
   }
 
   // Fetch inventory item details
-  const itemIds = data.map((item) => item.inventory_item_id);
+  const soldRows = data as LedgerEntryRow[];
+  const itemIds = soldRows.map((item) => item.inventory_item_id);
   const { data: inventoryItems } = await getSupabaseClient()
     .from("inventory")
     .select("id, title")
     .in("id", itemIds);
 
+  const inventoryRows = inventoryItems as InventoryTitleRow[] | null;
   const titleMap = new Map(
-    inventoryItems?.map((item) => [item.id, item.title]) || []
+    inventoryRows?.map((item) => [item.id, item.title]) || []
   );
 
-  return data.map((item) => ({
-    inventoryItemId: item.inventory_item_id,
-    title: titleMap.get(item.inventory_item_id) || "Unknown",
-    marketplace: item.marketplace,
-    netProfit: item.net_profit,
-    roi: item.roi,
-    salePrice: item.sale_price,
+  return soldRows.map((item) => ({
+    inventoryItemId: item.inventory_item_id as string,
+    title: titleMap.get(item.inventory_item_id as string) || "Unknown",
+    marketplace: item.marketplace as string,
+    netProfit: item.net_profit as number,
+    roi: item.roi as number,
+    salePrice: item.sale_price as number,
   }));
 }
 
@@ -465,9 +498,10 @@ export async function calculateLTV(userId: string): Promise<{
     .eq("user_id", userId)
     .eq("status", "available");
 
-  let totalUnrealized = 0;
-  if (inventory) {
-    for (const item of inventory) {
+  let totalUnrealized: number = 0;
+  const inventoryRows = inventory as InventoryValueRow[] | null;
+  if (inventoryRows) {
+    for (const item of inventoryRows) {
       const estimatedProfit =
         (item.estimated_resale_value || 0) - (item.acquired_price || 0);
       totalUnrealized += estimatedProfit;

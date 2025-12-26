@@ -7,6 +7,24 @@ import { getCurrentBackoffSeconds } from '@magnus-flipper-ai/rate-limiter';
  * Schedules scans based on marketplace risk level and backoff status
  */
 export async function scanMarketplace(marketplaceName: string) {
+  if (process.env.NODE_ENV !== "production") {
+    const guardState = globalThis as {
+      __ENTITLEMENT_CHECK_PASSED__?: boolean;
+      __EMERGENCY_OFF_ACTIVE__?: boolean;
+    };
+
+    if (guardState.__EMERGENCY_OFF_ACTIVE__) {
+      throw new Error("scanMarketplace called during emergency_off");
+    }
+
+    if (
+      process.env.EXECUTION_MODE === "public" &&
+      !guardState.__ENTITLEMENT_CHECK_PASSED__
+    ) {
+      throw new Error("scanMarketplace called without entitlement check");
+    }
+  }
+
   // TODO: Implement actual marketplace scanning logic
   // For now, this is a placeholder that will be implemented
   console.log(`Scanning marketplace: ${marketplaceName}`);

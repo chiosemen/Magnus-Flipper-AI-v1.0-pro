@@ -51,6 +51,7 @@
     "layout:audit": "ts-node scripts/layout-auditor.ts",
     "contract:enforce": "ts-node scripts/component-contract-enforcer.ts",
     "contract:generate": "ts-node scripts/component-contract-enforcer.ts --generate-contracts",
+    "ci:typecheck": "bash scripts/ci-typecheck.sh",
     "test:supervise": "ts-node scripts/testing-supervisor.ts --coverage",
     "test:generate": "ts-node scripts/testing-supervisor.ts --generate",
     "stress:test": "ts-node scripts/layout-stress-tester.ts",

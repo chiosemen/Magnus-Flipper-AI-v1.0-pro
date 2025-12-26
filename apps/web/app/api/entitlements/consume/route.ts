@@ -46,6 +46,13 @@ export async function POST(req: Request) {
     }
   }
 
+  if (mode === "emergency_off" && userRole !== "admin") {
+    return NextResponse.json(
+      { ok: false, reason: "execution_emergency_off" },
+      { status: 200 }
+    );
+  }
+
   if (!canExecute(userRole)) {
     return NextResponse.json(
       { ok: false, reason: "execution_not_allowed" },
@@ -76,6 +83,21 @@ export async function POST(req: Request) {
 
   const result = data[0] as { ok: boolean; remaining_scans: number; entitlement_id: string };
 
+  let planTier: string | undefined;
+  if (result.entitlement_id) {
+    const { data: entitlementRow, error: entitlementError } = await supabase
+      .from("scan_entitlements")
+      .select("plan_tier")
+      .eq("id", result.entitlement_id)
+      .maybeSingle();
+
+    if (entitlementError) {
+      console.warn("scan_entitlements lookup failed", entitlementError);
+    } else {
+      planTier = entitlementRow?.plan_tier ?? undefined;
+    }
+  }
+
   const { error: ledgerStartError } = await supabase
     .from("scan_ledger")
     .insert({
@@ -94,6 +116,7 @@ export async function POST(req: Request) {
       ok: true,
       remaining_scans: result.remaining_scans,
       entitlement_id: result.entitlement_id,
+      plan_tier: planTier,
     },
     { status: 200 }
   );

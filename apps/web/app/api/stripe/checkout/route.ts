@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getUser } from '@/lib/supabase/server';
 import { checkIsAdmin } from '@/lib/auth/admin-guard';
-import { canExecute } from '@/lib/runtime/execution';
+import { canExecute, getExecutionMode } from '@/lib/runtime/execution';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,6 +21,14 @@ export async function POST(req: Request) {
     adminProfile?.role ||
     (user.app_metadata?.role as string | undefined) ||
     (user.user_metadata?.role as string | undefined);
+
+  const mode = getExecutionMode();
+  if (mode === 'emergency_off' && userRole !== 'admin') {
+    return NextResponse.json(
+      { ok: false, reason: 'execution_emergency_off' },
+      { status: 200 }
+    );
+  }
 
   if (!canExecute(userRole)) {
     return NextResponse.json(

@@ -3,8 +3,50 @@
  * Learning loop that improves resale predictions over time
  */
 
-import { createClient, SupabaseClient } from "@getSupabaseClient()/getSupabaseClient()-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { EVCorrection, HistoricalStats, FinalizedSale } from "../schemas/SaleEvent.js";
+
+interface EvaluationSnapshot {
+  readonly resale_estimation?: number;
+  readonly confidence?: number;
+}
+
+interface HistoricalStatsRow {
+  readonly category: string;
+  readonly marketplace: string;
+  readonly avg_expected_value: number;
+  readonly avg_actual_value: number;
+  readonly avg_variance: number;
+  readonly std_deviation: number;
+  readonly sample_size: number;
+  readonly last_updated: string;
+}
+
+interface CorrectionRow {
+  readonly id: string;
+  readonly sale_id: string;
+  readonly inventory_item_id: string;
+  readonly category: string;
+  readonly marketplace: string;
+  readonly expected_value: number;
+  readonly actual_value: number;
+  readonly variance: number;
+  readonly variance_percent: number;
+  readonly original_confidence: number;
+  readonly correction_factor: number;
+  readonly learning_weight: number;
+  readonly created_at: string;
+  readonly metadata: unknown;
+}
+
+interface CorrectionMetricRow {
+  readonly expected_value: number;
+  readonly actual_value: number;
+}
+
+interface InventoryCategoryRow {
+  readonly category?: string | null;
+}
 
 let supabaseClient: SupabaseClient | null = null;
 
@@ -32,14 +74,15 @@ export async function correctEV(
   sale: FinalizedSale,
   originalEvaluation: any
 ): Promise<EVCorrection> {
-  const expectedValue = originalEvaluation?.resale_estimation || sale.salePrice;
+  const evaluation = (originalEvaluation ?? {}) as EvaluationSnapshot;
+  const expectedValue = evaluation.resale_estimation || sale.salePrice;
   const actualValue = sale.salePrice;
   const variance = actualValue - expectedValue;
   const variancePercent =
     expectedValue > 0 ? (variance / expectedValue) * 100 : 0;
 
   // Get original confidence from evaluation
-  const originalConfidence = originalEvaluation?.confidence || 50;
+  const originalConfidence = evaluation.confidence || 50;
 
   // Calculate Bayesian correction factor
   const correctionFactor = await calculateBayesianCorrection(
@@ -189,15 +232,16 @@ async function getHistoricalStats(
     return null;
   }
 
+  const row = data as HistoricalStatsRow;
   return {
-    category: data.category,
-    marketplace: data.marketplace,
-    avgExpectedValue: data.avg_expected_value,
-    avgActualValue: data.avg_actual_value,
-    avgVariance: data.avg_variance,
-    stdDeviation: data.std_deviation,
-    sampleSize: data.sample_size,
-    lastUpdated: data.last_updated,
+    category: row.category,
+    marketplace: row.marketplace,
+    avgExpectedValue: row.avg_expected_value,
+    avgActualValue: row.avg_actual_value,
+    avgVariance: row.avg_variance,
+    stdDeviation: row.std_deviation,
+    sampleSize: row.sample_size,
+    lastUpdated: row.last_updated,
   };
 }
 
@@ -276,7 +320,8 @@ async function getCategoryFromInventory(
     return "unknown";
   }
 
-  return data.category || "unknown";
+  const row = data as InventoryCategoryRow;
+  return row.category || "unknown";
 }
 
 /**
@@ -307,8 +352,9 @@ export async function getCorrectionInsights(
     .order("created_at", { ascending: false })
     .limit(20);
 
+  const correctionRows = (corrections as CorrectionRow[] | null) || [];
   const recentCorrections: EVCorrection[] =
-    corrections?.map((c) => ({
+    correctionRows.map((c) => ({
       id: c.id,
       saleId: c.sale_id,
       inventoryItemId: c.inventory_item_id,
@@ -322,7 +368,7 @@ export async function getCorrectionInsights(
       correctionFactor: c.correction_factor,
       learningWeight: c.learning_weight,
       createdAt: c.created_at,
-      metadata: c.metadata,
+      metadata: c.metadata as Record<string, unknown> | undefined,
     })) || [];
 
   // Calculate overall accuracy
@@ -406,7 +452,8 @@ export async function getAllHistoricalStats(): Promise<HistoricalStats[]> {
     return [];
   }
 
-  return data.map((stat) => ({
+  const rows = data as HistoricalStatsRow[];
+  return rows.map((stat) => ({
     category: stat.category,
     marketplace: stat.marketplace,
     avgExpectedValue: stat.avg_expected_value,
@@ -432,16 +479,18 @@ export async function calculateModelAccuracy(): Promise<{
     .select("expected_value, actual_value")
     .limit(1000);
 
-  if (!corrections || corrections.length === 0) {
+  const correctionRows = (corrections as CorrectionMetricRow[] | null) || [];
+
+  if (correctionRows.length === 0) {
     return { mape: 0, rmse: 0, r2: 0, sampleSize: 0 };
   }
 
-  const n = corrections.length;
-  let sumSquaredError = 0;
-  let sumAbsPercentError = 0;
-  let sumActual = 0;
+  const n = correctionRows.length;
+  let sumSquaredError: number = 0;
+  let sumAbsPercentError: number = 0;
+  let sumActual: number = 0;
 
-  for (const corr of corrections) {
+  for (const corr of correctionRows) {
     const error = corr.actual_value - corr.expected_value;
     sumSquaredError += error * error;
     sumAbsPercentError +=
@@ -454,8 +503,8 @@ export async function calculateModelAccuracy(): Promise<{
 
   // Calculate R-squared
   const meanActual = sumActual / n;
-  let sumSquaredTotal = 0;
-  for (const corr of corrections) {
+  let sumSquaredTotal: number = 0;
+  for (const corr of correctionRows) {
     sumSquaredTotal += Math.pow(corr.actual_value - meanActual, 2);
   }
 

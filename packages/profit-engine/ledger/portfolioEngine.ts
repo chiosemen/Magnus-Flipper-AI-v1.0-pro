@@ -3,9 +3,50 @@
  * Bloomberg Terminal-style portfolio tracking and analytics
  */
 
-import { createClient, SupabaseClient } from "@getSupabaseClient()/getSupabaseClient()-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { PortfolioSnapshot } from "../schemas/SaleEvent.js";
 import { calculatePnL, getAllTimePnL } from "./profitLedger.js";
+
+interface InventoryRow {
+  readonly id?: string;
+  readonly status?: string | null;
+  readonly acquired_price?: number | null;
+  readonly estimated_resale_value?: number | null;
+  readonly category?: string | null;
+  readonly acquired_at?: string | null;
+}
+
+interface SoldItemRow {
+  readonly inventory_item_id: string;
+  readonly net_profit?: number | null;
+  readonly holding_time?: number | null;
+  readonly sale_price?: number | null;
+  readonly marketplace?: string | null;
+}
+
+interface ListingRow {
+  readonly marketplace?: string | null;
+  readonly status?: string | null;
+}
+
+interface PortfolioSnapshotRow {
+  readonly id: string;
+  readonly user_id: string;
+  readonly snapshot_date: string;
+  readonly total_inventory_value: number;
+  readonly total_invested_capital: number;
+  readonly total_realized_profit: number;
+  readonly total_unrealized_profit: number;
+  readonly active_listings: number;
+  readonly sold_items: number;
+  readonly avg_holding_time: number;
+  readonly portfolio_roi: number;
+  readonly win_rate: number;
+  readonly best_performing_category?: string | null;
+  readonly worst_performing_category?: string | null;
+  readonly metadata: unknown;
+  readonly created_at: string;
+}
 
 let supabaseClient: SupabaseClient | null = null;
 
@@ -38,17 +79,21 @@ export async function createPortfolioSnapshot(
     .select("*")
     .eq("user_id", userId);
 
-  if (!inventory) {
+  const inventoryRows = inventory as InventoryRow[] | null;
+
+  if (!inventoryRows) {
     throw new Error("Failed to fetch inventory");
   }
 
   // Calculate inventory metrics
-  const activeItems = inventory.filter((item) => item.status === "available");
-  const soldItems = inventory.filter((item) => item.status === "sold");
+  const activeItems = inventoryRows.filter(
+    (item) => item.status === "available"
+  );
+  const soldItems = inventoryRows.filter((item) => item.status === "sold");
 
-  let totalInventoryValue = 0;
-  let totalInvestedCapital = 0;
-  let totalUnrealizedProfit = 0;
+  let totalInventoryValue: number = 0;
+  let totalInvestedCapital: number = 0;
+  let totalUnrealizedProfit: number = 0;
 
   for (const item of activeItems) {
     const acquiredPrice = item.acquired_price || 0;
@@ -75,19 +120,22 @@ export async function createPortfolioSnapshot(
     .select("holding_time, net_profit")
     .eq("user_id", userId);
 
-  let avgHoldingTime = 0;
-  let profitableItems = 0;
+  const soldRows = soldData as SoldItemRow[] | null;
+  let avgHoldingTime: number = 0;
+  let profitableItems: number = 0;
 
-  if (soldData && soldData.length > 0) {
+  if (soldRows && soldRows.length > 0) {
     avgHoldingTime =
-      soldData.reduce((sum, item) => sum + (item.holding_time || 0), 0) /
-      soldData.length;
-    profitableItems = soldData.filter((item) => item.net_profit > 0).length;
+      soldRows.reduce(
+        (sum: number, item) => sum + (item.holding_time || 0),
+        0
+      ) / soldRows.length;
+    profitableItems = soldRows.filter((item) => (item.net_profit || 0) > 0).length;
   }
 
   const winRate =
-    soldData && soldData.length > 0
-      ? (profitableItems / soldData.length) * 100
+    soldRows && soldRows.length > 0
+      ? (profitableItems / soldRows.length) * 100
       : 0;
 
   // Calculate portfolio ROI
@@ -166,16 +214,18 @@ async function getCategoryPerformance(
     .select("inventory_item_id, net_profit")
     .eq("user_id", userId);
 
-  if (!soldItems) return [];
+  const soldRows = soldItems as SoldItemRow[] | null;
+  if (!soldRows) return [];
 
   // Get inventory items to get categories
-  const itemIds = soldItems.map((item) => item.inventory_item_id);
+  const itemIds = soldRows.map((item) => item.inventory_item_id);
   const { data: inventory } = await getSupabaseClient()
     .from("inventory")
     .select("id, category, acquired_price")
     .in("id", itemIds);
 
-  if (!inventory) return [];
+  const inventoryRows = inventory as InventoryRow[] | null;
+  if (!inventoryRows) return [];
 
   // Group by category
   const categoryMap = new Map<
@@ -183,8 +233,8 @@ async function getCategoryPerformance(
     { profit: number; costs: number; count: number }
   >();
 
-  for (const sold of soldItems) {
-    const item = inventory.find((inv) => inv.id === sold.inventory_item_id);
+  for (const sold of soldRows) {
+    const item = inventoryRows.find((inv) => inv.id === sold.inventory_item_id);
     if (!item) continue;
 
     const category = item.category || "unknown";
@@ -195,7 +245,7 @@ async function getCategoryPerformance(
     };
 
     categoryMap.set(category, {
-      profit: existing.profit + sold.net_profit,
+      profit: existing.profit + (sold.net_profit as number),
       costs: existing.costs + (item.acquired_price || 0),
       count: existing.count + 1,
     });
@@ -236,7 +286,9 @@ export async function getPortfolioHistory(
     return [];
   }
 
-  return data.map((snap) => ({
+  const snapshotRows = data as PortfolioSnapshotRow[];
+
+  return snapshotRows.map((snap) => ({
     id: snap.id,
     userId: snap.user_id,
     snapshotDate: snap.snapshot_date,
@@ -249,9 +301,9 @@ export async function getPortfolioHistory(
     avgHoldingTime: snap.avg_holding_time,
     portfolioROI: snap.portfolio_roi,
     winRate: snap.win_rate,
-    bestPerformingCategory: snap.best_performing_category,
-    worstPerformingCategory: snap.worst_performing_category,
-    metadata: snap.metadata,
+    bestPerformingCategory: snap.best_performing_category as string | undefined,
+    worstPerformingCategory: snap.worst_performing_category as string | undefined,
+    metadata: snap.metadata as Record<string, unknown> | undefined,
     createdAt: snap.created_at,
   }));
 }
@@ -289,18 +341,21 @@ export async function getCurrentPortfolio(userId: string): Promise<{
     .select("status, acquired_price, estimated_resale_value")
     .eq("user_id", userId);
 
+  const inventoryRows = inventory as InventoryRow[] | null;
+
   const inventoryBreakdown = {
-    total: inventory?.length || 0,
-    available: inventory?.filter((i) => i.status === "available").length || 0,
-    sold: inventory?.filter((i) => i.status === "sold").length || 0,
-    reserved: inventory?.filter((i) => i.status === "reserved").length || 0,
+    total: inventoryRows?.length || 0,
+    available:
+      inventoryRows?.filter((i) => i.status === "available").length || 0,
+    sold: inventoryRows?.filter((i) => i.status === "sold").length || 0,
+    reserved: inventoryRows?.filter((i) => i.status === "reserved").length || 0,
   };
 
   // Calculate values
-  let invested = 0;
-  let current = 0;
+  let invested: number = 0;
+  let current: number = 0;
 
-  for (const item of inventory || []) {
+  for (const item of inventoryRows || []) {
     invested += item.acquired_price || 0;
     if (item.status === "available") {
       current += item.estimated_resale_value || 0;
@@ -317,23 +372,28 @@ export async function getCurrentPortfolio(userId: string): Promise<{
     .select("holding_time, net_profit, sale_price")
     .eq("user_id", userId);
 
-  let avgHoldingTime = 0;
-  let profitableItems = 0;
-  let avgSalePrice = 0;
+  const soldRows = soldItems as SoldItemRow[] | null;
+  let avgHoldingTime: number = 0;
+  let profitableItems: number = 0;
+  let avgSalePrice: number = 0;
 
-  if (soldItems && soldItems.length > 0) {
+  if (soldRows && soldRows.length > 0) {
     avgHoldingTime =
-      soldItems.reduce((sum, item) => sum + (item.holding_time || 0), 0) /
-      soldItems.length;
-    profitableItems = soldItems.filter((item) => item.net_profit > 0).length;
+      soldRows.reduce(
+        (sum: number, item) => sum + (item.holding_time || 0),
+        0
+      ) / soldRows.length;
+    profitableItems = soldRows.filter((item) => (item.net_profit || 0) > 0).length;
     avgSalePrice =
-      soldItems.reduce((sum, item) => sum + (item.sale_price || 0), 0) /
-      soldItems.length;
+      soldRows.reduce(
+        (sum: number, item) => sum + (item.sale_price || 0),
+        0
+      ) / soldRows.length;
   }
 
   const winRate =
-    soldItems && soldItems.length > 0
-      ? (profitableItems / soldItems.length) * 100
+    soldRows && soldRows.length > 0
+      ? (profitableItems / soldRows.length) * 100
       : 0;
 
   const totalCapital = invested + pnl.totalCosts;
@@ -362,7 +422,7 @@ export async function getCurrentPortfolio(userId: string): Promise<{
     },
     listings: {
       active: activeListings || 0,
-      sold: soldItems?.length || 0,
+      sold: soldRows?.length || 0,
       avgSalePrice,
     },
   };
@@ -386,7 +446,9 @@ export async function getInventoryAging(userId: string): Promise<
     .eq("user_id", userId)
     .eq("status", "available");
 
-  if (!inventory) return [];
+  const inventoryRows = inventory as InventoryRow[] | null;
+
+  if (!inventoryRows) return [];
 
   const now = Date.now();
   const ageRanges = [
@@ -398,14 +460,14 @@ export async function getInventoryAging(userId: string): Promise<
   ];
 
   const aging = ageRanges.map((range) => {
-    const items = inventory.filter((item) => {
-      const acquiredAt = new Date(item.acquired_at).getTime();
+    const items = inventoryRows.filter((item) => {
+      const acquiredAt = new Date(item.acquired_at as string).getTime();
       const ageDays = (now - acquiredAt) / (1000 * 60 * 60 * 24);
       return ageDays >= range.min && ageDays <= range.max;
     });
 
     const totalValue = items.reduce(
-      (sum, item) => sum + (item.estimated_resale_value || 0),
+      (sum: number, item) => sum + (item.estimated_resale_value || 0),
       0
     );
     const avgValue = items.length > 0 ? totalValue / items.length : 0;
@@ -446,8 +508,11 @@ export async function getMarketplaceDistribution(userId: string): Promise<
     .select("marketplace, sale_price")
     .eq("user_id", userId);
 
+  const listingRows = listings as ListingRow[] | null;
+  const soldRows = sold as SoldItemRow[] | null;
+
   const marketplaceMap = new Map<
-    string,
+    string | null | undefined,
     {
       activeListings: number;
       soldItems: number;
@@ -456,7 +521,7 @@ export async function getMarketplaceDistribution(userId: string): Promise<
   >();
 
   // Count active listings
-  for (const listing of listings || []) {
+  for (const listing of listingRows || []) {
     const marketplace = listing.marketplace;
     const existing = marketplaceMap.get(marketplace) || {
       activeListings: 0,
@@ -470,7 +535,7 @@ export async function getMarketplaceDistribution(userId: string): Promise<
   }
 
   // Count sold items and revenue
-  for (const item of sold || []) {
+  for (const item of soldRows || []) {
     const marketplace = item.marketplace;
     const existing = marketplaceMap.get(marketplace) || {
       activeListings: 0,
@@ -487,7 +552,7 @@ export async function getMarketplaceDistribution(userId: string): Promise<
   // Convert to array
   return Array.from(marketplaceMap.entries())
     .map(([marketplace, stats]) => ({
-      marketplace,
+      marketplace: marketplace as string,
       activeListings: stats.activeListings,
       soldItems: stats.soldItems,
       totalRevenue: stats.totalRevenue,
@@ -529,7 +594,9 @@ export async function calculateCashFlowProjection(
     .eq("user_id", userId)
     .eq("status", "available");
 
-  if (!inventory || inventory.length === 0) {
+  const inventoryRows = inventory as InventoryRow[] | null;
+
+  if (!inventoryRows || inventoryRows.length === 0) {
     return {
       projectedRevenue: 0,
       projectedProfit: 0,
@@ -540,29 +607,29 @@ export async function calculateCashFlowProjection(
 
   // Calculate average profit per item
   const avgProfit =
-    inventory.reduce(
-      (sum, item) =>
+    inventoryRows.reduce(
+      (sum: number, item) =>
         sum +
         ((item.estimated_resale_value || 0) - (item.acquired_price || 0)),
       0
-    ) / inventory.length;
+    ) / inventoryRows.length;
 
   const avgRevenue =
-    inventory.reduce(
-      (sum, item) => sum + (item.estimated_resale_value || 0),
+    inventoryRows.reduce(
+      (sum: number, item) => sum + (item.estimated_resale_value || 0),
       0
-    ) / inventory.length;
+    ) / inventoryRows.length;
 
   // Project forward
   const projectedSales = Math.min(
     salesPerDay * days,
-    inventory.length
+    inventoryRows.length
   );
   const projectedRevenue = avgRevenue * projectedSales;
   const projectedProfit = avgProfit * projectedSales;
 
-  const totalInvested = inventory.reduce(
-    (sum, item) => sum + (item.acquired_price || 0),
+  const totalInvested = inventoryRows.reduce(
+    (sum: number, item) => sum + (item.acquired_price || 0),
     0
   );
   const projectedROI =

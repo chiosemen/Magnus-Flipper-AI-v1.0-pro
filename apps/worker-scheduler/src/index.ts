@@ -17,6 +17,7 @@ import { getMarketplaceProfile, MarketplaceId } from '@magnus-flipper-ai/marketp
 import { runActivityFeedTTL } from "./services/ttl-cleanup.js";
 import { rehydrateListings } from "./hydration.js";
 import { runAlertDeliveryCycle } from "./alerts/alert-delivery-worker.js";
+import { metrics } from "./metrics.js";
 import {
   applyElitePoolGovernance,
   type EliteGovernanceResult,
@@ -187,8 +188,7 @@ async function main() {
   }
 
   if (process.env.EXECUTION_MODE === "admin") {
-    console.log("[worker] admin-only execution — exiting safely");
-    process.exit(0);
+    console.log("[worker] admin-only execution — proceeding without entitlement gate");
   }
 
   console.log(`Worker Scheduler ${WORKER_ID} starting...`);
@@ -217,6 +217,7 @@ async function main() {
           scanInterval: SCAN_INTERVAL,
           uptime: Date.now() - new Date(workerHeartbeat.startTime).getTime(),
           heartbeat: workerHeartbeat,
+          schedulerMetrics: metrics.scheduler,
           eliteGovernance: eliteGovernance ? {
             allowed: eliteGovernance.allowed,
             action: eliteGovernance.policy.action,
