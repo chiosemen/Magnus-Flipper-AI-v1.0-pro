@@ -3,7 +3,7 @@ import { ArrowLeft, Zap } from "lucide-react";
 import Header from "../../../marketing-swoopa/components/Header";
 import Footer from "../../../marketing-swoopa/components/Footer";
 import MarketplaceStatus from "../[slug]/MarketplaceStatus";
-import CreateSearchForm from "./CreateSearchForm";
+import MarketplaceSearchBox from "../../../components/marketplace/MarketplaceSearchBox";
 import VintedDealsList from "./VintedDealsList";
 import SavedSearchesList from "../../../components/SavedSearchesList";
 
@@ -64,7 +64,7 @@ export default async function VintedMarketplacePage() {
                 </p>
               </div>
               <div className="bg-[#121212] border border-white/10 rounded-xl p-6">
-                <CreateSearchForm />
+                <MarketplaceSearchBox defaultMarketplace="vinted" />
               </div>
             </div>
           </div>

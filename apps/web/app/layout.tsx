@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/app/providers/AuthProvider";
 import { AppProviders } from "@/app/providers/AppProviders";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
+                  <ImpersonationBanner />
                   {children}
                 </TooltipProvider>
               </QueryClientProvider>

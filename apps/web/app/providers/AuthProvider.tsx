@@ -41,6 +41,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const supabase = supabaseBrowser();
 
+  const ensureProfile = async (userId: string) => {
+    try {
+      const res = await fetch('/api/auth/ensure-profile', { method: 'POST' });
+      if (!res.ok) return null;
+      return await fetchProfile(userId);
+    } catch (err) {
+      console.warn('[AuthProvider] ensure-profile failed', err);
+      return null;
+    }
+  };
+
   // Fetch profile data for a user
   const fetchProfile = async (userId: string) => {
     try {
@@ -71,7 +82,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           setUser(session.user);
           const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
+          if (!profileData) {
+            const ensuredProfile = await ensureProfile(session.user.id);
+            setProfile(ensuredProfile);
+          } else {
+            setProfile(profileData);
+          }
         }
       } catch (err) {
         console.error('[AuthProvider] Error initializing auth:', err);
@@ -88,7 +104,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           setUser(session.user);
           const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
+          if (!profileData) {
+            const ensuredProfile = await ensureProfile(session.user.id);
+            setProfile(ensuredProfile);
+          } else {
+            setProfile(profileData);
+          }
         } else {
           setUser(null);
           setProfile(null);
@@ -170,4 +191,3 @@ export function useAuth() {
   }
   return context;
 }
-

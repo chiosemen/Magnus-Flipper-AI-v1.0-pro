@@ -27,6 +27,8 @@
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getSupabaseEnv } from './lib/supabase/env';
+import { isTrialExpired } from './lib/auth/trial';
 
 // ============================================================================
 // Middleware Configuration
@@ -50,6 +52,16 @@ export const config = {
 
 const ADMIN_PAGE_ROUTES = ['/admin'];
 const ADMIN_API_ROUTES = ['/api/admin', '/api/internal'];
+const TRIAL_ALLOWED_ROUTES = [
+  '/upgrade',
+  '/account',
+  '/billing',
+  '/login',
+  '/register',
+  '/auth/callback',
+  '/api/auth',
+  '/api/stripe/webhook',
+];
 
 function isAdminRoute(pathname: string): boolean {
   return ADMIN_PAGE_ROUTES.some((route) => pathname.startsWith(route));
@@ -57,6 +69,14 @@ function isAdminRoute(pathname: string): boolean {
 
 function isAdminAPIRoute(pathname: string): boolean {
   return ADMIN_API_ROUTES.some((route) => pathname.startsWith(route));
+}
+
+function isTrialAllowedRoute(pathname: string): boolean {
+  return TRIAL_ALLOWED_ROUTES.some((route) => pathname.startsWith(route));
+}
+
+function isApiRoute(pathname: string): boolean {
+  return pathname.startsWith('/api');
 }
 
 // ============================================================================
@@ -74,33 +94,25 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Skip non-admin routes
-  if (!isAdminRoute(pathname) && !isAdminAPIRoute(pathname)) {
-    return NextResponse.next();
-  }
-
   // Create Supabase client for Edge Runtime
   const response = NextResponse.next();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options });
-          response.cookies.set({ name, value: '', ...options });
-        },
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        return request.cookies.get(name)?.value;
       },
-    }
-  );
+      set(name: string, value: string, options: CookieOptions) {
+        request.cookies.set({ name, value, ...options });
+        response.cookies.set({ name, value, ...options });
+      },
+      remove(name: string, options: CookieOptions) {
+        request.cookies.set({ name, value: '', ...options });
+        response.cookies.set({ name, value: '', ...options });
+      },
+    },
+  });
 
   // Check authentication
   const {
@@ -115,22 +127,25 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    if (isAdminRoute(pathname)) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
   }
 
   // Check admin status from profiles table
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, email, role, is_admin')
+    .select('id, email, role, is_admin, plan, trial_expires_at, is_trial_expired')
     .eq('id', user.id)
     .single();
 
   // Verify admin status
   const isAdmin = profile?.is_admin === true && profile?.role === 'admin';
 
-  if (!isAdmin) {
+  if ((isAdminRoute(pathname) || isAdminAPIRoute(pathname)) && !isAdmin) {
     console.warn('[middleware] Non-admin access attempt:', {
       userId: user.id,
       email: user.email,
@@ -139,7 +154,6 @@ export async function middleware(request: NextRequest) {
       is_admin: profile?.is_admin,
     });
 
-    // Not admin - return 403 or redirect
     if (isAdminAPIRoute(pathname)) {
       return NextResponse.json(
         { error: 'Forbidden', message: 'Admin access required' },
@@ -150,7 +164,29 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/unauthorized', request.url));
   }
 
-  // Admin verified - allow access
+  if (!isAdmin && isTrialExpired(profile?.plan, profile?.trial_expires_at)) {
+      if (!profile.is_trial_expired) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ is_trial_expired: true })
+          .eq('id', user.id);
+        if (updateError) {
+          console.warn('[middleware] trial expiry update failed', updateError);
+        }
+      }
+
+      if (!isTrialAllowedRoute(pathname)) {
+        if (isApiRoute(pathname)) {
+          return NextResponse.json(
+            { error: 'Trial expired', code: 'trial_expired' },
+            { status: 403 }
+          );
+        }
+        return NextResponse.redirect(new URL('/upgrade', request.url));
+      }
+    }
+  }
+
   return response;
 }
 

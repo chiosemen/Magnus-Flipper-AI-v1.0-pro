@@ -1,24 +1,48 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FloatingParticles } from "../components/swoopa-motion/FloatingParticles";
 import { SwoopaAIOrb } from "../components/swoopa-ultra/SwoopaAIOrb";
 import { LiquidMetalButton } from "../components/swoopa-ultra/LiquidMetalButton";
 import { NeonCard } from "../components/swoopa-ultra/NeonCard";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { supabaseBrowser } from "@/lib/supabase/client";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts?: {
+        id?: {
+          initialize: (options: {
+            client_id: string;
+            callback: (response: { credential?: string }) => void;
+            auto_select?: boolean;
+            cancel_on_tap_outside?: boolean;
+          }) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
 
 function LoginPageContent() {
   const [isTyping, setIsTyping] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const oneTapInitialized = useRef(false);
+
+  const supabase = supabaseBrowser();
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, isAuthenticated } = useAuth();
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -27,6 +51,68 @@ function LoginPageContent() {
       router.push(redirect);
     }
   }, [isAuthenticated, router, searchParams]);
+
+  useEffect(() => {
+    if (isAuthenticated || oneTapInitialized.current) {
+      return;
+    }
+
+    if (!googleClientId) {
+      console.warn("[Auth] Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID");
+      return;
+    }
+
+    const initializeOneTap = () => {
+      if (oneTapInitialized.current) {
+        return;
+      }
+
+      if (!window.google?.accounts?.id) {
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response) => {
+          if (!response.credential) {
+            console.warn("[Auth] Google One Tap missing credential");
+            return;
+          }
+
+          const { error: idTokenError } = await supabase.auth.signInWithIdToken({
+            provider: "google",
+            token: response.credential,
+          });
+
+          if (idTokenError) {
+            console.warn("[Auth] Google One Tap sign-in failed", idTokenError);
+          }
+        },
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+
+      window.google.accounts.id.prompt();
+      oneTapInitialized.current = true;
+    };
+
+    if (window.google?.accounts?.id) {
+      initializeOneTap();
+      return;
+    }
+
+    if (document.getElementById("google-gis")) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = "google-gis";
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = initializeOneTap;
+    document.head.appendChild(script);
+  }, [googleClientId, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +129,24 @@ function LoginPageContent() {
 
     // Success - auth state will update and useEffect will redirect
     setLoading(false);
+  };
+
+  const signInWithGoogle = async () => {
+    setError(null);
+    setOauthLoading(true);
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (oauthError) {
+      setError(oauthError.message || "Failed to start Google sign-in");
+      setOauthLoading(false);
+      return;
+    }
   };
 
   return (
@@ -134,6 +238,15 @@ function LoginPageContent() {
                 {loading ? 'Signing in...' : 'Sign In'}
               </LiquidMetalButton>
             </motion.div>
+            <button
+              type="button"
+              onClick={signInWithGoogle}
+              disabled={loading || oauthLoading}
+              className="oauth-google-btn w-full flex items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 py-3 text-sm font-medium hover:bg-white/10 transition"
+            >
+              <img src="/google.svg" alt="Google" className="h-5 w-5" />
+              {oauthLoading ? "Connecting..." : "Continue with Google"}
+            </button>
           </form>
           <p className="text-neutral-300 mt-8 text-center">
             Don't have an account?{" "}

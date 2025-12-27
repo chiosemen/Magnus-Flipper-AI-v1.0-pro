@@ -6,6 +6,7 @@ import LiveDealsGrid from "../../../marketing-swoopa/components/LiveDealsGrid";
 import Header from "../../../marketing-swoopa/components/Header";
 import Footer from "../../../marketing-swoopa/components/Footer";
 import MarketplaceStatus from "./MarketplaceStatus";
+import MarketplaceSearchBox from "../../../components/marketplace/MarketplaceSearchBox";
 
 type MarketplacePageProps = {
   params: Promise<{ slug: string }>;
@@ -73,6 +74,25 @@ export default async function MarketplaceDetailPage({
               </div>
 
               <MarketplaceStatus marketplace={marketplace.slug} />
+            </div>
+          </div>
+        </section>
+
+        {/* Search Section */}
+        <section className="py-12 bg-[#0A0A0A]">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+              <div className="mb-6">
+                <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">
+                  Start a search
+                </h2>
+                <p className="text-white/70 text-sm font-medium">
+                  Search {marketplace.name} and activate a scan window instantly.
+                </p>
+              </div>
+              <div className="bg-[#121212] border border-white/10 rounded-xl p-6">
+                <MarketplaceSearchBox defaultMarketplace={marketplace.slug} />
+              </div>
             </div>
           </div>
         </section>

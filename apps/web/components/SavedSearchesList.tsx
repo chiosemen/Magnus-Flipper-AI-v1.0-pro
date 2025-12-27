@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Trash2, Eye, EyeOff } from "lucide-react";
 import SearchStatsPanel from "./SearchStatsPanel";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 interface SavedSearch {
   id: string;
@@ -25,11 +26,78 @@ interface SavedSearchesListProps {
 }
 
 export default function SavedSearchesList({ marketplace }: SavedSearchesListProps) {
-  const [searches] = useState<SavedSearch[]>([]);
+  const [searches, setSearches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(false);
+    let isMounted = true;
+
+    (async () => {
+      try {
+        const supabase = supabaseBrowser();
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData?.user) {
+          if (isMounted) {
+            setSearches([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("saved_searches")
+          .select(
+            "id, name, keywords, min_price, max_price, marketplaces, active, created_at, updated_at"
+          )
+          .contains("marketplaces", [marketplace])
+          .order("created_at", { ascending: false })
+          .limit(10);
+
+        if (error || !data) {
+          if (isMounted) {
+            setSearches([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const mapped: SavedSearch[] = data.map((row) => ({
+          id: row.id,
+          name: row.name || "Saved search",
+          query: Array.isArray(row.keywords) && row.keywords.length > 0
+            ? row.keywords.join(" ")
+            : row.name || "Saved search",
+          marketplace,
+          filters: {
+            keywords: Array.isArray(row.keywords) ? row.keywords : [],
+            minPrice: row.min_price ?? null,
+            maxPrice: row.max_price ?? null,
+          },
+          isActive: row.active ?? true,
+          createdAt: row.created_at || new Date().toISOString(),
+          updatedAt: row.updated_at || new Date().toISOString(),
+          stats: {
+            totalMatchesFound: 0,
+            totalListingsScanned: 0,
+            lastRunAt: null,
+          },
+        }));
+
+        if (isMounted) {
+          setSearches(mapped);
+          setLoading(false);
+        }
+      } catch {
+        if (isMounted) {
+          setSearches([]);
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
   }, [marketplace]);
 
   const formatDate = (dateString: string) => {

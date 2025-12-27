@@ -91,9 +91,10 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
 // PlanGuard - Require Minimum Plan Tier
 // ============================================================================
 
-type Plan = 'free' | 'pro' | 'agency' | 'elite';
+type Plan = 'trial' | 'free' | 'pro' | 'agency' | 'elite';
 
 const PLAN_RANKS: Record<Plan, number> = {
+  trial: 1,
   free: 1,
   pro: 2,
   agency: 3,

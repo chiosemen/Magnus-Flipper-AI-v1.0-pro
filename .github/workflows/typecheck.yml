@@ -27,6 +27,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify Supabase env (web)
+        run: node scripts/check-supabase-env.mjs
+
+      - name: Verify Supabase env (workers)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          worker_dirs=(apps/worker-* packages/worker-*)
+          if [ ${#worker_dirs[@]} -gt 0 ]; then
+            node scripts/check-supabase-env.mjs --require-service-role
+          else
+            echo "[typecheck] No worker-* packages found; skipping service role check."
+          fi
+
       - name: Typecheck builds
         shell: bash
         run: |
@@ -35,6 +50,8 @@ jobs:
           pnpm -r --workspace-concurrency 1 run build --if-present
           echo "[typecheck] Running web build..."
           pnpm --filter web build
+          echo "[typecheck] Running web tests..."
+          pnpm --filter web test -- --run
           echo "[typecheck] Detecting worker-* packages..."
           shopt -s nullglob
           worker_dirs=(apps/worker-* packages/worker-*)
@@ -64,6 +81,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Verify Supabase env (worker scheduler)
+        run: node scripts/check-supabase-env.mjs --require-service-role
 
       - name: Worker scheduler build and test
         run: |

@@ -27,7 +27,7 @@ export default function UnauthorizedPage() {
               : "This page requires admin privileges."}
           </p>
 
-          {!isAdmin && profile?.plan === 'free' && (
+          {!isAdmin && (profile?.plan === 'free' || profile?.plan === 'trial') && (
             <div className="bg-[#8A4FFF]/10 border border-[#8A4FFF]/30 rounded-lg p-4 mb-6">
               <p className="text-sm text-[#ededed]">
                 Upgrade to access premium features

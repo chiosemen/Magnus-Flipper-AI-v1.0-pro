@@ -6,12 +6,11 @@ import { ArrowLeft, Zap } from "lucide-react";
 import Header from "../../../marketing-swoopa/components/Header";
 import Footer from "../../../marketing-swoopa/components/Footer";
 import MarketplaceStatus from "../[slug]/MarketplaceStatus";
-import CreateSearchForm from "./CreateSearchForm";
+import MarketplaceSearchBox from "../../../components/marketplace/MarketplaceSearchBox";
 import FacebookDealsList from "./FacebookDealsList";
 import SavedSearchesList from "../../../components/SavedSearchesList";
 import LiveDealsGrid from "../../../marketing-swoopa/components/LiveDealsGrid";
 import { LiveResults } from "../../../components/LiveResults";
-import { saveSearch } from "../../../lib/supabase/saveSearch";
 import { supabaseBrowser } from "../../../lib/supabase/client";
 
 type SavedSearch = {
@@ -40,7 +39,12 @@ export default function FacebookMarketplacePage() {
     (async () => {
       try {
         const supabase = supabaseBrowser();
-        const { data, error } = await supabase.from("saved_searches").select("*").eq("marketplace", "facebook").order("created_at", { ascending: false }).limit(10);
+        const { data, error } = await supabase
+          .from("saved_searches")
+          .select("*")
+          .contains("marketplaces", ["facebook"])
+          .order("created_at", { ascending: false })
+          .limit(10);
         if (error || !data) return;
         const mapped: SavedSearch[] = data.map((row: any) => ({
           id: row.id,
@@ -56,21 +60,16 @@ export default function FacebookMarketplacePage() {
     })();
   }, []);
 
-  const handleSearchCreated = (runs: any[] = []) => {
-    const ids = runs.map((r) => r.datasetId).filter(Boolean);
-    if (ids.length) {
-      if (savedSearches.length < 10) {
-        const newSearch: SavedSearch = {
-          id: `saved_${Date.now()}`,
-          name: runs[0]?.query || "New search",
-          marketplace: "facebook",
-          datasetIds: ids,
-          createdAt: Date.now(),
-        };
-        setSavedSearches((prev) => [...prev, newSearch]);
-        saveSearch(newSearch);
-      }
-    }
+  const handleSearchCreated = (search: { query: string }, jobId?: string | null) => {
+    if (savedSearches.length >= 10) return;
+    const newSearch: SavedSearch = {
+      id: jobId || `saved_${Date.now()}`,
+      name: search.query || "New search",
+      marketplace: "facebook",
+      datasetIds: [],
+      createdAt: Date.now(),
+    };
+    setSavedSearches((prev) => [newSearch, ...prev].slice(0, 10));
   };
 
   return (
@@ -124,7 +123,8 @@ export default function FacebookMarketplacePage() {
                 </p>
               </div>
               <div className="bg-[#121212] border border-white/10 rounded-xl p-6">
-                <CreateSearchForm
+                <MarketplaceSearchBox
+                  defaultMarketplace="facebook"
                   onSearchCreated={handleSearchCreated}
                   disabled={savedSearches.length >= 10}
                 />
