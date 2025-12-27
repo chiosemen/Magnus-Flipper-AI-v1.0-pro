@@ -1,19 +1,14 @@
 import { it, expect } from 'vitest';
 import { AlertsResponse } from '@magnus/deploy-guardian-contracts';
-import { guardianDescribe, guardianEnv, guardianHeaders } from './helpers';
+import { guardianDescribe, guardianEnabled, guardianFetch } from './helpers';
 
-const suiteName = guardianEnv.hasEnv
+const suiteName = guardianEnabled
   ? 'GET /api/guardian/alerts'
   : 'GET /api/guardian/alerts (requires GUARDIAN_BASE_URL + GUARDIAN_API_KEY)';
 
 guardianDescribe(suiteName, () => {
   it('returns contract-valid alerts response', async () => {
-    const url = new URL('/api/guardian/alerts', guardianEnv.baseUrl);
-    url.searchParams.set('limit', '10');
-
-    const response = await fetch(url.toString(), {
-      headers: guardianHeaders(),
-    });
+    const response = await guardianFetch('/api/guardian/alerts?limit=10');
 
     expect(response.status).toBe(200);
 

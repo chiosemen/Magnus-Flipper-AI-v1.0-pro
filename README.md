@@ -44,3 +44,11 @@ scripts/
 
 ARCHITECTURE.md              (full system overview)
 ```
+
+## Environment Guardrails
+
+This repo enforces required Supabase envs before build and before push.
+
+- Local check: `pnpm env:check`
+- Pre-push hook: runs `node scripts/check-supabase-env.mjs`
+- Vercel sync: `./scripts/vercel-env-sync.sh` (requires `vercel link`)

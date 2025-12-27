@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "[pre-push] Validating required Supabase envs..."
+node scripts/check-supabase-env.mjs

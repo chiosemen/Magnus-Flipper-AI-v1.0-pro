@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { set } from "@vercel/edge-config";
+import { parseConnectionString } from "@vercel/edge-config";
 import { requireAdminAPI } from "@/lib/auth/admin-guard";
 import {
   asExecutionMode,
@@ -36,7 +36,46 @@ export async function POST(req: Request) {
   }
 
   try {
-    await set("execution_mode", mode);
+    const connectionString = process.env.EDGE_CONFIG;
+    if (!connectionString) {
+      console.warn("[execution-mode] EDGE_CONFIG missing.");
+      return NextResponse.json(
+        { ok: false, reason: "edge_config_write_failed" },
+        { status: 200 }
+      );
+    }
+
+    const connection = parseConnectionString(connectionString);
+    if (!connection) {
+      console.warn("[execution-mode] EDGE_CONFIG connection string invalid.");
+      return NextResponse.json(
+        { ok: false, reason: "edge_config_write_failed" },
+        { status: 200 }
+      );
+    }
+    const response = await fetch(
+      `https://api.vercel.com/v1/edge-config/${connection.id}/items`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${connection.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: [{ key: "execution_mode", value: mode }],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[execution-mode] Edge Config write failed:", errorText);
+      return NextResponse.json(
+        { ok: false, reason: "edge_config_write_failed" },
+        { status: 200 }
+      );
+    }
+
     return NextResponse.json({ ok: true, mode, source: "edge-config" });
   } catch (error) {
     console.error("[execution-mode] Edge Config write failed:", error);

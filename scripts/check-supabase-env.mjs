@@ -1,5 +1,31 @@
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+
+/**
+ * Load envs for Node-only scripts.
+ * Priority:
+ *   1. process.env (CI / Vercel)
+ *   2. .env.local (local dev)
+ *   3. .env (fallback)
+ */
+const cwd = process.cwd();
+const envFiles = ['.env.local', '.env'];
+
+for (const file of envFiles) {
+  const fullPath = path.join(cwd, file);
+  if (fs.existsSync(fullPath)) {
+    dotenv.config({ path: fullPath });
+  }
+}
+
 const args = new Set(process.argv.slice(2));
 const requireServiceRole = args.has('--require-service-role');
+
+function fail(message) {
+  console.error(`[supabase-env] ${message}`);
+  process.exit(1);
+}
 
 const errors = [];
 
@@ -9,12 +35,10 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseUrl.trim()) {
   errors.push('NEXT_PUBLIC_SUPABASE_URL is missing.');
-} else {
+} else if (process.env.NODE_ENV === 'production') {
   const lowered = supabaseUrl.toLowerCase();
   if (lowered.includes('localhost') || lowered.includes('127.0.0.1')) {
-    errors.push(
-      `NEXT_PUBLIC_SUPABASE_URL must not reference localhost (${supabaseUrl}).`
-    );
+    fail('NEXT_PUBLIC_SUPABASE_URL points to localhost in production.');
   }
 }
 

@@ -1,6 +1,5 @@
 {
-  "buildCommand": "pnpm --filter web... build",
-  "installCommand": "corepack enable && corepack prepare pnpm@9.12.0 --activate && pnpm install --frozen-lockfile",
-  "framework": "nextjs",
-  "rootDirectory": "apps/web"
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @magnus/deploy-guardian-api build",
+  "framework": null
 }

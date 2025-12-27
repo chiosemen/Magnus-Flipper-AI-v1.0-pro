@@ -238,15 +238,17 @@ function LoginPageContent() {
                 {loading ? 'Signing in...' : 'Sign In'}
               </LiquidMetalButton>
             </motion.div>
-            <button
-              type="button"
-              onClick={signInWithGoogle}
-              disabled={loading || oauthLoading}
-              className="oauth-google-btn w-full flex items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 py-3 text-sm font-medium hover:bg-white/10 transition"
-            >
-              <img src="/google.svg" alt="Google" className="h-5 w-5" />
-              {oauthLoading ? "Connecting..." : "Continue with Google"}
-            </button>
+            {googleClientId && (
+              <button
+                type="button"
+                onClick={signInWithGoogle}
+                disabled={loading || oauthLoading}
+                className="oauth-google-btn w-full flex items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 py-3 text-sm font-medium hover:bg-white/10 transition"
+              >
+                <img src="/google.svg" alt="Google" className="h-5 w-5" />
+                {oauthLoading ? "Connecting..." : "Continue with Google"}
+              </button>
+            )}
           </form>
           <p className="text-neutral-300 mt-8 text-center">
             Don't have an account?{" "}

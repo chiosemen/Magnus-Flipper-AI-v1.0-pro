@@ -67,8 +67,8 @@ export function buildImpersonationPayload(adminUserId: string, targetUserId: str
   };
 }
 
-export function readImpersonationCookie() {
-  const store = cookies();
+export async function readImpersonationCookie() {
+  const store = await cookies();
   const token = store.get(IMPERSONATION_COOKIE_NAME)?.value;
   if (!token) return null;
   return verifyImpersonationToken(token);

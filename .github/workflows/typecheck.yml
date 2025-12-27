@@ -29,6 +29,9 @@ jobs:
 
       - name: Verify Supabase env (web)
         run: node scripts/check-supabase-env.mjs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Verify Supabase env (workers)
         shell: bash
@@ -41,6 +44,10 @@ jobs:
           else
             echo "[typecheck] No worker-* packages found; skipping service role check."
           fi
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Typecheck builds
         shell: bash
@@ -61,6 +68,13 @@ jobs:
           else
             echo "[typecheck] No worker-* packages found; skipping."
           fi
+
+      - name: Guardian integration tests (non-blocking)
+        continue-on-error: true
+        run: pnpm --filter web test -- --run __tests__/guardian
+        env:
+          GUARDIAN_BASE_URL: ${{ secrets.GUARDIAN_BASE_URL }}
+          GUARDIAN_API_KEY: ${{ secrets.GUARDIAN_API_KEY }}
 
   worker-scheduler:
     runs-on: ubuntu-latest
@@ -84,6 +98,10 @@ jobs:
 
       - name: Verify Supabase env (worker scheduler)
         run: node scripts/check-supabase-env.mjs --require-service-role
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Worker scheduler build and test
         run: |

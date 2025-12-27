@@ -12,7 +12,7 @@ export async function GET() {
   }
   const { user: adminUser } = adminCheck;
 
-  const session = readImpersonationCookie();
+  const session = await readImpersonationCookie();
 
   if (!session || session.admin_user_id !== adminUser.id) {
     return NextResponse.json({ impersonating: false });

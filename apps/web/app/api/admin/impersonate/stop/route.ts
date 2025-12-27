@@ -16,7 +16,7 @@ export async function POST() {
   }
   const { user: adminUser } = adminCheck;
 
-  const session = readImpersonationCookie();
+  const session = await readImpersonationCookie();
   if (session && session.admin_user_id === adminUser.id) {
     const supabaseAdmin = createSupabaseAdmin();
     const { error: updateError } = await supabaseAdmin

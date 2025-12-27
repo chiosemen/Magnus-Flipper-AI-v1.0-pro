@@ -15,7 +15,7 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
 }
 
 export function getConfig(): GuardianConfig {
-  const port = Number(process.env.GUARDIAN_PORT ?? 4010);
+  const port = Number(process.env.PORT ?? process.env.GUARDIAN_PORT ?? 4010);
   const apiKey = process.env.GUARDIAN_API_KEY ?? '';
   const version = process.env.GUARDIAN_VERSION ?? '0.1.0';
   const guardianEnabled = parseBoolean(process.env.GUARDIAN_ENABLED, true);
