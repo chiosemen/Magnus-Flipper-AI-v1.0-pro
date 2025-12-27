@@ -42,13 +42,13 @@ export default function MarketplaceETA() {
   };
 
   const formatETA = (minutes: number) => {
-    if (minutes <= 1) return 'executing now';
-    return `ETA: ${minutes}m`;
+    if (minutes <= 1) return 'Scanning now';
+    return '≈ 60 seconds';
   };
 
   return (
     <div className="mb-6">
-      <div className="text-xs text-white/50 text-center mb-2">Marketplace Execution</div>
+      <div className="text-xs text-white/50 text-center mb-2">Live feed active</div>
       <div className="flex flex-wrap justify-center gap-2">
         {data.items.map((item) => (
           <div

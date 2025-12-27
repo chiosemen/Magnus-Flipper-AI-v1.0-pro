@@ -28,6 +28,7 @@ export default defineConfig({
       { find: '@/components', replacement: path.resolve(__dirname, './components') },
       { find: '@/types', replacement: path.resolve(__dirname, './types') },
       { find: '@/providers', replacement: path.resolve(__dirname, './providers') },
+      { find: '@/marketing-swoopa', replacement: path.resolve(__dirname, './marketing-swoopa') },
       // General @/* alias - matches tsconfig.json: tries app/* first, then src/*
       // Using regex to match @/... but not @/app, @/src, etc. (already handled above)
       { 

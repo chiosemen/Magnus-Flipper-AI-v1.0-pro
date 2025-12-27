@@ -31,7 +31,7 @@ export function EstimatedExecutionTime() {
 
   return (
     <div className="text-xs text-white/50 text-center">
-      Estimated execution time: ~{data.minutes} min
+      Fetching fresh listings
     </div>
   );
 }
@@ -43,8 +43,8 @@ export function NextScanETA() {
   return (
     <div className="text-xs text-emerald-400/80 text-center">
       {data.etaMinutes <= 1
-        ? 'Next scan executing now'
-        : `Next scan ETA: ${data.etaMinutes} min`}
+        ? 'Scanning now'
+        : 'Next refresh ≈ 60 seconds'}
     </div>
   );
 }
@@ -55,7 +55,7 @@ export function UserScanCount() {
 
   return (
     <div className="text-xs text-white/60 text-center">
-      You've executed {data.total} scan{data.total === 1 ? '' : 's'}
+      Live feed active · {data.total} scan{data.total === 1 ? '' : 's'}
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default function LiveDealsGrid({
   limit = 12,
 }: LiveDealsGridProps) {
   const [deals, setDeals] = useState<LiveDeal[]>([]);
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error] = useState<string | null>(null);
 
   // DEV MODE: Use mock data if forceShow is enabled and no real deals
@@ -36,6 +36,14 @@ export default function LiveDealsGrid({
       setDeals(mockDeals);
     }
   }, [deals.length, limit]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   if (loading) {
     return (

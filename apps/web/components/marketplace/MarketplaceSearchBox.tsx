@@ -70,6 +70,8 @@ export default function MarketplaceSearchBox({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
 
   const placeholderListings = useMemo(() => {
@@ -90,6 +92,8 @@ export default function MarketplaceSearchBox({
     setShowResults(false);
     setStatusLabel(null);
     setProgress(null);
+    setShowSkeleton(false);
+    setShowExpired(false);
 
     const trimmedQuery = query.trim();
     if (!trimmedQuery) {
@@ -189,7 +193,7 @@ export default function MarketplaceSearchBox({
       }
 
       setJobId(ingestJson?.jobId ?? null);
-      setStatusLabel("Active window");
+      setStatusLabel("Live signal");
       setProgress(ingestJson?.disabled ? 20 : 35);
       setShowResults(true);
       onSearchCreated?.(searchRequest, ingestJson?.jobId ?? null);
@@ -199,6 +203,27 @@ export default function MarketplaceSearchBox({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!showResults) return;
+    setShowSkeleton(true);
+    setShowExpired(false);
+
+    const skeletonTimer = setTimeout(() => {
+      setShowSkeleton(false);
+    }, 3000);
+
+    const expiredTimer = setTimeout(() => {
+      if (!progress) {
+        setShowExpired(true);
+      }
+    }, 15000);
+
+    return () => {
+      clearTimeout(skeletonTimer);
+      clearTimeout(expiredTimer);
+    };
+  }, [showResults, progress]);
 
   return (
     <div className="space-y-4">
@@ -241,7 +266,7 @@ export default function MarketplaceSearchBox({
               disabled={loading || disabled}
               className="w-full rounded-lg bg-gradient-to-r from-[#00E5FF] to-[#7B2FFF] px-4 py-2 font-semibold text-white transition hover:from-[#00E5FF]/90 hover:to-[#7B2FFF]/90 disabled:opacity-60"
             >
-              {loading ? "Activating..." : "Activate Search"}
+              {loading ? "Scanning now..." : "Instant scan"}
             </button>
           </div>
         </div>
@@ -258,7 +283,7 @@ export default function MarketplaceSearchBox({
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              {statusLabel || "Active window"}
+              {statusLabel || "Live signal"}
             </span>
             {jobId && (
               <span className="text-white/50 text-xs">Job: {jobId}</span>
@@ -267,7 +292,7 @@ export default function MarketplaceSearchBox({
 
           <div>
             <div className="flex items-center justify-between text-xs text-white/60 mb-2">
-              <span>Scan progress</span>
+              <span>Results updating</span>
               <span>{progress ?? 0}%</span>
             </div>
             <div className="h-2 rounded-full bg-white/10 overflow-hidden">
@@ -278,31 +303,53 @@ export default function MarketplaceSearchBox({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {placeholderListings.map((listing, idx) => (
-              <div
-                key={`${listing.title}-${idx}`}
-                className="rounded-lg border border-white/10 bg-black/40 overflow-hidden"
-              >
-                <img
-                  src="/placeholders/listing.png"
-                  alt={listing.title}
-                  className="h-28 w-full object-cover"
-                />
-                <div className="p-3 space-y-1 text-xs text-white/70">
-                  <div className="font-semibold text-white text-sm">
-                    {listing.title}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-emerald-300 font-semibold">
-                      {listing.price}
-                    </span>
-                    <span>{listing.location}</span>
+          {showSkeleton ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <div
+                  key={`skeleton-${idx}`}
+                  className="rounded-lg border border-white/10 bg-black/40 overflow-hidden animate-pulse"
+                >
+                  <div className="h-28 w-full bg-white/5" />
+                  <div className="p-3 space-y-2">
+                    <div className="h-3 w-3/4 bg-white/10 rounded" />
+                    <div className="h-3 w-1/2 bg-white/10 rounded" />
+                    <div className="h-3 w-2/3 bg-white/10 rounded" />
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : showExpired ? (
+            <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
+              Scan expired · Live feed active when you refresh
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {placeholderListings.map((listing, idx) => (
+                <div
+                  key={`${listing.title}-${idx}`}
+                  className="rounded-lg border border-white/10 bg-black/40 overflow-hidden"
+                >
+                  <img
+                    src="/placeholders/listing.png"
+                    alt={listing.title}
+                    className="h-28 w-full object-cover"
+                  />
+                  <div className="p-3 space-y-1 text-xs text-white/70">
+                    <div className="font-semibold text-white text-sm">
+                      {listing.title}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-emerald-300 font-semibold">
+                        {listing.price}
+                      </span>
+                      <span>{listing.location}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

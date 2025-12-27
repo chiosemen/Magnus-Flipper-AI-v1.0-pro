@@ -6,12 +6,12 @@ export default function WhyTimingMatters() {
       </h3>
       <p className="text-white/70 text-base mb-6">
         Most profitable listings appear and disappear within minutes.
-        Magnus runs during active windows so you see deals while sellers are still responsive.
+        Magnus runs with live signals so you see deals while sellers are still responsive.
       </p>
 
       {/* Simple 3-step flow */}
       <div className="flex items-center justify-center gap-4 text-sm text-white/60">
-        <span className="font-medium text-white">Scan Window</span>
+        <span className="font-medium text-white">Live signal</span>
         <span>→</span>
         <span className="font-medium text-white">Deal Found</span>
         <span>→</span>

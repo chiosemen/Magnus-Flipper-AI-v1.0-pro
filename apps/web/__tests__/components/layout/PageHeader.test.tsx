@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Button } from '@magnus-flipper-ai/ui/components/Button';
 
 describe('PageHeader', () => {
   it('renders title correctly', () => {
@@ -33,7 +32,7 @@ describe('PageHeader', () => {
     render(
       <PageHeader
         title="Test Page"
-        actions={<Button>Action</Button>}
+        actions={<button type="button">Action</button>}
       />
     );
 

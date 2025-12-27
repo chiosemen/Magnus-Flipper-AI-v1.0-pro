@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { canExecute, getExecutionMode } from "@/lib/runtime/execution";
+import {
+  getExecutionMode,
+  isExecutionAllowedForRequest,
+} from "@/lib/execution/edge-config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,8 +34,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "missing_params" }, { status: 400 });
   }
 
-  const mode = getExecutionMode();
-  let userRole: string | undefined;
+  const mode = await getExecutionMode();
+  let isAdmin = false;
 
   if (mode === "admin") {
     const { data: profile, error: profileError } = await supabase
@@ -41,21 +44,14 @@ export async function POST(req: Request) {
       .eq("id", userId)
       .maybeSingle();
 
-    if (!profileError && profile?.is_admin) {
-      userRole = profile.role;
+    if (!profileError && profile?.is_admin && profile?.role === "admin") {
+      isAdmin = true;
     }
   }
 
-  if (mode === "emergency_off" && userRole !== "admin") {
+  if (!isExecutionAllowedForRequest({ mode, isAdmin })) {
     return NextResponse.json(
-      { ok: false, reason: "execution_emergency_off" },
-      { status: 200 }
-    );
-  }
-
-  if (!canExecute(userRole)) {
-    return NextResponse.json(
-      { ok: false, reason: "execution_not_allowed" },
+      { ok: false, reason: "execution_not_allowed", mode },
       { status: 200 }
     );
   }

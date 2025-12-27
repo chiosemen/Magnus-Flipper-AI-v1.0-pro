@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MarketplaceStatus } from '@/app/dashboard/components/MarketplaceStatus';
+import { MarketplaceStatus } from '../../../_dashboard_off/dashboard/components/MarketplaceStatus';
 
 describe('MarketplaceStatus', () => {
   const mockMarketplaces = [

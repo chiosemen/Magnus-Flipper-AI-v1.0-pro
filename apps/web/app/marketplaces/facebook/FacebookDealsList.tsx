@@ -33,6 +33,7 @@ export default function FacebookDealsList() {
 
   useEffect(() => {
     async function fetchPooledDeals() {
+      const startedAt = Date.now();
       try {
         setLoading(true);
         setError(null);
@@ -81,7 +82,11 @@ export default function FacebookDealsList() {
           setError(null); // Clear error in dev mode
         }
       } finally {
-        setLoading(false);
+        const elapsed = Date.now() - startedAt;
+        const delay = Math.max(0, 3000 - elapsed);
+        setTimeout(() => {
+          setLoading(false);
+        }, delay);
       }
     }
 

@@ -27,12 +27,12 @@ const HERO_VARIANTS = [
   {
     id: 'A',
     headline: 'Get Real-Time Used Car Deals Before Anyone Else',
-    sub: 'Real-time scan windows surface profitable used car deals while everyone else is still searching.',
+    sub: 'Instant scan surfaces profitable used car deals while everyone else is still searching.',
   },
   {
     id: 'B',
     headline: 'Find Underpriced Cars Before Dealers See Them',
-    sub: 'Magnus scans live car marketplaces during active windows. You get first look at mispriced vehicles — and decide what to flip.',
+    sub: 'Magnus scans live car marketplaces with live signals. You get first look at mispriced vehicles — and decide what to flip.',
   },
 ];
 
@@ -51,21 +51,21 @@ const MARKETPLACES = [
 ----------------------------- */
 const PRICING_TIERS = {
   short: {
-    label: "Short Window Access",
+    label: "Short Signal Access",
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SHORT || '',
     scans: 3,
     marketplaces: ['facebook'],
     durationMinutes: 5,
   },
   active: {
-    label: "Active Window Access",
+    label: "Instant Scan Access",
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ACTIVE || '',
     scans: 5,
     marketplaces: ['facebook'],
     durationMinutes: 720,
   },
   wide: {
-    label: "Wide Window Access",
+    label: "Wide Signal Access",
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_WIDE || '',
     scans: 5,
     marketplaces: ['facebook', 'gumtree', 'vinted', 'ebay', 'offerup'],
@@ -233,7 +233,7 @@ export default function HomePage() {
                 <div className="h-full w-2/3 bg-cyan-300/70 animate-pulse" />
               </div>
               <div className="text-xs text-white/50">
-                Scan window · 12h remaining
+                Live signal · Results updating
               </div>
             </div>
           </div>
@@ -251,11 +251,11 @@ export default function HomePage() {
 
           <div className="flex items-center gap-4">
             <span className="px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-300 text-xs">
-              ● Active window
+              ● Live signal
             </span>
 
             <span className="text-xs text-white/50">
-              Next scan opens in <strong className="text-white">3h 12m</strong>
+              Next refresh in <strong className="text-white">≈ 60 seconds</strong>
             </span>
           </div>
 
@@ -293,8 +293,8 @@ export default function HomePage() {
               Live listing snapshots
             </h2>
             <p className="text-white/70 max-w-2xl">
-              What our scanners surface during active windows.
-              When the window closes, the signal fades.
+              What our scanners surface with live signals.
+              When signals cool down, the feed fades.
             </p>
           </div>
 
@@ -305,7 +305,7 @@ export default function HomePage() {
                 price: '£320',
                 marketplace: 'Facebook',
                 location: 'London',
-                img: '/listings/iphone.jpg',
+                img: '/placeholders/listing.png',
                 ageMinutes: 8,
                 expired: false,
               },
@@ -314,7 +314,7 @@ export default function HomePage() {
                 price: '£410',
                 marketplace: 'Facebook',
                 location: 'Manchester',
-                img: '/listings/ps5.jpg',
+                img: '/placeholders/listing.png',
                 ageMinutes: 45,
                 expired: false,
               },
@@ -323,7 +323,7 @@ export default function HomePage() {
                 price: '£180',
                 marketplace: 'Vinted',
                 location: 'Berlin',
-                img: '/listings/jordan.jpg',
+                img: '/placeholders/listing.png',
                 ageMinutes: 75,
                 expired: true,
               },
@@ -370,7 +370,7 @@ export default function HomePage() {
                     {item.expired ? (
                       <span className="text-red-400">Scan expired</span>
                     ) : (
-                      <span className="text-emerald-300">Active window</span>
+                      <span className="text-emerald-300">Live signal</span>
                     )}
                   </div>
                 </div>
@@ -417,7 +417,7 @@ export default function HomePage() {
 
           <div className="mb-12">
             <h2 className="text-3xl font-bold mb-3">
-              Activate scan windows
+              Activate live signal
             </h2>
             <p className="text-white/70 max-w-2xl">
               Choose how aggressively Magnus monitors the market for you.
@@ -431,7 +431,7 @@ export default function HomePage() {
           <section className="mx-auto max-w-3xl px-6 py-10">
             <LiveExecutionStrip />
             <p className="mt-3 text-xs text-white/50">
-              Scans execute automatically during active windows. You always stay in control.
+              Results update automatically with live signals. You always stay in control.
             </p>
           </section>
 
@@ -440,7 +440,7 @@ export default function HomePage() {
             {/* OFFER 1 */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
               <div className="text-sm text-white/50 mb-1">Targeted scans when timing matters</div>
-              <h3 className="text-xl font-semibold mb-2">Short Window</h3>
+              <h3 className="text-xl font-semibold mb-2">Short Signal</h3>
 
               <div className="text-3xl font-bold mb-4">£30</div>
 
@@ -458,14 +458,14 @@ export default function HomePage() {
                 disabled={checkoutLoading === 'short'}
                 className="mt-6 w-full rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {checkoutLoading === 'short' ? 'Loading...' : 'Activate Short Window'}
+                {checkoutLoading === 'short' ? 'Loading...' : 'Activate Short Signal'}
               </button>
             </div>
 
             {/* OFFER 2 */}
             <div className="rounded-2xl border border-cyan-300/30 bg-cyan-300/5 p-6">
-              <div className="text-sm text-cyan-200 mb-1">Automated monitoring during peak hours</div>
-              <h3 className="text-xl font-semibold mb-2">Active Window</h3>
+              <div className="text-sm text-cyan-200 mb-1">Live feed active</div>
+              <h3 className="text-xl font-semibold mb-2">Live signal</h3>
 
               <div className="text-3xl font-bold mb-4">£100</div>
 
@@ -483,14 +483,14 @@ export default function HomePage() {
                 disabled={checkoutLoading === 'active'}
                 className="mt-6 w-full rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {checkoutLoading === 'active' ? 'Loading...' : 'Activate Active Window'}
+                {checkoutLoading === 'active' ? 'Loading...' : 'Activate Live Signal'}
               </button>
             </div>
 
             {/* OFFER 3 */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
               <div className="text-sm text-white/50 mb-1">Maximum coverage, maximum opportunity</div>
-              <h3 className="text-xl font-semibold mb-2">Wide Window</h3>
+              <h3 className="text-xl font-semibold mb-2">Wide Signal</h3>
 
               <div className="text-3xl font-bold mb-4">£250–£300</div>
 
@@ -508,7 +508,7 @@ export default function HomePage() {
                 disabled={checkoutLoading === 'wide'}
                 className="mt-6 w-full rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {checkoutLoading === 'wide' ? 'Loading...' : 'Activate Wide Window'}
+                {checkoutLoading === 'wide' ? 'Loading...' : 'Activate Wide Signal'}
               </button>
             </div>
 
@@ -525,7 +525,7 @@ export default function HomePage() {
       {/* ================= CTA ================= */}
       <section className="border-t border-white/10 px-6 py-20 text-center">
         <h3 className="text-2xl font-bold mb-4">
-          Open a scan window. See what the market misses.
+          Instant scan. See what the market misses.
         </h3>
         <Link
           href="/pricing"

@@ -3,6 +3,7 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import { ApifyKillSwitches } from "./_components/ApifyKillSwitches";
 import { ElitePoolActivationRequests } from "./_components/ElitePoolActivationRequests";
+import { ExecutionModeToggle } from "./_components/ExecutionModeToggle";
 
 // Force dynamic rendering (no static generation)
 export const dynamic = "force-dynamic";
@@ -124,6 +125,9 @@ async function AdminDashboardContent() {
       </div>
 
       <div className="space-y-6">
+        {/* Execution Mode Toggle */}
+        <ExecutionModeToggle />
+
         {/* Apify Burn Rate Section */}
         <section>
           <h2 className="text-xl font-bold text-[#ededed] mb-3">

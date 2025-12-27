@@ -6,8 +6,8 @@ const CRON_PRESETS = [
   { label: "Every 5 minutes", value: "*/5 * * * *" },
   { label: "Every 15 minutes", value: "*/15 * * * *" },
   { label: "Every 30 minutes", value: "*/30 * * * *" },
-  { label: "Hourly", value: "0 * * * *" },
-  { label: "Every 6 hours", value: "0 */6 * * *" },
+  { label: "Every 60 minutes", value: "0 * * * *" },
+  { label: "Every 360 minutes", value: "0 */6 * * *" },
   { label: "Daily 9am", value: "0 9 * * *" },
 ];
 

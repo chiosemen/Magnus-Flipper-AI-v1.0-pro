@@ -1,5 +1,6 @@
 import { useApifyDataset } from "@/hooks/useApifyDataset";
 import { saveDeal } from "@/lib/supabase/saveDeal";
+import { useEffect, useMemo, useState } from "react";
 
 export interface Deal {
   id: string;
@@ -71,6 +72,17 @@ type Props = {
 export function LiveResults({ datasetIds }: Props) {
   const items = useApifyDataset(datasetIds);
   const fallbackImage = "/placeholders/listing.png";
+  const datasetKey = useMemo(() => datasetIds.join("|"), [datasetIds]);
+  const [showSkeleton, setShowSkeleton] = useState(true);
+
+  useEffect(() => {
+    setShowSkeleton(true);
+    const timer = setTimeout(() => {
+      setShowSkeleton(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [datasetKey]);
 
   let warned = false;
   const deals: Deal[] = items
@@ -174,13 +186,31 @@ export function LiveResults({ datasetIds }: Props) {
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {cards.map((card) => (
-          <DealCard key={card.id} {...card} />
-        ))}
-      </div>
-      {!items.length && (
-        <div className="text-slate-500 text-sm">Waiting for results…</div>
+      {showSkeleton ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div
+              key={`skeleton-${idx}`}
+              className="border border-slate-800 rounded-md p-3 bg-slate-900 text-slate-100 shadow-sm space-y-2 animate-pulse"
+            >
+              <div className="h-3 w-1/3 bg-slate-700 rounded" />
+              <div className="h-36 bg-slate-800 rounded" />
+              <div className="h-3 w-3/4 bg-slate-700 rounded" />
+              <div className="h-3 w-1/2 bg-slate-700 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {cards.map((card) => (
+              <DealCard key={card.id} {...card} />
+            ))}
+          </div>
+          {!items.length && (
+            <div className="text-slate-500 text-sm">Fetching fresh listings…</div>
+          )}
+        </>
       )}
     </div>
   );

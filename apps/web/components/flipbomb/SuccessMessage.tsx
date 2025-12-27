@@ -17,11 +17,11 @@ export function SuccessMessage({ jobId, onReset }: SuccessMessageProps) {
         </div>
         
         <h2 className="text-3xl md:text-4xl font-bold">
-          Deal Scan Started!
+          Instant scan started
         </h2>
         
         <p className="text-muted-foreground text-lg">
-          Your market scan is now running. We're searching across marketplaces for deals matching your criteria.
+          Live signal active. Fetching fresh listings that match your criteria.
         </p>
 
         {jobId && (

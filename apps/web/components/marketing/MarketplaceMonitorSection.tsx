@@ -11,7 +11,7 @@ export default function MarketplaceMonitorSection() {
             Marketplace Monitor
           </h2>
           <p className="mt-4 text-lg text-white/70">
-            Live visibility into listings the moment they appear — not hours later.
+            Live feed active the moment listings appear.
           </p>
         </div>
 
@@ -27,7 +27,7 @@ export default function MarketplaceMonitorSection() {
               Continuous Surveillance
             </h3>
             <p className="mt-3 text-sm text-white/70">
-              Magnus monitors marketplaces during active hours, tracking new
+              Magnus monitors marketplaces with instant scan coverage, tracking new
               listings, edits, and price drops in real time.
             </p>
           </div>

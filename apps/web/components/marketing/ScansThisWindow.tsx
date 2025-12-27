@@ -33,8 +33,8 @@ export default function ScansThisWindow() {
   return (
     <div className="text-xs text-white/60 text-center mb-2">
       {data.active
-        ? `Scans executed this window: ${data.count}`
-        : 'No active scan window'}
+        ? `Results updating: ${data.count}`
+        : 'Signal warming up'}
     </div>
   );
 }

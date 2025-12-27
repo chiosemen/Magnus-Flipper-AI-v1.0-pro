@@ -182,9 +182,11 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
                   const lastScan = new Date(data.scraperHealth[0].last_success_at);
                   const now = new Date();
                   const diffMins = Math.floor((now.getTime() - lastScan.getTime()) / 60000);
-                  return diffMins < 1 ? "Just now" : diffMins < 60 ? `${diffMins}m ago` : `${Math.floor(diffMins / 60)}h ago`;
+                  if (diffMins < 1) return "Scanning now";
+                  if (diffMins < 2) return "≈ 60 seconds";
+                  return "Live feed active";
                 })()
-              : "Initializing..."
+              : "Signal warming up"
           }
         />
       </section>
@@ -374,9 +376,9 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
                 </div>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-[#a0a0a0]">Last Scan:</span>
+                    <span className="text-[#a0a0a0]">Live signal:</span>
                     <span className="text-[#ededed] text-right ml-2 truncate font-medium">
-                      {lastRun ? lastRun.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Initializing"}
+                      {lastRun ? "Live feed active" : "Signal warming up"}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -387,7 +389,7 @@ function renderDashboard(data: any, userIsAdmin: boolean, isDemo: boolean) {
                   </div>
                   {isDelayed && (health.status as string) !== "down" && (health.status as string) !== "degraded" && (
                     <div className="text-xs text-yellow-400/90 mt-2 pt-2 border-t border-[#2a2a2a] font-medium">
-                      ⚠ Delayed scan detected
+                      ⚠ Signal warming up
                     </div>
                   )}
                 </div>

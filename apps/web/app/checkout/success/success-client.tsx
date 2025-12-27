@@ -11,7 +11,7 @@ export default function CheckoutSuccessClient() {
       <h1 className="text-2xl font-semibold">Scan Capacity Reserved</h1>
 
       <p className="mt-4 text-sm text-muted-foreground">
-        Your scans are queued and will execute during the next active window.
+        Live signal active. Fetching fresh listings now.
       </p>
 
       {sessionId && (

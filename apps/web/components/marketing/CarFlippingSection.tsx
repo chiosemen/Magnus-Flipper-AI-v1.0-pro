@@ -11,7 +11,7 @@ export default function CarFlippingSection() {
             Built for Car Flippers Who Move First
           </h2>
           <p className="mt-4 text-lg text-white/70">
-            Magnus scans live marketplaces during active windows to surface
+            Magnus scans live marketplaces with live signals to surface
             underpriced vehicles before competition reacts.
           </p>
         </div>
@@ -25,12 +25,12 @@ export default function CarFlippingSection() {
               <Timer className="h-5 w-5" />
             </div>
             <h3 className="text-lg font-medium text-white">
-              Real-Time Scan Windows
+              Instant Scan Signals
             </h3>
             <ul className="mt-4 space-y-2 text-sm text-white/70">
-              <li>• Scans run only when markets are active</li>
-              <li>• No stale feeds or delayed listings</li>
-              <li>• Timing beats volume</li>
+              <li>• Live signal keeps scans synced</li>
+              <li>• Live feed active, no stale listings</li>
+              <li>• Results updating before the crowd</li>
             </ul>
           </div>
 
@@ -78,7 +78,7 @@ export default function CarFlippingSection() {
 
         {/* Micro Flow */}
         <div className="mt-14 text-center text-sm text-white/60">
-          <span className="font-medium text-white">Scan Window</span>
+          <span className="font-medium text-white">Live signal</span>
           <span className="mx-2">→</span>
           <span className="font-medium text-white">Deal Found</span>
           <span className="mx-2">→</span>

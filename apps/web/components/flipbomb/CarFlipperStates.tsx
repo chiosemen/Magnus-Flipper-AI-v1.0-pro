@@ -121,7 +121,7 @@ export function CarFlipperEmpty() {
                   </span>
                 </div>
                 <p className="text-sm text-text-secondary">
-                  Located 12 miles away • Listed 2 hours ago
+                  Located 12 miles away • Live signal
                 </p>
               </div>
             </div>

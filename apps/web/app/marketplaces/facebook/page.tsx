@@ -24,12 +24,9 @@ type SavedSearch = {
 function timeAgo(ts: number) {
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} d ago`;
+  if (mins < 1) return "Live signal";
+  if (mins < 60) return "≈ 60 seconds";
+  return "Live feed active";
 }
 
 export default function FacebookMarketplacePage() {
@@ -167,7 +164,7 @@ export default function FacebookMarketplacePage() {
                         </span>
                       </div>
                       <div className="text-xs text-white/60 mt-1">
-                        {search.datasetIds.length > 0 ? "Live" : "Waiting for results…"}
+                        {search.datasetIds.length > 0 ? "Live" : "Fetching fresh listings…"}
                       </div>
                       {search.datasetIds.length > 0 ? (
                         <div className="mt-3">

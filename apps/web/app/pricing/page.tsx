@@ -63,7 +63,7 @@ export default function PricingPage() {
             <ul className="text-sm text-white/90 space-y-2 mb-4">
               <li>• Facebook Marketplace only</li>
               <li>• 5 instant searches</li>
-              <li>• 12-hour live scan window</li>
+              <li>• Live signal coverage</li>
               <li>• Priority alerts</li>
               <li>• Pooled + personal searches</li>
             </ul>
@@ -74,7 +74,7 @@ export default function PricingPage() {
                   <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75 animate-ping"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-300"></span>
                 </span>
-                Live scan window active
+                Live signal active
               </span>
             </div>
 
@@ -99,7 +99,7 @@ export default function PricingPage() {
             <ul className="text-sm text-white/80 space-y-2 mb-6">
               <li>• Facebook, Gumtree, Vinted, eBay, OfferUp</li>
               <li>• 5 instant searches</li>
-              <li>• 12-hour scan window</li>
+              <li>• Live signal coverage</li>
               <li>• Live deal feed + snapshots</li>
               <li>• Signal quality filtering</li>
             </ul>
@@ -125,7 +125,7 @@ export default function PricingPage() {
 
           <ul className="text-sm text-white/80 space-y-1 mb-6">
             <li>• 10+ instant searches</li>
-            <li>• 12-hour or continuous scan windows</li>
+            <li>• Live signal or continuous refresh</li>
             <li>• All marketplaces enabled</li>
             <li>• Custom limits & support</li>
           </ul>
@@ -160,7 +160,7 @@ export default function PricingPage() {
             </p>
             <p>
               Higher tiers unlock broader marketplace coverage and longer monitoring
-              windows — not artificial feature gates.
+              signals — not artificial feature gates.
             </p>
           </div>
         </section>

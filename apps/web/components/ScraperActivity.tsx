@@ -30,21 +30,17 @@ interface ScraperActivityProps {
  * Format timestamp to relative time
  */
 function formatRelativeTime(timestamp: string | null): string {
-  if (!timestamp) return "Never";
+  if (!timestamp) return "Signal warming up";
 
   const date = new Date(timestamp);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
 
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffMins < 1) return "Scanning now";
+  if (diffMins < 2) return "≈ 60 seconds";
 
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  return "Live feed active";
 }
 
 /**
@@ -124,7 +120,7 @@ export function ScraperActivity({
             <div className="flex items-center justify-between text-sm">
               <span className="text-[#a0a0a0] flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                Last Scan
+                Live signal
               </span>
               <span className="text-[#ededed] font-medium">
                 {formatRelativeTime(lastScanTime)}

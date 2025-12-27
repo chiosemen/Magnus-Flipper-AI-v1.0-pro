@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DashboardStats } from '@/app/dashboard/components/DashboardStats';
+import { DashboardStats } from '../../../_dashboard_off/dashboard/components/DashboardStats';
 
 describe('DashboardStats', () => {
   const mockStats = {

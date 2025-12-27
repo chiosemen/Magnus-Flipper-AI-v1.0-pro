@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DealsTable } from '@/app/deals/components/DealsTable';
+import { DealsTable } from '../../../app/_deals_off/components/DealsTable';
 
 describe('DealsTable', () => {
   const mockDeals = [

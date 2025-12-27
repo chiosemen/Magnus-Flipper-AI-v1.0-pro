@@ -87,7 +87,7 @@ export default async function MarketplaceDetailPage({
                   Start a search
                 </h2>
                 <p className="text-white/70 text-sm font-medium">
-                  Search {marketplace.name} and activate a scan window instantly.
+                  Search {marketplace.name} for an instant scan.
                 </p>
               </div>
               <div className="bg-[#121212] border border-white/10 rounded-xl p-6">

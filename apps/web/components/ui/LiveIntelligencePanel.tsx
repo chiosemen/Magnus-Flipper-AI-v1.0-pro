@@ -157,7 +157,7 @@ export function LiveIntelligencePanel({
           <div className="flex items-center justify-between pt-4 border-t border-[#2a2a2a]">
             <div className="flex items-center gap-2 text-xs text-[#a0a0a0]">
               <Clock className="w-3.5 h-3.5" />
-              Last scan
+              Live signal
             </div>
             <div className="text-xs font-medium text-[#4FF0E6]">
               {lastScanTime}

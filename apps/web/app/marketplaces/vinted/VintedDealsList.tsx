@@ -18,8 +18,16 @@ interface Deal {
 
 export default function VintedDealsList() {
   const [deals] = useState<Deal[]>([]);
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   if (loading) {
     return (
@@ -55,7 +63,7 @@ export default function VintedDealsList() {
         <div className="text-4xl mb-4 opacity-40">🔍</div>
         <p className="text-white/90 font-medium mb-2">No deals found yet</p>
         <p className="text-white/60 text-sm leading-relaxed">
-          Set up a search above to start tracking opportunities. Vinted is scanned every 10 minutes for matching listings.
+          Set up a search above to start tracking opportunities. Live feed active when new listings appear.
         </p>
       </div>
     );

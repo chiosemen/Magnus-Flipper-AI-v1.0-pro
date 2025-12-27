@@ -46,7 +46,7 @@ export function useIngestionRun() {
     const data: RunResponse = await res.json();
     setJobId(data.jobId);
     setStatus("queued");
-    setMessage("Queued for scanning");
+    setMessage("Signal warming up");
     setResults(null); // Reset results for new job
     return data.jobId;
   }, []);

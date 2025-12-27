@@ -22,13 +22,13 @@ export function LiveExecutionStrip() {
           }`}
         />
         <span className="font-medium">
-          {m.scanningLive ? 'Scanning live' : 'Next scan window scheduled'}
+          {m.scanningLive ? 'Scanning now' : 'Signal warming up'}
         </span>
       </div>
 
       {typeof m.scansThisWindow === 'number' && (
         <div className="text-white/70">
-          Scans executed this window:{' '}
+          Results updating:{' '}
           <span className="text-white font-semibold">
             {m.scansThisWindow}
           </span>
@@ -37,16 +37,16 @@ export function LiveExecutionStrip() {
 
       {m.nextEtaMinutes !== null && (
         <div className="text-white/70">
-          Next scan ETA:{' '}
+          Next refresh:{' '}
           <span className="text-white font-semibold">
-            ~{m.nextEtaMinutes} min
+            ≈ 60 seconds
           </span>
         </div>
       )}
 
       {m.executionConfidence && (
         <div className="text-white/70">
-          Execution confidence:{' '}
+          Live signal:{' '}
           <span
             className={`font-semibold ${
               m.executionConfidence === 'high'

@@ -41,13 +41,13 @@ export default function LiveScanStatusBadge() {
     switch (status) {
       case 'scanning':
         return {
-          label: 'Scanning Live',
+          label: 'Scanning now',
           dotClass: 'bg-emerald-400 animate-pulse',
           containerClass: 'bg-emerald-500/10 text-emerald-300 border-emerald-400/30',
         };
       case 'closed':
         return {
-          label: 'Scan Window Closed',
+          label: 'Signal warming up',
           dotClass: 'bg-zinc-500',
           containerClass: 'bg-zinc-500/10 text-zinc-400 border-white/10',
         };
@@ -59,7 +59,7 @@ export default function LiveScanStatusBadge() {
         };
       default:
         return {
-          label: 'Status Unknown',
+          label: 'Signal warming up',
           dotClass: 'bg-zinc-500',
           containerClass: 'bg-zinc-500/10 text-zinc-400 border-white/10',
         };

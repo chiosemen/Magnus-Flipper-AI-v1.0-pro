@@ -50,18 +50,11 @@ export default function SearchStatsPanel({ searchId, searchName }: SearchStatsPa
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 60) {
-      return `${diffMins}m ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours}h ago`;
-    } else if (diffDays < 7) {
-      return `${diffDays}d ago`;
-    } else {
-      return date.toLocaleDateString();
+      return "≈ 60 seconds";
     }
+    return "Live feed active";
   };
 
   const formatPrice = (price: number) => {
@@ -161,15 +154,15 @@ export default function SearchStatsPanel({ searchId, searchName }: SearchStatsPa
       <div className="mb-4 p-3 bg-white rounded border border-gray-200">
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-600">
-            <strong>Last Run:</strong>{" "}
-            {stats.lastRunAt ? formatDate(stats.lastRunAt) : "Never"}
+            <strong>Live signal:</strong>{" "}
+            {stats.lastRunAt ? formatDate(stats.lastRunAt) : "Signal warming up"}
           </span>
           <span className="text-gray-600">
-            <strong>Active:</strong> {stats.daysSinceCreation} days
+            <strong>Live feed active</strong>
           </span>
         </div>
         <div className="mt-2 text-xs text-gray-500">
-          Average {stats.avgMatchesPerRun} matches per run • {stats.marketplace}
+          Results updating • {stats.marketplace}
         </div>
       </div>
 
