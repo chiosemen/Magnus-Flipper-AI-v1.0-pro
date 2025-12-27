@@ -165,25 +165,24 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!isAdmin && isTrialExpired(profile?.plan, profile?.trial_expires_at)) {
-      if (!profile.is_trial_expired) {
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ is_trial_expired: true })
-          .eq('id', user.id);
-        if (updateError) {
-          console.warn('[middleware] trial expiry update failed', updateError);
-        }
+    if (!profile?.is_trial_expired) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ is_trial_expired: true })
+        .eq('id', user.id);
+      if (updateError) {
+        console.warn('[middleware] trial expiry update failed', updateError);
       }
+    }
 
-      if (!isTrialAllowedRoute(pathname)) {
-        if (isApiRoute(pathname)) {
-          return NextResponse.json(
-            { error: 'Trial expired', code: 'trial_expired' },
-            { status: 403 }
-          );
-        }
-        return NextResponse.redirect(new URL('/upgrade', request.url));
+    if (!isTrialAllowedRoute(pathname)) {
+      if (isApiRoute(pathname)) {
+        return NextResponse.json(
+          { error: 'Trial expired', code: 'trial_expired' },
+          { status: 403 }
+        );
       }
+      return NextResponse.redirect(new URL('/upgrade', request.url));
     }
   }
 

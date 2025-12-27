@@ -37,6 +37,8 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [plan, setPlan] = useState<string | null>(null);
+  const [isTrialExpired, setIsTrialExpired] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Fetch user role from Supabase
@@ -49,6 +51,21 @@ export function Sidebar() {
         } = await supabase.auth.getUser();
         const role = (user?.app_metadata?.role as string) || null;
         setUserRole(role);
+
+        if (user?.id) {
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("plan, is_trial_expired")
+            .eq("id", user.id)
+            .single();
+
+          if (profileError) {
+            console.warn("Failed to fetch user plan:", profileError);
+          } else {
+            setPlan(profile?.plan ?? null);
+            setIsTrialExpired(profile?.is_trial_expired === true);
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch user role:", error);
         setUserRole(null);
@@ -58,6 +75,13 @@ export function Sidebar() {
     }
     fetchUserRole();
   }, []);
+
+  const isFeatureLocked = (item: NavItem) => {
+    if (!item.locked) return false;
+    if (userRole === "admin") return false;
+    if (plan === "trial" || isTrialExpired) return true;
+    return false;
+  };
 
   // Filter navigation items based on user role
   const visibleNavItems = NAV_ITEMS.filter((item) => {
@@ -86,12 +110,13 @@ export function Sidebar() {
         <ul className="space-y-1 px-3">
           {visibleNavItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
-            const isLocked = item.locked;
+            const isLocked = isFeatureLocked(item);
 
             return (
               <li key={item.href}>
                 <Link
-                  href={isLocked ? "#" : item.href}
+                  href={isLocked ? "/upgrade" : item.href}
+                  aria-disabled={isLocked}
                   className={`
                     flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors
                     ${
