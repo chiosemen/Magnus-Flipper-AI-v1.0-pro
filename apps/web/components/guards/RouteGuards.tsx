@@ -23,18 +23,18 @@ interface GuardProps {
  * Redirects to /login if not authenticated
  */
 export function ProtectedRoute({ children }: GuardProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       const currentPath = window.location.pathname;
       router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white">Loading...</div>
@@ -54,12 +54,12 @@ export function ProtectedRoute({ children }: GuardProps) {
  * Redirects to /onboarding if not completed
  */
 export function OnboardingGuard({ children }: GuardProps) {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!isLoading && user) {
       const checkOnboarding = async () => {
         const supabase = supabaseBrowser();
         const { data: profile } = await supabase
@@ -76,9 +76,9 @@ export function OnboardingGuard({ children }: GuardProps) {
       };
       checkOnboarding();
     }
-  }, [user, loading, router]);
+  }, [user, isLoading, router]);
 
-  if (loading || onboardingComplete === null) {
+  if (isLoading || onboardingComplete === null) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white">Loading...</div>
@@ -96,52 +96,14 @@ export function OnboardingGuard({ children }: GuardProps) {
  * Redirects to /unauthorized if not admin
  */
 export function AdminGuard({ children }: GuardProps) {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!isLoading && user) {
       const checkAdminStatus = async () => {
-        const isProduction = process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
-
-        if (!isProduction) {
-          // NON-PRODUCTION: Auto-grant admin access for testing
-          console.log('[AdminGuard] Non-production mode: Auto-granting admin access');
-          setIsAdmin(true);
-          setChecking(false);
-          return;
-        }
-
-        // PRODUCTION: Check email allowlist
-        const adminAllowlist = (process.env.NEXT_PUBLIC_ADMIN_EMAIL_ALLOWLIST || '')
-          .split(',')
-          .map((email) => email.trim())
-          .filter(Boolean);
-
-        if (adminAllowlist.length === 0) {
-          console.error('[AdminGuard] CRITICAL: ADMIN_EMAIL_ALLOWLIST is empty in production');
-          setIsAdmin(false);
-          setChecking(false);
-          router.push('/unauthorized');
-          return;
-        }
-
-        const userEmail = user.email?.toLowerCase() || '';
-        const isAllowed = adminAllowlist.some((email) => email.toLowerCase() === userEmail);
-
-        if (!isAllowed) {
-          console.warn('[AdminGuard] Access denied:', {
-            email: user.email,
-            allowlist: adminAllowlist,
-          });
-          setIsAdmin(false);
-          setChecking(false);
-          router.push('/unauthorized');
-          return;
-        }
-
         // Additionally verify admin status in database
         const supabase = supabaseBrowser();
         const { data: profile } = await supabase
@@ -150,10 +112,9 @@ export function AdminGuard({ children }: GuardProps) {
           .eq('id', user.id)
           .single();
 
-        if (profile?.is_admin && profile?.role === 'admin') {
+        if (profile?.is_admin || profile?.role === 'admin') {
           setIsAdmin(true);
         } else {
-          console.warn('[AdminGuard] User in allowlist but not marked as admin in DB:', user.email);
           setIsAdmin(false);
           router.push('/unauthorized');
         }
@@ -162,9 +123,9 @@ export function AdminGuard({ children }: GuardProps) {
 
       checkAdminStatus();
     }
-  }, [user, loading, router]);
+  }, [user, isLoading, router]);
 
-  if (loading || checking) {
+  if (isLoading || checking) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white">Verifying admin access...</div>

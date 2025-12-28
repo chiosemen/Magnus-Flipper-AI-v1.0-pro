@@ -25,7 +25,7 @@ export default async function AdminSmokePage() {
     error = e instanceof Error ? e.message : 'Unknown error';
   }
 
-  if (error) {
+  if (error || !adminUser) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
         <div className="max-w-2xl w-full">
@@ -37,7 +37,7 @@ export default async function AdminSmokePage() {
 
             <div className="space-y-4 text-sm">
               <div className="bg-black/50 rounded-lg p-4">
-                <div className="text-red-300 font-mono">{error}</div>
+                <div className="text-red-300 font-mono">{error ?? 'Admin user missing'}</div>
               </div>
 
               <div className="text-white/70">

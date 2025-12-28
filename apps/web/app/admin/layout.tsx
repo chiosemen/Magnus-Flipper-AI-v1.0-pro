@@ -19,7 +19,7 @@
 
 import { ReactNode } from 'react';
 import { ProtectedRoute, OnboardingGuard, AdminGuard } from '@/components/guards/RouteGuards';
-import { adminAutoHeal } from '@/app/actions/adminAutoHeal';
+import { adminAutoHeal } from '@/lib/adminAutoHeal';
 
 interface AdminLayoutProps {
   children: ReactNode;
