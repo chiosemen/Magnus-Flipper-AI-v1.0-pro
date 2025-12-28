@@ -19,7 +19,7 @@
     "build:packages": "pnpm --filter '@magnus-flipper-ai/*' build",
     "build:guardian-contracts": "pnpm --filter @magnus/deploy-guardian-contracts build",
     "build:web": "pnpm build:packages && pnpm --filter web build",
-    "vercel-build": "pnpm --filter web build",
+    "vercel-build": "node scripts/vercel-build.mjs",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:production": "bash tests/production/run-tests.sh --all",
