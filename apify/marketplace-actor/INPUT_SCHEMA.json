@@ -1,0 +1,66 @@
+{
+  "title": "Marketplace Scraper Input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "facebookQueries": {
+      "title": "Facebook Marketplace Queries",
+      "type": "array",
+      "description": "Up to 10 concurrent search queries for Facebook Marketplace.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Search query"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location (optional)"
+          },
+          "maxItems": {
+            "type": "integer",
+            "title": "Max items",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    "vintedQueries": {
+      "title": "Vinted Queries",
+      "type": "array",
+      "description": "Up to 10 concurrent search queries for Vinted.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Search query"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country code (e.g. GB, FR, DE)"
+          },
+          "maxItems": {
+            "type": "integer",
+            "title": "Max items",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    "maxConcurrencyPerMarketplace": {
+      "title": "Max concurrency per marketplace",
+      "type": "integer",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 10
+    }
+  }
+}

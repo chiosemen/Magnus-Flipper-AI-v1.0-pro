@@ -107,6 +107,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith('/live-test') || pathname.startsWith('/api/live-scrape')) {
+    return NextResponse.next();
+  }
+
   // ============================================================================
   // PRODUCTION LOCK: NEVER allow auth bypass in production
   // ============================================================================

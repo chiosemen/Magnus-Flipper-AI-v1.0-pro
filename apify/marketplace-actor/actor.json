@@ -1,0 +1,8 @@
+{
+  "actorSpecification": 1,
+  "name": "marketplace-facebook-vinted",
+  "version": "0.1.0",
+  "buildTag": "latest",
+  "main": "src/main.js",
+  "input": "INPUT_SCHEMA.json"
+}
