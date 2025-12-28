@@ -63,6 +63,16 @@ const TRIAL_ALLOWED_ROUTES = [
   '/api/stripe/webhook',
 ];
 
+function parseAllowlist(): Set<string> {
+  const raw = process.env.ADMIN_EMAIL_ALLOWLIST ?? '';
+  return new Set(
+    raw
+      .split(',')
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
 function isAdminRoute(pathname: string): boolean {
   return ADMIN_PAGE_ROUTES.some((route) => pathname.startsWith(route));
 }
@@ -155,6 +165,19 @@ export async function middleware(request: NextRequest) {
 
   // Verify admin status
   const isAdmin = profile?.is_admin === true || profile?.role === 'admin';
+  const isProd = process.env.VERCEL_ENV === 'production';
+  const healed = request.cookies.get('__admin_healed')?.value;
+  const allowlist = parseAllowlist();
+  const isAllowlisted = user.email ? allowlist.has(user.email.toLowerCase()) : false;
+  const isAdminPage = isAdminRoute(pathname) && !isAdminAPIRoute(pathname);
+  const isHealRoute = pathname === '/admin/heal' || pathname.startsWith('/admin/heal/');
+
+  if (isProd && isAdminPage && !isAdmin && isAllowlisted && !healed && !isHealRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/heal';
+    url.searchParams.set('next', pathname);
+    return NextResponse.redirect(url);
+  }
 
   if ((isAdminRoute(pathname) || isAdminAPIRoute(pathname)) && !isAdmin) {
     console.warn('[middleware] Non-admin access attempt:', {

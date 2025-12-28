@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Admin Layout - Protected with Full Guards Stack
  *
@@ -21,12 +19,14 @@
 
 import { ReactNode } from 'react';
 import { ProtectedRoute, OnboardingGuard, AdminGuard } from '@/components/guards/RouteGuards';
+import { adminAutoHeal } from '@/app/actions/adminAutoHeal';
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default async function AdminLayout({ children }: AdminLayoutProps) {
+  await adminAutoHeal();
   return (
     <ProtectedRoute>
       <OnboardingGuard>
