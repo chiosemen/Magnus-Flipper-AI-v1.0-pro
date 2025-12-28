@@ -134,9 +134,8 @@ function LoginPageContent() {
   const signInWithGoogle = async () => {
     setError(null);
     setOauthLoading(true);
-
-    // Use NEXT_PUBLIC_SITE_URL if set, otherwise fall back to window.location.origin
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     const redirectUrl = `${siteUrl}/auth/callback`;
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({

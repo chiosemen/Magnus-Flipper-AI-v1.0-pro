@@ -43,8 +43,8 @@ NODE_ENV=production
 NEXT_PUBLIC_APP_URL=https://flipperagents.com
 NEXT_PUBLIC_API_URL=https://flipperagents.com/api
 
-# Vercel Analytics
-NEXT_PUBLIC_VERCEL_ENV=production
+# Vercel Environment
+VERCEL_ENV=production
 VERCEL_URL=flipperagents.com
 ```
 

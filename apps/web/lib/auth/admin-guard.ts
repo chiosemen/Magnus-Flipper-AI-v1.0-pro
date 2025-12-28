@@ -76,7 +76,7 @@ export async function requireAdmin(): Promise<AdminUser> {
   }
 
   // Verify admin status
-  if (!profile.is_admin || profile.role !== 'admin') {
+  if (!profile.is_admin && profile.role !== 'admin') {
     console.warn('[requireAdmin] Non-admin access attempt:', {
       userId: user.id,
       email: user.email,
@@ -144,7 +144,7 @@ export async function requireAdminAPI(): Promise<
   }
 
   // Verify admin status
-  if (!profile.is_admin || profile.role !== 'admin') {
+  if (!profile.is_admin && profile.role !== 'admin') {
     console.warn('[requireAdminAPI] Non-admin API access attempt:', {
       userId: user.id,
       email: user.email,
@@ -193,7 +193,7 @@ export async function checkIsAdmin(): Promise<AdminUser | null> {
       .eq('id', user.id)
       .single();
 
-    if (!profile || !profile.is_admin || profile.role !== 'admin') {
+    if (!profile || (!profile.is_admin && profile.role !== 'admin')) {
       return null;
     }
 

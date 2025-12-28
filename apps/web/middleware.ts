@@ -154,7 +154,7 @@ export async function middleware(request: NextRequest) {
     .single();
 
   // Verify admin status
-  const isAdmin = profile?.is_admin === true && profile?.role === 'admin';
+  const isAdmin = profile?.is_admin === true || profile?.role === 'admin';
 
   if ((isAdminRoute(pathname) || isAdminAPIRoute(pathname)) && !isAdmin) {
     console.warn('[middleware] Non-admin access attempt:', {
