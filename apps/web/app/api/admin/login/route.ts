@@ -87,41 +87,9 @@ export async function GET() {
       );
     }
 
-    // Create response with redirect
-    const response = NextResponse.redirect(new URL('/admin/dashboard', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
-
-    // Extract tokens from the magic link properties
-    const { properties } = sessionData;
-
-    if (properties?.access_token && properties?.refresh_token) {
-      // Set auth cookies manually
-      response.cookies.set({
-        name: 'sb-access-token',
-        value: properties.access_token,
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60, // 1 hour
-      });
-
-      response.cookies.set({
-        name: 'sb-refresh-token',
-        value: properties.refresh_token,
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-    } else {
-      // Fallback: redirect to the magic link to establish session
-      return NextResponse.redirect(sessionData.properties.action_link);
-    }
-
+    // Supabase will establish the session via the magic link redirect
     console.log(`[admin-login] ✅ Admin session created for ${ADMIN_EMAIL}`);
-
-    return response;
+    return NextResponse.redirect(sessionData.properties.action_link);
   } catch (error) {
     console.error('[admin-login] Unexpected error:', error);
     return NextResponse.json(
