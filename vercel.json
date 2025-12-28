@@ -1,5 +1,8 @@
 {
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @magnus/deploy-guardian-api build",
-  "framework": null
+  "builds": [
+    {
+      "src": "api/guardian.ts",
+      "use": "@vercel/node"
+    }
+  ]
 }
