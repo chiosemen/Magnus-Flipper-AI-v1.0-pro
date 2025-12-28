@@ -89,6 +89,7 @@ export default function HomePage() {
   const [variant, setVariant] = useState(HERO_VARIANTS[0]);
   const [workerStatus, setWorkerStatus] = useState<'live' | 'idle'>('live');
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Track page view (privacy-safe, session-scoped)
   usePageView('landing');
@@ -126,8 +127,84 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#070B12] text-white">
 
+      {/* ================= HEADER ================= */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#070B12]/95 backdrop-blur-sm border-b border-white/10">
+        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            Magnus Flipper
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6">
+            <Link href="/pricing" className="text-white/70 hover:text-white transition text-sm">
+              Pricing
+            </Link>
+            <Link href="/dashboard" className="text-white/70 hover:text-white transition text-sm">
+              Dashboard
+            </Link>
+            <Link href="/login" className="text-white/70 hover:text-white transition text-sm">
+              Sign In
+            </Link>
+            <Link
+              href="/pricing"
+              className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-black hover:bg-cyan-300 transition"
+            >
+              Start Scanning
+            </Link>
+          </nav>
+
+          {/* Mobile Hamburger Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden flex flex-col gap-1.5 p-2 rounded-lg hover:bg-white/5 transition"
+            aria-label="Toggle menu"
+          >
+            <span className={`h-0.5 w-6 bg-white transition-all ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+            <span className={`h-0.5 w-6 bg-white transition-all ${mobileMenuOpen ? 'opacity-0' : ''}`} />
+            <span className={`h-0.5 w-6 bg-white transition-all ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/10 bg-[#070B12]">
+            <nav className="px-6 py-4 flex flex-col gap-4">
+              <Link
+                href="/pricing"
+                className="text-white/70 hover:text-white transition text-sm py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Pricing
+              </Link>
+              <Link
+                href="/dashboard"
+                className="text-white/70 hover:text-white transition text-sm py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/login"
+                className="text-white/70 hover:text-white transition text-sm py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/pricing"
+                className="rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-black hover:bg-cyan-300 transition text-center"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Start Scanning
+              </Link>
+            </nav>
+          </div>
+        )}
+      </header>
+
       {/* ================= HERO ================= */}
-      <section className="relative overflow-hidden px-6 pt-24 pb-20">
+      <section className="relative overflow-hidden px-6 pt-32 pb-20">
         <div className="mx-auto max-w-6xl text-center">
 
           {/* Worker Status Pill */}

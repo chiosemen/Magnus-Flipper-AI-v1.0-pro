@@ -85,11 +85,22 @@ function isApiRoute(pathname: string): boolean {
 
 export async function middleware(request: NextRequest) {
   // ============================================================================
-  // DEVELOPMENT MODE: Bypass ALL auth checks
+  // PRODUCTION LOCK: NEVER allow auth bypass in production
   // ============================================================================
-  if (process.env.DISABLE_AUTH_GUARD === 'true') {
-    console.log('[middleware] 🚫 AUTH DISABLED - Bypassing all checks');
-    return NextResponse.next();
+  const isProduction = process.env.VERCEL_ENV === 'production';
+
+  if (isProduction) {
+    // PRODUCTION: Auth guard is PERMANENTLY LOCKED
+    // DISABLE_AUTH_GUARD is ignored to prevent accidental security bypass
+    if (process.env.DISABLE_AUTH_GUARD === 'true') {
+      console.error('[middleware] ⛔ CRITICAL: Attempted to disable auth guard in PRODUCTION (ignored)');
+    }
+  } else {
+    // NON-PRODUCTION: Allow bypass for testing
+    if (process.env.DISABLE_AUTH_GUARD === 'true') {
+      console.log('[middleware] 🚫 AUTH DISABLED - Bypassing all checks (non-production only)');
+      return NextResponse.next();
+    }
   }
 
   const { pathname } = request.nextUrl;
