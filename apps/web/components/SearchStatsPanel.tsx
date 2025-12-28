@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { resolveImage } from "@/lib/utils/imageResolver";
 
 interface SearchStats {
   searchId: string;
@@ -182,7 +183,7 @@ export default function SearchStatsPanel({ searchId, searchName }: SearchStatsPa
                 className="flex items-start gap-3 p-2 bg-white rounded border border-gray-200 hover:border-blue-400 hover:shadow-sm transition-all"
               >
                 <img
-                  src={item.imageUrl || fallbackImage}
+                  src={resolveImage(item.imageUrl, { fallback: fallbackImage })}
                   alt={item.title}
                   className="w-12 h-12 object-cover rounded flex-shrink-0"
                   onError={(e) => {

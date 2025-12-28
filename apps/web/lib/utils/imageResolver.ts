@@ -11,6 +11,14 @@
  */
 
 const DEFAULT_FALLBACK = "/placeholders/listing.png";
+const ROOT_ASSET_ALLOWLIST = new Set([
+  "/file.svg",
+  "/globe.svg",
+  "/google.svg",
+  "/next.svg",
+  "/vercel.svg",
+  "/window.svg",
+]);
 const MAX_URL_LENGTH = 2048; // Reasonable URL length limit
 
 /**
@@ -44,10 +52,10 @@ export function resolveImageUrl(
     return `${base}${imageUrl}`;
   }
 
-  // Relative URL without / - assume it's a public asset
+  // Relative URL without / - treat as invalid to prevent 404s from stale data
   if (!imageUrl.includes("://")) {
-    const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    return `${base}/${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+    console.warn(`[ImageResolver] Relative image URL missing leading "/": ${imageUrl}`);
+    return null;
   }
 
   // Fallback: return as-is (might be data: URL or other format)
@@ -159,6 +167,17 @@ export function resolveImage(
   }
 
   const trimmed = src.trim();
+
+  if (
+    trimmed.startsWith("/") &&
+    !trimmed.startsWith("/placeholders/") &&
+    !trimmed.startsWith("/marketplaces/") &&
+    !trimmed.startsWith("/marketing-swoopa/") &&
+    !ROOT_ASSET_ALLOWLIST.has(trimmed)
+  ) {
+    options?.onError?.(`Root-level asset not allowed: ${trimmed}`);
+    return fallback;
+  }
 
   // Check for malformed URLs
   if (isUrlMalformed(trimmed)) {

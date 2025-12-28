@@ -1,4 +1,5 @@
 import { useApifyDataset } from "@/hooks/useApifyDataset";
+import { resolveImage } from "@/lib/utils/imageResolver";
 import { saveDeal } from "@/lib/supabase/saveDeal";
 import { useEffect, useMemo, useState } from "react";
 
@@ -130,7 +131,7 @@ export function LiveResults({ datasetIds }: Props) {
       </div>
       <div className="mb-3 h-36 overflow-hidden rounded bg-slate-800">
         <img
-          src={image || fallbackImage}
+          src={resolveImage(image, { fallback: fallbackImage })}
           alt={title}
           className="h-full w-full object-cover"
           onError={(e) => {
