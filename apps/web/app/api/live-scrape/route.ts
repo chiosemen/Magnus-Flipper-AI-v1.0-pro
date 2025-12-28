@@ -10,7 +10,7 @@ const QUEUES: Record<string, PQueue> = {
 };
 
 const ACTORS = {
-  facebook: "apify/facebook-marketplace-scraper",
+  facebook: "apify/facebook-marketplace-scraper-v2",
   vinted: "apify/vinted-scraper",
 };
 
@@ -60,7 +60,7 @@ async function runFacebook(query: string, limit: number) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        search: query,
+        query,
         maxItems: limit,
         location: "London",
         proxy: { useApifyProxy: true },
@@ -69,15 +69,16 @@ async function runFacebook(query: string, limit: number) {
   );
 
   if (!res.ok) {
-    throw new Error(`Facebook actor failed (${res.status})`);
+    const text = await res.text();
+    throw new Error(`Facebook actor failed (${res.status}): ${text}`);
   }
 
   const data = await res.json();
   return (data || []).map((item: any) => ({
-    title: item.title,
-    price: item.price,
+    title: item.title || item.name,
+    price: item.price || item.priceText,
     url: item.url,
-    location: item.location,
+    location: item.location?.name || item.location,
   }));
 }
 
