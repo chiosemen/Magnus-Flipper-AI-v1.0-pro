@@ -36,6 +36,13 @@ type SearchResult = {
   durationMs?: number;
   items: any[];
   error?: string;
+  pooling?: {
+    pooled: boolean;
+    geoKey: string;
+    precision?: number | null;
+    strategy?: string;
+  } | null;
+  warnings?: string[];
   locationUsed?: {
     text?: string | null;
     lat?: number;
@@ -89,6 +96,11 @@ export default function MarketplaceSearchBox({
   const formattedQuery = useMemo(() => query.trim(), [query]);
   const trimmedLocation = useMemo(() => locationText.trim(), [locationText]);
   const normalizedLocation = trimmedLocation || "London";
+  const isAdmin = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const value = new URLSearchParams(window.location.search).get("admin");
+    return value === "1" || value === "true";
+  }, []);
 
   const executeSearch = async () => {
     if (disabled || loading) {
@@ -446,6 +458,13 @@ export default function MarketplaceSearchBox({
                     {result.count} results · {result.durationMs ?? 0} ms
                   </div>
                 </div>
+                {isAdmin && (
+                  <div className="mt-2 text-xs text-white/50">
+                    Pooled execution:{" "}
+                    {result.pooling?.pooled ? "on" : "off"} · Geo cell:{" "}
+                    {result.pooling?.geoKey ?? "n/a"}
+                  </div>
+                )}
 
                 {result.error ? (
                   <div className="mt-3 text-xs text-red-300">
