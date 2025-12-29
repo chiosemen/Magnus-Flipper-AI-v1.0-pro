@@ -236,6 +236,14 @@ function LoginPageContent() {
               onBlur={() => setIsTyping(false)}
               animate={isTyping ? { boxShadow: "0 0 20px rgba(59, 130, 246, 0.5)" } : {}}
             />
+            <div className="text-right">
+              <a
+                href="/reset-password"
+                className="text-sm text-cyan-400 hover:text-cyan-300 hover:underline transition"
+              >
+                Forgot password?
+              </a>
+            </div>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <LiquidMetalButton variant="primary" className="w-full" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign In'}

@@ -8,6 +8,7 @@ import { TrackedLink } from "./TrackedLink";
 import { Button } from "@/components/flipbomb/ui/button";
 import { Menu, X } from "lucide-react";
 import { fadeVariants, prefersReducedMotion } from "@/lib/motion";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 /**
  * Header Component
@@ -17,6 +18,7 @@ import { fadeVariants, prefersReducedMotion } from "@/lib/motion";
  */
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -43,14 +45,33 @@ export function Header() {
 
           {/* CTAs */}
           <div className="hidden md:flex items-center space-x-4">
-            <TrackedLink href="/login" intent="secondary">
-              <Button variant="ghost" size="sm">
-                Login
-              </Button>
-            </TrackedLink>
-            <TrackedLink href="/upgrade" intent="primary">
-              <Button size="sm">Upgrade</Button>
-            </TrackedLink>
+            {isAuthenticated ? (
+              <>
+                <TrackedLink href="/dashboard" intent="secondary">
+                  <Button variant="ghost" size="sm">
+                    Dashboard
+                  </Button>
+                </TrackedLink>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => signOut()}
+                >
+                  Log out
+                </Button>
+              </>
+            ) : (
+              <>
+                <TrackedLink href="/login" intent="secondary">
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
+                </TrackedLink>
+                <TrackedLink href="/upgrade" intent="primary">
+                  <Button size="sm">Upgrade</Button>
+                </TrackedLink>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -94,16 +115,36 @@ export function Header() {
                 ))}
               </nav>
               <div className="flex flex-col space-y-2 pt-4 border-t border-border/50">
-                <TrackedLink href="/login" intent="secondary">
-                  <Button variant="ghost" size="sm" className="w-full justify-start">
-                    Login
-                  </Button>
-                </TrackedLink>
-                <TrackedLink href="/upgrade" intent="primary">
-                  <Button size="sm" className="w-full">
-                    Upgrade
-                  </Button>
-                </TrackedLink>
+                {isAuthenticated ? (
+                  <>
+                    <TrackedLink href="/dashboard" intent="secondary">
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        Dashboard
+                      </Button>
+                    </TrackedLink>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => signOut()}
+                    >
+                      Log out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <TrackedLink href="/login" intent="secondary">
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        Login
+                      </Button>
+                    </TrackedLink>
+                    <TrackedLink href="/upgrade" intent="primary">
+                      <Button size="sm" className="w-full">
+                        Upgrade
+                      </Button>
+                    </TrackedLink>
+                  </>
+                )}
               </div>
             </motion.div>
           )}
@@ -112,4 +153,3 @@ export function Header() {
     </header>
   );
 }
-

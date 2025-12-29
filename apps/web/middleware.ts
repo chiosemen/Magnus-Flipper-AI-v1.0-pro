@@ -58,6 +58,8 @@ const TRIAL_ALLOWED_ROUTES = [
   '/billing',
   '/login',
   '/register',
+  '/reset-password',
+  '/update-password',
   '/auth/callback',
   '/api/auth',
   '/api/stripe/webhook',

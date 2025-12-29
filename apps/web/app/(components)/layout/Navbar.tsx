@@ -4,10 +4,12 @@ import { Bell, Search, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Button } from "../../../marketing-swoopa/components/ui/button";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export function Navbar() {
   const { resolvedTheme, setTheme } = useTheme();
   const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  const { user, isAuthenticated, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-sticky border-b border-border/60 bg-surface/80 backdrop-blur supports-[backdrop-filter]:bg-surface/60">
@@ -51,10 +53,35 @@ export function Navbar() {
               <Moon size={16} className="transition-transform hover:-rotate-12" />
             )}
           </Button>
-          <div className="flex h-9 items-center gap-2 rounded-full border border-border/80 bg-background px-3">
-            <div className="h-6 w-6 rounded-full bg-gradient-primary" />
-            <span className="text-foreground/90 text-sm font-medium">You</span>
-          </div>
+          {isAuthenticated ? (
+            <div className="flex h-9 items-center gap-2 rounded-full border border-border/80 bg-background px-3">
+              <div className="h-6 w-6 rounded-full bg-gradient-primary" />
+              <span className="max-w-[140px] truncate text-foreground/90 text-sm font-medium">
+                {user?.email ?? "Signed in"}
+              </span>
+              <button
+                onClick={() => signOut()}
+                className="text-xs font-semibold text-red-500 hover:text-red-400"
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="rounded-full border border-border/80 bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground"
+              >
+                Sign up
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>

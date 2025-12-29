@@ -62,6 +62,26 @@ const TIER_POLICIES: Record<Tier, TierPolicy> = {
   },
 };
 
+async function getUserTier(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<Tier> {
+  try {
+    const { data, error } = await supabase
+      .from('user_tiers')
+      .select('tier')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error || !data?.tier) {
+      return 'free';
+    }
+    const normalized = String(data.tier).toLowerCase();
+    return normalized in TIER_POLICIES ? (normalized as Tier) : 'free';
+  } catch {
+    return 'free';
+  }
+}
+
 function parseNumber(value: unknown, fallback: number): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string') {
@@ -221,12 +241,7 @@ async function requireUserFromJWT(authHeader?: string) {
       return { userId: null, tier: 'free' as Tier };
     }
 
-    const email = data.user.email || '';
-    const tier: Tier = email.endsWith('@enterprise.com')
-      ? 'enterprise'
-      : email.endsWith('@agency.com')
-      ? 'agency'
-      : 'pro';
+    const tier = await getUserTier(supabase, data.user.id);
     return { userId: data.user.id, tier };
   } catch {
     return { userId: null, tier: 'free' as Tier };
@@ -470,6 +485,8 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
 
       console.log(
         JSON.stringify({
+          userId: user.userId ?? null,
+          tier: user.tier,
           marketplaceId: pooledRun.marketplaceId,
           pooledKey,
           runId: result.runId,
@@ -483,6 +500,8 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
     } catch (error: any) {
       console.log(
         JSON.stringify({
+          userId: user.userId ?? null,
+          tier: user.tier,
           marketplaceId: pooledRun.marketplaceId,
           pooledKey,
           runId: null,
