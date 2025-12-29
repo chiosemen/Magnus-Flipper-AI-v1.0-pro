@@ -5,7 +5,7 @@
  * This can be run as:
  * 1. A separate worker service (recommended for production)
  * 2. Part of worker-scheduler (simpler setup)
- * 3. Serverless function (e.g., Vercel Cron, Azure Functions)
+ * 3. Serverless function (e.g., Vercel Cron)
  */
 
 import {

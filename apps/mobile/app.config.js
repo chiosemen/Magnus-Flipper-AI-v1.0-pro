@@ -5,7 +5,7 @@
  * Environment variables are injected at build time via EAS secrets.
  *
  * Production Backend URLs:
- * - API: https://api.magnusflipper.com (Azure Container App)
+ * - API: https://api.magnusflipper.com
  * - Supabase: Your Supabase project URL
  * - Stripe: Production publishable key
  */

@@ -16,10 +16,3 @@ export { LocalDealerAdapter } from "./adapters/localDealer.js";
 export { MarketplaceDealerAdapter } from "./adapters/marketplaceDealer.js";
 export { InstantOfferDealerAdapter } from "./adapters/instantOfferDealer.js";
 
-export {
-  isDealerCircuitOpen,
-  recordDealerFailure,
-  recordDealerSuccess,
-} from "./circuitBreaker.js";
-export type { CircuitBreakerConfig } from "./circuitBreaker.js";
-
