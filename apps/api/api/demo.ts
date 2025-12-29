@@ -78,6 +78,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         text-decoration: none;
         word-break: break-all;
       }
+      .search-panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 14px 16px;
+      }
+      .search-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .search-input {
+        flex: 1;
+        min-width: 220px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #0f1422;
+        color: var(--text);
+        font-size: 13px;
+      }
+      .search-input::placeholder { color: var(--muted); }
+      .search-input:disabled { opacity: 0.6; cursor: not-allowed; }
+      .search-button {
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: #0b0d12;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .search-button:disabled { opacity: 0.6; cursor: not-allowed; }
+      .search-hint {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
       .controls {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -144,6 +182,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .notice {
         color: var(--muted);
         font-size: 12px;
+        margin-top: 8px;
       }
       .hidden { display: none; }
       main {
@@ -231,6 +270,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         </div>
         <div class="replay">Replay URL: <a id="replay-url" href="#"></a></div>
       </div>
+      <div class="search-panel">
+        <form id="search-form" class="search-form" autocomplete="off">
+          <input
+            id="search-input"
+            class="search-input"
+            type="text"
+            placeholder="Search (comma-separated, max 10)"
+          />
+          <button id="search-submit" class="search-button" type="submit">Search</button>
+        </form>
+        <div class="search-hint">Example: iphone, macbook, airpods</div>
+        <div class="notice hidden" id="query-note">Max 10 concurrent searches (demo limit)</div>
+      </div>
       <div class="controls">
         <div class="meter">
           <div class="meter-label" id="concurrency-label">Concurrency: 0 / ${MAX_CONCURRENCY}</div>
@@ -247,7 +299,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           <span>🇬🇧 UK Proxy Mode</span>
         </label>
         <div class="proxy-banner hidden" id="proxy-banner">UK Residential Proxy Mode (Demo)</div>
-        <div class="notice hidden" id="query-note"></div>
       </div>
     </header>
     <main id="results"></main>
@@ -267,21 +318,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const facebookOdds = document.getElementById('facebook-odds');
         const vintedOdds = document.getElementById('vinted-odds');
         const queryNote = document.getElementById('query-note');
+        const searchForm = document.getElementById('search-form');
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-submit');
         const params = new URLSearchParams(window.location.search);
-        const rawQuery = params.get('q') || 'iphone';
+        const rawQuery = params.get('q') || '';
         const location = params.get('location') || 'prague';
         const proxyOn = params.get('proxy') === 'uk';
-        const allQueries = rawQuery
-          .split(',')
-          .map((q) => q.trim())
-          .filter(Boolean);
-        const queries = (allQueries.length ? allQueries : ['iphone']).slice(0, MAX_CONCURRENCY);
-        const truncated = allQueries.length > MAX_CONCURRENCY;
-        const resultsByQuery = {};
+        const initialParsed = parseQueries(rawQuery || 'iphone');
+        let activeQueries = initialParsed.queries;
+        let resultsByQuery = {};
         let inFlight = 0;
         let completed = 0;
         let startWall = 0;
         let rpsTimer = null;
+        let debounceTimer = null;
+        let isRunning = false;
         const stats = {
           facebook: { attempted: 0, success: 0, failed: 0 },
           vinted: { attempted: 0, success: 0, failed: 0 },
@@ -292,7 +344,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/\"/g, '&quot;')
+            .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
         }
 
@@ -306,6 +358,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (typeof value === 'number') return String(value);
           }
           return '';
+        }
+
+        function parseQueries(value) {
+          const parsed = String(value || '')
+            .split(',')
+            .map((q) => q.trim())
+            .filter(Boolean);
+          return {
+            queries: parsed.slice(0, MAX_CONCURRENCY),
+            truncated: parsed.length > MAX_CONCURRENCY,
+          };
+        }
+
+        function updateQueryNote(truncated) {
+          if (truncated) {
+            queryNote.textContent = 'Max 10 concurrent searches (demo limit)';
+            queryNote.classList.remove('hidden');
+            return;
+          }
+          queryNote.textContent = '';
+          queryNote.classList.add('hidden');
+        }
+
+        function setInputDisabled(disabled) {
+          searchInput.disabled = disabled;
+          searchButton.disabled = disabled;
         }
 
         function updateConcurrency() {
@@ -340,12 +418,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
         }
 
-        function buildReplayUrl() {
+        function buildReplayUrl(queries) {
           const nextParams = new URLSearchParams();
           nextParams.set('q', queries.join(','));
           if (location) nextParams.set('location', location);
           if (proxyOn) nextParams.set('proxy', 'uk');
           return window.location.origin + '/api/demo?' + nextParams.toString();
+        }
+
+        function updateUrl(queries) {
+          const nextParams = new URLSearchParams(window.location.search);
+          nextParams.set('q', queries.join(','));
+          if (location) {
+            nextParams.set('location', location);
+          } else {
+            nextParams.delete('location');
+          }
+          if (proxyOn) {
+            nextParams.set('proxy', 'uk');
+          } else {
+            nextParams.delete('proxy');
+          }
+          window.history.replaceState(null, '', '/api/demo?' + nextParams.toString());
         }
 
         function renderCard(result, source) {
@@ -394,7 +488,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         function renderResults() {
-          const blocks = queries.map((query) => {
+          const blocks = activeQueries.map((query) => {
             const group = resultsByQuery[query] || {};
             const header = '<div class="query-header">' +
               '<div class="query-title">Query: ' + escapeHtml(query) + '</div>' +
@@ -511,16 +605,87 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updateOdds();
         }
 
+        function applyQueries(nextQueries, truncated, updateHistory) {
+          activeQueries = nextQueries;
+          queryCountEl.textContent = String(activeQueries.length);
+          updateQueryNote(truncated);
+          if (updateHistory) {
+            updateUrl(activeQueries);
+          }
+          const replayUrl = buildReplayUrl(activeQueries);
+          replayEl.textContent = replayUrl;
+          replayEl.href = replayUrl;
+          resultsByQuery = {};
+          activeQueries.forEach((query) => {
+            resultsByQuery[query] = { facebook: null, vinted: null };
+          });
+          renderResults();
+        }
+
+        function startSearch(nextQueries, truncated, updateHistory) {
+          if (!nextQueries.length || isRunning) return;
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+          }
+          isRunning = true;
+          setInputDisabled(true);
+          applyQueries(nextQueries, truncated, updateHistory);
+          resetStats();
+          inFlight = 0;
+          updateConcurrency();
+          startRpsTimer();
+
+          const tasks = [];
+          nextQueries.forEach((query) => {
+            sources.forEach((source) => {
+              tasks.push(() => runSearch(source, query));
+            });
+          });
+
+          runPool(tasks, MAX_CONCURRENCY).then(() => {
+            stopRpsTimer();
+            isRunning = false;
+            setInputDisabled(false);
+          });
+        }
+
+        function triggerSearch(value) {
+          const trimmed = String(value || '').trim();
+          if (!trimmed) return;
+          const parsed = parseQueries(trimmed);
+          updateQueryNote(parsed.truncated);
+          if (!parsed.queries.length) return;
+          searchInput.value = parsed.queries.join(', ');
+          startSearch(parsed.queries, parsed.truncated, true);
+        }
+
+        function scheduleDebounce() {
+          if (isRunning) return;
+          const currentValue = searchInput.value;
+          const parsed = parseQueries(currentValue);
+          updateQueryNote(parsed.truncated);
+          if (!currentValue.trim()) {
+            if (debounceTimer) {
+              clearTimeout(debounceTimer);
+              debounceTimer = null;
+            }
+            return;
+          }
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = window.setTimeout(() => {
+            if (!isRunning) {
+              triggerSearch(searchInput.value);
+            }
+          }, 500);
+        }
+
         locationLabel.textContent = location;
-        queryCountEl.textContent = String(queries.length);
-        replayEl.textContent = buildReplayUrl();
-        replayEl.href = buildReplayUrl();
         proxyToggle.checked = proxyOn;
         proxyBanner.classList.toggle('hidden', !proxyOn);
-        if (truncated) {
-          queryNote.textContent = 'Showing first ' + MAX_CONCURRENCY + ' queries (hard cap).';
-          queryNote.classList.remove('hidden');
-        }
+        searchInput.value = initialParsed.truncated
+          ? initialParsed.queries.join(', ')
+          : (rawQuery || initialParsed.queries.join(', '));
 
         proxyToggle.addEventListener('change', () => {
           const nextParams = new URLSearchParams(window.location.search);
@@ -529,31 +694,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           } else {
             nextParams.delete('proxy');
           }
-          if (!nextParams.get('q')) {
-            nextParams.set('q', queries.join(','));
-          }
+          nextParams.set('q', activeQueries.join(','));
           if (location) {
             nextParams.set('location', location);
           }
           window.location.search = nextParams.toString();
         });
 
-        queries.forEach((query) => {
-          resultsByQuery[query] = { facebook: null, vinted: null };
-        });
-        renderResults();
-        resetStats();
-        updateConcurrency();
-        startRpsTimer();
-
-        const tasks = [];
-        queries.forEach((query) => {
-          sources.forEach((source) => {
-            tasks.push(() => runSearch(source, query));
-          });
+        searchForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (isRunning) return;
+          triggerSearch(searchInput.value);
         });
 
-        runPool(tasks, MAX_CONCURRENCY).then(stopRpsTimer);
+        searchInput.addEventListener('input', scheduleDebounce);
+
+        startSearch(activeQueries, initialParsed.truncated, false);
       })();
     </script>
   </body>
