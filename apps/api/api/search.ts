@@ -10,8 +10,9 @@ const DEFAULT_VINTED_QUERY = 'nike';
 const DEFAULT_LOCATION = 'prague';
 const DEFAULT_LIMIT = 20;
 const DEFAULT_RADIUS_KM = 50;
+const DEFAULT_RUN_TIMEOUT_MS = 120000;
 
-type Tier = 'free' | 'pro' | 'agency';
+type Tier = 'free' | 'pro' | 'agency' | 'enterprise';
 
 type TierPolicy = {
   tier: Tier;
@@ -51,6 +52,13 @@ const TIER_POLICIES: Record<Tier, TierPolicy> = {
     maxMarketsPerRun: 10,
     maxConcurrency: 10,
     marketsAllowed: getTierAllowedMarkets('agency'),
+  },
+  enterprise: {
+    tier: 'enterprise',
+    maxQueriesPerRun: 10,
+    maxMarketsPerRun: 10,
+    maxConcurrency: 10,
+    marketsAllowed: getTierAllowedMarkets('enterprise'),
   },
 };
 
@@ -214,11 +222,64 @@ async function requireUserFromJWT(authHeader?: string) {
     }
 
     const email = data.user.email || '';
-    const tier: Tier = email.endsWith('@agency.com') ? 'agency' : 'pro';
+    const tier: Tier = email.endsWith('@enterprise.com')
+      ? 'enterprise'
+      : email.endsWith('@agency.com')
+      ? 'agency'
+      : 'pro';
     return { userId: data.user.id, tier };
   } catch {
     return { userId: null, tier: 'free' as Tier };
   }
+}
+
+function buildRunOptions(tier: Tier, limit: number) {
+  const baseTimeout = parseNumber(
+    process.env.APIFY_RUN_TIMEOUT_MS,
+    DEFAULT_RUN_TIMEOUT_MS,
+  );
+
+  if (tier === 'enterprise') {
+    return {
+      maxRetries: 3,
+      timeoutMs: Math.max(baseTimeout, 180000),
+    };
+  }
+
+  if (tier === 'agency') {
+    return {
+      maxRetries: 2,
+      timeoutMs: baseTimeout,
+      adjustOnRetry: ({
+        input,
+        itemsLimit,
+      }: {
+        attempt: number;
+        error: { classified: string; message: string };
+        input: Record<string, any>;
+        itemsLimit: number;
+      }) => {
+        const nextLimit = Math.max(5, Math.floor(itemsLimit / 2));
+        const nextInput = { ...input };
+        if (typeof nextInput.resultsLimit === 'number') {
+          nextInput.resultsLimit = Math.min(nextInput.resultsLimit, nextLimit);
+        }
+        return { input: nextInput, itemsLimit: nextLimit };
+      },
+    };
+  }
+
+  if (tier === 'pro') {
+    return {
+      maxRetries: 2,
+      timeoutMs: baseTimeout,
+    };
+  }
+
+  return {
+    maxRetries: 0,
+    timeoutMs: baseTimeout,
+  };
 }
 
 async function runPool<T>(tasks: Array<() => Promise<T>>, limit: number): Promise<T[]> {
@@ -388,7 +449,11 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
 
   const { pooledRuns, mapping } = planPooledRuns(requests, tierRunCaps);
 
+  const runOptions = buildRunOptions(policy.tier, limit);
   const tasks = pooledRuns.map((pooledRun) => async () => {
+    const pooledKey = `${pooledRun.marketplaceId}:${pooledRun.geoKey}:${pooledRun.queryNormalized}${
+      pooledRun.category ? `:${pooledRun.category}` : ''
+    }`;
     try {
       const result = await runMarketplaceActor(pooledRun.marketplaceId, pooledRun.query, {
         client,
@@ -400,10 +465,33 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         limit,
         proxy,
         region,
+        runOptions,
       });
-      return { pooledRunId: pooledRun.pooledRunId, result };
+
+      console.log(
+        JSON.stringify({
+          marketplaceId: pooledRun.marketplaceId,
+          pooledKey,
+          runId: result.runId,
+          durationMs: result.durationMs,
+          status: result.status,
+          errorClass: result.meta.error?.classified ?? null,
+        }),
+      );
+
+      return { pooledRunId: pooledRun.pooledRunId, result, pooledKey };
     } catch (error: any) {
-      return { pooledRunId: pooledRun.pooledRunId, error };
+      console.log(
+        JSON.stringify({
+          marketplaceId: pooledRun.marketplaceId,
+          pooledKey,
+          runId: null,
+          durationMs: 0,
+          status: 'ERROR',
+          errorClass: 'UNKNOWN',
+        }),
+      );
+      return { pooledRunId: pooledRun.pooledRunId, error, pooledKey };
     }
   });
 
@@ -414,6 +502,40 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
   }
 
   const pooledRunMap = new Map(pooledRuns.map((run) => [run.pooledRunId, run]));
+  const errors: Array<{
+    marketplaceId: MarketplaceId;
+    code: string;
+    message: string;
+    classified: string;
+    runId?: string | null;
+  }> = [];
+
+  for (const pooledRun of pooledRuns) {
+    const pooledResult = pooledResultMap.get(pooledRun.pooledRunId);
+    if (!pooledResult || 'error' in pooledResult) {
+      errors.push({
+        marketplaceId: pooledRun.marketplaceId,
+        code: 'UNKNOWN',
+        message:
+          pooledResult && 'error' in pooledResult
+            ? pooledResult.error?.message || 'Search failed'
+            : 'Search failed',
+        classified: 'UNKNOWN',
+      });
+      continue;
+    }
+
+    const error = pooledResult.result.meta.error;
+    if (error) {
+      errors.push({
+        marketplaceId: pooledRun.marketplaceId,
+        code: error.code || error.classified,
+        message: error.message,
+        classified: error.classified,
+        runId: pooledResult.result.runId,
+      });
+    }
+  }
 
   const results = mapping.map((entry) => {
     const meta = requestMeta.get(entry.requestId);
@@ -452,11 +574,13 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
     }
 
     const result = pooledResult.result;
+    const resultError = result.meta.error;
     return {
       ...result,
       locationUsed: meta.locationUsed,
       radiusKmUsed: meta.radiusKmUsed,
       timestamp: meta.timestamp,
+      error: resultError?.message,
       pooling: pooledRun
         ? {
             pooled,
@@ -486,6 +610,12 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
       concurrency: policy.maxConcurrency,
     },
     results,
+    errors,
+    meta: {
+      pooledRuns: pooledRuns.length,
+      poolingEnabled: pooledRuns.some((run) => run.pooling.enabled),
+      errorCount: errors.length,
+    },
   });
 }
 
@@ -576,6 +706,10 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
         proxy,
         region,
       });
+      if (result.meta.error) {
+        res.status(500).json({ error: result.meta.error.message });
+        return;
+      }
 
       res.status(200).json({
         source: 'facebook',
@@ -595,6 +729,10 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
       proxy,
       region,
     });
+    if (result.meta.error) {
+      res.status(500).json({ error: result.meta.error.message });
+      return;
+    }
 
     res.status(200).json({
       source: 'vinted',

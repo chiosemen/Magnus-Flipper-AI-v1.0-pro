@@ -1,4 +1,5 @@
 import { ApifyClient } from 'apify-client';
+import { runActor, type RunActorOptions } from './apifyClient';
 import { MARKETPLACES, type MarketplaceId } from './marketplaceRegistry';
 
 type MarketplaceOptions = {
@@ -11,6 +12,7 @@ type MarketplaceOptions = {
   limit?: number;
   proxy?: string;
   region?: string;
+  runOptions?: RunActorOptions;
 };
 
 const DEFAULT_DATASET_LIMIT = 20;
@@ -85,22 +87,23 @@ export async function runMarketplaceActor(
   }
 
   const client = options.client ?? new ApifyClient({ token });
-  const startedAt = Date.now();
   const input = buildActorInput(market, query, options);
-  const run = await client.actor(actorId).call(input);
   const limit = options.limit ?? DEFAULT_DATASET_LIMIT;
-  const { items } = await client
-    .dataset(run.defaultDatasetId)
-    .listItems({ limit });
+  const runResult = await runActor(actorId, input, {
+    client,
+    itemsLimit: limit,
+    ...options.runOptions,
+  });
 
   return {
     market,
     query,
     actorId,
-    runId: run.id,
-    datasetId: run.defaultDatasetId,
-    durationMs: Date.now() - startedAt,
-    count: items.length,
-    items,
+    runId: runResult.runId,
+    status: runResult.status,
+    durationMs: runResult.meta.durationMs,
+    count: runResult.items.length,
+    items: runResult.items,
+    meta: runResult.meta,
   };
 }
