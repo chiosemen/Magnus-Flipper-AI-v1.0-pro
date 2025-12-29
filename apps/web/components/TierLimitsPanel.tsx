@@ -1,8 +1,10 @@
+import { MARKETPLACES, type MarketplaceId } from "@/lib/marketplaceRegistry";
+
 type TierPolicy = {
   tier: string;
   maxQueriesPerRun: number;
   maxConcurrency: number;
-  marketsAllowed: string[];
+  marketsAllowed: MarketplaceId[];
 };
 
 type TierLimitsPanelProps = {
@@ -70,7 +72,9 @@ export function TierLimitsPanel({
         <div className="rounded-lg border border-white/10 bg-black/30 p-3 sm:col-span-2">
           <dt className="text-xs text-white/50">Markets allowed</dt>
           <dd className="mt-1 text-sm text-white/90">
-            {policy.marketsAllowed.join(", ")}
+            {policy.marketsAllowed
+              .map((market) => MARKETPLACES[market]?.label ?? market)
+              .join(", ")}
           </dd>
         </div>
       </dl>

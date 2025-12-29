@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { ApifyClient } from 'apify-client';
 import { createClient } from '@supabase/supabase-js';
 import { runMarketplaceActor } from '../lib/apifyActors';
+import { MARKETPLACES, type MarketplaceId } from '../lib/marketplaceRegistry';
 
 const DEFAULT_FACEBOOK_QUERY = 'iphone';
 const DEFAULT_VINTED_QUERY = 'nike';
@@ -16,9 +17,15 @@ type TierPolicy = {
   maxQueriesPerRun: number;
   maxMarketsPerRun: number;
   maxConcurrency: number;
-  marketsAllowed: string[];
+  marketsAllowed: MarketplaceId[];
   dailyRunLimit?: number;
 };
+
+function getTierAllowedMarkets(tier: Tier): MarketplaceId[] {
+  return Object.values(MARKETPLACES)
+    .filter((market) => market.enabled && market.tierAccess[tier])
+    .map((market) => market.id);
+}
 
 const TIER_POLICIES: Record<Tier, TierPolicy> = {
   free: {
@@ -26,7 +33,7 @@ const TIER_POLICIES: Record<Tier, TierPolicy> = {
     maxQueriesPerRun: 2,
     maxMarketsPerRun: 2,
     maxConcurrency: 1,
-    marketsAllowed: ['facebook', 'vinted'],
+    marketsAllowed: getTierAllowedMarkets('free'),
     dailyRunLimit: 5,
   },
   pro: {
@@ -34,7 +41,7 @@ const TIER_POLICIES: Record<Tier, TierPolicy> = {
     maxQueriesPerRun: 5,
     maxMarketsPerRun: 4,
     maxConcurrency: 3,
-    marketsAllowed: ['facebook', 'vinted'],
+    marketsAllowed: getTierAllowedMarkets('pro'),
     dailyRunLimit: 50,
   },
   agency: {
@@ -42,7 +49,7 @@ const TIER_POLICIES: Record<Tier, TierPolicy> = {
     maxQueriesPerRun: 10,
     maxMarketsPerRun: 10,
     maxConcurrency: 10,
-    marketsAllowed: ['facebook', 'vinted'],
+    marketsAllowed: getTierAllowedMarkets('agency'),
   },
 };
 
@@ -93,6 +100,10 @@ function parseQueries(input: unknown): string[] {
 function parseMarkets(input: unknown): string[] {
   const raw = normalizeList(input);
   return raw.map((m) => m.trim().toLowerCase()).filter(Boolean);
+}
+
+function isMarketplaceId(value: string): value is MarketplaceId {
+  return value in MARKETPLACES;
 }
 
 function parseBody(req: VercelRequest): Record<string, any> {
@@ -215,16 +226,30 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
   let markets = parseMarkets(body.markets);
   if (markets.length === 0) {
     markets = policy.marketsAllowed.slice();
+  } else {
+    const unsupported = markets.filter((market) => {
+      if (!isMarketplaceId(market)) return true;
+      return !MARKETPLACES[market].enabled;
+    });
+    if (unsupported.length > 0) {
+      res.status(400).json({
+        error: `Unsupported marketplaces: ${unsupported.join(', ')}`,
+      });
+      return;
+    }
   }
-  markets = markets.filter((market) => policy.marketsAllowed.includes(market));
-  markets = markets.slice(0, policy.maxMarketsPerRun);
+  const filteredMarkets = markets.filter(
+    (market): market is MarketplaceId =>
+      isMarketplaceId(market) && policy.marketsAllowed.includes(market),
+  );
+  const typedMarkets = filteredMarkets.slice(0, policy.maxMarketsPerRun);
 
   if (queries.length === 0) {
     res.status(400).json({ error: 'No queries provided' });
     return;
   }
 
-  if (markets.length === 0) {
+  if (typedMarkets.length === 0) {
     res.status(400).json({ error: 'No allowed marketplaces for this tier' });
     return;
   }
@@ -254,7 +279,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
   const region = typeof body.region === 'string' ? body.region : undefined;
   const country = resolvedLocation?.country;
 
-  if (markets.includes('facebook') && !resolvedLocation) {
+  if (typedMarkets.includes('facebook') && !resolvedLocation) {
     res.status(400).json({
       error: 'Location must include lat/lng or a supported locationText for facebook search',
     });
@@ -262,7 +287,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
   }
 
   const tasks = queries.flatMap((query) =>
-    markets.map((market) => async () => {
+    typedMarkets.map((market) => async () => {
       try {
         const timestamp = new Date().toISOString();
         const result = await runMarketplaceActor(market, query, {
@@ -311,7 +336,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
     },
     requestedQueries,
     executedQueries: queries,
-    markets,
+    markets: typedMarkets,
     stats: {
       totalTasks: results.length,
       concurrency: policy.maxConcurrency,
@@ -328,8 +353,14 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   }
 
   const sourceParam = getQueryParam(req.query?.source);
+  const source =
+    sourceParam && isMarketplaceId(sourceParam) ? sourceParam : null;
 
-  if (sourceParam !== 'facebook' && sourceParam !== 'vinted') {
+  if (
+    !source ||
+    !MARKETPLACES[source].enabled ||
+    (source !== 'facebook' && source !== 'vinted')
+  ) {
     res
       .status(400)
       .json({ error: 'Invalid source. Use source=facebook or source=vinted' });
@@ -380,7 +411,7 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
       : undefined;
 
   try {
-    if (sourceParam === 'facebook') {
+    if (source === 'facebook') {
       const q = (qParam || DEFAULT_FACEBOOK_QUERY).toString();
 
       if (!resolvedLocation) {

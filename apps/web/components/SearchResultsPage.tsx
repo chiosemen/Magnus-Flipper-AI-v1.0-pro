@@ -1,10 +1,11 @@
 import { TierLimitsPanel } from "@/components/TierLimitsPanel";
+import type { MarketplaceId } from "@/lib/marketplaceRegistry";
 
 type TierPolicy = {
   tier: string;
   maxQueriesPerRun: number;
   maxConcurrency: number;
-  marketsAllowed: string[];
+  marketsAllowed: MarketplaceId[];
 };
 
 type SearchResponse = {

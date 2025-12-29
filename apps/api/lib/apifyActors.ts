@@ -1,6 +1,5 @@
 import { ApifyClient } from 'apify-client';
-
-type Marketplace = 'facebook' | 'vinted';
+import { MARKETPLACES, type MarketplaceId } from './marketplaceRegistry';
 
 type MarketplaceOptions = {
   client?: ApifyClient;
@@ -12,11 +11,6 @@ type MarketplaceOptions = {
   limit?: number;
   proxy?: string;
   region?: string;
-};
-
-type ActorDefinition = {
-  actorId: string;
-  buildInput: (query: string, options: MarketplaceOptions) => Record<string, any>;
 };
 
 const DEFAULT_DATASET_LIMIT = 20;
@@ -33,11 +27,11 @@ function buildProxyConfiguration(options: MarketplaceOptions) {
   };
 }
 
-const ACTOR_MAP: Record<Marketplace, ActorDefinition> = {
-  facebook: {
-    actorId: 'apify/facebook-marketplace-scraper',
-    buildInput: (query, options) => {
-      const proxyConfiguration = buildProxyConfiguration(options);
+function buildActorInput(market: MarketplaceId, query: string, options: MarketplaceOptions) {
+  const proxyConfiguration = buildProxyConfiguration(options);
+
+  switch (market) {
+    case 'facebook': {
       const lat = options.lat;
       const lng = options.lng;
       if (typeof lat !== 'number' || typeof lng !== 'number') {
@@ -51,30 +45,38 @@ const ACTOR_MAP: Record<Marketplace, ActorDefinition> = {
         resultsLimit: options.limit ?? DEFAULT_DATASET_LIMIT,
         ...(proxyConfiguration ? { proxyConfiguration } : {}),
       };
-    },
-  },
-  vinted: {
-    actorId: 'silentflow/vinted-scraper-ppr',
-    buildInput: (query, options) => {
-      const proxyConfiguration = buildProxyConfiguration(options);
+    }
+    case 'vinted': {
       return {
         browseMode: false,
         searchText: query,
         ...(options.country ? { country: options.country } : {}),
         ...(proxyConfiguration ? { proxyConfiguration } : {}),
       };
-    },
-  },
-};
+    }
+    default:
+      throw new Error(`Marketplace ${market} does not have actor input defined`);
+  }
+}
 
 export async function runMarketplaceActor(
-  market: Marketplace,
+  market: MarketplaceId,
   query: string,
   options: MarketplaceOptions = {},
 ) {
-  const definition = ACTOR_MAP[market];
-  if (!definition) {
+  const config = MARKETPLACES[market];
+  if (!config) {
     throw new Error(`Unsupported market: ${market}`);
+  }
+  if (!config.enabled) {
+    throw new Error(`Marketplace disabled: ${market}`);
+  }
+
+  const actorId = config.actor.versionTag
+    ? `${config.actor.actorId}:${config.actor.versionTag}`
+    : config.actor.actorId;
+  if (actorId.includes('apify-actor-id-here')) {
+    throw new Error(`Marketplace actor not configured: ${market}`);
   }
 
   const token = process.env.APIFY_TOKEN;
@@ -84,8 +86,8 @@ export async function runMarketplaceActor(
 
   const client = options.client ?? new ApifyClient({ token });
   const startedAt = Date.now();
-  const input = definition.buildInput(query, options);
-  const run = await client.actor(definition.actorId).call(input);
+  const input = buildActorInput(market, query, options);
+  const run = await client.actor(actorId).call(input);
   const limit = options.limit ?? DEFAULT_DATASET_LIMIT;
   const { items } = await client
     .dataset(run.defaultDatasetId)
@@ -94,7 +96,7 @@ export async function runMarketplaceActor(
   return {
     market,
     query,
-    actorId: definition.actorId,
+    actorId,
     runId: run.id,
     datasetId: run.defaultDatasetId,
     durationMs: Date.now() - startedAt,

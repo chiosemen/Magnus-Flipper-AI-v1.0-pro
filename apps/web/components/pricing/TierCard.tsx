@@ -1,9 +1,5 @@
 import type { TierPolicy } from "@/components/pricing/tierPolicy";
-
-const MARKET_LABELS: Record<string, string> = {
-  facebook: "Facebook",
-  vinted: "Vinted",
-};
+import { MARKETPLACES } from "@/lib/marketplaceRegistry";
 
 type TierCardProps = {
   policy: TierPolicy;
@@ -12,7 +8,7 @@ type TierCardProps = {
 
 export function TierCard({ policy, isHighlighted }: TierCardProps) {
   const markets = policy.marketsAllowed.map(
-    (market) => MARKET_LABELS[market] ?? market
+    (market) => MARKETPLACES[market]?.label ?? market
   );
 
   return (

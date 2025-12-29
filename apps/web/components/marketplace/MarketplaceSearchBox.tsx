@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TierLimitsPanel } from "@/components/TierLimitsPanel";
-
-type Marketplace = "facebook" | "ebay" | "vinted" | "gumtree";
+import { MARKETPLACES, type MarketplaceId } from "@/lib/marketplaceRegistry";
 
 type SearchRequest = {
   query: string;
-  marketplaces: Marketplace[];
+  marketplaces: MarketplaceId[];
   location?: string | null;
   radiusKm?: number | null;
   units?: "mi" | "km";
@@ -19,18 +18,15 @@ type MarketplaceSearchBoxProps = {
   onSearchCreated?: (search: SearchRequest, jobId?: string | null) => void;
 };
 
-const MARKETPLACE_OPTIONS: { value: Marketplace; label: string }[] = [
-  { value: "facebook", label: "Facebook Marketplace" },
-  { value: "ebay", label: "eBay" },
-  { value: "vinted", label: "Vinted" },
-  { value: "gumtree", label: "Gumtree" },
-];
+const MARKETPLACE_OPTIONS = Object.values(MARKETPLACES)
+  .filter((market) => market.enabled)
+  .map((market) => ({ value: market.id, label: market.label }));
 
 type SearchPolicy = {
   tier: string;
   maxQueriesPerRun: number;
   maxConcurrency: number;
-  marketsAllowed: string[];
+  marketsAllowed: MarketplaceId[];
 };
 
 type SearchResult = {
@@ -58,13 +54,15 @@ type SearchResponse = {
   results: SearchResult[];
 };
 
-function normalizeMarketplace(value?: string): Marketplace {
-  const normalized = value?.toLowerCase().trim();
-  if (normalized === "facebook") return "facebook";
-  if (normalized === "ebay") return "ebay";
-  if (normalized === "vinted") return "vinted";
-  if (normalized === "gumtree") return "gumtree";
-  return "facebook";
+const DEFAULT_MARKETPLACE =
+  MARKETPLACE_OPTIONS[0]?.value ?? ("facebook" as MarketplaceId);
+
+function normalizeMarketplace(value?: string): MarketplaceId {
+  const normalized = value?.toLowerCase().trim() as MarketplaceId | undefined;
+  if (normalized && MARKETPLACES[normalized]?.enabled) {
+    return normalized;
+  }
+  return DEFAULT_MARKETPLACE;
 }
 
 export default function MarketplaceSearchBox({
@@ -73,7 +71,7 @@ export default function MarketplaceSearchBox({
   onSearchCreated,
 }: MarketplaceSearchBoxProps) {
   const [query, setQuery] = useState("");
-  const [marketplace, setMarketplace] = useState<Marketplace>(() =>
+  const [marketplace, setMarketplace] = useState<MarketplaceId>(() =>
     normalizeMarketplace(defaultMarketplace)
   );
   const [locationText, setLocationText] = useState("London");
@@ -295,7 +293,7 @@ export default function MarketplaceSearchBox({
             </label>
             <select
               value={marketplace}
-              onChange={(e) => setMarketplace(e.target.value as Marketplace)}
+              onChange={(e) => setMarketplace(e.target.value as MarketplaceId)}
               className="w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-[#00E5FF]/60 disabled:opacity-60"
               disabled={disabled || loading}
             >
