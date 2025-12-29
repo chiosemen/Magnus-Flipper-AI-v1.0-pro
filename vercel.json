@@ -1,13 +1,26 @@
 {
-  "functions": {
-    "api/*.ts": {
-      "runtime": "@vercel/node@3.1.0"
+  "builds": [
+    {
+      "src": "api/live-test.ts",
+      "use": "@vercel/node@3.1.0"
+    },
+    {
+      "src": "api/guardian.ts",
+      "use": "@vercel/node@3.1.0"
     }
-  },
+  ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "/api/live-test",
+      "dest": "api/live-test.ts"
+    },
+    {
+      "src": "/api/guardian",
+      "dest": "api/guardian.ts"
+    },
+    {
+      "src": "/api/guardian/(.*)",
+      "dest": "api/guardian.ts"
     }
   ]
 }
