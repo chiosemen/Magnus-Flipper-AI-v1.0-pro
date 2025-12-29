@@ -1,19 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { TierLimitsPanel } from "@/components/TierLimitsPanel";
 
 type Marketplace = "facebook" | "ebay" | "vinted" | "gumtree";
 
 type SearchRequest = {
   query: string;
-  marketplace: Marketplace;
-  user_id: string;
-  scan_window: {
-    requested_at: string;
-    status: "requested";
-    source: "user_search";
-  };
+  marketplaces: Marketplace[];
+  location?: string | null;
+  radiusKm?: number | null;
+  units?: "mi" | "km";
 };
 
 type MarketplaceSearchBoxProps = {
@@ -29,23 +26,37 @@ const MARKETPLACE_OPTIONS: { value: Marketplace; label: string }[] = [
   { value: "gumtree", label: "Gumtree" },
 ];
 
-const FALLBACK_LISTINGS = [
-  {
-    title: "MacBook Pro 13\" • M1",
-    price: "$899",
-    location: "London",
-  },
-  {
-    title: "MacBook Pro 14\" • 16GB",
-    price: "$1,299",
-    location: "Manchester",
-  },
-  {
-    title: "MacBook Pro 16\" • 1TB",
-    price: "$1,799",
-    location: "Birmingham",
-  },
-];
+type SearchPolicy = {
+  tier: string;
+  maxQueriesPerRun: number;
+  maxConcurrency: number;
+  marketsAllowed: string[];
+};
+
+type SearchResult = {
+  market: string;
+  query: string;
+  count: number;
+  durationMs?: number;
+  items: any[];
+  error?: string;
+  locationUsed?: {
+    text?: string | null;
+    lat?: number;
+    lng?: number;
+    country?: string | null;
+  } | null;
+  radiusKmUsed?: number | null;
+};
+
+type SearchResponse = {
+  policy: SearchPolicy;
+  requestedQueries: number;
+  executedQueries: string[];
+  markets: string[];
+  stats: { totalTasks: number; concurrency: number };
+  results: SearchResult[];
+};
 
 function normalizeMarketplace(value?: string): Marketplace {
   const normalized = value?.toLowerCase().trim();
@@ -65,165 +76,187 @@ export default function MarketplaceSearchBox({
   const [marketplace, setMarketplace] = useState<Marketplace>(() =>
     normalizeMarketplace(defaultMarketplace)
   );
-  const [statusLabel, setStatusLabel] = useState<string | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
+  const [locationText, setLocationText] = useState("London");
+  const [radiusValue, setRadiusValue] = useState(25);
+  const [radiusUnits, setRadiusUnits] = useState<"mi" | "km">("mi");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [showSkeleton, setShowSkeleton] = useState(false);
-  const [showExpired, setShowExpired] = useState(false);
-  const [jobId, setJobId] = useState<string | null>(null);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [policy, setPolicy] = useState<SearchPolicy | null>(null);
+  const [requestedQueries, setRequestedQueries] = useState<number | null>(null);
+  const [executedQueries, setExecutedQueries] = useState<string[] | null>(null);
+  const [clientLimitHit, setClientLimitHit] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const placeholderListings = useMemo(() => {
-    if (!query.trim()) return FALLBACK_LISTINGS;
-    return FALLBACK_LISTINGS.map((listing) => ({
-      ...listing,
-      title: `${query.trim()} • ${listing.title.split("•")[1]?.trim() || "Deal"}`,
-    }));
-  }, [query]);
+  const formattedQuery = useMemo(() => query.trim(), [query]);
+  const trimmedLocation = useMemo(() => locationText.trim(), [locationText]);
+  const normalizedLocation = trimmedLocation || "London";
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (disabled) {
+  const executeSearch = async () => {
+    if (disabled || loading) {
       return;
     }
     setError(null);
     setLoading(true);
-    setShowResults(false);
-    setStatusLabel(null);
-    setProgress(null);
-    setShowSkeleton(false);
-    setShowExpired(false);
+    setResults([]);
+    setPolicy(null);
+    setRequestedQueries(null);
+    setExecutedQueries(null);
 
-    const trimmedQuery = query.trim();
-    if (!trimmedQuery) {
+    if (!formattedQuery) {
       setError("Please enter a search term.");
       setLoading(false);
       return;
     }
 
-    let supabase;
     try {
-      supabase = supabaseBrowser();
-    } catch (err) {
-      setError("Login required to start a scan.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData?.user) {
-        setError("Login required to start a scan.");
-        setLoading(false);
-        return;
-      }
-
-      const searchRequest: SearchRequest = {
-        query: trimmedQuery,
-        marketplace,
-        user_id: userData.user.id,
-        scan_window: {
-          requested_at: new Date().toISOString(),
-          status: "requested",
-          source: "user_search",
-        },
-      };
-
-      const entitlementRes = await fetch("/api/entitlements/consume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: searchRequest.user_id,
-          marketplace: searchRequest.marketplace,
-        }),
-      });
-
-      const entitlementJson: { ok?: boolean; reason?: string } =
-        await entitlementRes.json().catch(() => ({}));
-
-      if (!entitlementRes.ok || entitlementJson.ok !== true) {
-        setError(
-          entitlementJson.reason === "execution_not_allowed"
-            ? "Execution is currently paused."
-            : entitlementJson.reason === "execution_emergency_off"
-            ? "Execution is temporarily paused for safety."
-            : "You need scan credits to start a search."
-        );
-        setLoading(false);
-        return;
-      }
-
-      const keywords = trimmedQuery
+      const parsedQueries = formattedQuery
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean);
+      const limitedQueries = parsedQueries.slice(0, 10);
+      const truncated = parsedQueries.length > 10;
+      setClientLimitHit(truncated);
 
-      const { error: saveError } = await supabase.from("saved_searches").insert({
-        user_id: searchRequest.user_id,
-        name: trimmedQuery,
-        keywords,
-        marketplaces: [marketplace],
-        min_price: null,
-        max_price: null,
-        location: null,
-        condition: null,
-        active: true,
-      });
-
-      if (saveError) {
-        console.warn("saved_searches insert failed", saveError);
-      }
-
-      const ingestRes = await fetch("/api/ingest/run", {
+      const response = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: searchRequest.query,
-          marketplaces: [searchRequest.marketplace],
-          user_id: searchRequest.user_id,
-          scan_window: searchRequest.scan_window,
-          source: "user-search",
+          queries: limitedQueries,
+          markets: [marketplace],
+          locationText: normalizedLocation,
+          radiusKm: radiusValue,
+          units: radiusUnits,
         }),
       });
 
-      const ingestJson = await ingestRes.json().catch(() => ({}));
-      if (!ingestRes.ok) {
-        throw new Error(ingestJson?.error || "Failed to start scan.");
+      const responseJson = await response.json().catch(() => ({}));
+
+      if (response.status === 400) {
+        setError(responseJson?.error || "Invalid request.");
+        setLoading(false);
+        return;
       }
 
-      setJobId(ingestJson?.jobId ?? null);
-      setStatusLabel("Live signal");
-      setProgress(ingestJson?.disabled ? 20 : 35);
-      setShowResults(true);
-      onSearchCreated?.(searchRequest, ingestJson?.jobId ?? null);
+      if (response.status === 429) {
+        setError("Plan limit reached.");
+        setLoading(false);
+        return;
+      }
+
+      if (!response.ok) {
+        setError("Search failed. Please try again.");
+        if (process.env.NODE_ENV !== "production") {
+          console.log("Search error", responseJson);
+        }
+        setLoading(false);
+        return;
+      }
+
+      const payload = responseJson as SearchResponse;
+      setResults(payload.results || []);
+      setPolicy(payload.policy || null);
+      setRequestedQueries(payload.requestedQueries ?? null);
+      setExecutedQueries(payload.executedQueries ?? null);
+      (window as any).__MAGNUS_SEARCH_POLICY__ = payload.policy || null;
+
+      const searchRequest: SearchRequest = {
+        query: formattedQuery,
+        marketplaces: [marketplace],
+        location: normalizedLocation,
+        radiusKm: radiusValue,
+        units: radiusUnits,
+      };
+      onSearchCreated?.(searchRequest, null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start scan.");
+      setError(err instanceof Error ? err.message : "Search failed.");
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Search error", err);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    await executeSearch();
+  };
+
   useEffect(() => {
-    if (!showResults) return;
-    setShowSkeleton(true);
-    setShowExpired(false);
-
-    const skeletonTimer = setTimeout(() => {
-      setShowSkeleton(false);
-    }, 3000);
-
-    const expiredTimer = setTimeout(() => {
-      if (!progress) {
-        setShowExpired(true);
-      }
-    }, 15000);
-
+    if (!formattedQuery || disabled) return;
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      void executeSearch();
+    }, 500);
     return () => {
-      clearTimeout(skeletonTimer);
-      clearTimeout(expiredTimer);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
     };
-  }, [showResults, progress]);
+  }, [
+    formattedQuery,
+    normalizedLocation,
+    radiusValue,
+    radiusUnits,
+    marketplace,
+    disabled,
+  ]);
+
+  const executedCount = Array.isArray(executedQueries)
+    ? executedQueries.length
+    : 0;
+  const totalResults = results.reduce((sum, result) => sum + result.count, 0);
+  const avgDuration = results.length
+    ? Math.round(
+        results.reduce((sum, result) => sum + (result.durationMs || 0), 0) /
+          results.length
+      )
+    : 0;
+
+  const effectiveDetails = useMemo(() => {
+    const candidate = results.find(
+      (result) =>
+        result.locationUsed ||
+        typeof result.radiusKmUsed === "number"
+    );
+    if (!candidate) {
+      return { locationLabel: null, radiusKm: null };
+    }
+    const location = candidate.locationUsed;
+    let locationLabel: string | null = null;
+    if (location?.text) {
+      locationLabel = location.text;
+    } else if (
+      typeof location?.lat === "number" &&
+      typeof location?.lng === "number"
+    ) {
+      locationLabel = `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
+    }
+    const radiusKm =
+      typeof candidate.radiusKmUsed === "number"
+        ? candidate.radiusKmUsed
+        : null;
+    return { locationLabel, radiusKm };
+  }, [results]);
+
+  const pickField = (item: any, keys: string[]) => {
+    for (const key of keys) {
+      const value = key.split(".").reduce((acc, part) => {
+        if (!acc || typeof acc !== "object") return undefined;
+        return acc[part];
+      }, item);
+      if (typeof value === "string" && value.trim()) return value.trim();
+      if (typeof value === "number") return String(value);
+    }
+    return "";
+  };
 
   return (
     <div className="space-y-4">
@@ -236,12 +269,25 @@ export default function MarketplaceSearchBox({
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g., MacBook Pro"
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                setQuery(nextValue);
+                const total = nextValue
+                  .split(",")
+                  .map((item) => item.trim())
+                  .filter(Boolean).length;
+                setClientLimitHit(total > 10);
+              }}
+              placeholder="e.g., MacBook Pro, iPad, AirPods"
               className="w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:border-[#00E5FF]/60 disabled:opacity-60"
               required
-              disabled={disabled}
+              disabled={disabled || loading}
             />
+            {clientLimitHit && (
+              <p className="text-xs text-yellow-300 mt-1">
+                Max 10 concurrent searches (demo limit).
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-white/70 mb-1">
@@ -251,7 +297,7 @@ export default function MarketplaceSearchBox({
               value={marketplace}
               onChange={(e) => setMarketplace(e.target.value as Marketplace)}
               className="w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-[#00E5FF]/60 disabled:opacity-60"
-              disabled={disabled}
+              disabled={disabled || loading}
             >
               {MARKETPLACE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -266,8 +312,69 @@ export default function MarketplaceSearchBox({
               disabled={loading || disabled}
               className="w-full rounded-lg bg-gradient-to-r from-[#00E5FF] to-[#7B2FFF] px-4 py-2 font-semibold text-white transition hover:from-[#00E5FF]/90 hover:to-[#7B2FFF]/90 disabled:opacity-60"
             >
-              {loading ? "Scanning now..." : "Instant scan"}
+              {loading ? "Searching..." : "Instant scan"}
             </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_180px]">
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-1">
+              Location (text)
+            </label>
+            <input
+              type="text"
+              value={locationText}
+              onChange={(e) => setLocationText(e.target.value)}
+              onBlur={() => {
+                if (!locationText.trim()) {
+                  setLocationText("London");
+                }
+              }}
+              placeholder="London"
+              className="w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:border-[#00E5FF]/60 disabled:opacity-60"
+              disabled={disabled || loading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-1">
+              Radius ({radiusUnits})
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={1}
+                max={100}
+                value={radiusValue}
+                onChange={(e) => setRadiusValue(Number(e.target.value))}
+                className="w-full accent-[#00E5FF]"
+                disabled={disabled || loading}
+              />
+              <span className="text-sm text-white/70 min-w-[48px] text-right">
+                {radiusValue}
+              </span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-1">
+              Units
+            </label>
+            <div className="flex rounded-lg border border-white/10 bg-[#0f0f0f] p-1">
+              {(["mi", "km"] as const).map((unit) => (
+                <button
+                  key={unit}
+                  type="button"
+                  onClick={() => setRadiusUnits(unit)}
+                  className={`flex-1 rounded-md px-3 py-1 text-sm font-semibold transition ${
+                    radiusUnits === unit
+                      ? "bg-[#00E5FF] text-black"
+                      : "text-white/70 hover:text-white"
+                  }`}
+                  disabled={disabled || loading}
+                >
+                  {unit}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </form>
@@ -278,78 +385,134 @@ export default function MarketplaceSearchBox({
         </div>
       )}
 
-      {showResults && (
+      {loading && (
+        <div className="rounded-xl border border-white/10 bg-[#0f0f0f] px-4 py-3 text-sm text-white/70">
+          Running live search…
+        </div>
+      )}
+
+      {policy && (
+        <TierLimitsPanel
+          policy={policy}
+          requestedQueries={requestedQueries ?? undefined}
+          executedQueries={executedCount || undefined}
+        />
+      )}
+
+      {(results.length > 0 || policy) && (
         <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-4 space-y-4">
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              {statusLabel || "Live signal"}
-            </span>
-            {jobId && (
-              <span className="text-white/50 text-xs">Job: {jobId}</span>
-            )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm text-white/70">
+            <div className="rounded-lg border border-white/10 bg-black/40 p-3">
+              <div className="text-xs text-white/50">Total listings</div>
+              <div className="text-base font-semibold text-white">
+                {totalResults}
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-black/40 p-3">
+              <div className="text-xs text-white/50">Tasks executed</div>
+              <div className="text-base font-semibold text-white">
+                {results.length}
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-black/40 p-3">
+              <div className="text-xs text-white/50">Avg duration</div>
+              <div className="text-base font-semibold text-white">
+                {avgDuration ? `${avgDuration} ms` : "—"}
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-black/40 p-3">
+              <div className="text-xs text-white/50">Effective location</div>
+              <div className="text-base font-semibold text-white">
+                {effectiveDetails.locationLabel || "—"}
+              </div>
+              <div className="mt-1 text-xs text-white/50">
+                Effective radius:{" "}
+                {typeof effectiveDetails.radiusKm === "number"
+                  ? `${effectiveDetails.radiusKm.toFixed(1)} km`
+                  : "—"}
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between text-xs text-white/60 mb-2">
-              <span>Results updating</span>
-              <span>{progress ?? 0}%</span>
-            </div>
-            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="space-y-4">
+            {results.map((result, index) => (
               <div
-                className="h-full bg-gradient-to-r from-[#00E5FF] to-[#7B2FFF]"
-                style={{ width: `${progress ?? 0}%` }}
-              />
-            </div>
-          </div>
+                key={`${result.market}-${result.query}-${index}`}
+                className="rounded-lg border border-white/10 bg-black/40 p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-white/70">
+                  <div className="text-white font-semibold capitalize">
+                    {result.market} · {result.query}
+                  </div>
+                  <div>
+                    {result.count} results · {result.durationMs ?? 0} ms
+                  </div>
+                </div>
 
-          {showSkeleton ? (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {Array.from({ length: 3 }).map((_, idx) => (
-                <div
-                  key={`skeleton-${idx}`}
-                  className="rounded-lg border border-white/10 bg-black/40 overflow-hidden animate-pulse"
-                >
-                  <div className="h-28 w-full bg-white/5" />
-                  <div className="p-3 space-y-2">
-                    <div className="h-3 w-3/4 bg-white/10 rounded" />
-                    <div className="h-3 w-1/2 bg-white/10 rounded" />
-                    <div className="h-3 w-2/3 bg-white/10 rounded" />
+                {result.error ? (
+                  <div className="mt-3 text-xs text-red-300">
+                    {result.error}
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : showExpired ? (
-            <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
-              Scan expired · Live feed active when you refresh
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {placeholderListings.map((listing, idx) => (
-                <div
-                  key={`${listing.title}-${idx}`}
-                  className="rounded-lg border border-white/10 bg-black/40 overflow-hidden"
-                >
-                  <img
-                    src="/placeholders/listing.png"
-                    alt={listing.title}
-                    className="h-28 w-full object-cover"
-                  />
-                  <div className="p-3 space-y-1 text-xs text-white/70">
-                    <div className="font-semibold text-white text-sm">
-                      {listing.title}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-emerald-300 font-semibold">
-                        {listing.price}
-                      </span>
-                      <span>{listing.location}</span>
-                    </div>
+                ) : (
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {result.items.slice(0, 9).map((item, itemIndex) => {
+                      const title =
+                        pickField(item, [
+                          "title",
+                          "name",
+                          "listingTitle",
+                          "heading",
+                          "marketplace_listing_title",
+                        ]) || "Listing";
+                      const price =
+                        pickField(item, [
+                          "price",
+                          "priceLabel",
+                          "listingPrice",
+                          "priceValue",
+                        ]) || "—";
+                      const locationLabel =
+                        pickField(item, [
+                          "location.city",
+                          "city",
+                          "location.name",
+                          "location.address",
+                        ]) || "—";
+                      const link =
+                        pickField(item, [
+                          "url",
+                          "listingUrl",
+                          "itemUrl",
+                          "link",
+                          "productUrl",
+                          "permalink",
+                        ]) || "";
+
+                      return (
+                        <a
+                          key={`${result.market}-${itemIndex}`}
+                          href={link || "#"}
+                          target={link ? "_blank" : undefined}
+                          rel={link ? "noopener noreferrer" : undefined}
+                          className="rounded-lg border border-white/10 bg-[#0f0f0f] p-3 text-xs text-white/70 transition hover:border-[#00E5FF]/40"
+                        >
+                          <div className="text-sm font-semibold text-white">
+                            {title}
+                          </div>
+                          <div className="mt-2 flex items-center justify-between text-xs">
+                            <span className="text-emerald-300 font-semibold">
+                              {price}
+                            </span>
+                            <span>{locationLabel}</span>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
