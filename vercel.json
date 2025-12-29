@@ -4,5 +4,11 @@
       "src": "api/live-test.ts",
       "use": "@vercel/node"
     }
+  ],
+  "routes": [
+    {
+      "src": "/api/live-test",
+      "dest": "api/live-test.ts"
+    }
   ]
 }
