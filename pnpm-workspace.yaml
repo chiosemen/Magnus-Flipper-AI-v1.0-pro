@@ -1,22 +1,15 @@
 packages:
-  # === ACTIVE APPS ===
-  - "apps/web"
+  # Phase 2 — ONLY what we ship
   - "apps/api"
-  - "apps/mobile"
+  - "apps/web"
 
-  - "apps/worker-scheduler"
-  - "apps/worker-realtime"
-  - "apps/worker-scraper"
-  - "apps/worker-ingestion"
-  - "apps/worker-alerts"
+  # Shared UI / utils ONLY if imported
+  - "packages/ui"
+  - "packages/core"
 
-  # === ACTIVE PACKAGES ===
-  - "packages/*"
+  # Explicit kill switch
+  - "!apps/*"
+  - "!packages/*"
 
-  # === EXPLICIT EXCLUSIONS ===
-  - "!apps/canary-*"
-  - "!apps/web_broken_backup"
-  - "!apps/worker"
-  - "!packages/dealer-engine"
-  - "!_graveyard/**"
+
 
