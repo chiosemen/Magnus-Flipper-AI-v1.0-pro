@@ -1,4 +1,4 @@
-export type TierKey = "free" | "pro" | "agency";
+export type TierKey = "free" | "pro" | "agency" | "enterprise";
 
 import { MARKETPLACES, type MarketplaceId } from "@/lib/marketplaceRegistry";
 
@@ -11,7 +11,11 @@ export type TierPolicy = {
 
 function getTierMarkets(tier: TierKey): MarketplaceId[] {
   return Object.values(MARKETPLACES)
-    .filter((market) => market.enabled && market.tierAccess[tier])
+    .filter((market) => {
+      if (!market.enabled) return false;
+      if (tier === "enterprise") return market.tierAvailability.agency;
+      return market.tierAvailability[tier];
+    })
     .map((market) => market.id);
 }
 
@@ -33,5 +37,11 @@ export const TIER_POLICY_MAP: Record<TierKey, TierPolicy> = {
     maxQueriesPerRun: 10,
     maxConcurrency: 10,
     marketsAllowed: getTierMarkets("agency"),
+  },
+  enterprise: {
+    tier: "enterprise",
+    maxQueriesPerRun: 10,
+    maxConcurrency: 10,
+    marketsAllowed: getTierMarkets("enterprise"),
   },
 };

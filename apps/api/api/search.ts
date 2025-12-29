@@ -1,86 +1,28 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'crypto';
 import { ApifyClient } from 'apify-client';
-import { createClient } from '@supabase/supabase-js';
 import { runMarketplaceActor } from '../lib/apifyActors';
 import { planPooledRuns, type PoolRequest } from '../lib/geopool';
-import { MARKETPLACES, type MarketplaceId } from '../lib/marketplaceRegistry';
+import {
+  MARKETPLACES,
+  estimateCuForRun,
+  getMarketCapabilities,
+  type MarketplaceId,
+} from '../lib/marketplaceRegistry';
+import { requireUserFromJWT } from '../lib/auth';
+import { TIER_POLICIES, type Tier } from '../lib/tierPolicy';
+import {
+  writeCostLedgerEntries,
+  type CostLedgerSource,
+  type ProxyType,
+} from '../lib/costLedger';
 
 const DEFAULT_FACEBOOK_QUERY = 'iphone';
 const DEFAULT_VINTED_QUERY = 'nike';
-const DEFAULT_LOCATION = 'prague';
+const DEFAULT_LOCATION = 'london';
 const DEFAULT_LIMIT = 20;
 const DEFAULT_RADIUS_KM = 50;
 const DEFAULT_RUN_TIMEOUT_MS = 120000;
-
-type Tier = 'free' | 'pro' | 'agency' | 'enterprise';
-
-type TierPolicy = {
-  tier: Tier;
-  maxQueriesPerRun: number;
-  maxMarketsPerRun: number;
-  maxConcurrency: number;
-  marketsAllowed: MarketplaceId[];
-  dailyRunLimit?: number;
-};
-
-function getTierAllowedMarkets(tier: Tier): MarketplaceId[] {
-  return Object.values(MARKETPLACES)
-    .filter((market) => market.enabled && market.tierAccess[tier])
-    .map((market) => market.id);
-}
-
-const TIER_POLICIES: Record<Tier, TierPolicy> = {
-  free: {
-    tier: 'free',
-    maxQueriesPerRun: 2,
-    maxMarketsPerRun: 2,
-    maxConcurrency: 1,
-    marketsAllowed: getTierAllowedMarkets('free'),
-    dailyRunLimit: 5,
-  },
-  pro: {
-    tier: 'pro',
-    maxQueriesPerRun: 5,
-    maxMarketsPerRun: 4,
-    maxConcurrency: 3,
-    marketsAllowed: getTierAllowedMarkets('pro'),
-    dailyRunLimit: 50,
-  },
-  agency: {
-    tier: 'agency',
-    maxQueriesPerRun: 10,
-    maxMarketsPerRun: 10,
-    maxConcurrency: 10,
-    marketsAllowed: getTierAllowedMarkets('agency'),
-  },
-  enterprise: {
-    tier: 'enterprise',
-    maxQueriesPerRun: 10,
-    maxMarketsPerRun: 10,
-    maxConcurrency: 10,
-    marketsAllowed: getTierAllowedMarkets('enterprise'),
-  },
-};
-
-async function getUserTier(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-): Promise<Tier> {
-  try {
-    const { data, error } = await supabase
-      .from('user_tiers')
-      .select('tier')
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (error || !data?.tier) {
-      return 'free';
-    }
-    const normalized = String(data.tier).toLowerCase();
-    return normalized in TIER_POLICIES ? (normalized as Tier) : 'free';
-  } catch {
-    return 'free';
-  }
-}
 
 function parseNumber(value: unknown, fallback: number): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -186,10 +128,13 @@ type GeoPoint = {
 };
 
 const GEO_FALLBACKS: Record<string, GeoPoint> = {
-  london: { lat: 51.5074, lng: -0.1278, country: 'uk' },
-  manchester: { lat: 53.4808, lng: -2.2426, country: 'uk' },
-  birmingham: { lat: 52.4862, lng: -1.8904, country: 'uk' },
-  prague: { lat: 50.0755, lng: 14.4378, country: 'cz' },
+  london: { lat: 51.5074, lng: -0.1278, country: 'UK' },
+  manchester: { lat: 53.4808, lng: -2.2426, country: 'UK' },
+  birmingham: { lat: 52.4862, lng: -1.8904, country: 'UK' },
+  "new york": { lat: 40.7128, lng: -74.006, country: 'US' },
+  "los angeles": { lat: 34.0522, lng: -118.2437, country: 'US' },
+  chicago: { lat: 41.8781, lng: -87.6298, country: 'US' },
+  prague: { lat: 50.0755, lng: 14.4378, country: 'CZ' },
 };
 
 function normalizeRadiusKm(value: unknown, units: unknown): number | null {
@@ -214,38 +159,9 @@ function resolveGeoLocation(
   return { ...fallback, text: locationText };
 }
 
-async function requireUserFromJWT(authHeader?: string) {
-  if (!authHeader) {
-    return { userId: null, tier: 'free' as Tier };
-  }
-
-  const token = authHeader.toLowerCase().startsWith('bearer ')
-    ? authHeader.slice(7).trim()
-    : authHeader.trim();
-  if (!token) {
-    return { userId: null, tier: 'free' as Tier };
-  }
-
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !supabaseKey) {
-    return { userId: null, tier: 'free' as Tier };
-  }
-
-  try {
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data?.user) {
-      return { userId: null, tier: 'free' as Tier };
-    }
-
-    const tier = await getUserTier(supabase, data.user.id);
-    return { userId: data.user.id, tier };
-  } catch {
-    return { userId: null, tier: 'free' as Tier };
-  }
+function resolveProxyType(proxy?: string, region?: string): ProxyType {
+  const combined = `${proxy ?? ''} ${region ?? ''}`.toLowerCase();
+  return combined.includes('residential') ? 'residential' : 'datacenter';
 }
 
 function buildRunOptions(tier: Tier, limit: number) {
@@ -313,16 +229,34 @@ async function runPool<T>(tasks: Array<() => Promise<T>>, limit: number): Promis
   return results;
 }
 
-async function handlePost(req: VercelRequest, res: VercelResponse) {
+type SearchUser = {
+  userId: string | null;
+  tier: Tier;
+};
+
+type SearchExecutionResult = {
+  status: number;
+  payload: Record<string, any>;
+};
+
+type SearchContext = {
+  source?: CostLedgerSource;
+  cuCap?: number;
+};
+
+export async function executeSearch(
+  req: VercelRequest,
+  body: Record<string, any>,
+  user: SearchUser,
+  context: SearchContext = {},
+): Promise<SearchExecutionResult> {
   const token = process.env.APIFY_TOKEN;
   if (!token) {
-    res.status(500).json({ error: 'APIFY_TOKEN missing' });
-    return;
+    return { status: 500, payload: { error: 'APIFY_TOKEN missing' } };
   }
 
-  const user = await requireUserFromJWT(req.headers.authorization);
   const policy = TIER_POLICIES[user.tier];
-  const body = parseBody(req);
+  const debugPooling = process.env.DEBUG_POOLING === 'true';
 
   let queries = parseQueries(body.q ?? body.queries);
   const requestedQueries = queries.length;
@@ -337,29 +271,47 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
       return !MARKETPLACES[market].enabled;
     });
     if (unsupported.length > 0) {
-      res.status(400).json({
-        error: `Unsupported marketplaces: ${unsupported.join(', ')}`,
-      });
-      return;
+      return {
+        status: 400,
+        payload: { error: `Unsupported marketplaces: ${unsupported.join(', ')}` },
+      };
+    }
+
+    const disallowed = markets.filter(
+      (market) => isMarketplaceId(market) && !policy.marketsAllowed.includes(market),
+    );
+    if (disallowed.length > 0) {
+      return {
+        status: 400,
+        payload: { error: `${disallowed[0]} is not available on your plan.` },
+      };
     }
   }
-  const filteredMarkets = markets.filter(
-    (market): market is MarketplaceId =>
-      isMarketplaceId(market) && policy.marketsAllowed.includes(market),
+
+  const filteredMarkets = markets.filter((market): market is MarketplaceId =>
+    isMarketplaceId(market),
   );
   const typedMarkets = filteredMarkets.slice(0, policy.maxMarketsPerRun);
 
   if (queries.length === 0) {
-    res.status(400).json({ error: 'No queries provided' });
-    return;
+    return { status: 400, payload: { error: 'No queries provided' } };
   }
 
   if (typedMarkets.length === 0) {
-    res.status(400).json({ error: 'No allowed marketplaces for this tier' });
-    return;
+    return {
+      status: 400,
+      payload: { error: 'No allowed marketplaces for this tier' },
+    };
   }
 
   const limit = Math.max(1, parseNumber(body.limit, DEFAULT_LIMIT));
+  const cuEstimate = estimateCuForRun({
+    markets: typedMarkets,
+    queries,
+    itemsExpected: limit,
+  });
+  const estimatedCuTotal = cuEstimate.total;
+  const estimatedCuByMarket = cuEstimate.byMarket;
   const postalCode = normalizeString(body.postalCode);
   const locationTextInput =
     normalizeString(body.locationText) ?? normalizeString(body.location);
@@ -367,7 +319,11 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
   let lng = parseFloatValue(body.lng ?? body.longitude);
   let resolvedPostal: { postalCode: string; country: string; lat: number; lng: number } | null =
     null;
-  if (lat === null && lng === null && postalCode) {
+  const needsGeoResolution = typedMarkets.some((market) => {
+    const capabilities = MARKETPLACES[market].geoCapabilities;
+    return capabilities.supportsLatLng || capabilities.supportsPostal;
+  });
+  if (lat === null && lng === null && postalCode && needsGeoResolution) {
     try {
       resolvedPostal = await resolvePostalCode(
         req,
@@ -377,16 +333,18 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
       lat = resolvedPostal.lat;
       lng = resolvedPostal.lng;
     } catch (error: any) {
-      res.status(400).json({ error: error?.message || 'Postal resolution failed' });
-      return;
+      return {
+        status: 400,
+        payload: { error: error?.message || 'Postal resolution failed' },
+      };
     }
   }
   const locationText =
     locationTextInput ??
     (postalCode ?? null) ??
     (lat !== null && lng !== null ? null : DEFAULT_LOCATION);
-  const radiusKm =
-    normalizeRadiusKm(body.radiusKm, body.units) ?? DEFAULT_RADIUS_KM;
+  const radiusRequested = normalizeRadiusKm(body.radiusKm, body.units);
+  const radiusKm = radiusRequested ?? DEFAULT_RADIUS_KM;
   const resolvedLocation = resolveGeoLocation(locationText, lat, lng);
   const locationUsed = resolvedLocation
     ? {
@@ -401,13 +359,20 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
   const client = new ApifyClient({ token });
   const proxy = typeof body.proxy === 'string' ? body.proxy : undefined;
   const region = typeof body.region === 'string' ? body.region : undefined;
+  const proxyType = resolveProxyType(proxy, region);
   const country = resolvedLocation?.country ?? resolvedPostal?.country ?? null;
 
-  if (typedMarkets.includes('facebook') && !resolvedLocation) {
-    res.status(400).json({
-      error: 'Location must include lat/lng or a supported locationText for facebook search',
-    });
-    return;
+  const marketsNeedingLatLng = typedMarkets.filter((market) => {
+    const capabilities = MARKETPLACES[market].geoCapabilities;
+    return capabilities.supportsRadiusKm && capabilities.supportsLatLng;
+  });
+  if (marketsNeedingLatLng.length > 0 && (lat === null || lng === null)) {
+    return {
+      status: 400,
+      payload: {
+        error: `Lat/lng required for: ${marketsNeedingLatLng.join(', ')}`,
+      },
+    };
   }
 
   const tierRunCaps = Object.fromEntries(
@@ -422,6 +387,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
       query: string;
       locationUsed: typeof locationUsed;
       radiusKmUsed: number | null;
+      poolingReason?: string | null;
       timestamp: string;
       warnings: string[];
     }
@@ -429,11 +395,61 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
 
   for (const query of queries) {
     for (const market of typedMarkets) {
+      const marketConfig = MARKETPLACES[market];
+      const capabilities = marketConfig.geoCapabilities;
       const requestId = `${market}-${requests.length + 1}`;
-      const radiusKmUsed = MARKETPLACES[market].geo.supportsRadius ? radiusKm : null;
+      const radiusKmUsed = capabilities.supportsRadiusKm ? radiusKm : null;
+      const latUsed = capabilities.supportsLatLng
+        ? resolvedLocation?.lat ?? null
+        : null;
+      const lngUsed = capabilities.supportsLatLng
+        ? resolvedLocation?.lng ?? null
+        : null;
+      const postalUsed = capabilities.supportsPostal ? postalCode : null;
       const warnings: string[] = [];
-      if (!MARKETPLACES[market].geo.supportsRadius) {
-        warnings.push('Radius not supported; using country/city pooling.');
+      if (!capabilities.supportsRadiusKm && radiusRequested !== null) {
+        warnings.push('Radius ignored for this marketplace.');
+      }
+      if (!capabilities.supportsLatLng && resolvedLocation) {
+        warnings.push('Geo coordinates ignored for this marketplace.');
+      }
+      if (!capabilities.supportsPostal && postalCode) {
+        warnings.push('Postal code ignored for this marketplace.');
+      }
+
+      const poolingReasons: string[] = [];
+      if (!marketConfig.pooling.enabled) {
+        poolingReasons.push('Pooling disabled by registry.');
+      }
+      if (
+        radiusKmUsed &&
+        marketConfig.pooling.maxRadiusKm > 0 &&
+        radiusKmUsed > marketConfig.pooling.maxRadiusKm
+      ) {
+        poolingReasons.push(
+          `Radius exceeds pooling max (${marketConfig.pooling.maxRadiusKm} km).`,
+        );
+      }
+      const pricingModel =
+        marketConfig.costModel.pricingModel ??
+        (marketConfig.costModel.cuPerItem > 0 ? 'per-result' : 'per-run');
+      if (pricingModel === 'per-run' && marketConfig.costModel.pooledSafe === false) {
+        poolingReasons.push('Pooling disabled for per-run pricing.');
+      }
+      if (marketConfig.pooling.key === 'geohash' && !capabilities.supportsLatLng) {
+        poolingReasons.push('Pooling disabled: lat/lng unsupported.');
+      }
+      if (marketConfig.pooling.key === 'postal' && !capabilities.supportsPostal) {
+        poolingReasons.push('Pooling disabled: postal unsupported.');
+      }
+
+      const poolingOverride =
+        poolingReasons.length > 0
+          ? { enabled: false, reason: poolingReasons[0] }
+          : undefined;
+
+      if (poolingReasons.length > 0) {
+        warnings.push(...poolingReasons);
       }
 
       requests.push({
@@ -442,13 +458,15 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         marketplaceId: market,
         query,
         category: normalizeString(body.category),
-        lat: resolvedLocation?.lat ?? null,
-        lng: resolvedLocation?.lng ?? null,
+        lat: latUsed,
+        lng: lngUsed,
         radiusKm: radiusKmUsed,
+        postalCode: postalUsed,
         tier: policy.tier,
         maxResults: limit,
         country,
         city: locationUsed?.text ?? null,
+        poolingOverride,
       });
 
       requestMeta.set(requestId, {
@@ -456,16 +474,54 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         query,
         locationUsed,
         radiusKmUsed,
+        poolingReason: poolingOverride?.reason ?? null,
         timestamp: new Date().toISOString(),
         warnings,
       });
+
+      if (debugPooling) {
+        console.log(
+          JSON.stringify({
+            marketplaceId: market,
+            query,
+            poolingEnabled: poolingOverride ? poolingOverride.enabled : marketConfig.pooling.enabled,
+            poolingReason: poolingOverride?.reason ?? null,
+          }),
+        );
+      }
     }
   }
 
   const { pooledRuns, mapping } = planPooledRuns(requests, tierRunCaps);
+  const cuCap =
+    typeof context.cuCap === 'number' ? context.cuCap : policy.cuCapPerRun;
+  let cuEstimatedTotal = 0;
+  let cuCapReached = false;
+  const skippedRunIds = new Set<string>();
+  let pooledRunsToExecute = pooledRuns;
+
+  if (typeof cuCap === 'number' && cuCap > 0) {
+    pooledRunsToExecute = [];
+    for (const pooledRun of pooledRuns) {
+      const marketConfig = MARKETPLACES[pooledRun.marketplaceId];
+      const estimated = marketConfig.costModel.cuPerRun;
+      if (cuEstimatedTotal + estimated > cuCap) {
+        skippedRunIds.add(pooledRun.pooledRunId);
+        cuCapReached = true;
+        continue;
+      }
+      cuEstimatedTotal += estimated;
+      pooledRunsToExecute.push(pooledRun);
+    }
+  } else {
+    cuEstimatedTotal = pooledRuns.reduce(
+      (sum, run) => sum + MARKETPLACES[run.marketplaceId].costModel.cuPerRun,
+      0,
+    );
+  }
 
   const runOptions = buildRunOptions(policy.tier, limit);
-  const tasks = pooledRuns.map((pooledRun) => async () => {
+  const tasks = pooledRunsToExecute.map((pooledRun) => async () => {
     const pooledKey = `${pooledRun.marketplaceId}:${pooledRun.geoKey}:${pooledRun.queryNormalized}${
       pooledRun.category ? `:${pooledRun.category}` : ''
     }`;
@@ -476,6 +532,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         lat: pooledRun.lat ?? undefined,
         lng: pooledRun.lng ?? undefined,
         radiusKm: pooledRun.radiusKm ?? undefined,
+        postalCode: pooledRun.postalCode ?? undefined,
         country,
         limit,
         proxy,
@@ -530,6 +587,15 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
   }> = [];
 
   for (const pooledRun of pooledRuns) {
+    if (skippedRunIds.has(pooledRun.pooledRunId)) {
+      errors.push({
+        marketplaceId: pooledRun.marketplaceId,
+        code: 'CU_CAP',
+        message: 'Skipped due to CU cap',
+        classified: 'LIMIT',
+      });
+      continue;
+    }
     const pooledResult = pooledResultMap.get(pooledRun.pooledRunId);
     if (!pooledResult || 'error' in pooledResult) {
       errors.push({
@@ -556,18 +622,53 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  if (user.userId) {
+    const source = context.source ?? 'search';
+    const executedAt = new Date().toISOString();
+    const ledgerEntries = pooledRuns.map((pooledRun) => {
+      const pooledResult = pooledResultMap.get(pooledRun.pooledRunId);
+      const runResult = pooledResult && !('error' in pooledResult) ? pooledResult.result : null;
+      const marketConfig = MARKETPLACES[pooledRun.marketplaceId];
+      const itemsCount = runResult?.items?.length ?? 0;
+      const baseCu = marketConfig.costModel.cuPerRun;
+      const perItemCu = marketConfig.costModel.cuPerItem;
+      const pricingModel =
+        marketConfig.costModel.pricingModel ??
+        (marketConfig.costModel.cuPerItem > 0 ? 'per-result' : 'per-run');
+      const cuEstimated =
+        pricingModel === 'per-result' ? baseCu + itemsCount * perItemCu : baseCu;
+      return {
+        userId: user.userId as string,
+        runId: randomUUID(),
+        source,
+        marketplace: pooledRun.marketplaceId,
+        actorId: runResult?.actorId ?? marketConfig.actorId,
+        cuEstimated,
+        cuActual: cuEstimated,
+        proxyType,
+        executedAt,
+      };
+    });
+    await writeCostLedgerEntries(ledgerEntries);
+  }
+
   const results = mapping.map((entry) => {
     const meta = requestMeta.get(entry.requestId);
     const pooledRun = pooledRunMap.get(entry.pooledRunId);
     const pooled = pooledRun ? pooledRun.requestIds.length > 1 : false;
     const pooledResult = pooledResultMap.get(entry.pooledRunId);
+    const poolingReason = meta?.poolingReason ?? null;
     const warnings = [
       ...(meta?.warnings ?? []),
       ...(entry.warnings ?? []),
       ...(pooledRun?.warnings ?? []),
     ];
 
+    const skipped = skippedRunIds.has(entry.pooledRunId);
     if (!meta || !pooledResult || 'error' in pooledResult) {
+      if (skipped) {
+        warnings.push('Skipped due to CU cap.');
+      }
       return {
         market: meta?.market ?? entry.marketplaceId,
         query: meta?.query ?? 'unknown',
@@ -577,7 +678,9 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         count: 0,
         items: [],
         durationMs: 0,
-        error: pooledResult && 'error' in pooledResult
+        error: skipped
+          ? 'Skipped due to CU cap'
+          : pooledResult && 'error' in pooledResult
           ? pooledResult.error?.message || pooledResult.error || 'Search failed'
           : 'Search failed',
         pooling: pooledRun
@@ -586,6 +689,9 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
               geoKey: pooledRun.geoKey,
               precision: pooledRun.precision,
               strategy: pooledRun.pooling.strategy,
+              poolingApplied: pooledRun.pooling.enabled,
+              poolingKey: pooledRun.geoKey,
+              poolingReason,
             }
           : null,
         warnings: warnings.length > 0 ? Array.from(new Set(warnings)) : undefined,
@@ -606,36 +712,114 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
             geoKey: pooledRun.geoKey,
             precision: pooledRun.precision,
             strategy: pooledRun.pooling.strategy,
+            poolingApplied: pooledRun.pooling.enabled,
+            poolingKey: pooledRun.geoKey,
+            poolingReason,
           }
         : null,
       warnings: warnings.length > 0 ? Array.from(new Set(warnings)) : undefined,
     };
   });
 
-  res.status(200).json({
-    tier: policy.tier,
-    policy: {
-      maxQueriesPerRun: policy.maxQueriesPerRun,
-      maxMarketsPerRun: policy.maxMarketsPerRun,
-      maxConcurrency: policy.maxConcurrency,
-      marketsAllowed: policy.marketsAllowed,
-      dailyRunLimit: policy.dailyRunLimit,
+  const poolingApplied = pooledRuns.some(
+    (run) => run.pooling.enabled && run.pooling.strategy !== 'none',
+  );
+  const poolingKeys = Array.from(new Set(pooledRuns.map((run) => run.geoKey)));
+  const poolingReasons = Array.from(
+    new Set(
+      Array.from(requestMeta.values())
+        .map((meta) => meta.poolingReason)
+        .filter((reason): reason is string => Boolean(reason)),
+    ),
+  );
+  const metaWarnings = Array.from(
+    new Set(results.flatMap((entry) => entry.warnings ?? [])),
+  );
+
+  const poolingPrecisions = Array.from(
+    new Set(
+      pooledRuns
+        .map((run) => run.precision)
+        .filter((value): value is number => value !== null),
+    ),
+  );
+
+  const marketCapabilities = Object.fromEntries(
+    typedMarkets.map((market) => {
+      const capabilities = getMarketCapabilities(market);
+      return [
+        market,
+        {
+          supportsRadiusKm: capabilities.supportsRadiusKm,
+          supportsPostal: capabilities.supportsPostal,
+          supportsLatLng: capabilities.supportsLatLng,
+          supportsCountry: capabilities.supportsCountry,
+        },
+      ];
+    }),
+  );
+
+  const radiusIgnoredMarkets =
+    radiusRequested !== null
+      ? typedMarkets.filter(
+          (market) => !MARKETPLACES[market].geoCapabilities.supportsRadiusKm,
+        )
+      : [];
+
+  return {
+    status: 200,
+    payload: {
+      tier: policy.tier,
+      policy: {
+        maxQueriesPerRun: policy.maxQueriesPerRun,
+        maxMarketsPerRun: policy.maxMarketsPerRun,
+        maxConcurrency: policy.maxConcurrency,
+        marketsAllowed: policy.marketsAllowed,
+        dailyRunLimit: policy.dailyRunLimit,
+        dailyCuLimit: policy.dailyCuLimit,
+        cuCapPerRun: policy.cuCapPerRun,
+      },
+      requestedQueries,
+      executedQueries: queries,
+      markets: typedMarkets,
+      stats: {
+        totalTasks: pooledRunsToExecute.length,
+        concurrency: policy.maxConcurrency,
+      },
+      results,
+      errors,
+      meta: {
+        marketCapabilities,
+        radiusIgnoredMarkets,
+        estimatedCuTotal,
+        estimatedCuByMarket,
+        pooledRuns: pooledRunsToExecute.length,
+        pooledRunsPlanned: pooledRuns.length,
+        poolingEnabled: pooledRuns.some((run) => run.pooling.enabled),
+        poolingApplied,
+        poolingKey: poolingKeys[0] ?? null,
+        poolingReason: poolingReasons[0] ?? null,
+        warnings: metaWarnings.length > 0 ? metaWarnings : undefined,
+        errorCount: errors.length,
+        cuEstimated: cuEstimatedTotal,
+        cuCap: typeof cuCap === 'number' ? cuCap : null,
+        cuCapReached,
+        skippedRuns: skippedRunIds.size,
+        pooling: {
+          applied: poolingApplied,
+          keys: poolingKeys,
+          precisions: poolingPrecisions,
+        },
+      },
     },
-    requestedQueries,
-    executedQueries: queries,
-    markets: typedMarkets,
-    stats: {
-      totalTasks: pooledRuns.length,
-      concurrency: policy.maxConcurrency,
-    },
-    results,
-    errors,
-    meta: {
-      pooledRuns: pooledRuns.length,
-      poolingEnabled: pooledRuns.some((run) => run.pooling.enabled),
-      errorCount: errors.length,
-    },
-  });
+  };
+}
+
+async function handlePost(req: VercelRequest, res: VercelResponse) {
+  const user = await requireUserFromJWT(req.headers.authorization);
+  const body = parseBody(req);
+  const result = await executeSearch(req, body, user, { source: 'search' });
+  res.status(result.status).json(result.payload);
 }
 
 async function handleGet(req: VercelRequest, res: VercelResponse) {

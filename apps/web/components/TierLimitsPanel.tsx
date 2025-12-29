@@ -73,7 +73,9 @@ export function TierLimitsPanel({
           <dt className="text-xs text-white/50">Markets allowed</dt>
           <dd className="mt-1 text-sm text-white/90">
             {policy.marketsAllowed
-              .map((market) => MARKETPLACES[market]?.label ?? market)
+              .map(
+                (market) => MARKETPLACES[market]?.label ?? market,
+              )
               .join(", ")}
           </dd>
         </div>

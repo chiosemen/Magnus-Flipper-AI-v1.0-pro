@@ -1,14 +1,24 @@
-import { ApifyClient } from 'apify-client';
-import { runActor, type RunActorOptions } from './apifyClient';
-import { MARKETPLACES, type MarketplaceId } from './marketplaceRegistry';
+import { ApifyClient } from "apify-client";
+import { runActor, type RunActorOptions } from "./apifyClient";
+import {
+  buildActorInput,
+  getMarketplaceActorId,
+  getProxyDefaults,
+  getProxyGroupsForMarket,
+  MARKETPLACES,
+  type ActorInputParams,
+  type MarketplaceId,
+} from "./marketplaceRegistry";
 
 type MarketplaceOptions = {
   client?: ApifyClient;
   locationText?: string;
+  postalCode?: string;
   lat?: number;
   lng?: number;
   radiusKm?: number;
   country?: string;
+  category?: string;
   limit?: number;
   proxy?: string;
   region?: string;
@@ -16,49 +26,19 @@ type MarketplaceOptions = {
 };
 
 const DEFAULT_DATASET_LIMIT = 20;
-const DEFAULT_RADIUS_KM = 50;
 
-function buildProxyConfiguration(options: MarketplaceOptions) {
-  const proxyGroups = [options.proxy, options.region].filter(
-    (value): value is string => typeof value === 'string' && value.trim().length > 0,
-  );
-  if (proxyGroups.length === 0) return undefined;
+function buildGeoUsed(
+  params: ActorInputParams,
+  supportsRadiusKm: boolean,
+  supportsLatLng: boolean,
+) {
   return {
-    useApifyProxy: true,
-    proxyGroups,
+    lat: supportsLatLng ? params.lat ?? null : null,
+    lng: supportsLatLng ? params.lng ?? null : null,
+    radiusKm: supportsRadiusKm ? params.radiusKm ?? null : null,
+    postalCode: params.postalCode ?? null,
+    country: params.country ?? null,
   };
-}
-
-function buildActorInput(market: MarketplaceId, query: string, options: MarketplaceOptions) {
-  const proxyConfiguration = buildProxyConfiguration(options);
-
-  switch (market) {
-    case 'facebook': {
-      const lat = options.lat;
-      const lng = options.lng;
-      if (typeof lat !== 'number' || typeof lng !== 'number') {
-        throw new Error('Missing lat/lng for facebook search');
-      }
-      return {
-        query,
-        lat,
-        lng,
-        radius_km: options.radiusKm ?? DEFAULT_RADIUS_KM,
-        resultsLimit: options.limit ?? DEFAULT_DATASET_LIMIT,
-        ...(proxyConfiguration ? { proxyConfiguration } : {}),
-      };
-    }
-    case 'vinted': {
-      return {
-        browseMode: false,
-        searchText: query,
-        ...(options.country ? { country: options.country } : {}),
-        ...(proxyConfiguration ? { proxyConfiguration } : {}),
-      };
-    }
-    default:
-      throw new Error(`Marketplace ${market} does not have actor input defined`);
-  }
 }
 
 export async function runMarketplaceActor(
@@ -74,26 +54,41 @@ export async function runMarketplaceActor(
     throw new Error(`Marketplace disabled: ${market}`);
   }
 
-  const actorId = config.actor.versionTag
-    ? `${config.actor.actorId}:${config.actor.versionTag}`
-    : config.actor.actorId;
-  if (actorId.includes('apify-actor-id-here')) {
-    throw new Error(`Marketplace actor not configured: ${market}`);
-  }
-
+  const actorId = getMarketplaceActorId(market);
   const token = process.env.APIFY_TOKEN;
   if (!token && !options.client) {
-    throw new Error('APIFY_TOKEN missing');
+    throw new Error("APIFY_TOKEN missing");
   }
 
   const client = options.client ?? new ApifyClient({ token });
-  const input = buildActorInput(market, query, options);
+  const params: ActorInputParams = {
+    query,
+    locationText: options.locationText,
+    postalCode: options.postalCode,
+    lat: options.lat,
+    lng: options.lng,
+    radiusKm: options.radiusKm,
+    country: options.country,
+    category: options.category,
+    limit: options.limit,
+    proxy: options.proxy,
+    region: options.region,
+  };
+
+  const input = buildActorInput(market, params);
   const limit = options.limit ?? DEFAULT_DATASET_LIMIT;
+
   const runResult = await runActor(actorId, input, {
     client,
     itemsLimit: limit,
     ...options.runOptions,
   });
+
+  const proxyDefaults = getProxyDefaults(market);
+  const proxyGroups = getProxyGroupsForMarket(market, params);
+  const cuEstimated =
+    config.costModel.cuPerRun +
+    config.costModel.cuPerItem * runResult.items.length;
 
   return {
     market,
@@ -104,6 +99,21 @@ export async function runMarketplaceActor(
     durationMs: runResult.meta.durationMs,
     count: runResult.items.length,
     items: runResult.items,
-    meta: runResult.meta,
+    meta: {
+      ...runResult.meta,
+      marketId: market,
+      actorId,
+      geoUsed: buildGeoUsed(
+        params,
+        config.geoCapabilities.supportsRadiusKm,
+        config.geoCapabilities.supportsLatLng,
+      ),
+      proxyUsed: {
+        type: proxyDefaults.type,
+        country: proxyDefaults.country ?? null,
+        groups: proxyGroups,
+      },
+      cuEstimated,
+    },
   };
 }

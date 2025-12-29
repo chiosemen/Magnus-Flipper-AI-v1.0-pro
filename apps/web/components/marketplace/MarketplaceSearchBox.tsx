@@ -2,14 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TierLimitsPanel } from "@/components/TierLimitsPanel";
-import { MARKETPLACES, type MarketplaceId } from "@/lib/marketplaceRegistry";
+import { RadiusSelector } from "@/components/marketplace/RadiusSelector";
+import {
+  MARKETPLACES,
+  type MarketplaceConfig,
+  type MarketplaceId,
+} from "@/lib/marketplaceRegistry";
 
 type SearchRequest = {
   query: string;
   marketplaces: MarketplaceId[];
-  location?: string | null;
+  postalCode?: string | null;
+  lat?: number | null;
+  lng?: number | null;
   radiusKm?: number | null;
-  units?: "mi" | "km";
 };
 
 type MarketplaceSearchBoxProps = {
@@ -20,13 +26,25 @@ type MarketplaceSearchBoxProps = {
 
 const MARKETPLACE_OPTIONS = Object.values(MARKETPLACES)
   .filter((market) => market.enabled)
-  .map((market) => ({ value: market.id, label: market.label }));
+  .map((market) => ({
+    value: market.id,
+    label: market.label,
+  }));
 
 type SearchPolicy = {
   tier: string;
   maxQueriesPerRun: number;
   maxConcurrency: number;
   marketsAllowed: MarketplaceId[];
+  dailyCuLimit?: number;
+  cuCapPerRun?: number;
+};
+
+type MarketCapability = {
+  supportsRadiusKm: boolean;
+  supportsPostal: boolean;
+  supportsLatLng: boolean;
+  supportsCountry: boolean;
 };
 
 type SearchResult = {
@@ -41,6 +59,9 @@ type SearchResult = {
     geoKey: string;
     precision?: number | null;
     strategy?: string;
+    poolingApplied?: boolean;
+    poolingKey?: string;
+    poolingReason?: string | null;
   } | null;
   warnings?: string[];
   locationUsed?: {
@@ -52,6 +73,14 @@ type SearchResult = {
   radiusKmUsed?: number | null;
 };
 
+type SearchMeta = {
+  marketCapabilities?: Record<string, MarketCapability>;
+  radiusIgnoredMarkets?: string[];
+  warnings?: string[];
+  estimatedCuTotal?: number;
+  estimatedCuByMarket?: Record<string, number>;
+};
+
 type SearchResponse = {
   policy: SearchPolicy;
   requestedQueries: number;
@@ -59,6 +88,7 @@ type SearchResponse = {
   markets: string[];
   stats: { totalTasks: number; concurrency: number };
   results: SearchResult[];
+  meta?: SearchMeta;
 };
 
 const DEFAULT_MARKETPLACE =
@@ -72,6 +102,34 @@ function normalizeMarketplace(value?: string): MarketplaceId {
   return DEFAULT_MARKETPLACE;
 }
 
+function toCapability(market: MarketplaceConfig): MarketCapability {
+  return {
+    supportsRadiusKm: market.geoCapabilities.supportsRadiusKm,
+    supportsPostal: market.geoCapabilities.supportsPostal,
+    supportsLatLng: market.geoCapabilities.supportsLatLng,
+    supportsCountry: market.geoCapabilities.supportsCountry,
+  };
+}
+
+function getGeoBadge(capability: MarketCapability) {
+  if (capability.supportsRadiusKm) {
+    return {
+      label: "Radius OK",
+      className: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+    };
+  }
+  if (!capability.supportsPostal && !capability.supportsLatLng) {
+    return {
+      label: "Country-only",
+      className: "border-yellow-500/40 bg-yellow-500/15 text-yellow-300",
+    };
+  }
+  return {
+    label: "No Radius",
+    className: "border-red-500/40 bg-red-500/15 text-red-300",
+  };
+}
+
 export default function MarketplaceSearchBox({
   defaultMarketplace,
   disabled = false,
@@ -81,26 +139,130 @@ export default function MarketplaceSearchBox({
   const [marketplace, setMarketplace] = useState<MarketplaceId>(() =>
     normalizeMarketplace(defaultMarketplace)
   );
-  const [locationText, setLocationText] = useState("London");
-  const [radiusValue, setRadiusValue] = useState(25);
-  const [radiusUnits, setRadiusUnits] = useState<"mi" | "km">("mi");
+  const [postalCode, setPostalCode] = useState("SW1A 1AA");
+  const [radiusMiles, setRadiusMiles] = useState(25);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [useDeviceLocation, setUseDeviceLocation] = useState(false);
+  const [showUseMyLocation, setShowUseMyLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [policy, setPolicy] = useState<SearchPolicy | null>(null);
+  const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [requestedQueries, setRequestedQueries] = useState<number | null>(null);
   const [executedQueries, setExecutedQueries] = useState<string[] | null>(null);
   const [clientLimitHit, setClientLimitHit] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const geoDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const geoRequestIdRef = useRef(0);
 
   const formattedQuery = useMemo(() => query.trim(), [query]);
-  const trimmedLocation = useMemo(() => locationText.trim(), [locationText]);
-  const normalizedLocation = trimmedLocation || "London";
+  const trimmedPostal = useMemo(() => postalCode.trim(), [postalCode]);
+  const radiusKm = useMemo(
+    () => Number((radiusMiles * 1.60934).toFixed(2)),
+    [radiusMiles]
+  );
+  const selectedMarketplace = MARKETPLACES[marketplace];
+  const fallbackCapability = useMemo(
+    () => toCapability(selectedMarketplace),
+    [selectedMarketplace]
+  );
+  const lockedMarkets = useMemo(() => {
+    if (!policy?.marketsAllowed?.length) return [];
+    return MARKETPLACE_OPTIONS.filter(
+      (option) => !policy.marketsAllowed.includes(option.value)
+    );
+  }, [policy]);
+  const isMarketDisabled = (value: MarketplaceId) =>
+    policy ? !policy.marketsAllowed.includes(value) : false;
+  const selectedCapability =
+    meta?.marketCapabilities?.[marketplace] ?? fallbackCapability;
+  const geoBadge = useMemo(
+    () => getGeoBadge(selectedCapability),
+    [selectedCapability]
+  );
+  const estimatedCuTotal =
+    typeof meta?.estimatedCuTotal === "number" ? meta.estimatedCuTotal : null;
+  const geoBadges = MARKETPLACE_OPTIONS.map((option) => ({
+    ...option,
+    badge: getGeoBadge(
+      meta?.marketCapabilities?.[option.value] ??
+        toCapability(MARKETPLACES[option.value])
+    ),
+  }));
   const isAdmin = useMemo(() => {
     if (typeof window === "undefined") return false;
     const value = new URLSearchParams(window.location.search).get("admin");
     return value === "1" || value === "true";
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setShowUseMyLocation("geolocation" in navigator);
+  }, []);
+
+  useEffect(() => {
+    if (!policy?.marketsAllowed?.length) return;
+    if (policy.marketsAllowed.includes(marketplace)) return;
+    setMarketplace(policy.marketsAllowed[0]);
+  }, [policy, marketplace]);
+
+  useEffect(() => {
+    if (useDeviceLocation) return;
+    if (!trimmedPostal) {
+      setLat(null);
+      setLng(null);
+      setGeoError(null);
+      setGeoLoading(false);
+      return;
+    }
+    if (geoDebounceRef.current) {
+      clearTimeout(geoDebounceRef.current);
+    }
+    geoDebounceRef.current = setTimeout(() => {
+      const requestId = ++geoRequestIdRef.current;
+      setGeoLoading(true);
+      setGeoError(null);
+      fetch("/api/geo/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postalCode: trimmedPostal }),
+      })
+        .then(async (response) => {
+          const payload = await response.json().catch(() => ({}));
+          if (requestId !== geoRequestIdRef.current) return;
+          if (!response.ok) {
+            setLat(null);
+            setLng(null);
+            setGeoError(payload?.error || "Unable to resolve postal code.");
+            return;
+          }
+          setLat(typeof payload.lat === "number" ? payload.lat : null);
+          setLng(typeof payload.lng === "number" ? payload.lng : null);
+          setGeoError(null);
+        })
+        .catch((err) => {
+          if (requestId !== geoRequestIdRef.current) return;
+          setLat(null);
+          setLng(null);
+          setGeoError(err instanceof Error ? err.message : "Location lookup failed.");
+        })
+        .finally(() => {
+          if (requestId === geoRequestIdRef.current) {
+            setGeoLoading(false);
+          }
+        });
+    }, 450);
+
+    return () => {
+      if (geoDebounceRef.current) {
+        clearTimeout(geoDebounceRef.current);
+      }
+    };
+  }, [trimmedPostal, useDeviceLocation]);
 
   const executeSearch = async () => {
     if (disabled || loading) {
@@ -110,11 +272,26 @@ export default function MarketplaceSearchBox({
     setLoading(true);
     setResults([]);
     setPolicy(null);
+    setMeta(null);
     setRequestedQueries(null);
     setExecutedQueries(null);
 
     if (!formattedQuery) {
       setError("Please enter a search term.");
+      setLoading(false);
+      return;
+    }
+
+    const needsGeo =
+      selectedCapability.supportsRadiusKm && selectedCapability.supportsLatLng;
+    const hasCoords = typeof lat === "number" && typeof lng === "number";
+    if (needsGeo && geoLoading) {
+      setError("Resolving location. Please wait a moment.");
+      setLoading(false);
+      return;
+    }
+    if (needsGeo && !hasCoords && !trimmedPostal) {
+      setError("Add a postal code or use my location to search this market.");
       setLoading(false);
       return;
     }
@@ -134,9 +311,10 @@ export default function MarketplaceSearchBox({
         body: JSON.stringify({
           queries: limitedQueries,
           markets: [marketplace],
-          locationText: normalizedLocation,
-          radiusKm: radiusValue,
-          units: radiusUnits,
+          postalCode: trimmedPostal || undefined,
+          lat,
+          lng,
+          radiusKm,
         }),
       });
 
@@ -166,6 +344,7 @@ export default function MarketplaceSearchBox({
       const payload = responseJson as SearchResponse;
       setResults(payload.results || []);
       setPolicy(payload.policy || null);
+      setMeta(payload.meta || null);
       setRequestedQueries(payload.requestedQueries ?? null);
       setExecutedQueries(payload.executedQueries ?? null);
       (window as any).__MAGNUS_SEARCH_POLICY__ = payload.policy || null;
@@ -173,9 +352,10 @@ export default function MarketplaceSearchBox({
       const searchRequest: SearchRequest = {
         query: formattedQuery,
         marketplaces: [marketplace],
-        location: normalizedLocation,
-        radiusKm: radiusValue,
-        units: radiusUnits,
+        postalCode: trimmedPostal || null,
+        lat,
+        lng,
+        radiusKm,
       };
       onSearchCreated?.(searchRequest, null);
     } catch (err) {
@@ -212,9 +392,10 @@ export default function MarketplaceSearchBox({
     };
   }, [
     formattedQuery,
-    normalizedLocation,
-    radiusValue,
-    radiusUnits,
+    trimmedPostal,
+    radiusKm,
+    lat,
+    lng,
     marketplace,
     disabled,
   ]);
@@ -309,14 +490,37 @@ export default function MarketplaceSearchBox({
               className="w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-4 py-2 text-white focus:outline-none focus:border-[#00E5FF]/60 disabled:opacity-60"
               disabled={disabled || loading}
             >
-              {MARKETPLACE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {MARKETPLACE_OPTIONS.map((option) => {
+                const locked = isMarketDisabled(option.value);
+                return (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                    disabled={locked}
+                    title={
+                      locked
+                        ? "Upgrade required to search this marketplace."
+                        : undefined
+                    }
+                  >
+                    {option.label}
+                  </option>
+                );
+              })}
             </select>
+            {lockedMarkets.length > 0 && (
+              <div className="mt-1 text-xs text-white/50">
+                Upgrade required to search:{" "}
+                {lockedMarkets.map((option) => option.label).join(", ")}
+              </div>
+            )}
+            <div
+              className={`mt-2 inline-flex items-center gap-2 rounded-full border px-2 py-1 text-[11px] ${geoBadge.className}`}
+            >
+              Geo support: {geoBadge.label}
+            </div>
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-3">
             <button
               type="submit"
               disabled={loading || disabled}
@@ -324,69 +528,79 @@ export default function MarketplaceSearchBox({
             >
               {loading ? "Searching..." : "Instant scan"}
             </button>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px_180px]">
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-1">
-              Location (text)
-            </label>
-            <input
-              type="text"
-              value={locationText}
-              onChange={(e) => setLocationText(e.target.value)}
-              onBlur={() => {
-                if (!locationText.trim()) {
-                  setLocationText("London");
-                }
-              }}
-              placeholder="London"
-              className="w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-4 py-2 text-white placeholder-white/40 focus:outline-none focus:border-[#00E5FF]/60 disabled:opacity-60"
-              disabled={disabled || loading}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-1">
-              Radius ({radiusUnits})
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min={1}
-                max={100}
-                value={radiusValue}
-                onChange={(e) => setRadiusValue(Number(e.target.value))}
-                className="w-full accent-[#00E5FF]"
-                disabled={disabled || loading}
-              />
-              <span className="text-sm text-white/70 min-w-[48px] text-right">
-                {radiusValue}
+            {estimatedCuTotal !== null && (
+              <span
+                title="Estimated based on selected markets, queries, and geo. Actual usage may vary."
+                className="whitespace-nowrap rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] text-white/70"
+              >
+                Estimated cost: ~{estimatedCuTotal.toFixed(1)} CU
               </span>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-white/70 mb-1">
-              Units
-            </label>
-            <div className="flex rounded-lg border border-white/10 bg-[#0f0f0f] p-1">
-              {(["mi", "km"] as const).map((unit) => (
-                <button
-                  key={unit}
-                  type="button"
-                  onClick={() => setRadiusUnits(unit)}
-                  className={`flex-1 rounded-md px-3 py-1 text-sm font-semibold transition ${
-                    radiusUnits === unit
-                      ? "bg-[#00E5FF] text-black"
-                      : "text-white/70 hover:text-white"
-                  }`}
-                  disabled={disabled || loading}
-                >
-                  {unit}
-                </button>
-              ))}
-            </div>
+            )}
           </div>
         </div>
+        <div className="flex flex-wrap gap-2 text-[11px] text-white/70">
+          {geoBadges.map((badge) => (
+            <div
+              key={badge.value}
+              className={`rounded-full border px-2 py-1 ${badge.badge.className}`}
+            >
+              {badge.label}: {badge.badge.label}
+            </div>
+          ))}
+        </div>
+        <RadiusSelector
+          postalCode={postalCode}
+          onPostalChange={(value) => {
+            setPostalCode(value);
+            setUseDeviceLocation(false);
+          }}
+          radiusMiles={radiusMiles}
+          onRadiusChange={setRadiusMiles}
+          lat={lat}
+          lng={lng}
+          geoLoading={geoLoading}
+          geoError={geoError}
+          onUseMyLocation={() => {
+            if (!navigator?.geolocation) return;
+            setGeoLoading(true);
+            setGeoError(null);
+            setUseDeviceLocation(true);
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                setLat(position.coords.latitude);
+                setLng(position.coords.longitude);
+                setGeoLoading(false);
+              },
+              (err) => {
+                setGeoError(err.message || "Unable to access location.");
+                setGeoLoading(false);
+                setUseDeviceLocation(false);
+              },
+              { enableHighAccuracy: false, timeout: 8000 }
+            );
+          }}
+          showUseMyLocation={showUseMyLocation}
+          supportsRadius={selectedCapability.supportsRadiusKm}
+          disabled={disabled || loading}
+        />
+        {!selectedCapability.supportsRadiusKm && (
+          <div className="text-xs text-yellow-300">
+            {selectedMarketplace.label}{" "}
+            does not support radius targeting. We fall back to country-level
+            matching when possible.
+          </div>
+        )}
+        {meta?.radiusIgnoredMarkets && meta.radiusIgnoredMarkets.length > 0 && (
+          <div className="text-xs text-yellow-300">
+            Radius ignored for:{" "}
+            {meta.radiusIgnoredMarkets
+              .map(
+                (market) =>
+                  MARKETPLACES[market as MarketplaceId]?.label ?? market
+              )
+              .join(", ")}
+          </div>
+        )}
       </form>
 
       {error && (

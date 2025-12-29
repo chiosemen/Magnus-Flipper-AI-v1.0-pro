@@ -1,6 +1,6 @@
 import { MARKETPLACES, type MarketplaceId } from './marketplaceRegistry';
 
-type PoolingStrategy = 'geohash' | 'countryOnly' | 'none';
+type PoolingStrategy = 'geohash' | 'postal' | 'country' | 'none';
 
 export type PoolRequest = {
   requestId: string;
@@ -11,10 +11,12 @@ export type PoolRequest = {
   lat?: number | null;
   lng?: number | null;
   radiusKm?: number | null;
+  postalCode?: string | null;
   tier: string;
   maxResults?: number | null;
   country?: string | null;
   city?: string | null;
+  poolingOverride?: { enabled: boolean; reason?: string };
 };
 
 export type PooledRun = {
@@ -26,6 +28,7 @@ export type PooledRun = {
   lat?: number | null;
   lng?: number | null;
   radiusKm?: number | null;
+  postalCode?: string | null;
   geoKey: string;
   precision: number | null;
   pooling: {
@@ -110,12 +113,12 @@ export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; l
   return 6371 * 2 * Math.asin(Math.sqrt(h));
 }
 
-export function pickPrecision(radiusKm: number): number {
-  if (radiusKm <= 5) return 7;
-  if (radiusKm <= 20) return 6;
-  if (radiusKm <= 80) return 5;
-  if (radiusKm <= 300) return 4;
-  return 3;
+export function getGeohashPrecision(radiusKm: number): number | null {
+  if (radiusKm <= 5) return 7; // Street-level
+  if (radiusKm <= 15) return 6; // Neighborhood-level
+  if (radiusKm <= 50) return 5; // City-level
+  if (radiusKm <= 100) return 4; // Metro-level
+  return null; // Too wide to pool safely
 }
 
 function normalizeQuery(input: string): string {
@@ -148,27 +151,41 @@ export function planPooledRuns(
     const normalizedCategory = normalizeCategory(request.category);
     const tierCap = tierRunCaps[request.tier] ?? 1;
     const radiusKm = request.radiusKm ?? 0;
-    const precision = pickPrecision(radiusKm);
+    const precision = getGeohashPrecision(radiusKm);
 
-    let strategy: PoolingStrategy = marketplace.pooling.strategy;
+    let strategy: PoolingStrategy = marketplace.pooling.key;
     let poolingEnabled = marketplace.pooling.enabled;
 
-    if (!marketplace.geo.supportsRadius) {
-      strategy = marketplace.geo.supportsCountry || marketplace.geo.supportsCity ? 'countryOnly' : 'none';
+    if (request.poolingOverride) {
+      poolingEnabled = request.poolingOverride.enabled;
+      if (!poolingEnabled) {
+        strategy = 'none';
+      }
+      if (request.poolingOverride.reason) {
+        warnings.push(request.poolingOverride.reason);
+      }
+    }
+
+    if (!marketplace.geoCapabilities.supportsRadiusKm && poolingEnabled) {
+      strategy = marketplace.pooling.key === 'country' ? 'country' : 'none';
       warnings.push('Radius disabled for this marketplace.');
     }
 
-    if (request.tier === 'enterprise' && radiusKm > 0 && radiusKm <= 5) {
+    if (strategy === 'geohash' && precision === null) {
       strategy = 'none';
       poolingEnabled = false;
-      warnings.push('Pooling disabled for enterprise small radius.');
+      warnings.push('Radius too large for geohash pooling.');
+    }
+
+    if (strategy === 'none') {
+      poolingEnabled = false;
     }
 
     const geoKeys = buildGeoKeys(
       request,
       strategy,
       precision,
-      marketplace.pooling.maxKeysPerRun,
+      marketplace.pooling.maxKeysPerRun ?? 0,
       tierCap,
       warnings,
     );
@@ -188,7 +205,8 @@ export function planPooledRuns(
           category: normalizedCategory ?? undefined,
           lat: geoKey.lat ?? request.lat ?? null,
           lng: geoKey.lng ?? request.lng ?? null,
-          radiusKm: marketplace.geo.supportsRadius ? request.radiusKm ?? null : null,
+          radiusKm: marketplace.geoCapabilities.supportsRadiusKm ? request.radiusKm ?? null : null,
+          postalCode: request.postalCode ?? null,
           geoKey: geoKey.geoKey,
           precision: strategy === 'geohash' ? precision : null,
           pooling: {
@@ -224,7 +242,7 @@ type GeoKeyPoint = { geoKey: string; lat?: number | null; lng?: number | null };
 function buildGeoKeys(
   request: PoolRequest,
   strategy: PoolingStrategy,
-  precision: number,
+  precision: number | null,
   maxKeysPerRun: number,
   tierCap: number,
   warnings: string[],
@@ -236,7 +254,7 @@ function buildGeoKeys(
     return [{ geoKey: `nopool-${request.requestId}` }];
   }
 
-  if (strategy === 'countryOnly') {
+  if (strategy === 'country') {
     const country = request.country?.toUpperCase();
     if (country) return [{ geoKey: `country:${country}` }];
     const city = request.city?.trim().toLowerCase();
@@ -245,8 +263,19 @@ function buildGeoKeys(
     return [{ geoKey: `nopool-${request.requestId}` }];
   }
 
+  if (strategy === 'postal') {
+    const postal = request.postalCode?.trim().toUpperCase();
+    if (postal) return [{ geoKey: `postal:${postal}` }];
+    warnings.push('Missing postal code for postal pooling.');
+    return [{ geoKey: `nopool-${request.requestId}` }];
+  }
+
   if (request.lat === null || request.lat === undefined || request.lng === null || request.lng === undefined) {
     warnings.push('Missing lat/lng for geohash pooling.');
+    return [{ geoKey: `nopool-${request.requestId}` }];
+  }
+  if (precision === null) {
+    warnings.push('Geohash precision unavailable for requested radius.');
     return [{ geoKey: `nopool-${request.requestId}` }];
   }
 

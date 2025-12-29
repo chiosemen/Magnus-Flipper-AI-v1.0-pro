@@ -13,6 +13,13 @@ interface NavItem {
   tier?: "free" | "pro" | "agency" | "admin";
 }
 
+type UsageSummary = {
+  todayCu: number;
+  dailyLimitCu: number;
+  percentUsed: number;
+  tier: string;
+};
+
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: "📊", tier: "admin" }, // Admin-only
   { label: "Deals", href: "/deals", icon: "💎", tier: "free" },
@@ -40,6 +47,7 @@ export function Sidebar() {
   const [plan, setPlan] = useState<string | null>(null);
   const [isTrialExpired, setIsTrialExpired] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [usageSummary, setUsageSummary] = useState<UsageSummary | null>(null);
 
   // Fetch user role from Supabase
   useEffect(() => {
@@ -64,6 +72,22 @@ export function Sidebar() {
           } else {
             setPlan(profile?.plan ?? null);
             setIsTrialExpired(profile?.is_trial_expired === true);
+          }
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (token) {
+          const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+          const url = baseUrl ? `${baseUrl}/api/usage/summary` : "/api/usage/summary";
+          const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.ok) {
+            const payload = (await response.json()) as UsageSummary;
+            setUsageSummary(payload);
           }
         }
       } catch (error) {
@@ -142,6 +166,31 @@ export function Sidebar() {
         <div className="bg-surfaceSubtle rounded-lg p-3">
           <div className="text-xs text-text-muted mb-1">Current Plan</div>
           <div className="text-sm font-bold text-foreground">Free Tier</div>
+          {usageSummary && (
+            <div className="mt-3 space-y-2">
+              <div className="text-xs text-text-muted">Daily usage</div>
+              <div className="flex items-center justify-between text-xs text-text-secondary">
+                <span>
+                  {`Daily usage: ${usageSummary.todayCu.toFixed(1)} / ${usageSummary.dailyLimitCu} CU`}
+                </span>
+                <span>{`${usageSummary.percentUsed.toFixed(0)}%`}</span>
+              </div>
+              <div className="h-2 rounded-full bg-border">
+                <div
+                  className={`h-2 rounded-full ${
+                    usageSummary.percentUsed > 90
+                      ? "bg-red-500"
+                      : usageSummary.percentUsed >= 70
+                      ? "bg-amber-500"
+                      : "bg-emerald-500"
+                  }`}
+                  style={{
+                    width: `${Math.min(usageSummary.percentUsed, 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
           <button className="mt-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs py-2 rounded-md transition-colors">
             Upgrade
           </button>
