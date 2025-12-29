@@ -1,8 +1,7 @@
 {
-  "installCommand": "pnpm install --frozen-lockfile --ignore-scripts",
   "builds": [
     {
-      "src": "api/*.ts",
+      "src": "api/live-test.ts",
       "use": "@vercel/node"
     }
   ]
