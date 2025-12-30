@@ -1,0 +1,27 @@
+{
+  "id": "sub_test_1234567890",
+  "object": "subscription",
+  "status": "active",
+  "customer": "cus_test_1234567890",
+  "current_period_start": 1735689600,
+  "current_period_end": 1738281600,
+  "cancel_at_period_end": false,
+  "items": {
+    "object": "list",
+    "data": [
+      {
+        "id": "si_test_1234567890",
+        "object": "subscription_item",
+        "price": {
+          "id": "price_test_market_agent",
+          "object": "price"
+        },
+        "subscription": "sub_test_1234567890"
+      }
+    ],
+    "has_more": false,
+    "url": ""
+  },
+  "created": 1735689600
+}
+

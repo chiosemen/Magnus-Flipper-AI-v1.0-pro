@@ -1,0 +1,26 @@
+[
+  {
+    "source": "gumtree",
+    "title": "MacBook Pro M1 2021",
+    "priceText": "£850",
+    "url": "https://www.gumtree.com/p/laptops/macbook-pro-m1-2021/1234567890",
+    "image": "https://example.com/macbook.jpg",
+    "location": "London",
+    "currency": "GBP"
+  },
+  {
+    "source": "vinted",
+    "title": "iPhone 13 Pro Max",
+    "priceText": "€650",
+    "url": "https://www.vinted.co.uk/items/987654321",
+    "image": "https://example.com/iphone.jpg"
+  },
+  {
+    "source": "facebook",
+    "title": "Samsung Galaxy S21",
+    "priceText": "£500",
+    "url": "https://www.facebook.com/marketplace/item/1122334455",
+    "image": "https://example.com/samsung.jpg"
+  }
+]
+

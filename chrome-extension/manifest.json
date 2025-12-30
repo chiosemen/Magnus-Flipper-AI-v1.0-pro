@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Magnus Flipper - Marketplace Extractor",
+  "version": "1.0.0",
+  "description": "Extract listings from Facebook Marketplace and Vinted for Magnus Flipper AI",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.facebook.com/*",
+    "https://www.vinted.co.uk/*",
+    "https://www.vinted.com/*",
+    "https://magnus-api.vercel.app/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.facebook.com/marketplace/*",
+        "https://www.facebook.com/*/marketplace/*"
+      ],
+      "js": ["content/facebook.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.vinted.co.uk/*",
+        "https://www.vinted.com/*"
+      ],
+      "js": ["content/vinted.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Magnus Flipper"
+  }
+}
+

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 280px;
+      padding: 12px;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+    }
+    h3 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      background: #6ea8fe;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    button:hover {
+      background: #5a9df0;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 8px;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+  </style>
+</head>
+<body>
+  <h3>MM Seed Uploader</h3>
+  
+  <input id="query" placeholder="Search label (e.g. macbook pro london)" />
+  
+  <button id="send">Send to Dashboard</button>
+  
+  <div id="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+

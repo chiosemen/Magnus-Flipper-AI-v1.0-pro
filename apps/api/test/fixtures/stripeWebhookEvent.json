@@ -1,0 +1,22 @@
+{
+  "id": "evt_test_1234567890",
+  "object": "event",
+  "type": "customer.subscription.created",
+  "created": 1735689600,
+  "data": {
+    "object": {
+      "id": "sub_test_1234567890",
+      "object": "subscription",
+      "status": "active",
+      "customer": "cus_test_1234567890"
+    },
+    "previous_attributes": {}
+  },
+  "livemode": false,
+  "pending_webhooks": 0,
+  "request": {
+    "id": null,
+    "idempotency_key": null
+  }
+}
+
