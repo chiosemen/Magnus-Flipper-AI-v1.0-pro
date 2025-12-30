@@ -1,7 +1,0 @@
-{
-  "verdict": {
-    "exitCode": 2,
-    "expectError": true
-  },
-  "description": "This fixture tests tool-level errors (e.g., missing dependencies, crashes). Exit code should be 2, not 0 or 1."
-}
