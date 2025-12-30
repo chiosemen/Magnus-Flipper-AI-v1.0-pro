@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Menu, X, Zap, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,15 +36,18 @@ export default function Header() {
       <div className="container-wide">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative">
-              <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" fill="currentColor" />
-              </div>
-              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-volt-400 rounded-full animate-pulse" />
-            </div>
+          <Link href="/" className="flex items-center gap-3 group">
+            <Image
+              src="/logo-icon.svg"
+              alt="Magnus Flipper AI"
+              width={44}
+              height={44}
+              priority
+              className="transition-transform duration-200 group-hover:scale-105"
+            />
             <span className="text-xl font-bold font-heading">
-              Magnus <span className="text-gradient">Flipper</span>
+              <span className="text-white">Magnus</span>
+              <span className="text-gradient ml-1">Flipper</span>
             </span>
           </Link>
 

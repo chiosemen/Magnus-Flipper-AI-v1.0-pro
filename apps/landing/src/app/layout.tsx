@@ -49,19 +49,23 @@ export const metadata: Metadata = {
     description: 'Find profitable flips instantly. Magnus Flipper AI scans Facebook Marketplace, Craigslist, eBay, and OfferUp 24/7. Get real-time alerts before anyone else sees the deal.',
     images: [
       {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
+        url: '/logo-social-square.svg',
+        width: 400,
+        height: 400,
         alt: 'Magnus Flipper AI - Find Profitable Flips Before Anyone Else',
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'Magnus Flipper AI | Instant Marketplace Alerts',
     description: 'Find profitable flips instantly with AI-powered marketplace scanning',
     creator: '@magnusflipperai',
-    images: ['/og-image.png'],
+    images: ['/logo-social-square.svg'],
+  },
+  icons: {
+    icon: '/logo-icon.svg',
+    apple: '/logo-icon.svg',
   },
   robots: {
     index: true,
@@ -89,6 +93,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
+      <head>
+        <link rel="icon" href="/logo-icon.svg" type="image/svg+xml" />
+      </head>
       <body className={`${spaceGrotesk.variable} ${inter.variable}`}>
         {children}
       </body>

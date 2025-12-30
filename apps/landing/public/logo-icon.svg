@@ -1,0 +1,38 @@
+<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with premium gradient -->
+  <rect width="44" height="44" rx="10" fill="url(#icon-bg)"/>
+
+  <!-- 3D Highlight effect -->
+  <ellipse cx="16" cy="16" rx="12" ry="12" fill="url(#icon-highlight)" opacity="0.4"/>
+
+  <!-- Price tag shape -->
+  <path d="M34 14L34 24L22 34L10 24L10 14L16 14L16 10C16 8.5 17 7 19 7L25 7C27 7 28 8.5 28 10L28 14L34 14Z"
+        fill="white" fill-opacity="0.08"
+        stroke="white" stroke-width="1" stroke-opacity="0.3"/>
+
+  <!-- Price tag hole -->
+  <circle cx="13" cy="17" r="2" fill="none" stroke="white" stroke-width="1" stroke-opacity="0.4"/>
+  <circle cx="13" cy="17" r="0.8" fill="white" fill-opacity="0.3"/>
+
+  <!-- Lightning Bolt -->
+  <path d="M27 8L16 22H21L18 30L15 36L30 22H24L28 14L27 8Z" fill="white"/>
+
+  <!-- Speed lines -->
+  <line x1="6" y1="20" x2="10" y2="20" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="5" y1="24" x2="10" y2="24" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.45"/>
+
+  <!-- Notification pulse dot -->
+  <circle cx="38" cy="8" r="3" fill="#facc15"/>
+
+  <defs>
+    <linearGradient id="icon-bg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="50%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+    <radialGradient id="icon-highlight" cx="0" cy="0" r="1" gradientTransform="translate(16 16) scale(12)">
+      <stop stop-color="white" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>
