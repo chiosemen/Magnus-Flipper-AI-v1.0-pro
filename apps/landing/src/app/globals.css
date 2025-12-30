@@ -138,4 +138,64 @@
   .border-gradient {
     border-image: linear-gradient(135deg, #22c55e, #facc15) 1;
   }
+
+  /* Infinite Marquee Animation */
+  .marquee-container {
+    width: 100%;
+    overflow: hidden;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 10%,
+      black 90%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 10%,
+      black 90%,
+      transparent
+    );
+  }
+
+  .marquee-track {
+    display: flex;
+    gap: 3rem;
+    width: max-content;
+    animation: marquee 40s linear infinite;
+  }
+
+  .marquee-track:hover {
+    animation-play-state: paused;
+  }
+
+  .marquee-item {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    filter: grayscale(100%);
+    opacity: 0.5;
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    background: rgba(15, 23, 42, 0.5);
+  }
+
+  .marquee-item:hover {
+    filter: grayscale(0%);
+    opacity: 1;
+    background: rgba(15, 23, 42, 0.8);
+    transform: scale(1.05);
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
 }

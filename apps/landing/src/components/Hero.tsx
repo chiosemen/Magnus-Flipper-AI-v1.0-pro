@@ -133,13 +133,24 @@ export default function Hero() {
             className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-16"
           >
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.6 + index * 0.1,
+                  type: "spring",
+                  stiffness: 200,
+                }}
+                className="text-center"
+              >
                 <div className="flex items-center justify-center gap-1 text-3xl md:text-4xl font-bold text-gradient mb-2">
                   {stat.value}
                   {stat.icon && <stat.icon className="w-6 h-6 text-volt-400" fill="currentColor" />}
                 </div>
                 <div className="text-sm text-carbon-400">{stat.label}</div>
-              </div>
+              </motion.div>
             ))}
           </motion.div>
 

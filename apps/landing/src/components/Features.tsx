@@ -94,11 +94,16 @@ export default function Features() {
             <motion.div
               key={index}
               variants={itemVariants}
-              className="card-hover group"
+              whileHover={{ y: -8, transition: { duration: 0.2 } }}
+              className="card group"
             >
-              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-carbon-800 ${feature.color} mb-4 group-hover:scale-110 transition-transform duration-300`}>
+              <motion.div
+                className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-carbon-800 ${feature.color} mb-4`}
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <feature.icon className="w-6 h-6" />
-              </div>
+              </motion.div>
               <h3 className="text-xl font-bold mb-3 text-carbon-100">
                 {feature.title}
               </h3>

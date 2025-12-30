@@ -96,12 +96,22 @@ export default function Pricing() {
             >
               {/* Popular Badge */}
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                  <div className="badge-volt px-4 py-1.5">
+                <motion.div
+                  className="absolute -top-4 left-1/2 -translate-x-1/2 z-10"
+                  animate={{
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <div className="badge-volt px-4 py-1.5 shadow-lg shadow-volt-400/30">
                     <Crown className="w-3.5 h-3.5" />
                     Most Popular
                   </div>
-                </div>
+                </motion.div>
               )}
 
               <div

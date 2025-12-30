@@ -1,5 +1,6 @@
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
+import MarketplaceMarquee from '@/components/MarketplaceMarquee';
 import Features from '@/components/Features';
 import HowItWorks from '@/components/HowItWorks';
 import Testimonials from '@/components/Testimonials';
@@ -13,6 +14,7 @@ export default function Home() {
     <main className="min-h-screen">
       <Header />
       <Hero />
+      <MarketplaceMarquee />
       <Features />
       <HowItWorks />
       <Testimonials />
