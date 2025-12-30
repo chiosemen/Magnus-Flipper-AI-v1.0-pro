@@ -2,6 +2,16 @@ import { getAllowedMarketsForTier, type MarketplaceId, type MarketplaceTier } fr
 
 export type Tier = MarketplaceTier;
 
+export type TierFeatures = {
+  dealScore: boolean;
+  dealScoreExplain: boolean;
+  dealScoreContext: boolean;
+  insights: boolean;
+  signals: boolean;
+  heatmap: boolean;
+  arbitrageReadOnly: boolean;
+};
+
 export type TierPolicy = {
   tier: Tier;
   maxQueriesPerRun: number;
@@ -11,6 +21,46 @@ export type TierPolicy = {
   dailyRunLimit?: number;
   dailyCuLimit: number;
   cuCapPerRun: number;
+  features: TierFeatures;
+};
+
+const TIER_FEATURES: Record<Tier, TierFeatures> = {
+  free: {
+    dealScore: true,
+    dealScoreExplain: false,
+    dealScoreContext: false,
+    insights: false,
+    signals: false,
+    heatmap: false,
+    arbitrageReadOnly: false,
+  },
+  pro: {
+    dealScore: true,
+    dealScoreExplain: true,
+    dealScoreContext: false,
+    insights: true,
+    signals: true,
+    heatmap: false,
+    arbitrageReadOnly: false,
+  },
+  agency: {
+    dealScore: true,
+    dealScoreExplain: true,
+    dealScoreContext: true,
+    insights: true,
+    signals: true,
+    heatmap: true,
+    arbitrageReadOnly: true,
+  },
+  enterprise: {
+    dealScore: true,
+    dealScoreExplain: true,
+    dealScoreContext: true,
+    insights: true,
+    signals: true,
+    heatmap: true,
+    arbitrageReadOnly: true,
+  },
 };
 
 const TIER_LIMITS: Record<Tier, Omit<TierPolicy, "tier" | "marketsAllowed">> = {
@@ -21,6 +71,7 @@ const TIER_LIMITS: Record<Tier, Omit<TierPolicy, "tier" | "marketsAllowed">> = {
     dailyRunLimit: 5,
     dailyCuLimit: 50,
     cuCapPerRun: 20,
+    features: TIER_FEATURES.free,
   },
   pro: {
     maxQueriesPerRun: 5,
@@ -29,6 +80,7 @@ const TIER_LIMITS: Record<Tier, Omit<TierPolicy, "tier" | "marketsAllowed">> = {
     dailyRunLimit: 50,
     dailyCuLimit: 200,
     cuCapPerRun: 80,
+    features: TIER_FEATURES.pro,
   },
   agency: {
     maxQueriesPerRun: 10,
@@ -36,6 +88,7 @@ const TIER_LIMITS: Record<Tier, Omit<TierPolicy, "tier" | "marketsAllowed">> = {
     maxConcurrency: 10,
     dailyCuLimit: 800,
     cuCapPerRun: 250,
+    features: TIER_FEATURES.agency,
   },
   enterprise: {
     maxQueriesPerRun: 10,
@@ -43,6 +96,7 @@ const TIER_LIMITS: Record<Tier, Omit<TierPolicy, "tier" | "marketsAllowed">> = {
     maxConcurrency: 10,
     dailyCuLimit: 1500,
     cuCapPerRun: 400,
+    features: TIER_FEATURES.enterprise,
   },
 };
 

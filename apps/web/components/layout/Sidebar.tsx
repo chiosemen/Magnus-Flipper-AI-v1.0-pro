@@ -168,10 +168,13 @@ export function Sidebar() {
           <div className="text-sm font-bold text-foreground">Free Tier</div>
           {usageSummary && (
             <div className="mt-3 space-y-2">
-              <div className="text-xs text-text-muted">Daily usage</div>
+              <div className="text-xs text-text-muted">Today's usage</div>
+              <div className="text-[11px] text-text-muted">
+                Tracked automatically across all scans.
+              </div>
               <div className="flex items-center justify-between text-xs text-text-secondary">
                 <span>
-                  {`Daily usage: ${usageSummary.todayCu.toFixed(1)} / ${usageSummary.dailyLimitCu} CU`}
+                  {`Today's usage: ${usageSummary.todayCu.toFixed(1)} / ${usageSummary.dailyLimitCu} CU`}
                 </span>
                 <span>{`${usageSummary.percentUsed.toFixed(0)}%`}</span>
               </div>
@@ -189,6 +192,16 @@ export function Sidebar() {
                   }}
                 />
               </div>
+              {usageSummary.percentUsed >= 100 ? (
+                <div className="text-[11px] text-text-muted">
+                  Daily usage limit reached. New scans will resume tomorrow.
+                </div>
+              ) : usageSummary.percentUsed >= 70 ? (
+                <div className="text-[11px] text-text-muted">
+                  You're approaching today's usage limit. Some scans may be
+                  deferred.
+                </div>
+              ) : null}
             </div>
           )}
           <button className="mt-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs py-2 rounded-md transition-colors">

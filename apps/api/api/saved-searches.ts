@@ -106,7 +106,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(500).json({ error: error.message });
       return;
     }
-    res.status(200).json({ savedSearches: data ?? [] });
+    const { data: runs } = await supabase
+      .from('alert_runs')
+      .select('saved_search_id, started_at, matches_found, meta')
+      .eq('user_id', user.userId)
+      .order('started_at', { ascending: false });
+
+    const lastRunMap = new Map<string, any>();
+    for (const run of runs ?? []) {
+      if (!lastRunMap.has(run.saved_search_id)) {
+        lastRunMap.set(run.saved_search_id, {
+          saved_search_id: run.saved_search_id,
+          started_at: run.started_at,
+          matches_found: run.matches_found,
+          meta: {
+            newListings: run.meta?.newListings ?? null,
+            priceDrops: run.meta?.priceDrops ?? null,
+            suppressionReason: run.meta?.suppressionReason ?? null,
+          },
+        });
+      }
+    }
+
+    const savedSearches = (data ?? []).map((search) => ({
+      ...search,
+      lastRun: lastRunMap.get(search.id) ?? null,
+    }));
+
+    res.status(200).json({ savedSearches });
     return;
   }
 

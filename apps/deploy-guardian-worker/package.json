@@ -10,8 +10,8 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@magnus/deploy-guardian-contracts": "0.1.0",
-    "@magnus/deploy-guardian-store": "0.1.0",
+    "@magnus/deploy-guardian-contracts": "workspace:*",
+    "@magnus/deploy-guardian-store": "workspace:*",
     "@prisma/client": "7.0.1"
   },
   "devDependencies": {

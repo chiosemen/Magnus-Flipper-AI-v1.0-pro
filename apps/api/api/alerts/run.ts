@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createHash } from 'crypto';
 import { executeSearch } from '../search';
 import { getServiceSupabaseClient } from '../../lib/supabase';
 import { getUserTier } from '../../lib/auth';
@@ -27,12 +28,22 @@ type SavedSearchRecord = {
 
 type ListingItem = {
   marketplace: string;
+  query: string;
   title: string;
   price: string | number | null;
+  priceNumber: number | null;
   url: string;
+  titleHash: string | null;
+  dedupeKeys: string[];
+};
+
+type AlertItem = ListingItem & {
+  changeType: 'new_listing' | 'price_drop';
+  previousPrice?: number | null;
 };
 
 const MAX_EMAIL_ITEMS = 10;
+const DEFAULT_PRICE_DROP_PCT = 0.08;
 
 function getAdminHeader(req: VercelRequest) {
   const header = req.headers['x-admin-key'];
@@ -65,20 +76,66 @@ function parsePrice(value: any): string | number | null {
   return null;
 }
 
+function parsePriceNumber(value: any): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    if (!cleaned) return null;
+    const parsed = Number.parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function getPreviousPrice(map: Record<string, any>, key: string): number | null {
+  const value = map[key];
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    return parsePriceNumber(value);
+  }
+  return null;
+}
+
+function normalizeText(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function hashTitle(title: string): string {
+  return createHash('sha256').update(normalizeText(title)).digest('hex');
+}
+
+function buildDedupeKeys(params: {
+  url: string | null;
+  titleHash: string | null;
+  marketplace: string;
+  query: string;
+}) {
+  const keys = new Set<string>();
+  if (params.url) {
+    keys.add(`url:${params.marketplace}:${params.url}`);
+  }
+  if (params.titleHash) {
+    const queryKey = normalizeText(params.query || '');
+    keys.add(`mq:${params.marketplace}:${queryKey}:${params.titleHash}`);
+  }
+  return Array.from(keys);
+}
+
 function collectListings(results: Array<any>): ListingItem[] {
   const listings: ListingItem[] = [];
   for (const result of results) {
     const marketplace = result.market ?? 'unknown';
+    const query = typeof result.query === 'string' ? result.query : '';
     for (const item of result.items ?? []) {
-      const url = pickField(item, [
-        'url',
-        'listingUrl',
-        'itemUrl',
-        'link',
-        'productUrl',
-        'permalink',
-      ]);
-      if (!url) continue;
+      const url =
+        pickField(item, [
+          'url',
+          'listingUrl',
+          'itemUrl',
+          'link',
+          'productUrl',
+          'permalink',
+        ]) || '';
       const title =
         pickField(item, [
           'title',
@@ -87,16 +144,33 @@ function collectListings(results: Array<any>): ListingItem[] {
           'heading',
           'marketplace_listing_title',
         ]) || 'Listing';
-      const price = parsePrice(
-        pickField(item, [
-          'price',
-          'priceLabel',
-          'listingPrice',
-          'priceValue',
-          'amount',
-        ]),
-      );
-      listings.push({ marketplace, title, price, url });
+      const priceValue = pickField(item, [
+        'price',
+        'priceLabel',
+        'listingPrice',
+        'priceValue',
+        'amount',
+      ]);
+      const price = parsePrice(priceValue);
+      const priceNumber = parsePriceNumber(priceValue);
+      const titleHash = title ? hashTitle(title) : null;
+      const dedupeKeys = buildDedupeKeys({
+        url: url || null,
+        titleHash,
+        marketplace,
+        query,
+      });
+      if (dedupeKeys.length === 0) continue;
+      listings.push({
+        marketplace,
+        query,
+        title,
+        price,
+        priceNumber,
+        url,
+        titleHash,
+        dedupeKeys,
+      });
     }
   }
   return listings;
@@ -105,29 +179,62 @@ function collectListings(results: Array<any>): ListingItem[] {
 function buildGeoSummary(geo: SavedSearchRecord['geo']) {
   if (!geo) return 'n/a';
   const parts: string[] = [];
-  if (geo.country) parts.push(geo.country);
   if (geo.locationText) parts.push(geo.locationText);
   if (geo.postal) parts.push(geo.postal);
-  if (geo.lat !== null && geo.lat !== undefined && geo.lng !== null && geo.lng !== undefined) {
-    parts.push(`${geo.lat},${geo.lng}`);
+  if (
+    geo.lat !== null &&
+    geo.lat !== undefined &&
+    geo.lng !== null &&
+    geo.lng !== undefined
+  ) {
+    parts.push(`${geo.lat.toFixed(2)},${geo.lng.toFixed(2)}`);
   }
+  if (geo.country) parts.push(geo.country);
   if (geo.radiusKm) {
-    parts.push(`${geo.radiusKm}${geo.units === 'mi' ? ' mi' : ' km'}`);
+    const unit = geo.units === 'mi' ? 'mi' : 'km';
+    const radius =
+      unit === 'mi' ? geo.radiusKm * 0.621371 : geo.radiusKm;
+    parts.push(`${radius.toFixed(0)} ${unit}`);
   }
-  return parts.length > 0 ? parts.join(' - ') : 'n/a';
+  return parts.length > 0 ? parts.join(' · ') : 'n/a';
 }
 
-function buildEmailHtml(
-  search: SavedSearchRecord,
-  newItems: ListingItem[],
-) {
-  const rows = newItems.slice(0, MAX_EMAIL_ITEMS).map((item) => {
+function buildEmailSubject(search: SavedSearchRecord, items: AlertItem[]) {
+  const primaryQuery = search.queries?.[0] ?? search.name;
+  const markets = (search.markets ?? []).map(
+    (market) => MARKETPLACES[market as MarketplaceId]?.label ?? market,
+  );
+  const marketLabel =
+    markets.length === 1 ? markets[0] : `${markets.length} markets`;
+  const geoLabel = buildGeoSummary(search.geo);
+  const count = items.length;
+  const changeLabel =
+    items.some((item) => item.changeType === 'price_drop') && count > 0
+      ? 'updates'
+      : 'new listings';
+  const geoSuffix = geoLabel !== 'n/a' ? ` within ${geoLabel}` : '';
+  return `${count} ${changeLabel} for "${primaryQuery}" on ${marketLabel}${geoSuffix}`;
+}
+
+function buildEmailHtml(search: SavedSearchRecord, items: AlertItem[]) {
+  const rows = items.slice(0, MAX_EMAIL_ITEMS).map((item) => {
     const price = item.price ?? 'n/a';
+    const changeLabel =
+      item.changeType === 'price_drop'
+        ? 'Price drop'
+        : 'New listing';
+    const previous =
+      item.changeType === 'price_drop' && typeof item.previousPrice === 'number'
+        ? ` (was ${item.previousPrice})`
+        : '';
+    const marketLabel =
+      MARKETPLACES[item.marketplace as MarketplaceId]?.label ?? item.marketplace;
     return `
       <tr>
-        <td style="padding:6px 0;color:#e5e7eb;">${item.marketplace}</td>
+        <td style="padding:6px 0;color:#e5e7eb;">${marketLabel}</td>
         <td style="padding:6px 0;color:#e5e7eb;">${item.title}</td>
-        <td style="padding:6px 0;color:#e5e7eb;">${price}</td>
+        <td style="padding:6px 0;color:#e5e7eb;">${price}${previous}</td>
+        <td style="padding:6px 0;color:#9ca3af;">${changeLabel}</td>
         <td style="padding:6px 0;">
           <a href="${item.url}" style="color:#60a5fa;text-decoration:none;">View</a>
         </td>
@@ -135,18 +242,29 @@ function buildEmailHtml(
     `;
   });
 
+  const marketsLabel = (search.markets ?? []).join(', ');
+  const geoLabel = buildGeoSummary(search.geo);
+  const queryLabel = (search.queries ?? []).join(', ');
+
   return `
     <div style="font-family:Arial,sans-serif;background:#0b0b0b;color:#e5e7eb;padding:24px;">
-      <h2 style="margin:0 0 8px;">${search.name} - New listings</h2>
+      <h2 style="margin:0 0 6px;">${search.name}</h2>
       <p style="margin:0 0 12px;color:#9ca3af;">
-        Markets: ${(search.markets ?? []).join(', ')} | Geo: ${buildGeoSummary(search.geo)}
+        You are receiving this alert because "${search.name}" is enabled (${search.frequency} cadence).
       </p>
+      <div style="margin:0 0 12px;color:#9ca3af;">
+        <strong>What changed:</strong> ${items.length} updates<br/>
+        <strong>Queries:</strong> ${queryLabel}<br/>
+        <strong>Markets:</strong> ${marketsLabel}<br/>
+        <strong>Geo:</strong> ${geoLabel}
+      </div>
       <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
         <thead>
           <tr>
             <th align="left" style="padding-bottom:8px;color:#9ca3af;">Market</th>
             <th align="left" style="padding-bottom:8px;color:#9ca3af;">Title</th>
             <th align="left" style="padding-bottom:8px;color:#9ca3af;">Price</th>
+            <th align="left" style="padding-bottom:8px;color:#9ca3af;">Change</th>
             <th align="left" style="padding-bottom:8px;color:#9ca3af;">Link</th>
           </tr>
         </thead>
@@ -192,7 +310,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   for (const search of (searches ?? []) as SavedSearchRecord[]) {
     const { data: lastRun } = await supabase
       .from('alert_runs')
-      .select('started_at')
+      .select('started_at, meta')
       .eq('saved_search_id', search.id)
       .order('started_at', { ascending: false })
       .limit(1)
@@ -269,25 +387,91 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const payload = searchResult.payload;
     const listings = collectListings(payload.results ?? []);
-    const uniqueUrls = Array.from(new Set(listings.map((item) => item.url)));
+    const dedupeKeys = Array.from(
+      new Set(listings.flatMap((item) => item.dedupeKeys)),
+    );
 
-    const { data: seenRows } = await supabase
-      .from('listing_seen')
-      .select('listing_url')
-      .eq('user_id', search.user_id)
-      .eq('saved_search_id', search.id)
-      .in('listing_url', uniqueUrls);
+    const seenRows =
+      dedupeKeys.length > 0
+        ? (
+            await supabase
+              .from('listing_seen')
+              .select('listing_url')
+              .eq('user_id', search.user_id)
+              .eq('saved_search_id', search.id)
+              .in('listing_url', dedupeKeys)
+          ).data
+        : [];
 
     const seenSet = new Set((seenRows ?? []).map((row) => row.listing_url));
-    const newItems = listings.filter((item) => !seenSet.has(item.url));
+    const newItems = listings.filter((item) =>
+      item.dedupeKeys.every((key) => !seenSet.has(key)),
+    );
+
+    const meta = typeof lastRun?.meta === 'object' && lastRun?.meta ? lastRun.meta : {};
+    const previousPriceMap =
+      typeof meta.priceMap === 'object' && meta.priceMap ? meta.priceMap : {};
+
+    const priceThreshold = (() => {
+      const raw = Number.parseFloat(process.env.ALERT_PRICE_DROP_PCT ?? '');
+      return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_PRICE_DROP_PCT;
+    })();
+
+    const priceDropItems = listings.filter((item) => {
+      if (!item.priceNumber) return false;
+      const primaryKey = item.url
+        ? `url:${item.marketplace}:${item.url}`
+        : item.dedupeKeys[0];
+      const previous = getPreviousPrice(previousPriceMap, primaryKey);
+      if (typeof previous !== 'number' || previous <= 0) return false;
+      if (item.priceNumber >= previous) return false;
+      const deltaPct = (previous - item.priceNumber) / previous;
+      return deltaPct >= priceThreshold;
+    });
+
+    const hasMinorPriceChanges = listings.some((item) => {
+      if (!item.priceNumber) return false;
+      const primaryKey = item.url
+        ? `url:${item.marketplace}:${item.url}`
+        : item.dedupeKeys[0];
+      const previous = getPreviousPrice(previousPriceMap, primaryKey);
+      if (typeof previous !== 'number' || previous <= 0) return false;
+      if (item.priceNumber === previous) return false;
+      const deltaPct = Math.abs(previous - item.priceNumber) / previous;
+      return deltaPct > 0 && deltaPct < priceThreshold;
+    });
+
+    const alertItemsMap = new Map<string, AlertItem>();
+    for (const item of newItems) {
+      const primaryKey = item.url
+        ? `url:${item.marketplace}:${item.url}`
+        : item.dedupeKeys[0];
+      alertItemsMap.set(primaryKey, { ...item, changeType: 'new_listing' });
+    }
+    for (const item of priceDropItems) {
+      const primaryKey = item.url
+        ? `url:${item.marketplace}:${item.url}`
+        : item.dedupeKeys[0];
+      if (alertItemsMap.has(primaryKey)) continue;
+      const previous = getPreviousPrice(previousPriceMap, primaryKey);
+      alertItemsMap.set(primaryKey, {
+        ...item,
+        changeType: 'price_drop',
+        previousPrice: typeof previous === 'number' ? previous : null,
+      });
+    }
+
+    const alertItems = Array.from(alertItemsMap.values());
 
     if (newItems.length > 0) {
-      const seenInsert = newItems.map((item) => ({
-        user_id: search.user_id,
-        saved_search_id: search.id,
-        marketplace: item.marketplace,
-        listing_url: item.url,
-      }));
+      const seenInsert = newItems.flatMap((item) =>
+        item.dedupeKeys.map((key) => ({
+          user_id: search.user_id,
+          saved_search_id: search.id,
+          marketplace: item.marketplace,
+          listing_url: key,
+        })),
+      );
       await supabase.from('listing_seen').upsert(seenInsert, {
         onConflict: 'user_id,saved_search_id,marketplace,listing_url',
         ignoreDuplicates: true,
@@ -297,18 +481,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let sent = 0;
     let emailStatus: string | null = null;
 
-    if (newItems.length > 0) {
+    const emailItems = alertItems.filter((item) => item.url);
+
+    if (emailItems.length > 0) {
       const { data: user } = await supabase.auth.admin.getUserById(search.user_id);
       const email = user?.user?.email;
       if (email) {
-        const html = buildEmailHtml(search, newItems);
+        const html = buildEmailHtml(search, emailItems);
         const emailResult = await sendEmail({
           to: email,
-          subject: `${search.name}: ${newItems.length} new listings`,
+          subject: buildEmailSubject(search, emailItems),
           html,
         });
         if (emailResult.ok) {
-          sent = Math.min(newItems.length, MAX_EMAIL_ITEMS);
+          sent = Math.min(emailItems.length, MAX_EMAIL_ITEMS);
           emailStatus = 'sent';
         } else {
           emailStatus = emailResult.skipped ? 'skipped' : 'failed';
@@ -316,20 +502,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else {
         emailStatus = 'no_email';
       }
+    } else if (alertItems.length > 0) {
+      emailStatus = 'no_link';
     }
+
+    const nextPriceMap = listings.reduce<Record<string, number>>((acc, item) => {
+      if (typeof item.priceNumber !== 'number') return acc;
+      const primaryKey = item.url ? `url:${item.url}` : item.dedupeKeys[0];
+      acc[primaryKey] = item.priceNumber;
+      return acc;
+    }, {});
+
+    const suppressionReason =
+      alertItems.length === 0
+        ? hasMinorPriceChanges
+          ? 'price_changes_below_threshold'
+          : 'no_changes'
+        : null;
 
     await supabase
       .from('alert_runs')
       .update({
         status: 'complete',
         finished_at: new Date().toISOString(),
-        matches_found: newItems.length,
+        matches_found: alertItems.length,
         meta: {
           emailStatus,
           totalListings: listings.length,
           newListings: newItems.length,
+          priceDrops: priceDropItems.length,
+          priceThresholdPct: priceThreshold,
+          suppressionReason,
           cuEstimated: payload.meta?.cuEstimated ?? null,
           warnings: payload.meta?.warnings ?? [],
+          priceMap: nextPriceMap,
         },
       })
       .eq('id', run.id);

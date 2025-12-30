@@ -1,720 +1,548 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'crypto';
+import { z } from 'zod';
+import {
+  redis,
+  nowSec,
+  normalizeQuery,
+  searchKey,
+  ingestKey,
+  lockKey,
+  ttlFor,
+} from '../lib/redis';
+import { requireUserFromJWT } from '../lib/auth';
+import { getMarketAgentEntitlement } from '../lib/entitlements';
+import {
+  checkUsageLimits,
+  incrementDailyRollup,
+  logUsageEvent,
+} from '../lib/usageMetering';
 
-const MAX_CONCURRENCY = 10;
+type Marketplace = 'facebook' | 'vinted' | 'gumtree';
+
+const QuerySchema = z.object({
+  q: z.string().trim().max(120).default(''),
+  marketplace: z.enum(['facebook', 'vinted', 'gumtree']).default('gumtree'),
+  country: z.string().trim().min(2).max(3).default('GB'),
+  maxItems: z.coerce.number().min(1).max(100).default(40),
+  mode: z.enum(['search', 'enrich']).default('search'),
+});
+
+const EnvSchema = z.object({
+  UPSTASH_REDIS_REST_URL: z.string().min(1),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+});
+
+type Listing = {
+  source: Marketplace;
+  title: string;
+  priceText: string;
+  url: string;
+  image?: string;
+  badge: 'verified' | 'live-capture' | 'recent' | 'in-progress';
+  freshnessSeconds: number;
+};
+
+type CachedPayload = {
+  items: Omit<Listing, 'badge' | 'freshnessSeconds'>[];
+  createdAt: number;
+  strategy: 'apify' | 'browser-first';
+};
+
+type ErrorResponse = {
+  ok: false;
+  error_code: string;
+  error: string;
+  request_id: string;
+  details?: Record<string, any>;
+};
+
+function getBoolParam(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return false;
+  return value === 'true' || value === '1';
+}
+
+function logEvent(level: 'info' | 'warn' | 'error', payload: Record<string, any>) {
+  const line = {
+    level,
+    ts: new Date().toISOString(),
+    ...payload,
+  };
+  const method = level === 'error' ? console.error : console.log;
+  method(JSON.stringify(line));
+}
+
+function respondError(
+  res: VercelResponse,
+  status: number,
+  requestId: string,
+  errorCode: string,
+  message: string,
+  details?: Record<string, any>,
+) {
+  const payload: ErrorResponse = {
+    ok: false,
+    error_code: errorCode,
+    error: message,
+    request_id: requestId,
+    details,
+  };
+  res.status(status).json(payload);
+}
+
+async function apifyRunSyncGet(actorId: string, input: any) {
+  const token = process.env.APIFY_TOKEN;
+  if (!token) throw new Error('Missing APIFY_TOKEN');
+  if (!actorId) throw new Error('Missing actorId for marketplace');
+
+  const url = `https://api.apify.com/v2/acts/${encodeURIComponent(
+    actorId,
+  )}/run-sync-get-dataset-items?token=${encodeURIComponent(token)}`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`Apify ${r.status}: ${text.slice(0, 300)}`);
+  }
+  return r.json();
+}
+
+function normalizeApifyItem(marketplace: Marketplace, raw: any) {
+  return {
+    source: marketplace,
+    title: raw.title ?? raw.name ?? '',
+    priceText: raw.priceText ?? raw.price ?? '',
+    url: raw.url ?? raw.link ?? '',
+    image: raw.image ?? raw.img ?? (Array.isArray(raw.images) ? raw.images[0] : ''),
+  };
+}
+
+function decorate(
+  items: Omit<Listing, 'badge' | 'freshnessSeconds'>[],
+  createdAt: number,
+  internalBadge: 'enriched' | 'browser' | 'cached' | 'stale',
+): Listing[] {
+  const age = Math.max(0, nowSec() - createdAt);
+  const badge: Listing['badge'] =
+    internalBadge === 'enriched'
+      ? 'verified'
+      : internalBadge === 'browser'
+      ? 'live-capture'
+      : 'recent';
+
+  return items.map((it) => ({
+    ...it,
+    badge,
+    freshnessSeconds: age,
+  }));
+}
+
+function getQueryParams(req: VercelRequest) {
+  if (req.method === 'POST') {
+    return {
+      ...req.query,
+      ...(typeof req.body === 'object' && req.body ? req.body : {}),
+    };
+  }
+  return req.query;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method && req.method !== 'GET') {
-    res.status(405).send('Method not allowed');
+  const requestId = randomUUID();
+  const startedAt = Date.now();
+  const env = EnvSchema.safeParse(process.env);
+
+  if (!env.success) {
+    logEvent('error', { request_id: requestId, issues: env.error.issues });
+    respondError(res, 500, requestId, 'env_missing', 'Redis env missing');
     return;
   }
 
-  const html = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Magnus — Live Market Demo</title>
-    <style>
-      :root {
-        color-scheme: dark;
-        --bg: #0b0d12;
-        --panel: #141924;
-        --panel-soft: #1b2332;
-        --text: #f4f6fb;
-        --muted: #9aa3b2;
-        --accent: #6ea8fe;
-        --border: rgba(255, 255, 255, 0.08);
-        --good: #34d399;
-        --warn: #fbbf24;
-        --bad: #f87171;
-        --shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-        background: radial-gradient(circle at top, #1a2030 0%, var(--bg) 45%);
-        color: var(--text);
-        padding: 28px 20px 60px;
-      }
-      header {
-        max-width: 1120px;
-        margin: 0 auto 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-      .banner {
-        background: linear-gradient(120deg, rgba(110, 168, 254, 0.16), rgba(20, 25, 36, 0.9));
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 18px 20px;
-        box-shadow: var(--shadow);
-      }
-      .banner h1 {
-        margin: 0 0 6px;
-        font-size: 24px;
-        letter-spacing: 0.3px;
-      }
-      .banner p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 13px;
-      }
-      .banner-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px 18px;
-        margin-top: 10px;
-        font-size: 13px;
-        color: var(--muted);
-      }
-      .replay {
-        margin-top: 10px;
-        font-size: 12px;
-      }
-      .replay a {
-        color: var(--accent);
-        text-decoration: none;
-        word-break: break-all;
-      }
-      .search-panel {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 14px 16px;
-      }
-      .search-form {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .search-input {
-        flex: 1;
-        min-width: 220px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        background: #0f1422;
-        color: var(--text);
-        font-size: 13px;
-      }
-      .search-input::placeholder { color: var(--muted); }
-      .search-input:disabled { opacity: 0.6; cursor: not-allowed; }
-      .search-button {
-        padding: 10px 16px;
-        border-radius: 10px;
-        border: none;
-        background: var(--accent);
-        color: #0b0d12;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .search-button:disabled { opacity: 0.6; cursor: not-allowed; }
-      .search-hint {
-        margin-top: 8px;
-        font-size: 12px;
-        color: var(--muted);
-      }
-      .controls {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 14px;
-      }
-      .meter,
-      .odds-card,
-      .toggle,
-      .notice,
-      .proxy-banner {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 14px 16px;
-      }
-      .meter-label {
-        font-size: 13px;
-        color: var(--muted);
-        margin-bottom: 8px;
-      }
-      .meter-track {
-        height: 10px;
-        border-radius: 999px;
-        background: #111622;
-        overflow: hidden;
-      }
-      .meter-fill {
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, #6ea8fe 0%, #60a5fa 100%);
-        transition: width 200ms ease;
-      }
-      .odds-row {
-        display: grid;
-        gap: 10px;
-      }
-      .odds-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 13px;
-        color: var(--muted);
-      }
-      .odds-card.good { border-color: rgba(52, 211, 153, 0.4); color: var(--good); }
-      .odds-card.warn { border-color: rgba(251, 191, 36, 0.4); color: var(--warn); }
-      .odds-card.bad { border-color: rgba(248, 113, 113, 0.4); color: var(--bad); }
-      .toggle {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 13px;
-        color: var(--muted);
-      }
-      .toggle input {
-        width: 16px;
-        height: 16px;
-        accent-color: var(--accent);
-      }
-      .proxy-banner {
-        border-color: rgba(110, 168, 254, 0.35);
-        color: var(--accent);
-        font-size: 13px;
-      }
-      .notice {
-        color: var(--muted);
-        font-size: 12px;
-        margin-top: 8px;
-      }
-      .hidden { display: none; }
-      main {
-        max-width: 1120px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-      }
-      .query-section {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 16px 18px 20px;
-        box-shadow: var(--shadow);
-      }
-      .query-header {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 8px;
-        margin-bottom: 12px;
-        font-size: 14px;
-      }
-      .query-title {
-        font-weight: 600;
-      }
-      .market-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 12px;
-      }
-      .card {
-        background: var(--panel-soft);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 12px 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        min-height: 120px;
-      }
-      .card-title {
-        font-weight: 600;
-        font-size: 13px;
-        letter-spacing: 0.3px;
-        text-transform: uppercase;
-        color: var(--accent);
-      }
-      .meta {
-        font-size: 12px;
-        color: var(--muted);
-      }
-      .item {
-        font-size: 12px;
-        border-top: 1px solid var(--border);
-        padding-top: 6px;
-        color: var(--text);
-      }
-      .item a {
-        color: var(--text);
-        text-decoration: none;
-      }
-      .item a:hover { color: var(--accent); }
-      .error {
-        color: var(--bad);
-        font-size: 12px;
-        font-weight: 600;
-      }
-      .loading {
-        color: var(--muted);
-        font-size: 12px;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <div class="banner">
-        <h1>🚀 Magnus — 10-Market Live Test</h1>
-        <p>Live data | No cache | No mocks</p>
-        <div class="banner-meta">
-          <div>Requests/sec: <span id="rps">0.00</span></div>
-          <div>Location: <span id="location-label">prague</span></div>
-          <div>Parallel queries: <span id="query-count">0</span></div>
-        </div>
-        <div class="replay">Replay URL: <a id="replay-url" href="#"></a></div>
-      </div>
-      <div class="search-panel">
-        <form id="search-form" class="search-form" autocomplete="off">
-          <input
-            id="search-input"
-            class="search-input"
-            type="text"
-            placeholder="Search (comma-separated, max 10)"
-          />
-          <button id="search-submit" class="search-button" type="submit">Search</button>
-        </form>
-        <div class="search-hint">Example: iphone, macbook, airpods</div>
-        <div class="notice hidden" id="query-note">Max 10 concurrent searches (demo limit)</div>
-      </div>
-      <div class="controls">
-        <div class="meter">
-          <div class="meter-label" id="concurrency-label">Concurrency: 0 / ${MAX_CONCURRENCY}</div>
-          <div class="meter-track">
-            <div class="meter-fill" id="concurrency-fill"></div>
-          </div>
-        </div>
-        <div class="odds-row">
-          <div class="odds-card" id="facebook-odds">Facebook success: --%</div>
-          <div class="odds-card" id="vinted-odds">Vinted success: --%</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="proxy-toggle" />
-          <span>🇬🇧 UK Proxy Mode</span>
-        </label>
-        <div class="proxy-banner hidden" id="proxy-banner">UK Residential Proxy Mode (Demo)</div>
-      </div>
-    </header>
-    <main id="results"></main>
-    <script>
-      (function () {
-        const MAX_CONCURRENCY = ${MAX_CONCURRENCY};
-        const sources = ['facebook', 'vinted'];
-        const resultsEl = document.getElementById('results');
-        const concurrencyFill = document.getElementById('concurrency-fill');
-        const concurrencyLabel = document.getElementById('concurrency-label');
-        const rpsEl = document.getElementById('rps');
-        const locationLabel = document.getElementById('location-label');
-        const queryCountEl = document.getElementById('query-count');
-        const replayEl = document.getElementById('replay-url');
-        const proxyToggle = document.getElementById('proxy-toggle');
-        const proxyBanner = document.getElementById('proxy-banner');
-        const facebookOdds = document.getElementById('facebook-odds');
-        const vintedOdds = document.getElementById('vinted-odds');
-        const queryNote = document.getElementById('query-note');
-        const searchForm = document.getElementById('search-form');
-        const searchInput = document.getElementById('search-input');
-        const searchButton = document.getElementById('search-submit');
-        const params = new URLSearchParams(window.location.search);
-        const rawQuery = params.get('q') || '';
-        const location = params.get('location') || 'prague';
-        const proxyOn = params.get('proxy') === 'uk';
-        const initialParsed = parseQueries(rawQuery || 'iphone');
-        let activeQueries = initialParsed.queries;
-        let resultsByQuery = {};
-        let inFlight = 0;
-        let completed = 0;
-        let startWall = 0;
-        let rpsTimer = null;
-        let debounceTimer = null;
-        let isRunning = false;
-        const stats = {
-          facebook: { attempted: 0, success: 0, failed: 0 },
-          vinted: { attempted: 0, success: 0, failed: 0 },
-        };
+  const queryParams = getQueryParams(req);
+  const parsed = QuerySchema.safeParse(queryParams);
 
-        function escapeHtml(value) {
-          return String(value)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-        }
+  if (!parsed.success) {
+    respondError(res, 400, requestId, 'invalid_input', 'Invalid request', {
+      issues: parsed.error.issues,
+    });
+    return;
+  }
 
-        function pickField(item, keys) {
-          for (const key of keys) {
-            const value = key.split('.').reduce((acc, part) => {
-              if (!acc || typeof acc !== 'object') return undefined;
-              return acc[part];
-            }, item);
-            if (typeof value === 'string' && value.trim()) return value.trim();
-            if (typeof value === 'number') return String(value);
-          }
-          return '';
-        }
+  const marketplace = parsed.data.marketplace as Marketplace;
+  const country = parsed.data.country.toUpperCase();
+  const mode = parsed.data.mode;
+  const demoMode = getBoolParam(queryParams.demo);
+  const qNorm = normalizeQuery(parsed.data.q || '');
+  const maxItems = demoMode ? Math.min(parsed.data.maxItems, 10) : parsed.data.maxItems;
 
-        function parseQueries(value) {
-          const parsed = String(value || '')
-            .split(',')
-            .map((q) => q.trim())
-            .filter(Boolean);
-          return {
-            queries: parsed.slice(0, MAX_CONCURRENCY),
-            truncated: parsed.length > MAX_CONCURRENCY,
-          };
-        }
+  if (mode === 'enrich' && req.method !== 'POST') {
+    respondError(res, 405, requestId, 'method_not_allowed', 'POST required for enrich');
+    return;
+  }
 
-        function updateQueryNote(truncated) {
-          if (truncated) {
-            queryNote.textContent = 'Max 10 concurrent searches (demo limit)';
-            queryNote.classList.remove('hidden');
-            return;
-          }
-          queryNote.textContent = '';
-          queryNote.classList.add('hidden');
-        }
+  if (!qNorm) {
+    respondError(res, 400, requestId, 'missing_query', 'Query is required');
+    return;
+  }
 
-        function setInputDisabled(disabled) {
-          searchInput.disabled = disabled;
-          searchButton.disabled = disabled;
-        }
+  let userId: string | null = null;
+  let entitlementStatus: string | null = null;
 
-        function updateConcurrency() {
-          const ratio = Math.min(inFlight, MAX_CONCURRENCY) / MAX_CONCURRENCY;
-          concurrencyFill.style.width = Math.round(ratio * 100) + '%';
-          concurrencyLabel.textContent = 'Concurrency: ' + inFlight + ' / ' + MAX_CONCURRENCY;
-        }
+  if (!demoMode) {
+    const user = await requireUserFromJWT(req.headers.authorization);
+    if (!user.userId) {
+      respondError(res, 401, requestId, 'unauthorized', 'Authorization required');
+      return;
+    }
+    const entitlement = await getMarketAgentEntitlement(user.userId);
+    userId = user.userId;
+    entitlementStatus = entitlement.status;
 
-        function updateRps() {
-          const elapsed = (Date.now() - startWall) / 1000;
-          const rps = elapsed > 0 ? completed / elapsed : 0;
-          rpsEl.textContent = rps.toFixed(2);
-        }
+    if (!entitlement.enabled) {
+      respondError(res, 403, requestId, 'entitlement_required', 'Market Agent access required', {
+        status: entitlement.status,
+        graceUntil: entitlement.graceUntil?.toISOString() ?? null,
+        upgrade_hint: 'Subscribe to Market Agent to enable this endpoint.',
+      });
+      return;
+    }
+  }
 
-        function oddsClass(pct) {
-          if (pct > 70) return 'good';
-          if (pct >= 40) return 'warn';
-          return 'bad';
-        }
+  const sk = searchKey(marketplace, country, qNorm);
+  const lk = lockKey(marketplace, country, qNorm);
+  const ik = ingestKey(marketplace, country, qNorm);
 
-        function updateOdds() {
-          ['facebook', 'vinted'].forEach((source) => {
-            const attempted = stats[source].attempted;
-            const success = stats[source].success;
-            const pct = attempted ? (success / attempted) * 100 : 0;
-            const label =
-              source.charAt(0).toUpperCase() + source.slice(1) + ' success: ' +
-              (attempted ? pct.toFixed(0) + '%' : '--%');
-            const target = source === 'facebook' ? facebookOdds : vintedOdds;
-            target.textContent = label + (proxyOn && attempted && pct < 40 ? ' (proxy limited)' : '');
-            target.className = 'odds-card' + (attempted ? ' ' + oddsClass(pct) : '');
-          });
-        }
+  if (mode === 'enrich') {
+    let body: any = req.body;
+    if (typeof req.body === 'string') {
+      try {
+        body = JSON.parse(req.body);
+      } catch {
+        respondError(res, 400, requestId, 'invalid_json', 'Invalid JSON body');
+        return;
+      }
+    }
+    const items = Array.isArray(body?.items) ? body.items : [];
+    if (!items.length) {
+      respondError(res, 400, requestId, 'missing_items', 'Enrich payload requires items');
+      return;
+    }
 
-        function buildReplayUrl(queries) {
-          const nextParams = new URLSearchParams();
-          nextParams.set('q', queries.join(','));
-          if (location) nextParams.set('location', location);
-          if (proxyOn) nextParams.set('proxy', 'uk');
-          return window.location.origin + '/api/demo?' + nextParams.toString();
-        }
+    const normalized = items.map((x: any) => ({
+      source: (x.source || marketplace) as Marketplace,
+      title: x.title || '',
+      priceText: x.priceText || '',
+      url: x.url || '',
+      image: x.image || '',
+    }));
 
-        function updateUrl(queries) {
-          const nextParams = new URLSearchParams(window.location.search);
-          nextParams.set('q', queries.join(','));
-          if (location) {
-            nextParams.set('location', location);
-          } else {
-            nextParams.delete('location');
-          }
-          if (proxyOn) {
-            nextParams.set('proxy', 'uk');
-          } else {
-            nextParams.delete('proxy');
-          }
-          window.history.replaceState(null, '', '/api/demo?' + nextParams.toString());
-        }
+    await redis.set(
+      ik,
+      { items: normalized, ingestedAt: nowSec() },
+      { ex: ttlFor(marketplace) },
+    );
 
-        function renderCard(result, source) {
-          if (!result) {
-            return '<div class="card"><div class="card-title">' +
-              escapeHtml(source) +
-              '</div><div class="loading">Loading...</div></div>';
-          }
-          const title = source.toUpperCase();
-          const meta = 'Time: ' + result.durationMs + ' ms | Items: ' + result.count;
-          if (result.error) {
-            return '<div class="card">' +
-              '<div class="card-title">' + escapeHtml(title) + '</div>' +
-              '<div class="meta">' + escapeHtml(meta) + '</div>' +
-              '<div class="error">' + escapeHtml(result.error) + '</div>' +
-              '</div>';
-          }
-          const items = (result.items || []).slice(0, 3).map((item) => {
-            const itemTitle = pickField(item, [
-              'title',
-              'name',
-              'listingTitle',
-              'heading',
-              'marketplace_listing_title',
-            ]) || 'Item';
-            const link = pickField(item, [
-              'url',
-              'listingUrl',
-              'itemUrl',
-              'link',
-              'productUrl',
-              'permalink',
-            ]);
-            const safeLink = link && link.startsWith('http') ? link : '';
-            const content = safeLink
-              ? '<a href="' + escapeHtml(safeLink) + '" target="_blank" rel="noopener noreferrer">' +
-                escapeHtml(itemTitle) + '</a>'
-              : escapeHtml(itemTitle);
-            return '<div class="item">' + content + '</div>';
-          }).join('');
-          return '<div class="card">' +
-            '<div class="card-title">' + escapeHtml(title) + '</div>' +
-            '<div class="meta">' + escapeHtml(meta) + '</div>' +
-            items +
-            '</div>';
-        }
-
-        function renderResults() {
-          const blocks = activeQueries.map((query) => {
-            const group = resultsByQuery[query] || {};
-            const header = '<div class="query-header">' +
-              '<div class="query-title">Query: ' + escapeHtml(query) + '</div>' +
-              '<div class="meta">Sources: Facebook + Vinted</div>' +
-              '</div>';
-            const grid = '<div class="market-grid">' +
-              renderCard(group.facebook, 'facebook') +
-              renderCard(group.vinted, 'vinted') +
-              '</div>';
-            return '<section class="query-section">' + header + grid + '</section>';
-          }).join('');
-          resultsEl.innerHTML = blocks;
-        }
-
-        async function runSearch(source, query) {
-          stats[source].attempted += 1;
-          updateOdds();
-          const startedAt = Date.now();
-          const url = new URL('/api/search', window.location.origin);
-          url.searchParams.set('source', source);
-          url.searchParams.set('q', query);
-          if (location) url.searchParams.set('location', location);
-          if (proxyOn) url.searchParams.set('proxy', 'uk');
-          try {
-            const response = await fetch(url.toString());
-            const json = await response.json();
-            const items = Array.isArray(json && json.items) ? json.items : [];
-            const durationMs = Date.now() - startedAt;
-            const ok = response.ok && items.length > 0;
-            if (ok) {
-              stats[source].success += 1;
-            } else {
-              stats[source].failed += 1;
-            }
-            updateOdds();
-            const errorMessage = response.ok
-              ? (items.length ? '' : 'Empty results')
-              : (json && json.error ? String(json.error) : 'Request failed (' + response.status + ')');
-            return {
-              source,
-              query,
-              durationMs,
-              count: items.length,
-              items,
-              error: errorMessage,
-            };
-          } catch (error) {
-            stats[source].failed += 1;
-            updateOdds();
-            return {
-              source,
-              query,
-              durationMs: Date.now() - startedAt,
-              count: 0,
-              items: [],
-              error: error && error.message ? error.message : 'Request failed',
-            };
-          } finally {
-            completed += 1;
-            updateRps();
-          }
-        }
-
-        function runPool(tasks, limit) {
-          return new Promise((resolve) => {
-            let index = 0;
-            const launchNext = () => {
-              while (inFlight < limit && index < tasks.length) {
-                const task = tasks[index++];
-                inFlight += 1;
-                updateConcurrency();
-                task()
-                  .then((result) => {
-                    if (result && resultsByQuery[result.query]) {
-                      resultsByQuery[result.query][result.source] = result;
-                      renderResults();
-                    }
-                  })
-                  .catch(() => {})
-                  .finally(() => {
-                    inFlight -= 1;
-                    updateConcurrency();
-                    if (index >= tasks.length && inFlight === 0) {
-                      resolve();
-                    } else {
-                      launchNext();
-                    }
-                  });
-              }
-            };
-            launchNext();
-          });
-        }
-
-        function startRpsTimer() {
-          startWall = Date.now();
-          completed = 0;
-          updateRps();
-          if (rpsTimer) clearInterval(rpsTimer);
-          rpsTimer = window.setInterval(updateRps, 250);
-        }
-
-        function stopRpsTimer() {
-          if (rpsTimer) {
-            clearInterval(rpsTimer);
-            rpsTimer = null;
-          }
-          updateRps();
-        }
-
-        function resetStats() {
-          stats.facebook = { attempted: 0, success: 0, failed: 0 };
-          stats.vinted = { attempted: 0, success: 0, failed: 0 };
-          updateOdds();
-        }
-
-        function applyQueries(nextQueries, truncated, updateHistory) {
-          activeQueries = nextQueries;
-          queryCountEl.textContent = String(activeQueries.length);
-          updateQueryNote(truncated);
-          if (updateHistory) {
-            updateUrl(activeQueries);
-          }
-          const replayUrl = buildReplayUrl(activeQueries);
-          replayEl.textContent = replayUrl;
-          replayEl.href = replayUrl;
-          resultsByQuery = {};
-          activeQueries.forEach((query) => {
-            resultsByQuery[query] = { facebook: null, vinted: null };
-          });
-          renderResults();
-        }
-
-        function startSearch(nextQueries, truncated, updateHistory) {
-          if (!nextQueries.length || isRunning) return;
-          if (debounceTimer) {
-            clearTimeout(debounceTimer);
-            debounceTimer = null;
-          }
-          isRunning = true;
-          setInputDisabled(true);
-          applyQueries(nextQueries, truncated, updateHistory);
-          resetStats();
-          inFlight = 0;
-          updateConcurrency();
-          startRpsTimer();
-
-          const tasks = [];
-          nextQueries.forEach((query) => {
-            sources.forEach((source) => {
-              tasks.push(() => runSearch(source, query));
-            });
-          });
-
-          runPool(tasks, MAX_CONCURRENCY).then(() => {
-            stopRpsTimer();
-            isRunning = false;
-            setInputDisabled(false);
-          });
-        }
-
-        function triggerSearch(value) {
-          const trimmed = String(value || '').trim();
-          if (!trimmed) return;
-          const parsed = parseQueries(trimmed);
-          updateQueryNote(parsed.truncated);
-          if (!parsed.queries.length) return;
-          searchInput.value = parsed.queries.join(', ');
-          startSearch(parsed.queries, parsed.truncated, true);
-        }
-
-        function scheduleDebounce() {
-          if (isRunning) return;
-          const currentValue = searchInput.value;
-          const parsed = parseQueries(currentValue);
-          updateQueryNote(parsed.truncated);
-          if (!currentValue.trim()) {
-            if (debounceTimer) {
-              clearTimeout(debounceTimer);
-              debounceTimer = null;
-            }
-            return;
-          }
-          if (debounceTimer) clearTimeout(debounceTimer);
-          debounceTimer = window.setTimeout(() => {
-            if (!isRunning) {
-              triggerSearch(searchInput.value);
-            }
-          }, 500);
-        }
-
-        locationLabel.textContent = location;
-        proxyToggle.checked = proxyOn;
-        proxyBanner.classList.toggle('hidden', !proxyOn);
-        searchInput.value = initialParsed.truncated
-          ? initialParsed.queries.join(', ')
-          : (rawQuery || initialParsed.queries.join(', '));
-
-        proxyToggle.addEventListener('change', () => {
-          const nextParams = new URLSearchParams(window.location.search);
-          if (proxyToggle.checked) {
-            nextParams.set('proxy', 'uk');
-          } else {
-            nextParams.delete('proxy');
-          }
-          nextParams.set('q', activeQueries.join(','));
-          if (location) {
-            nextParams.set('location', location);
-          }
-          window.location.search = nextParams.toString();
+    if (userId) {
+      try {
+        await logUsageEvent({
+          userId,
+          eventType: 'seed_ingest',
+          marketplace,
+          queryNorm: qNorm,
+          itemsReturned: normalized.length,
+          cacheStatus: 'browser-seed',
+          strategy: 'browser-first',
+          latencyMs: Date.now() - startedAt,
+          billable: false,
         });
-
-        searchForm.addEventListener('submit', (event) => {
-          event.preventDefault();
-          if (isRunning) return;
-          triggerSearch(searchInput.value);
+        await incrementDailyRollup({
+          userId,
+          eventType: 'seed_ingest',
+          queryNorm: qNorm,
+          itemsReturned: normalized.length,
+          billable: false,
         });
+      } catch (error: any) {
+        logEvent('error', {
+          request_id: requestId,
+          error: error?.message,
+          mode,
+          marketplace,
+          qNorm,
+        });
+        respondError(res, 500, requestId, 'usage_write_failed', 'Usage tracking failed');
+        return;
+      }
+    }
 
-        searchInput.addEventListener('input', scheduleDebounce);
+    res.status(200).json({
+      ok: true,
+      mode: 'enrich',
+      marketplace,
+      country,
+      items: decorate(normalized, nowSec(), 'browser'),
+      meta: {
+        cached: false,
+        cacheStatus: 'browser-seed',
+        strategy: 'browser-first',
+        ageSeconds: null,
+        latencyMs: Date.now() - startedAt,
+        request_id: requestId,
+      },
+    });
+    return;
+  }
 
-        startSearch(activeQueries, initialParsed.truncated, false);
-      })();
-    </script>
-  </body>
-</html>`;
+  let cacheStatus = 'miss';
+  let strategy: 'apify' | 'browser-first' = 'browser-first';
+  let items: Omit<Listing, 'badge' | 'freshnessSeconds'>[] = [];
+  let createdAt = nowSec();
+  let apifyFailure: string | null = null;
 
-  res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.send(html);
+  const cached = await redis.get<CachedPayload>(sk);
+  if (cached?.items?.length) {
+    cacheStatus = 'hit';
+    items = cached.items;
+    createdAt = cached.createdAt;
+    strategy = cached.strategy;
+    res.status(200).json({
+      ok: true,
+      items: decorate(items, createdAt, 'cached'),
+      meta: {
+        marketplace,
+        country,
+        cached: true,
+        cacheStatus,
+        strategy,
+        ageSeconds: nowSec() - createdAt,
+        ttlSeconds: ttlFor(marketplace),
+        latencyMs: Date.now() - startedAt,
+        request_id: requestId,
+      },
+    });
+    return;
+  }
+
+  if (userId) {
+    try {
+      const usage = await checkUsageLimits(userId);
+      if (!usage.allowed) {
+        respondError(res, 429, requestId, 'usage_limit', 'Usage limit reached', {
+          usage: usage.current,
+          entitlementStatus,
+        });
+        return;
+      }
+    } catch (error: any) {
+      logEvent('error', {
+        request_id: requestId,
+        error: error?.message,
+        marketplace,
+        qNorm,
+      });
+      respondError(res, 500, requestId, 'usage_read_failed', 'Usage lookup failed');
+      return;
+    }
+  }
+
+  let lockAcquired = false;
+  try {
+    lockAcquired = Boolean(await redis.set(lk, '1', { nx: true, ex: 20 }));
+
+    if (!lockAcquired) {
+      const seeded = await redis.get<{ items: any[]; ingestedAt: number }>(ik);
+      if (seeded?.items?.length) {
+        cacheStatus = 'lock-busy-stale';
+        const seededItems = seeded.items.map((x) => ({
+          source: marketplace,
+          title: x.title || '',
+          priceText: x.priceText || '',
+          url: x.url || '',
+          image: x.image || '',
+        }));
+        res.status(200).json({
+          ok: true,
+          items: decorate(seededItems, seeded.ingestedAt, 'stale'),
+          meta: {
+            marketplace,
+            country,
+            cached: false,
+            cacheStatus,
+            strategy: 'browser-first',
+            note: 'Served ingest while run in flight',
+            ageSeconds: nowSec() - seeded.ingestedAt,
+            latencyMs: Date.now() - startedAt,
+            request_id: requestId,
+          },
+        });
+        return;
+      }
+
+      respondError(res, 409, requestId, 'lock_busy', 'Request already in flight');
+      return;
+    }
+
+    if (marketplace === 'gumtree') {
+      strategy = 'apify';
+      const actorId = process.env.APIFY_ACTOR_GUMTREE || '';
+
+      if (actorId) {
+        try {
+          const rawItems = await apifyRunSyncGet(actorId, {
+            query: parsed.data.q,
+            maxItems,
+            country,
+          });
+          items = rawItems.map((r: any) => normalizeApifyItem('gumtree', r));
+        } catch (error: any) {
+          apifyFailure = error?.message || 'Apify failed';
+          logEvent('warn', {
+            request_id: requestId,
+            error: apifyFailure,
+            marketplace,
+            qNorm,
+            strategy: 'apify',
+          });
+          items = [];
+          strategy = 'browser-first';
+        }
+      } else {
+        apifyFailure = 'Apify actor not configured';
+        strategy = 'browser-first';
+      }
+    }
+
+    if (strategy === 'browser-first' || items.length === 0) {
+      const seeded = await redis.get<{ items: any[]; ingestedAt: number }>(ik);
+      if (seeded?.items?.length) {
+        items = seeded.items.map((x) => ({
+          source: marketplace,
+          title: x.title || '',
+          priceText: x.priceText || '',
+          url: x.url || '',
+          image: x.image || '',
+        }));
+        createdAt = seeded.ingestedAt;
+        strategy = 'browser-first';
+      }
+    }
+
+    if (items.length === 0 && apifyFailure) {
+      respondError(res, 500, requestId, 'apify_failed', apifyFailure);
+      return;
+    }
+
+    const toCache: CachedPayload = {
+      items: items.map(({ source, title, priceText, url, image }) => ({
+        source,
+        title,
+        priceText,
+        url,
+        image,
+      })),
+      createdAt,
+      strategy,
+    };
+
+    if (toCache.items.length) {
+      cacheStatus = 'miss-filled';
+      await redis.set(sk, toCache, { ex: ttlFor(marketplace) });
+    } else if (strategy === 'apify') {
+      cacheStatus = 'miss-empty';
+      await redis.set(sk, toCache, { ex: 30 });
+    } else {
+      cacheStatus = 'miss-empty';
+    }
+
+    const billable = strategy === 'apify' && cacheStatus !== 'hit';
+
+    if (userId) {
+      try {
+        await logUsageEvent({
+          userId,
+          eventType: 'run',
+          marketplace,
+          queryNorm: qNorm,
+          itemsReturned: toCache.items.length,
+          cacheStatus,
+          strategy,
+          latencyMs: Date.now() - startedAt,
+          billable,
+        });
+        await incrementDailyRollup({
+          userId,
+          eventType: 'run',
+          queryNorm: qNorm,
+          itemsReturned: toCache.items.length,
+          billable,
+        });
+      } catch (error: any) {
+        logEvent('error', {
+          request_id: requestId,
+          error: error?.message,
+          marketplace,
+          qNorm,
+        });
+        respondError(res, 500, requestId, 'usage_write_failed', 'Usage tracking failed');
+        return;
+      }
+    }
+
+    res.status(200).json({
+      ok: true,
+      items: decorate(
+        toCache.items,
+        createdAt,
+        toCache.strategy === 'apify' ? 'enriched' : 'browser',
+      ),
+      meta: {
+        marketplace,
+        country,
+        cached: false,
+        cacheStatus,
+        strategy,
+        ageSeconds: Math.max(0, nowSec() - createdAt),
+        ttlSeconds: ttlFor(marketplace),
+        latencyMs: Date.now() - startedAt,
+        request_id: requestId,
+      },
+    });
+  } catch (error: any) {
+    logEvent('error', {
+      request_id: requestId,
+      error: error?.message,
+      marketplace,
+      qNorm,
+      cacheStatus,
+      strategy,
+    });
+    respondError(res, 500, requestId, 'server_error', 'Market Agent failed');
+  } finally {
+    if (lockAcquired) {
+      try {
+        await redis.del(lk);
+      } catch (error: any) {
+        logEvent('error', {
+          request_id: requestId,
+          error: error?.message,
+          marketplace,
+          qNorm,
+          lock: 'release_failed',
+        });
+      }
+    }
+    logEvent('info', {
+      request_id: requestId,
+      path: req.url ?? '/api/demo',
+      marketplace,
+      qNorm,
+      cacheStatus,
+      strategy,
+      latencyMs: Date.now() - startedAt,
+    });
+  }
 }

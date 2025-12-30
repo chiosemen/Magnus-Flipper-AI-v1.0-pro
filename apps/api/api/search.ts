@@ -2,7 +2,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
 import { ApifyClient } from 'apify-client';
 import { runMarketplaceActor } from '../lib/apifyActors';
-import { planPooledRuns, type PoolRequest } from '../lib/geopool';
+import {
+  geohashEncode,
+  getGeohashPrecision,
+  planPooledRuns,
+  type PoolRequest,
+} from '../lib/geopool';
 import {
   MARKETPLACES,
   estimateCuForRun,
@@ -10,12 +15,25 @@ import {
   type MarketplaceId,
 } from '../lib/marketplaceRegistry';
 import { requireUserFromJWT } from '../lib/auth';
-import { TIER_POLICIES, type Tier } from '../lib/tierPolicy';
+import { TIER_POLICIES, getTierPolicy, type Tier, type TierFeatures } from '../lib/tierPolicy';
+import { resolveEntitlement } from '../lib/entitlementResolver';
+import { enforceBilling } from '../lib/billingGuard';
+import { logBillingEvent } from '../lib/billingEvents';
 import {
   writeCostLedgerEntries,
   type CostLedgerSource,
   type ProxyType,
 } from '../lib/costLedger';
+import { getServiceSupabaseClient } from '../lib/supabase';
+import {
+  extractPrice,
+  extractResaleAnchor,
+  median,
+  scoreDeal,
+  type DealScore,
+  type Listing,
+} from '../lib/dealScore';
+import { rankDeals } from '../lib/rankDeals';
 
 const DEFAULT_FACEBOOK_QUERY = 'iphone';
 const DEFAULT_VINTED_QUERY = 'nike';
@@ -75,6 +93,69 @@ function parseMarkets(input: unknown): string[] {
 
 function isMarketplaceId(value: string): value is MarketplaceId {
   return value in MARKETPLACES;
+}
+
+function pickField(item: any, keys: string[]): string | null {
+  if (!item || typeof item !== 'object') return null;
+  for (const key of keys) {
+    const value = key.split('.').reduce((acc, part) => {
+      if (!acc || typeof acc !== 'object') return undefined;
+      return acc[part];
+    }, item as Record<string, any>);
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+function getItemLatLng(item: any): { lat: number; lng: number } | null {
+  if (!item || typeof item !== 'object') return null;
+  const candidates = [
+    { lat: item.lat, lng: item.lng },
+    { lat: item.latitude, lng: item.longitude },
+    { lat: item.location?.lat, lng: item.location?.lng },
+    { lat: item.location?.latitude, lng: item.location?.longitude },
+    { lat: item.geo?.lat, lng: item.geo?.lng },
+  ];
+  for (const candidate of candidates) {
+    if (
+      typeof candidate.lat === 'number' &&
+      Number.isFinite(candidate.lat) &&
+      typeof candidate.lng === 'number' &&
+      Number.isFinite(candidate.lng)
+    ) {
+      return { lat: candidate.lat, lng: candidate.lng };
+    }
+  }
+  return null;
+}
+
+function normalizeGeoToken(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, '-');
+}
+
+function resolveGeoKeyForStats(params: {
+  pooledKey?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  radiusKm?: number | null;
+  country?: string | null;
+  locationText?: string | null;
+}) {
+  if (params.pooledKey) return params.pooledKey;
+  if (
+    typeof params.lat === 'number' &&
+    typeof params.lng === 'number' &&
+    Number.isFinite(params.lat) &&
+    Number.isFinite(params.lng)
+  ) {
+    const precision = params.radiusKm
+      ? getGeohashPrecision(params.radiusKm) ?? 4
+      : 5;
+    return geohashEncode(params.lat, params.lng, precision);
+  }
+  if (params.country) return `country:${normalizeGeoToken(params.country)}`;
+  if (params.locationText) return `city:${normalizeGeoToken(params.locationText)}`;
+  return null;
 }
 
 function parseBody(req: VercelRequest): Record<string, any> {
@@ -229,6 +310,127 @@ async function runPool<T>(tasks: Array<() => Promise<T>>, limit: number): Promis
   return results;
 }
 
+type DailyStatRow = {
+  market: string;
+  query: string;
+  geo_cell: string | null;
+  stat_date: string;
+  median_price: number | null;
+  count_listings: number | null;
+};
+
+type StatsKey = {
+  market: string;
+  query: string;
+  geoKey: string | null;
+  statDate: string;
+};
+
+function buildStatsKey(key: StatsKey) {
+  return `${key.market}|${key.query}|${key.geoKey ?? ''}|${key.statDate}`;
+}
+
+function formatDealScoreForTier(
+  dealScore: DealScore,
+  features: TierFeatures,
+) {
+  if (!features.dealScore) return undefined;
+  const payload: {
+    score: number;
+    confidence: DealScore['confidence'];
+    explanation?: string[];
+    context?: DealScore['context'];
+  } = {
+    score: dealScore.score,
+    confidence: dealScore.confidence,
+  };
+
+  if (features.dealScoreExplain) {
+    payload.explanation = dealScore.explanation;
+  }
+
+  if (features.dealScoreContext && dealScore.context) {
+    payload.context = dealScore.context;
+  }
+
+  return payload;
+}
+
+async function fetchDailyStats(keys: StatsKey[]) {
+  if (keys.length === 0) return new Map<string, DailyStatRow>();
+  try {
+    const supabase = getServiceSupabaseClient();
+    const uniqueMarkets = Array.from(new Set(keys.map((key) => key.market)));
+    const uniqueQueries = Array.from(new Set(keys.map((key) => key.query)));
+    const statDate = keys[0]?.statDate;
+
+    if (uniqueMarkets.length === 0 || uniqueQueries.length === 0 || !statDate) {
+      return new Map<string, DailyStatRow>();
+    }
+
+    const { data, error } = await supabase
+      .from('listing_stats_daily')
+      .select('market, query, geo_cell, stat_date, median_price, count_listings')
+      .eq('stat_date', statDate)
+      .in('market', uniqueMarkets)
+      .in('query', uniqueQueries);
+
+    if (error || !data) {
+      return new Map<string, DailyStatRow>();
+    }
+
+    const map = new Map<string, DailyStatRow>();
+    for (const row of data as DailyStatRow[]) {
+      const entry = {
+        market: row.market,
+        query: row.query,
+        geo_cell: row.geo_cell ?? null,
+        stat_date: row.stat_date,
+        median_price:
+          typeof row.median_price === 'number' ? row.median_price : null,
+        count_listings:
+          typeof row.count_listings === 'number' ? row.count_listings : null,
+      };
+      map.set(
+        buildStatsKey({
+          market: entry.market,
+          query: entry.query,
+          geoKey: entry.geo_cell,
+          statDate: entry.stat_date,
+        }),
+        entry,
+      );
+    }
+
+    return map;
+  } catch {
+    return new Map<string, DailyStatRow>();
+  }
+}
+
+async function fetchUsageSnapshot(userId: string) {
+  try {
+    const supabase = getServiceSupabaseClient();
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const { data, error } = await supabase
+      .from('cost_ledger')
+      .select('cu_actual')
+      .eq('user_id', userId)
+      .gte('executed_at', start.toISOString());
+    if (error || !data) {
+      return { todayCu: 0 };
+    }
+    const todayCu = data.reduce((sum, row) => {
+      const value = typeof row.cu_actual === 'number' ? row.cu_actual : Number(row.cu_actual);
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+    return { todayCu };
+  } catch {
+    return { todayCu: 0 };
+  }
+}
+
 type SearchUser = {
   userId: string | null;
   tier: Tier;
@@ -255,7 +457,8 @@ export async function executeSearch(
     return { status: 500, payload: { error: 'APIFY_TOKEN missing' } };
   }
 
-  const policy = TIER_POLICIES[user.tier];
+  const entitlement = await resolveEntitlement({ userId: user.userId });
+  const policy = getTierPolicy(entitlement.tier);
   const debugPooling = process.env.DEBUG_POOLING === 'true';
 
   let queries = parseQueries(body.q ?? body.queries);
@@ -313,6 +516,69 @@ export async function executeSearch(
   });
   const estimatedCuTotal = cuEstimate.total;
   const estimatedCuByMarket = cuEstimate.byMarket;
+
+  const intentPayload = {
+    queries,
+    markets: typedMarkets,
+    estimatedCu: estimatedCuTotal,
+    itemsExpected: limit,
+  };
+
+  await logBillingEvent({
+    userId: user.userId ?? null,
+    eventType: 'search_intent',
+    status: 'received',
+    intent: intentPayload,
+    metadata: { tier: policy.tier },
+  });
+
+  const usageSnapshot = user.userId ? await fetchUsageSnapshot(user.userId) : { todayCu: 0 };
+  const billingDecision = enforceBilling({
+    entitlement,
+    usage: usageSnapshot,
+    intent: {
+      estimatedCu: estimatedCuTotal,
+      markets: typedMarkets,
+      queries,
+    },
+  });
+
+  if (billingDecision.blocked) {
+    await logBillingEvent({
+      userId: user.userId ?? null,
+      eventType: 'search_blocked',
+      status: 'blocked',
+      intent: intentPayload,
+      usage: { todayCu: usageSnapshot.todayCu },
+      blockedReason: billingDecision.reason ?? 'blocked',
+      metadata: { tier: policy.tier },
+    });
+
+    return {
+      status: 200,
+      payload: {
+        blocked: true,
+        reason: billingDecision.reason ?? 'Access blocked',
+        resetsAt: billingDecision.resetsAt ?? null,
+        tier: policy.tier,
+        policy: {
+          maxQueriesPerRun: policy.maxQueriesPerRun,
+          maxMarketsPerRun: policy.maxMarketsPerRun,
+          maxConcurrency: policy.maxConcurrency,
+          marketsAllowed: policy.marketsAllowed,
+          dailyRunLimit: policy.dailyRunLimit,
+          dailyCuLimit: policy.dailyCuLimit,
+          cuCapPerRun: policy.cuCapPerRun,
+          features: policy.features,
+        },
+        meta: {
+          estimatedCuTotal,
+          estimatedCuByMarket,
+          warning: billingDecision.warning ?? null,
+        },
+      },
+    };
+  }
   const postalCode = normalizeString(body.postalCode);
   const locationTextInput =
     normalizeString(body.locationText) ?? normalizeString(body.location);
@@ -409,39 +675,37 @@ export async function executeSearch(
       const postalUsed = capabilities.supportsPostal ? postalCode : null;
       const warnings: string[] = [];
       if (!capabilities.supportsRadiusKm && radiusRequested !== null) {
-        warnings.push('Radius ignored for this marketplace.');
+        warnings.push('Some selected markets do not support precise location filtering.');
       }
       if (!capabilities.supportsLatLng && resolvedLocation) {
-        warnings.push('Geo coordinates ignored for this marketplace.');
+        warnings.push('Location accuracy is limited for this marketplace.');
       }
       if (!capabilities.supportsPostal && postalCode) {
-        warnings.push('Postal code ignored for this marketplace.');
+        warnings.push('Postal code was not applied for this marketplace.');
       }
 
       const poolingReasons: string[] = [];
       if (!marketConfig.pooling.enabled) {
-        poolingReasons.push('Pooling disabled by registry.');
+        poolingReasons.push('Standard scan used for this market.');
       }
       if (
         radiusKmUsed &&
         marketConfig.pooling.maxRadiusKm > 0 &&
         radiusKmUsed > marketConfig.pooling.maxRadiusKm
       ) {
-        poolingReasons.push(
-          `Radius exceeds pooling max (${marketConfig.pooling.maxRadiusKm} km).`,
-        );
+        poolingReasons.push('Radius is broader than the precision scan limit.');
       }
       const pricingModel =
         marketConfig.costModel.pricingModel ??
         (marketConfig.costModel.cuPerItem > 0 ? 'per-result' : 'per-run');
       if (pricingModel === 'per-run' && marketConfig.costModel.pooledSafe === false) {
-        poolingReasons.push('Pooling disabled for per-run pricing.');
+        poolingReasons.push('Precision pooling is disabled for this market.');
       }
       if (marketConfig.pooling.key === 'geohash' && !capabilities.supportsLatLng) {
-        poolingReasons.push('Pooling disabled: lat/lng unsupported.');
+        poolingReasons.push('Precise location pooling unavailable for this market.');
       }
       if (marketConfig.pooling.key === 'postal' && !capabilities.supportsPostal) {
-        poolingReasons.push('Pooling disabled: postal unsupported.');
+        poolingReasons.push('Postal-based pooling unavailable for this market.');
       }
 
       const poolingOverride =
@@ -544,7 +808,7 @@ export async function executeSearch(
       console.log(
         JSON.stringify({
           userId: user.userId ?? null,
-          tier: user.tier,
+          tier: policy.tier,
           marketplaceId: pooledRun.marketplaceId,
           pooledKey,
           runId: result.runId,
@@ -559,7 +823,7 @@ export async function executeSearch(
       console.log(
         JSON.stringify({
           userId: user.userId ?? null,
-          tier: user.tier,
+          tier: policy.tier,
           marketplaceId: pooledRun.marketplaceId,
           pooledKey,
           runId: null,
@@ -675,6 +939,21 @@ export async function executeSearch(
     await writeCostLedgerEntries(ledgerEntries);
   }
 
+  await logBillingEvent({
+    userId: user.userId ?? null,
+    eventType: 'search_executed',
+    status: 'complete',
+    intent: intentPayload,
+    usage: {
+      todayCu: usageSnapshot.todayCu,
+      cuCharged: cuEstimatedTotal,
+      pooledRuns: pooledRunsToExecute.length,
+      skippedRuns: skippedRunIds.size,
+      errorCount: errors.length,
+    },
+    metadata: { tier: policy.tier },
+  });
+
   const results = mapping.map((entry) => {
     const meta = requestMeta.get(entry.requestId);
     const pooledRun = pooledRunMap.get(entry.pooledRunId);
@@ -744,6 +1023,132 @@ export async function executeSearch(
     };
   });
 
+  let scoredResults = results;
+
+  if (policy.features.dealScore) {
+    const statDate = new Date().toISOString().slice(0, 10);
+    const statsKeys: StatsKey[] = results.map((result) => {
+      const geoKey = resolveGeoKeyForStats({
+        pooledKey: result.pooling?.geoKey ?? null,
+        lat: result.locationUsed?.lat ?? null,
+        lng: result.locationUsed?.lng ?? null,
+        radiusKm: result.radiusKmUsed ?? null,
+        country: result.locationUsed?.country ?? null,
+        locationText: result.locationUsed?.text ?? null,
+      });
+      return {
+        market: result.market,
+        query: result.query,
+        geoKey,
+        statDate,
+      };
+    });
+
+    const statsMap = await fetchDailyStats(statsKeys);
+
+    scoredResults = results.map((result, index) => {
+      if (!Array.isArray(result.items) || result.items.length === 0) {
+        return result;
+      }
+
+      const geoKey = statsKeys[index]?.geoKey ?? null;
+      const statKey = buildStatsKey({
+        market: result.market,
+        query: result.query,
+        geoKey,
+        statDate,
+      });
+      const stats = statsMap.get(statKey);
+
+      const prices = result.items
+        .map((item) => extractPrice(item))
+        .filter((value): value is number => value !== null);
+      const medianPrice = stats?.median_price ?? median(prices);
+      const countListings = stats?.count_listings ?? result.items.length;
+
+      const scoredItems = result.items.map((item: any) => {
+        const title =
+          pickField(item, [
+            'title',
+            'name',
+            'listingTitle',
+            'heading',
+            'marketplace_listing_title',
+          ]) || 'Listing';
+        const url =
+          pickField(item, [
+            'url',
+            'listingUrl',
+            'itemUrl',
+            'link',
+            'productUrl',
+            'permalink',
+          ]) || undefined;
+        const image =
+          pickField(item, ['image', 'imageUrl', 'picture', 'photo', 'thumbnail']) || undefined;
+        const postedAt =
+          pickField(item, [
+            'createdAt',
+            'created_at',
+            'listedAt',
+            'timestamp',
+            'date',
+            'publishedAt',
+          ]) || undefined;
+        const itemLatLng = getItemLatLng(item);
+        const listing: Listing = {
+          market: result.market,
+          query: result.query,
+          title,
+          price: extractPrice(item) ?? item?.price ?? null,
+          url,
+          image,
+          locationText: result.locationUsed?.text ?? undefined,
+          lat: itemLatLng?.lat ?? undefined,
+          lng: itemLatLng?.lng ?? undefined,
+          radiusKm: result.radiusKmUsed ?? undefined,
+          postedAt,
+          fetchedAt: result.timestamp ?? new Date().toISOString(),
+        };
+
+        const dealScore = scoreDeal({
+          listing,
+          marketContext: {
+            medianPrice: typeof medianPrice === 'number' ? medianPrice : null,
+            listingCount: typeof countListings === 'number' ? countListings : null,
+            referencePrice: extractResaleAnchor(item),
+          },
+          geoContext: {
+            hasExactLocation: Boolean(itemLatLng),
+            hasRadius: typeof result.radiusKmUsed === 'number',
+            isInferred: Boolean(result.locationUsed?.text) && !itemLatLng,
+          },
+        });
+
+        const dealScorePayload = formatDealScoreForTier(dealScore, policy.features);
+
+        return {
+          item,
+          dealScore: dealScorePayload,
+          postedAt,
+          fetchedAt: listing.fetchedAt,
+        };
+      });
+
+      return {
+        ...result,
+        items: rankDeals(scoredItems).map((entry) =>
+          entry.dealScore
+            ? {
+                ...entry.item,
+                dealScore: entry.dealScore,
+              }
+            : entry.item,
+        ),
+      };
+    });
+  }
+
   const poolingApplied = pooledRuns.some(
     (run) => run.pooling.enabled && run.pooling.strategy !== 'none',
   );
@@ -756,8 +1161,11 @@ export async function executeSearch(
     ),
   );
   const metaWarnings = Array.from(
-    new Set(results.flatMap((entry) => entry.warnings ?? [])),
+    new Set(scoredResults.flatMap((entry) => entry.warnings ?? [])),
   );
+  if (billingDecision.warning) {
+    metaWarnings.push(billingDecision.warning);
+  }
 
   const poolingPrecisions = Array.from(
     new Set(
@@ -801,6 +1209,7 @@ export async function executeSearch(
         dailyRunLimit: policy.dailyRunLimit,
         dailyCuLimit: policy.dailyCuLimit,
         cuCapPerRun: policy.cuCapPerRun,
+        features: policy.features,
       },
       requestedQueries,
       requestedMarkets,
@@ -810,7 +1219,7 @@ export async function executeSearch(
         totalTasks: pooledRunsToExecute.length,
         concurrency: policy.maxConcurrency,
       },
-      results,
+      results: scoredResults,
       errors,
       meta: {
         marketCapabilities,

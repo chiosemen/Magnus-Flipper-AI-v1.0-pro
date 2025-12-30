@@ -22,6 +22,15 @@ type SavedSearch = {
   } | null;
   frequency: "daily" | "weekly";
   enabled: boolean;
+  lastRun?: {
+    started_at: string;
+    matches_found: number;
+    meta?: {
+      newListings?: number;
+      priceDrops?: number;
+      suppressionReason?: string | null;
+    };
+  } | null;
 };
 
 const MARKET_OPTIONS = Object.values(MARKETPLACES).filter((market) => market.enabled);
@@ -48,6 +57,20 @@ export default function SavedSearchesPage() {
   const [units, setUnits] = useState<"km" | "mi">("km");
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
 
+  const formatRelativeTime = (iso?: string | null) => {
+    if (!iso) return null;
+    const then = new Date(iso).getTime();
+    if (!Number.isFinite(then)) return null;
+    const diffMs = Date.now() - then;
+    const minutes = Math.round(diffMs / 60000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours} hr ago`;
+    const days = Math.round(hours / 24);
+    return `${days}d ago`;
+  };
+
   const canSubmit = useMemo(() => name.trim() && queries.trim(), [name, queries]);
 
   const getToken = async () => {
@@ -69,12 +92,12 @@ export default function SavedSearchesPage() {
       });
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload?.error || "Failed to load saved searches.");
+        setError(payload?.error || "Unable to load watchlists right now.");
         return;
       }
       setSavedSearches(payload.savedSearches ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load saved searches.");
+      setError("Unable to load watchlists right now.");
     } finally {
       setLoading(false);
     }
@@ -100,7 +123,7 @@ export default function SavedSearchesPage() {
     try {
       const token = await getToken();
       if (!token) {
-        setError("You must be logged in to save searches.");
+        setError("Sign in to save watchlists.");
         return;
       }
 
@@ -135,7 +158,7 @@ export default function SavedSearchesPage() {
 
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload?.error || "Failed to save search.");
+        setError(payload?.error || "Unable to save watchlist right now.");
         return;
       }
 
@@ -151,7 +174,7 @@ export default function SavedSearchesPage() {
       setFrequency("daily");
       setSavedSearches((prev) => [payload.savedSearch, ...prev]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save search.");
+      setError("Unable to save watchlist right now.");
     } finally {
       setLoading(false);
     }
@@ -161,7 +184,7 @@ export default function SavedSearchesPage() {
     setError(null);
     const token = await getToken();
     if (!token) {
-      setError("You must be logged in to update searches.");
+      setError("Sign in to update watchlists.");
       return;
     }
     const response = await fetch(`/api/saved-searches/${search.id}`, {
@@ -174,7 +197,7 @@ export default function SavedSearchesPage() {
     });
     const payload = await response.json();
     if (!response.ok) {
-      setError(payload?.error || "Failed to update search.");
+      setError(payload?.error || "Unable to update watchlist right now.");
       return;
     }
     setSavedSearches((prev) =>
@@ -189,7 +212,7 @@ export default function SavedSearchesPage() {
     setError(null);
     const token = await getToken();
     if (!token) {
-      setError("You must be logged in to update searches.");
+      setError("Sign in to update watchlists.");
       return;
     }
     const response = await fetch(`/api/saved-searches/${search.id}`, {
@@ -202,7 +225,7 @@ export default function SavedSearchesPage() {
     });
     const payload = await response.json();
     if (!response.ok) {
-      setError(payload?.error || "Failed to update search.");
+      setError(payload?.error || "Unable to update watchlist right now.");
       return;
     }
     setSavedSearches((prev) =>
@@ -214,7 +237,7 @@ export default function SavedSearchesPage() {
     setError(null);
     const token = await getToken();
     if (!token) {
-      setError("You must be logged in to delete searches.");
+      setError("Sign in to remove watchlists.");
       return;
     }
     const response = await fetch(`/api/saved-searches/${searchId}`, {
@@ -223,7 +246,7 @@ export default function SavedSearchesPage() {
     });
     const payload = await response.json();
     if (!response.ok) {
-      setError(payload?.error || "Failed to delete search.");
+      setError(payload?.error || "Unable to remove watchlist right now.");
       return;
     }
     setSavedSearches((prev) => prev.filter((item) => item.id !== searchId));
@@ -232,15 +255,15 @@ export default function SavedSearchesPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6">
-        <h1 className="text-3xl font-semibold mb-3">Saved Searches</h1>
+        <h1 className="text-3xl font-semibold mb-3">Watchlists</h1>
         <p className="text-white/70 mb-6">
-          Log in to create alerts and scheduled searches.
+          Sign in to create watchlists and scheduled scans.
         </p>
         <Link
           href="/login"
           className="rounded-lg bg-white text-black px-4 py-2 font-semibold"
         >
-          Log in
+          Sign in
         </Link>
       </div>
     );
@@ -250,24 +273,27 @@ export default function SavedSearchesPage() {
     <div className="min-h-screen bg-black text-white px-6 py-10">
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="space-y-2">
-          <h1 className="text-3xl font-semibold">Saved Searches</h1>
+          <h1 className="text-3xl font-semibold">Watchlists</h1>
           <p className="text-white/70">
-            Schedule pooled scans and receive email alerts (best effort).
+            Saved searches that run automatically on a schedule.
           </p>
         </header>
 
         <form
+          id="create-watchlist"
           onSubmit={handleCreate}
           className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6 space-y-4"
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm text-white/70 mb-1">Search name</label>
+              <label className="block text-sm text-white/70 mb-1">
+                Watchlist name
+              </label>
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2"
-                placeholder="UK iPhone deals"
+                placeholder="iPhone deals near London"
                 required
               />
             </div>
@@ -277,14 +303,16 @@ export default function SavedSearchesPage() {
                 value={queries}
                 onChange={(event) => setQueries(event.target.value)}
                 className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2"
-                placeholder="iphone, macbook"
+                placeholder="iphone 13, macbook pro, ps5"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-white/70 mb-2">Markets</label>
+            <label className="block text-sm text-white/70 mb-2">
+              Markets scanned
+            </label>
             <div className="flex flex-wrap gap-2">
               {MARKET_OPTIONS.map((market) => (
                 <button
@@ -382,10 +410,13 @@ export default function SavedSearchesPage() {
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="md:col-span-2 text-xs text-white/50">
-              Provide location text or postal, and optionally lat/lng with radius.
+              Some marketplaces approximate by region. Location accuracy is shown
+              on each run.
             </div>
             <div>
-              <label className="block text-sm text-white/70 mb-1">Frequency</label>
+              <label className="block text-sm text-white/70 mb-1">
+                Run frequency
+              </label>
               <select
                 value={frequency}
                 onChange={(event) =>
@@ -404,7 +435,7 @@ export default function SavedSearchesPage() {
             disabled={!canSubmit || loading}
             className="rounded-lg bg-white text-black px-4 py-2 font-semibold disabled:opacity-60"
           >
-            {loading ? "Saving..." : "Save search"}
+            {loading ? "Saving watchlist..." : "Save watchlist"}
           </button>
         </form>
 
@@ -415,13 +446,23 @@ export default function SavedSearchesPage() {
         )}
 
         <section className="space-y-4">
-          <h2 className="text-xl font-semibold">Your saved searches</h2>
+          <h2 className="text-xl font-semibold">Watchlists</h2>
           {loading && (
-            <div className="text-sm text-white/60">Loading saved searches...</div>
+            <div className="text-sm text-white/60">Loading watchlists...</div>
           )}
           {!loading && savedSearches.length === 0 && (
-            <div className="text-sm text-white/60">
-              No saved searches yet.
+            <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-4 text-sm text-white/70 space-y-3">
+              <div>You don't have any watchlists yet.</div>
+              <div>
+                Create one to monitor specific markets, locations, and price
+                ranges over time, automatically and within your plan limits.
+              </div>
+              <a
+                href="#create-watchlist"
+                className="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs text-white"
+              >
+                Create Watchlist
+              </a>
             </div>
           )}
           {savedSearches.map((search) => (
@@ -435,8 +476,47 @@ export default function SavedSearchesPage() {
                   <div className="text-xs text-white/50">
                     {search.queries.join(", ")}
                   </div>
+                  {search.lastRun ? (
+                    <div className="mt-1 text-xs text-white/60">
+                      <div className="text-white/70">
+                        {search.lastRun.meta?.suppressionReason
+                          ? "Last run: Skipped to stay within your plan limits."
+                          : "Last run: Completed successfully."}
+                      </div>
+                      <div className="mt-1">
+                        {(() => {
+                          const newListings =
+                            typeof search.lastRun?.meta?.newListings === "number"
+                              ? search.lastRun.meta.newListings
+                              : search.lastRun.matches_found;
+                          if (newListings === 0) {
+                            return "Preview: no new listings on last run.";
+                          }
+                          return `Preview: last run would have found ${newListings} new listings.`;
+                        })()}
+                        {search.lastRun.meta?.priceDrops
+                          ? ` · ${search.lastRun.meta.priceDrops} price drops`
+                          : ""}
+                        {search.lastRun.started_at
+                          ? ` · last checked ${formatRelativeTime(
+                              search.lastRun.started_at
+                            )}`
+                          : ""}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-xs text-white/50">
+                      Preview: no runs yet.
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
+                  <span
+                    title="This watchlist runs under your current plan limits."
+                    className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] text-white/60"
+                  >
+                    Plan limits
+                  </span>
                   <select
                     value={search.frequency}
                     onChange={(event) =>
@@ -453,8 +533,13 @@ export default function SavedSearchesPage() {
                   <button
                     onClick={() => handleToggle(search)}
                     className="rounded-full border border-white/10 px-3 py-1 text-xs"
+                    title={
+                      search.enabled
+                        ? "Paused watchlists won't run on schedule."
+                        : undefined
+                    }
                   >
-                    {search.enabled ? "Disable" : "Enable"}
+                    {search.enabled ? "Pause watchlist" : "Resume watchlist"}
                   </button>
                   <button
                     onClick={() => handleDelete(search.id)}
@@ -465,11 +550,11 @@ export default function SavedSearchesPage() {
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-white/60">
-                <span>Frequency: {search.frequency}</span>
-                <span>Markets: {search.markets.join(", ")}</span>
+                <span>Run frequency: {search.frequency}</span>
+                <span>Markets scanned: {search.markets.join(", ")}</span>
                 {search.geo ? (
                   <span>
-                    Geo:{" "}
+                    Search area:{" "}
                     {[
                       search.geo.country,
                       search.geo.locationText,

@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireUserFromJWT } from '../../lib/auth';
 import { getServiceSupabaseClient } from '../../lib/supabase';
 import { getTierPolicy } from '../../lib/tierPolicy';
+import { resolveEntitlement } from '../../lib/entitlementResolver';
 
 function safeNumber(value: unknown): number {
   const parsed = typeof value === 'number' ? value : Number(value);
@@ -32,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data, error } = await supabase
       .from('cost_ledger')
-      .select('cu_estimated, cu_actual')
+      .select('cu_actual')
       .eq('user_id', user.userId)
       .gte('executed_at', todayStart);
 
@@ -41,13 +42,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const todayCu = (data ?? []).reduce((sum, row) => {
-      const actual = safeNumber(row.cu_actual);
-      const estimate = safeNumber(row.cu_estimated);
-      return sum + (actual > 0 ? actual : estimate);
-    }, 0);
+    const todayCu = (data ?? []).reduce(
+      (sum, row) => sum + safeNumber(row.cu_actual),
+      0,
+    );
 
-    const policy = getTierPolicy(user.tier);
+    const entitlement = await resolveEntitlement({ userId: user.userId });
+    const policy = getTierPolicy(entitlement.tier);
     const dailyLimitCu = policy.dailyCuLimit;
     const percentUsed =
       dailyLimitCu > 0

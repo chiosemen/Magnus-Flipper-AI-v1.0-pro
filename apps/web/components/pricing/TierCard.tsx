@@ -57,8 +57,17 @@ export function TierCard({ policy, isHighlighted }: TierCardProps) {
         </div>
       </dl>
 
+      <div className="mt-4 space-y-2 text-xs text-white/70">
+        {policy.featureHighlights.map((feature) => (
+          <div key={feature} className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300/70" />
+            <span>{feature}</span>
+          </div>
+        ))}
+      </div>
+
       <div className="mt-4 text-xs text-white/60">
-        Live data via Apify
+        Live marketplace data
       </div>
     </div>
   );

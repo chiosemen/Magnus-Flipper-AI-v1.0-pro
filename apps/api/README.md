@@ -99,3 +99,28 @@ create policy "listing_seen_insert_own"
   on public.listing_seen for insert
   with check (auth.uid() = user_id);
 ```
+
+## Phase 6 setup
+
+Run the SQL in `apps/api/supabase/phase6.sql` to create Deal Score tables
+and daily stats for signals/insights.
+
+Required env vars:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (api)
+- `SUPABASE_ANON_KEY` (web)
+- `APIFY_TOKEN`
+- `ADMIN_KEY` (admin aggregate endpoint)
+
+## Phase 8 setup
+
+Run the SQL in `apps/api/supabase/phase8.sql` to create billing entitlements,
+overrides, and billing events.
+
+Required env vars:
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_PRO` (optional)
+- `STRIPE_PRICE_AGENCY` (optional)
+- `STRIPE_PRICE_ENTERPRISE` (optional)
+- `ENTITLEMENT_GRACE_DAYS` (optional)

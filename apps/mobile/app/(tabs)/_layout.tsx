@@ -25,10 +25,26 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="home" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
           title: 'Search',
           tabBarIcon: ({ color }) => (
             <TabBarIcon name="search" color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="results"
+        options={{
+          title: 'Results',
+          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
