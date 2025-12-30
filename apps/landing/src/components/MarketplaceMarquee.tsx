@@ -2,8 +2,16 @@
 
 import Image from 'next/image';
 
+type Marketplace = {
+  name: string;
+  logo: string;
+  url: string;
+  tier: 'primary' | 'secondary';
+  label?: string;
+};
+
 // PRIMARY - Actively wired
-const primaryMarketplaces = [
+const primaryMarketplaces: Marketplace[] = [
   {
     name: 'Facebook Marketplace',
     logo: '/logos/facebook-marketplace.svg',
@@ -31,7 +39,7 @@ const primaryMarketplaces = [
 ];
 
 // SECONDARY - Supporting/Reference
-const secondaryMarketplaces = [
+const secondaryMarketplaces: Marketplace[] = [
   {
     name: 'Craigslist',
     logo: '/logos/craigslist.svg',
