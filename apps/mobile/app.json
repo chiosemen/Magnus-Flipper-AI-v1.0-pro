@@ -1,32 +1,37 @@
 {
   "expo": {
-    "name": "Magnus Flipper AI",
-    "slug": "magnus-flipper-ai",
+    "name": "magnus-flipper-mobile",
+    "slug": "magnus-flipper-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/icon.png",
+    "scheme": "magnusflipper",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": true
     },
-
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
     },
-
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
     "plugins": [
       "expo-router"
     ],
-
     "experiments": {
       "typedRoutes": true
     }

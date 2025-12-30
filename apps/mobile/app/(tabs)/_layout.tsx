@@ -1,96 +1,61 @@
-/**
- * Tab Layout - Main app navigation
- * Tabs: Feed (Home), Searches, Alerts, Settings
- */
-
+import React from 'react';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+
+// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
+function TabBarIcon(props: {
+  name: React.ComponentProps<typeof FontAwesome>['name'];
+  color: string;
+}) {
+  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+}
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#0A0F14' },
-        headerTintColor: '#E6F6FF',
-        tabBarStyle: {
-          backgroundColor: '#0A0F14',
-          borderTopColor: '#1E293B',
-          borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#64748B',
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: 'Home',
-          headerTitle: 'Feed',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="searches"
-        options={{
-          title: 'Searches',
-          headerTitle: 'Saved Searches',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="alerts"
-        options={{
-          title: 'Alerts',
-          headerTitle: 'Recent Alerts',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          headerTitle: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
-          ),
-        }}
-      />
-      {/* Hide old screens from tab bar */}
+        headerStyle: { backgroundColor: '#0b0d12' },
+        headerTintColor: '#f9fafb',
+        tabBarStyle: { backgroundColor: '#0b0d12', borderTopColor: '#1f2937' },
+        tabBarActiveTintColor: '#00E5FF',
+        tabBarInactiveTintColor: '#6b7280',
+        headerShown: useClientOnlyValue(false, true),
+      }}>
       <Tabs.Screen
         name="index"
         options={{
-          href: null,
+          title: 'Search',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="search" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="watchlists"
+        name="saved"
         options={{
-          href: null,
+          title: 'Saved',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="heart" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="deals"
+        name="usage"
         options={{
-          href: null,
+          title: 'Usage',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="bar-chart" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="account"
         options={{
-          href: null,
+          title: 'Account',
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="user" color={color} />
+          ),
         }}
       />
     </Tabs>
