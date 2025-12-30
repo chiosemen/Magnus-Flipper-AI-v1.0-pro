@@ -13,35 +13,36 @@ const stats = [
 
 const dealNotifications = [
   {
-    title: 'iPhone 14 Pro',
-    price: '$450',
-    market: 'Facebook',
-    savings: '$350 below market',
+    title: 'Dyson Vacuum',
+    price: '$180',
+    market: 'Facebook Marketplace',
+    savings: '$220 below retail',
     delay: 0
   },
   {
-    title: 'PS5 Console',
-    price: '$320',
-    market: 'OfferUp',
-    savings: '$180 profit margin',
+    title: 'iPhone 13 Pro',
+    price: '£450',
+    market: 'Gumtree',
+    savings: '£180 profit margin',
     delay: 0.2
   },
   {
-    title: 'Dyson Vacuum',
-    price: '$180',
-    market: 'Craigslist',
-    savings: '$220 below retail',
+    title: 'Nintendo Switch',
+    price: '€120',
+    market: 'Vinted',
+    savings: '€80 below market',
     delay: 0.4
   },
 ];
 
 const marketplaceLogos = [
   'Facebook Marketplace',
-  'Craigslist',
   'eBay',
-  'OfferUp',
-  'Nextdoor',
-  'Kijiji',
+  'Vinted',
+  'Gumtree',
+  'Craigslist',
+  'Amazon',
+  'CEX',
 ];
 
 export default function Hero() {
@@ -84,7 +85,7 @@ export default function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-carbon-300 mb-8 max-w-3xl mx-auto leading-relaxed"
           >
-            Magnus Flipper AI monitors 6+ marketplaces 24/7, analyzing millions of listings with AI to send you instant alerts on underpriced items before they're gone.
+            Magnus Flipper AI monitors 7+ marketplaces 24/7, analyzing millions of listings with AI to send you instant alerts on underpriced items before they're gone.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -207,7 +208,7 @@ export default function Hero() {
             className="mt-16"
           >
             <p className="text-sm text-carbon-500 mb-6 uppercase tracking-wider">
-              Monitoring 6+ Marketplaces
+              Monitoring 7+ Marketplaces
             </p>
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
               {marketplaceLogos.map((marketplace, index) => (

@@ -19,7 +19,7 @@ const features = [
   {
     icon: Globe,
     title: 'Multi-Marketplace',
-    description: 'Monitor Facebook Marketplace, Craigslist, eBay, OfferUp, Nextdoor, and Kijiji from one dashboard.',
+    description: 'Monitor Facebook Marketplace, eBay, Vinted, and Gumtree from one dashboard. Plus reference pricing from Amazon and CEX trade-in values.',
     color: 'text-blue-400',
   },
   {

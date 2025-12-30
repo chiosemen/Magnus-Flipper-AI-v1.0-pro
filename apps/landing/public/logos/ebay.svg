@@ -1,6 +1,8 @@
-<svg width="80" height="32" viewBox="0 0 80 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <text x="4" y="22" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#E53238">e</text>
-  <text x="18" y="22" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#0064D2">B</text>
-  <text x="32" y="22" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#F5AF02">a</text>
-  <text x="46" y="22" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#86B817">y</text>
+<svg viewBox="0 0 80 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="24" font-family="Arial, sans-serif" font-size="24" font-weight="bold">
+    <tspan fill="#E53238">e</tspan>
+    <tspan fill="#0064D2">b</tspan>
+    <tspan fill="#F5AF02">a</tspan>
+    <tspan fill="#86B817">y</tspan>
+  </text>
 </svg>
