@@ -21,10 +21,16 @@ export function ProfitCalculator() {
 
   const grossProfit = sellPriceNum - buyPriceNum;
   const netProfit = grossProfit - feesNum;
-  // Margin: profit as percentage of sell price (how much profit per unit sold)
-  const margin = sellPriceNum > 0 ? ((netProfit / sellPriceNum) * 100).toFixed(2) : "0.00";
-  // ROI: return on investment as percentage of buy price (how much return on initial investment)
-  const roi = buyPriceNum > 0 ? ((netProfit / buyPriceNum) * 100).toFixed(2) : "0.00";
+  // Margin: profit as percentage of buy price (how much profit relative to purchase cost)
+  const margin = buyPriceNum > 0 ? ((netProfit / buyPriceNum) * 100).toFixed(2) : "0.00";
+  // ROI: return on investment as percentage of sell price (how much profit relative to sale)
+  const roi = sellPriceNum > 0 ? ((netProfit / sellPriceNum) * 100).toFixed(2) : "0.00";
+  const hasInput = buyPrice !== "" || sellPrice !== "" || fees !== "";
+
+  const formatCurrency = (value: number) => {
+    const absolute = Math.abs(value).toFixed(2);
+    return value < 0 ? `-£${absolute}` : `£${absolute}`;
+  };
 
   return (
     <Card className="p-6">
@@ -36,8 +42,11 @@ export function ProfitCalculator() {
         {/* Inputs */}
         <div className="space-y-4">
           <div>
-            <label className="text-body-s text-text-secondary mb-2 block">Buy Price (£)</label>
+            <label htmlFor="buy-price" className="text-body-s text-text-secondary mb-2 block">
+              Buy Price
+            </label>
             <Input
+              id="buy-price"
               type="number"
               value={buyPrice}
               onChange={(e) => setBuyPrice(e.target.value)}
@@ -47,8 +56,11 @@ export function ProfitCalculator() {
           </div>
 
           <div>
-            <label className="text-body-s text-text-secondary mb-2 block">Sell Price (£)</label>
+            <label htmlFor="sell-price" className="text-body-s text-text-secondary mb-2 block">
+              Sell Price
+            </label>
             <Input
+              id="sell-price"
               type="number"
               value={sellPrice}
               onChange={(e) => setSellPrice(e.target.value)}
@@ -58,10 +70,11 @@ export function ProfitCalculator() {
           </div>
 
           <div>
-            <label className="text-body-s text-text-secondary mb-2 block">
-              Fees & Costs (£)
+            <label htmlFor="fees" className="text-body-s text-text-secondary mb-2 block">
+              Fees & Costs
             </label>
             <Input
+              id="fees"
               type="number"
               value={fees}
               onChange={(e) => setFees(e.target.value)}
@@ -79,7 +92,9 @@ export function ProfitCalculator() {
         <div className="space-y-4">
           <div className="p-4 bg-surfaceSubtle rounded-md">
             <div className="text-body-s text-text-secondary mb-1">Gross Profit</div>
-            <div className="text-h2 font-bold text-foreground">£{grossProfit.toFixed(2)}</div>
+            <div className="text-h2 font-bold text-foreground">
+              {formatCurrency(grossProfit)}
+            </div>
           </div>
 
           <div className="p-4 bg-surfaceSubtle rounded-md">
@@ -89,7 +104,7 @@ export function ProfitCalculator() {
                 netProfit >= 0 ? "text-success" : "text-destructive"
               }`}
             >
-              £{netProfit.toFixed(2)}
+              {hasInput ? formatCurrency(netProfit) : "—"}
             </div>
           </div>
 

@@ -1,6 +1,42 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AppShell } from '@/components/layout/AppShell';
+import { supabaseBrowser } from '@/lib/supabase/client';
+
+vi.mock('@/lib/supabase/client', () => ({
+  supabaseBrowser: vi.fn(),
+}));
+
+vi.mock('@/app/providers/AuthProvider', () => ({
+  useAuth: () => ({
+    user: { email: 'test@example.com' },
+    isAuthenticated: true,
+    signOut: vi.fn(),
+  }),
+}));
+
+const buildSupabaseMock = () => ({
+  auth: {
+    getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+    getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+  },
+  from: () => ({
+    select: () => ({
+      eq: () => ({
+        single: vi.fn().mockResolvedValue({
+          data: { plan: 'free', is_trial_expired: false },
+          error: null,
+        }),
+      }),
+    }),
+  }),
+});
+
+beforeEach(() => {
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon';
+  vi.mocked(supabaseBrowser).mockReturnValue(buildSupabaseMock() as any);
+});
 
 describe('AppShell', () => {
   it('renders children correctly', () => {

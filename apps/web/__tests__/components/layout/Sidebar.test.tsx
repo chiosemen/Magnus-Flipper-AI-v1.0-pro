@@ -30,6 +30,7 @@ const buildSupabaseMock = (
   isTrialExpired = false
 ) => ({
   auth: {
+    getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
     getUser: vi.fn().mockResolvedValue({
       data: {
         user: role
@@ -53,7 +54,7 @@ const buildSupabaseMock = (
 describe('Sidebar', () => {
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
-    vi.mocked(supabaseBrowser).mockReturnValue(buildSupabaseMock());
+    vi.mocked(supabaseBrowser).mockReturnValue(buildSupabaseMock() as any);
   });
 
   afterEach(() => {

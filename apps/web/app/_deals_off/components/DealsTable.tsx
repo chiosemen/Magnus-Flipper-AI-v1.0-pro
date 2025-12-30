@@ -1,5 +1,5 @@
-import { Button } from "@magnus-flipper-ai/ui/components";
-import { Card } from "@magnus-flipper-ai/ui/components";
+import { Button } from "@/marketing-swoopa/components/ui/button";
+import { Card } from "@/marketing-swoopa/components/ui/card";
 import Link from "next/link";
 
 interface Deal {
