@@ -263,6 +263,7 @@ export async function executeSearch(
   queries = queries.slice(0, policy.maxQueriesPerRun);
 
   let markets = parseMarkets(body.markets);
+  const requestedMarkets = markets.length;
   if (markets.length === 0) {
     markets = policy.marketsAllowed.slice();
   } else {
@@ -521,7 +522,7 @@ export async function executeSearch(
   }
 
   const runOptions = buildRunOptions(policy.tier, limit);
-  const tasks = pooledRunsToExecute.map((pooledRun) => async () => {
+  const buildTask = (pooledRun: (typeof pooledRunsToExecute)[number]) => async () => {
     const pooledKey = `${pooledRun.marketplaceId}:${pooledRun.geoKey}:${pooledRun.queryNormalized}${
       pooledRun.category ? `:${pooledRun.category}` : ''
     }`;
@@ -569,9 +570,31 @@ export async function executeSearch(
       );
       return { pooledRunId: pooledRun.pooledRunId, error, pooledKey };
     }
-  });
+  };
 
-  const pooledResults = await runPool(tasks, policy.maxConcurrency);
+  const vintedRuns = pooledRunsToExecute.filter(
+    (run) => run.marketplaceId === 'vinted',
+  );
+  const otherRuns = pooledRunsToExecute.filter(
+    (run) => run.marketplaceId !== 'vinted',
+  );
+
+  const runTasks = async (
+    runs: typeof pooledRunsToExecute,
+    limit: number,
+  ) => {
+    if (runs.length === 0) return [];
+    return runPool(runs.map(buildTask), Math.max(1, limit));
+  };
+
+  const vintedConcurrency =
+    MARKETPLACES.vinted.pooling.maxConcurrency ?? 1;
+  const [vintedResults, otherResults] = await Promise.all([
+    runTasks(vintedRuns, vintedConcurrency),
+    runTasks(otherRuns, policy.maxConcurrency),
+  ]);
+
+  const pooledResults = [...vintedResults, ...otherResults];
   const pooledResultMap = new Map<string, (typeof pooledResults)[number]>();
   for (const entry of pooledResults) {
     pooledResultMap.set(entry.pooledRunId, entry);
@@ -780,6 +803,7 @@ export async function executeSearch(
         cuCapPerRun: policy.cuCapPerRun,
       },
       requestedQueries,
+      requestedMarkets,
       executedQueries: queries,
       markets: typedMarkets,
       stats: {
@@ -799,6 +823,7 @@ export async function executeSearch(
         poolingApplied,
         poolingKey: poolingKeys[0] ?? null,
         poolingReason: poolingReasons[0] ?? null,
+        proxyOverrideApplied: typedMarkets.includes('vinted'),
         warnings: metaWarnings.length > 0 ? metaWarnings : undefined,
         errorCount: errors.length,
         cuEstimated: cuEstimatedTotal,

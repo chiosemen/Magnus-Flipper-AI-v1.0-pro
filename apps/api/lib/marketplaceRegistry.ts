@@ -26,6 +26,14 @@ export type CostModel = {
   minIntervalSeconds?: number;
 };
 
+export type ProxyPolicy = {
+  type: "apify";
+  groups: string[];
+  countryRequired?: boolean;
+  allowedCountries?: string[];
+  notes?: string;
+};
+
 export type TierAvailability = {
   free: boolean;
   pro: boolean;
@@ -64,14 +72,18 @@ export type MarketplaceConfig = {
   geoCapabilities: GeoCapabilities;
   costModel: CostModel;
   enabled: boolean;
+  notes?: string;
   actorVersion?: string;
   proxyDefaults?: ProxyDefaults;
+  proxyPolicy?: ProxyPolicy;
   buildInput: (params: ActorInputContext) => Record<string, any>;
   pooling: {
     enabled: boolean;
     key: "geohash" | "postal" | "country" | "none";
     maxRadiusKm: number;
     maxKeysPerRun?: number;
+    maxConcurrency?: number;
+    allowPooling?: boolean;
   };
 };
 
@@ -212,12 +224,20 @@ const MARKETPLACE_ENTRIES: Record<MarketplaceId, MarketplaceConfig> = {
     costModel: {
       cuPerRun: 0.4,
       cuPerItem: 0.02,
-      proxy: "datacenter",
+      proxy: "residential",
       pricingModel: "per-result",
       pooledSafe: true,
       minIntervalSeconds: 2,
     },
     enabled: true,
+    notes: "Vinted requires residential proxies; shared proxies are unreliable.",
+    proxyPolicy: {
+      type: "apify",
+      groups: ["RESIDENTIAL"],
+      countryRequired: true,
+      allowedCountries: ["GB", "US"],
+      notes: "Vinted blocks shared proxies — residential required for stability.",
+    },
     buildInput: (params) => {
       return {
         browseMode: false,
@@ -227,9 +247,12 @@ const MARKETPLACE_ENTRIES: Record<MarketplaceId, MarketplaceConfig> = {
       };
     },
     pooling: {
-      enabled: false,
+      enabled: true,
+      allowPooling: true,
       key: "country",
       maxRadiusKm: 0,
+      maxKeysPerRun: 1,
+      maxConcurrency: 1,
     },
   },
   cex: {
