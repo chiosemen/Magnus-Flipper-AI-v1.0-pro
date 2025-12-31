@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { MARKETPLACES, type MarketplaceId } from "@/lib/marketplaceRegistry";
@@ -35,7 +35,22 @@ type SavedSearch = {
 
 const MARKET_OPTIONS = Object.values(MARKETPLACES).filter((market) => market.enabled);
 
+export const dynamic = 'force-dynamic';
+
 export default function SavedSearchesPage() {
+  // Gate: disable during build or when env flag is set
+  if (process.env.NEXT_PUBLIC_DISABLE_ONBOARDING === 'true') {
+    return <div style={{ display: 'none' }} />;
+  }
+
+  return (
+    <Suspense fallback={<div style={{ display: 'none' }} />}>
+      <SavedSearchesInner />
+    </Suspense>
+  );
+}
+
+function SavedSearchesInner() {
   const { isAuthenticated } = useAuth();
   const supabase = supabaseBrowser();
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);

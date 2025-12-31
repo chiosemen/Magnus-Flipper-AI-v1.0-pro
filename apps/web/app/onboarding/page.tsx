@@ -19,13 +19,28 @@
  * 5. Redirect to dashboard
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
 
+export const dynamic = 'force-dynamic';
+
 export default function OnboardingPage() {
+  // Gate: disable during build or when env flag is set
+  if (process.env.NEXT_PUBLIC_DISABLE_ONBOARDING === 'true') {
+    return <div style={{ display: 'none' }} />;
+  }
+
+  return (
+    <Suspense fallback={<div style={{ display: 'none' }} />}>
+      <OnboardingInner />
+    </Suspense>
+  );
+}
+
+function OnboardingInner() {
   const router = useRouter();
   const { user, profile, refreshProfile } = useAuth();
   const [step, setStep] = useState(1);
