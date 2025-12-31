@@ -1,4 +1,13 @@
-export const TESTIMONIALS = {
+import type { Region } from '@/hooks/useRegion';
+
+export const TESTIMONIALS: Record<Region, Array<{
+  quote: string;
+  author: string;
+  role: string;
+  location: string;
+  monthlyProfit: string;
+  rating: number;
+}>> = {
   US: [
     {
       quote: "Magnus Flipper has completely changed my flipping game. I'm finding deals 10x faster and my profits have tripled in just 2 months.",

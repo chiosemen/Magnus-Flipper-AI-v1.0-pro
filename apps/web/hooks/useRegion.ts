@@ -1,6 +1,8 @@
 'use client';
 
-export function useRegion() {
+export type Region = 'US' | 'UK';
+
+export function useRegion(): { region: Region; currency: string; symbol: string } {
   if (typeof window === 'undefined') {
     return { region: 'US', currency: 'USD', symbol: '$' };
   }
