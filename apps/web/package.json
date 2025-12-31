@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@9.12.0",
   "scripts": {
-    "dev": "NEXT_DISABLE_TURBOPACK=1 next dev",
+    "dev": "HOST=127.0.0.1 PORT=3000 NEXT_DISABLE_TURBOPACK=1 next dev",
     "prebuild": "node ../../scripts/check-supabase-env.mjs",
     "build": "NEXT_TELEMETRY_DISABLED=1 NEXT_DISABLE_TURBOPACK=1 next build --webpack",
     "start": "next start",

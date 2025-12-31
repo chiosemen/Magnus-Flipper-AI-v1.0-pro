@@ -1,57 +1,104 @@
-"use client";
-
+import type { Metadata } from "next";
+import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
-import "../theme/theme.css";
-import "../marketing-swoopa/marketing.css";
-import "./lovable.css";
-import React from "react";
-import { Toaster } from "../marketing-swoopa/components/ui/toaster";
-import { Toaster as Sonner } from "../marketing-swoopa/components/ui/sonner";
-import { TooltipProvider } from "../marketing-swoopa/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/app/providers/AuthProvider";
-import { AppProviders } from "@/app/providers/AppProviders";
-import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 
-const queryClient = new QueryClient();
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+  preload: true,
+});
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  preload: true,
+});
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://magnusflipper.ai'),
+  title: {
+    default: 'Magnus Flipper AI | Instant Marketplace Alerts & Deal Arbitrage',
+    template: '%s | Magnus Flipper AI',
+  },
+  description: 'Find profitable flips instantly. Magnus Flipper AI scans Facebook Marketplace, Craigslist, eBay, and OfferUp 24/7. Get real-time alerts before anyone else sees the deal.',
+  keywords: [
+    'marketplace alerts',
+    'facebook marketplace notifications',
+    'deal arbitrage',
+    'flipping software',
+    'reselling tools',
+    'marketplace monitor',
+    'deal finder',
+    'flip deals',
+    'marketplace scanner',
+    'craigslist alerts',
+    'ebay alerts',
+    'offerup alerts',
+  ],
+  authors: [{ name: 'Magnus Chi', url: 'https://magnus-tech.ai' }],
+  creator: 'Magnus-Tech.AI',
+  publisher: 'Magnus-Tech.AI',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://magnusflipper.ai',
+    siteName: 'Magnus Flipper AI',
+    title: 'Magnus Flipper AI | Instant Marketplace Alerts & Deal Arbitrage',
+    description: 'Find profitable flips instantly. Magnus Flipper AI scans Facebook Marketplace, Craigslist, eBay, and OfferUp 24/7. Get real-time alerts before anyone else sees the deal.',
+    images: [
+      {
+        url: '/logo-social-square.svg',
+        width: 400,
+        height: 400,
+        alt: 'Magnus Flipper AI - Find Profitable Flips Before Anyone Else',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Magnus Flipper AI | Instant Marketplace Alerts',
+    description: 'Find profitable flips instantly with AI-powered marketplace scanning',
+    creator: '@magnusflipperai',
+    images: ['/logo-social-square.svg'],
+  },
+  icons: {
+    icon: '/logo-icon.svg',
+    apple: '/logo-icon.svg',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
+  alternates: {
+    canonical: 'https://magnusflipper.ai',
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning data-theme="dark">
+    <html lang="en" className="scroll-smooth">
       <head>
-        <title>Magnus Flipper – AI Marketplace Intelligence</title>
-        <meta name="description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
-        <meta property="og:title" content="Magnus Flipper – AI Marketplace Intelligence" />
-        <meta property="og:description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
-        <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Magnus Flipper – AI Marketplace Intelligence" />
-        <meta name="twitter:description" content="Real-time cross-marketplace scanning, pricing intelligence, and deal alerts powered by AI." />
+        <link rel="icon" href="/logo-icon.svg" type="image/svg+xml" />
       </head>
-      <body
-        className="font-body antialiased"
-        style={{
-          position: "relative",
-          overflowX: "hidden"
-        }}
-      >
-        <AuthProvider>
-          <AppProviders>
-            <ThemeProvider defaultTheme="dark">
-              <QueryClientProvider client={queryClient}>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <ImpersonationBanner />
-                  {children}
-                </TooltipProvider>
-              </QueryClientProvider>
-            </ThemeProvider>
-          </AppProviders>
-        </AuthProvider>
+      <body className={`${spaceGrotesk.variable} ${inter.variable}`}>
+        {children}
       </body>
     </html>
   );
 }
-// VERCEL-HARD-RESET Wed Dec 24 18:44:41 EST 2025
