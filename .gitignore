@@ -71,3 +71,7 @@ apps/mobile.old
 # Supabase local artifacts
 supabase/.branches/
 migration/
+# Environment files (DO NOT COMMIT)
+.env*
+env.*
+import.env
