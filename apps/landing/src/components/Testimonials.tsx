@@ -1,168 +1,169 @@
-'use client';
+'use client'
 
-import { Star } from 'lucide-react';
-import { motion } from 'framer-motion';
-
-const testimonials = [
-  {
-    quote: "Magnus Flipper has completely changed my flipping game. I'm finding deals 10x faster and my profits have tripled in just 2 months.",
-    author: "Sarah Chen",
-    role: "Full-Time Reseller",
-    location: "Los Angeles, CA",
-    monthlyProfit: "$8,400",
-    rating: 5,
-  },
-  {
-    quote: "The AI price analysis is incredible. It's like having a market expert working for me 24/7. I've made back my annual subscription in the first week.",
-    author: "Marcus Rodriguez",
-    role: "Electronics Flipper",
-    location: "Austin, TX",
-    monthlyProfit: "$12,200",
-    rating: 5,
-  },
-  {
-    quote: "I was skeptical at first, but the instant alerts are no joke. I'm always first to message sellers now. My close rate has gone from 20% to 65%.",
-    author: "Jennifer Walsh",
-    role: "Furniture Flipper",
-    location: "Seattle, WA",
-    monthlyProfit: "$6,800",
-    rating: 5,
-  },
-  {
-    quote: "Best investment I've made in my flipping business. The multi-marketplace monitoring saves me hours every day. Highly recommend!",
-    author: "David Park",
-    role: "Sneaker Reseller",
-    location: "New York, NY",
-    monthlyProfit: "$15,600",
-    rating: 5,
-  },
-  {
-    quote: "The keyword tracking is so powerful. I set up 10 searches and they run 24/7. I wake up to profitable deals in my inbox every morning.",
-    author: "Amanda Foster",
-    role: "Side Hustle Flipper",
-    location: "Miami, FL",
-    monthlyProfit: "$4,200",
-    rating: 5,
-  },
-  {
-    quote: "Magnus Flipper paid for itself in 3 days. The profit calculator helps me make quick decisions and avoid bad deals. Game changer!",
-    author: "Chris Thompson",
-    role: "Tool Flipper",
-    location: "Denver, CO",
-    monthlyProfit: "$9,500",
-    rating: 5,
-  },
-];
-
-const trustRatings = [
-  { platform: 'App Store', rating: 4.9, reviews: '12K+' },
-  { platform: 'Google Play', rating: 4.8, reviews: '8K+' },
-  { platform: 'Trustpilot', rating: 4.7, reviews: '5K+' },
-];
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { Star } from 'lucide-react'
+import { useRegion } from '@/hooks/useRegion'
+import { getTestimonialsByRegion, type Testimonial } from '@/data/testimonials'
 
 export default function Testimonials() {
+  const { region, isLoading } = useRegion()
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+
+  useEffect(() => {
+    if (!isLoading) {
+      setTestimonials(getTestimonialsByRegion(region))
+    }
+  }, [region, isLoading])
+
+  // Calculate stats based on region
+  const totalFlippers = region === 'UK' ? '12,000+' : '50,000+'
+  const regionLabel = region === 'UK' ? 'UK & Ireland' : 'Worldwide'
+
   return (
     <section id="testimonials" className="section bg-carbon-950">
       <div className="container-wide">
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            Loved by{' '}
-            <span className="text-gradient">50,000+ Flippers</span>
-          </h2>
-          <p className="text-lg text-carbon-300">
-            Join thousands of successful resellers who are finding more deals and making more profit with Magnus Flipper AI.
-          </p>
-        </div>
-
-        {/* Testimonials Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-              className="card group"
-            >
-              {/* Rating Stars */}
-              <div className="flex gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-4 h-4 text-volt-400"
-                    fill="currentColor"
-                  />
-                ))}
-              </div>
-
-              {/* Quote */}
-              <p className="text-carbon-300 leading-relaxed mb-6">
-                "{testimonial.quote}"
-              </p>
-
-              {/* Author Info */}
-              <div className="border-t border-carbon-800 pt-4">
-                <div className="font-semibold text-carbon-100 mb-1">
-                  {testimonial.author}
-                </div>
-                <div className="text-sm text-carbon-400 mb-2">
-                  {testimonial.role} • {testimonial.location}
-                </div>
-                <div className="inline-flex items-center gap-2 text-sm">
-                  <span className="text-carbon-500">Avg. Monthly Profit:</span>
-                  <span className="font-bold text-flipper-400">
-                    {testimonial.monthlyProfit}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Trust Ratings Bar */}
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
+          className="text-center mb-16"
         >
-          <div className="bg-carbon-900/50 border border-carbon-800 rounded-2xl p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {trustRatings.map((item, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-sm text-carbon-500 mb-2">
-                    {item.platform}
-                  </div>
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    <div className="flex gap-0.5">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < Math.floor(item.rating)
-                              ? 'text-volt-400'
-                              : 'text-carbon-700'
-                          }`}
-                          fill="currentColor"
-                        />
-                      ))}
+          <h2 className="text-3xl md:text-5xl font-bold mb-4">
+            <span className="text-white">Loved by </span>
+            <span className="text-gradient">{totalFlippers} Flippers</span>
+          </h2>
+          <p className="text-carbon-400 text-lg max-w-2xl mx-auto">
+            Join thousands of successful resellers {region === 'UK' ? 'across the UK' : ''} who are finding more deals and making more profit with Magnus Flipper AI.
+          </p>
+
+          {/* Region indicator */}
+          <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-carbon-900 border border-carbon-800">
+            <span className="w-2 h-2 rounded-full bg-flipper-400 animate-pulse" />
+            <span className="text-xs text-carbon-400">
+              Showing testimonials from {regionLabel}
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Testimonial Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            // Skeleton loading state
+            [...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-carbon-900 rounded-2xl p-6 animate-pulse"
+              >
+                <div className="h-4 bg-carbon-800 rounded w-24 mb-4" />
+                <div className="h-20 bg-carbon-800 rounded mb-4" />
+                <div className="h-4 bg-carbon-800 rounded w-32" />
+              </div>
+            ))
+          ) : (
+            testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="group card"
+              >
+                {/* Star Rating */}
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-4 h-4 fill-volt-400 text-volt-400"
+                    />
+                  ))}
+                </div>
+
+                {/* Quote */}
+                <blockquote className="text-carbon-300 mb-6 leading-relaxed">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </blockquote>
+
+                {/* Divider */}
+                <div className="border-t border-carbon-800 pt-4">
+                  {/* Author */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-white">
+                        {testimonial.name}
+                      </p>
+                      <p className="text-sm text-carbon-500">
+                        {testimonial.role} &bull; {testimonial.location}
+                      </p>
                     </div>
-                    <span className="text-2xl font-bold text-carbon-100">
-                      {item.rating}
-                    </span>
                   </div>
-                  <div className="text-xs text-carbon-500">
-                    {item.reviews} reviews
+
+                  {/* Profit & Marketplace */}
+                  <div className="flex items-center justify-between mt-4">
+                    <div>
+                      <p className="text-xs text-carbon-500 uppercase tracking-wider">
+                        Avg. Monthly Profit
+                      </p>
+                      <p className="text-flipper-400 font-bold text-lg">
+                        {testimonial.profit}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-carbon-500 uppercase tracking-wider">
+                        Primary Platform
+                      </p>
+                      <p className="text-carbon-300 text-sm">
+                        {testimonial.marketplace}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+
+        {/* Trust Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mt-16 flex flex-wrap justify-center items-center gap-8 md:gap-16"
+        >
+          <div className="text-center">
+            <p className="text-3xl font-bold text-white">4.9</p>
+            <div className="flex gap-0.5 justify-center my-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-4 h-4 fill-volt-400 text-volt-400" />
               ))}
             </div>
+            <p className="text-xs text-carbon-500">App Store Rating</p>
+          </div>
+
+          <div className="text-center">
+            <p className="text-3xl font-bold text-flipper-400">{totalFlippers}</p>
+            <p className="text-xs text-carbon-500 mt-1">Active Flippers</p>
+          </div>
+
+          <div className="text-center">
+            <p className="text-3xl font-bold text-white">
+              {region === 'UK' ? '£2.1M+' : '$8.5M+'}
+            </p>
+            <p className="text-xs text-carbon-500 mt-1">
+              Profits Generated {region === 'UK' ? '(UK)' : ''}
+            </p>
+          </div>
+
+          <div className="text-center">
+            <p className="text-3xl font-bold text-volt-400">&lt;30s</p>
+            <p className="text-xs text-carbon-500 mt-1">Alert Speed</p>
           </div>
         </motion.div>
       </div>
     </section>
-  );
+  )
 }
