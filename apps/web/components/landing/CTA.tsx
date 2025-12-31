@@ -36,7 +36,7 @@ export default function CTA() {
               className="btn-primary text-lg px-10 py-5 glow-green hover:glow-green"
             >
               <Zap className="w-6 h-6" />
-              Start Free Trial Now
+              Start scanning markets in under 60 seconds
             </Link>
           </div>
 

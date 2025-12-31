@@ -2,57 +2,8 @@
 
 import { Star } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const testimonials = [
-  {
-    quote: "Magnus Flipper has completely changed my flipping game. I'm finding deals 10x faster and my profits have tripled in just 2 months.",
-    author: "Sarah Chen",
-    role: "Full-Time Reseller",
-    location: "Los Angeles, CA",
-    monthlyProfit: "$8,400",
-    rating: 5,
-  },
-  {
-    quote: "The AI price analysis is incredible. It's like having a market expert working for me 24/7. I've made back my annual subscription in the first week.",
-    author: "Marcus Rodriguez",
-    role: "Electronics Flipper",
-    location: "Austin, TX",
-    monthlyProfit: "$12,200",
-    rating: 5,
-  },
-  {
-    quote: "I was skeptical at first, but the instant alerts are no joke. I'm always first to message sellers now. My close rate has gone from 20% to 65%.",
-    author: "Jennifer Walsh",
-    role: "Furniture Flipper",
-    location: "Seattle, WA",
-    monthlyProfit: "$6,800",
-    rating: 5,
-  },
-  {
-    quote: "Best investment I've made in my flipping business. The multi-marketplace monitoring saves me hours every day. Highly recommend!",
-    author: "David Park",
-    role: "Sneaker Reseller",
-    location: "New York, NY",
-    monthlyProfit: "$15,600",
-    rating: 5,
-  },
-  {
-    quote: "The keyword tracking is so powerful. I set up 10 searches and they run 24/7. I wake up to profitable deals in my inbox every morning.",
-    author: "Amanda Foster",
-    role: "Side Hustle Flipper",
-    location: "Miami, FL",
-    monthlyProfit: "$4,200",
-    rating: 5,
-  },
-  {
-    quote: "Magnus Flipper paid for itself in 3 days. The profit calculator helps me make quick decisions and avoid bad deals. Game changer!",
-    author: "Chris Thompson",
-    role: "Tool Flipper",
-    location: "Denver, CO",
-    monthlyProfit: "$9,500",
-    rating: 5,
-  },
-];
+import { useRegion } from '@/hooks/useRegion';
+import { TESTIMONIALS } from '@/data/testimonials';
 
 const trustRatings = [
   { platform: 'App Store', rating: 4.9, reviews: '12K+' },
@@ -61,6 +12,8 @@ const trustRatings = [
 ];
 
 export default function Testimonials() {
+  const { region } = useRegion();
+  const testimonials = TESTIMONIALS[region];
   return (
     <section id="testimonials" className="section bg-carbon-950">
       <div className="container-wide">
