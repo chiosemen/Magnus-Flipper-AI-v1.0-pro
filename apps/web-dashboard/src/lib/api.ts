@@ -1,3 +1,5 @@
+import "server-only";
+
 const BASE_URL = process.env.MAGNUS_API_BASE_URL?.trim() || null;
 
 export function getApiBaseUrl() {
