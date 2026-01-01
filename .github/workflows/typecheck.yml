@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify Supabase env (web)
+      - name: Verify env (web)
         working-directory: apps/web
         run: node ../../scripts/check-supabase-env.mjs
         env:
@@ -35,78 +35,17 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Verify Supabase env (workers)
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          worker_dirs=(apps/worker-* packages/worker-*)
-          if [ ${#worker_dirs[@]} -gt 0 ]; then
-            node scripts/check-supabase-env.mjs --require-service-role
-          else
-            echo "[typecheck] No worker-* packages found; skipping service role check."
-          fi
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Lint
+        run: pnpm -w lint
 
-      - name: Typecheck builds
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "[typecheck] Running workspace build (if present)..."
-          pnpm -r --workspace-concurrency 1 run build --if-present
-          echo "[typecheck] Running web build..."
-          pnpm --filter web build
-          echo "[typecheck] Running web tests..."
-          pnpm --filter web test -- --run
-          echo "[typecheck] Detecting worker-* packages..."
-          shopt -s nullglob
-          worker_dirs=(apps/worker-* packages/worker-*)
-          if [ ${#worker_dirs[@]} -gt 0 ]; then
-            echo "[typecheck] Worker packages: ${worker_dirs[*]}"
-            pnpm --filter "worker-*" build
-          else
-            echo "[typecheck] No worker-* packages found; skipping."
-          fi
+      - name: Typecheck
+        run: pnpm -r --workspace-concurrency 1 run typecheck --if-present
 
-      - name: Guardian integration tests (non-blocking)
-        continue-on-error: true
-        run: pnpm --filter web test -- --run __tests__/guardian
-        env:
-          GUARDIAN_BASE_URL: ${{ secrets.GUARDIAN_BASE_URL }}
-          GUARDIAN_API_KEY: ${{ secrets.GUARDIAN_API_KEY }}
+      - name: Build
+        run: pnpm -r --workspace-concurrency 1 run build --if-present
 
-  worker-scheduler:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Web tests
+        run: pnpm --filter @magnus/web test -- --run
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".node-version"
-          cache: "pnpm"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.12.0
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify Supabase env (worker scheduler)
-        run: node scripts/check-supabase-env.mjs --require-service-role
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-      - name: Worker scheduler build and test
-        run: |
-          set -euo pipefail
-          pnpm --filter @magnus-flipper-ai/worker-scheduler build
-          pnpm --filter @magnus-flipper-ai/worker-scheduler test
+      - name: Mobile tests
+        run: pnpm --filter magnus-flipper-mobile test

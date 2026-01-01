@@ -1,33 +1,30 @@
-// mobile/lib/supabase.ts
-import { createClient } from '@supabase/supabase-js';
-import 'react-native-url-polyfill/auto';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import * as SecureStore from 'expo-secure-store';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    '[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY in your env.',
-  );
+const secureStoreAdapter = {
+  getItem: (key: string) => SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+};
+
+let client: SupabaseClient | null = null;
+
+export function getSupabaseClient(): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Supabase env vars missing');
+  }
+  if (!client) {
+    client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        storage: secureStoreAdapter,
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+      },
+    });
+  }
+  return client;
 }
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    // For Expo/React Native, we stub storage to use globalThis.localStorage if present.
-    storage: {
-      getItem: async (key: string) => {
-        // @ts-ignore
-        return globalThis.localStorage?.getItem(key) ?? null;
-      },
-      setItem: async (key: string, value: string) => {
-        // @ts-ignore
-        globalThis.localStorage?.setItem(key, value);
-      },
-      removeItem: async (key: string) => {
-        // @ts-ignore
-        globalThis.localStorage?.removeItem(key);
-      },
-    },
-  },
-});

@@ -25,7 +25,7 @@ describe('Supabase env guard', () => {
   });
 
   it('throws when NEXT_PUBLIC_SUPABASE_URL is localhost in production', () => {
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon';
     expect(() => getSupabaseEnv()).toThrow(/localhost/);

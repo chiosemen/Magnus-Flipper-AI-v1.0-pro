@@ -42,14 +42,14 @@ const baseUser = {
   role: 'authenticated',
   email: 'user@example.com',
   email_confirmed_at: null,
-  phone: null,
+  phone: '',
   last_sign_in_at: null,
   app_metadata: {},
   user_metadata: {},
   identities: [],
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
-} as User;
+} as unknown as User;
 
 beforeEach(() => {
   process.env = { ...ORIGINAL_ENV };

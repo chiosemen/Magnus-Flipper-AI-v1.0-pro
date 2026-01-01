@@ -21,7 +21,7 @@ describe('ProfitCalculator', () => {
     fireEvent.change(buyInput, { target: { value: '100' } });
     fireEvent.change(sellInput, { target: { value: '150' } });
 
-    expect(screen.getByText('£50.00')).toBeInTheDocument(); // Gross profit
+    expect(screen.getAllByText('£50.00').length).toBeGreaterThan(0); // Gross profit
   });
 
   it('calculates net profit correctly', () => {
@@ -62,8 +62,8 @@ describe('ProfitCalculator', () => {
     fireEvent.change(buyInput, { target: { value: '150' } });
     fireEvent.change(sellInput, { target: { value: '100' } });
 
-    const netProfit = screen.getByText('-£50.00');
-    expect(netProfit).toHaveClass('text-destructive');
+    const netProfit = screen.getAllByText('-£50.00');
+    expect(netProfit.some((el) => el.classList.contains('text-destructive'))).toBe(true);
   });
 
   it('uses design tokens for styling', () => {

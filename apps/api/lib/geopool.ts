@@ -143,7 +143,7 @@ export function planPooledRuns(
     const marketplace = MARKETPLACES[request.marketplaceId];
     const warnings: string[] = [];
     if (!marketplace) {
-      warnings.push('Marketplace not found.');
+      warnings.push('Marketplace unavailable for this scan.');
       continue;
     }
 
@@ -168,13 +168,13 @@ export function planPooledRuns(
 
     if (!marketplace.geoCapabilities.supportsRadiusKm && poolingEnabled) {
       strategy = marketplace.pooling.key === 'country' ? 'country' : 'none';
-      warnings.push('Radius disabled for this marketplace.');
+      warnings.push('Radius was not applied for this marketplace.');
     }
 
     if (strategy === 'geohash' && precision === null) {
       strategy = 'none';
       poolingEnabled = false;
-      warnings.push('Radius too large for geohash pooling.');
+      warnings.push('Radius is too broad for precision pooling.');
     }
 
     if (strategy === 'none') {

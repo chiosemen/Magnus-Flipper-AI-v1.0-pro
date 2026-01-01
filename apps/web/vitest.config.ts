@@ -22,13 +22,6 @@ export default defineConfig({
   resolve: {
     alias: [
       // Specific aliases first (exact matches)
-      {
-        find: '@magnus/deploy-guardian-contracts',
-        replacement: path.resolve(
-          __dirname,
-          '../../packages/deploy-guardian-contracts/dist'
-        ),
-      },
       { find: '@/app', replacement: path.resolve(__dirname, './app') },
       { find: '@/src', replacement: path.resolve(__dirname, './src') },
       { find: '@/lib', replacement: path.resolve(__dirname, './lib') },

@@ -6,10 +6,26 @@
  * Shown when user tries to access admin-only or plan-restricted content
  */
 
+import { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers/AuthProvider';
 
+export const dynamic = 'force-dynamic';
+
 export default function UnauthorizedPage() {
+  // Gate: disable during build or when env flag is set
+  if (process.env.NEXT_PUBLIC_DISABLE_ONBOARDING === 'true') {
+    return <div style={{ display: 'none' }} />;
+  }
+
+  return (
+    <Suspense fallback={<div style={{ display: 'none' }} />}>
+      <UnauthorizedInner />
+    </Suspense>
+  );
+}
+
+function UnauthorizedInner() {
   const router = useRouter();
   const { isAdmin, profile } = useAuth();
 

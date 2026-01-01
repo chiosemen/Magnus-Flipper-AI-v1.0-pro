@@ -1,6 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TopNav } from '@/components/layout/TopNav';
+
+vi.mock('@/app/providers/AuthProvider', () => ({
+  useAuth: () => ({
+    user: { email: 'test@example.com' },
+    isAuthenticated: true,
+    signOut: vi.fn(),
+  }),
+}));
 
 describe('TopNav', () => {
   it('renders title correctly', () => {
@@ -37,7 +45,7 @@ describe('TopNav', () => {
   it('renders user avatar placeholder', () => {
     const { container } = render(<TopNav />);
 
-    const avatar = container.querySelector('.w-8.h-8.rounded-full');
+    const avatar = container.querySelector('.rounded-full.bg-gradient-brand-combined');
     expect(avatar).toBeInTheDocument();
     expect(avatar).toHaveClass('bg-gradient-brand-combined');
   });

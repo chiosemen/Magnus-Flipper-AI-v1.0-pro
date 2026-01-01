@@ -8,6 +8,7 @@ import {
   MARKETPLACES,
   type ActorInputParams,
   type MarketplaceId,
+  type ProxyPolicy,
 } from "./marketplaceRegistry";
 
 type MarketplaceOptions = {
@@ -26,6 +27,44 @@ type MarketplaceOptions = {
 };
 
 const DEFAULT_DATASET_LIMIT = 20;
+
+function normalizeProxyCountry(
+  input: string | null | undefined,
+  allowed?: string[],
+) {
+  if (!input) return allowed?.[0] ?? null;
+  const upper = input.trim().toUpperCase();
+  if (upper === "UK") return "GB";
+  if (upper === "GB") return "GB";
+  if (upper === "US") return "US";
+  if (allowed && !allowed.includes(upper)) {
+    return allowed[0] ?? null;
+  }
+  return upper;
+}
+
+function applyProxyPolicy(
+  input: Record<string, any>,
+  policy: ProxyPolicy | undefined,
+  params: ActorInputParams,
+) {
+  if (!policy || policy.type !== "apify") return input;
+  const proxyCountry = normalizeProxyCountry(params.country ?? null, policy.allowedCountries);
+  const proxyGroups = policy.groups.length > 0 ? policy.groups : ["RESIDENTIAL"];
+  return {
+    ...input,
+    proxy: {
+      useApifyProxy: true,
+      apifyProxyGroups: proxyGroups,
+      ...(proxyCountry ? { apifyProxyCountry: proxyCountry } : {}),
+    },
+    proxyConfiguration: {
+      useApifyProxy: true,
+      proxyGroups: proxyGroups,
+      ...(proxyCountry ? { proxyCountry } : {}),
+    },
+  };
+}
 
 function buildGeoUsed(
   params: ActorInputParams,
@@ -75,7 +114,9 @@ export async function runMarketplaceActor(
     region: options.region,
   };
 
-  const input = buildActorInput(market, params);
+  let input = buildActorInput(market, params);
+  // Vinted blocks shared proxies — residential required for stability.
+  input = applyProxyPolicy(input, config.proxyPolicy, params);
   const limit = options.limit ?? DEFAULT_DATASET_LIMIT;
 
   const runResult = await runActor(actorId, input, {
@@ -85,7 +126,12 @@ export async function runMarketplaceActor(
   });
 
   const proxyDefaults = getProxyDefaults(market);
-  const proxyGroups = getProxyGroupsForMarket(market, params);
+  const proxyGroups =
+    config.proxyPolicy?.groups?.length ? config.proxyPolicy.groups : getProxyGroupsForMarket(market, params);
+  const proxyCountry = normalizeProxyCountry(
+    params.country ?? null,
+    config.proxyPolicy?.allowedCountries,
+  );
   const cuEstimated =
     config.costModel.cuPerRun +
     config.costModel.cuPerItem * runResult.items.length;
@@ -110,7 +156,7 @@ export async function runMarketplaceActor(
       ),
       proxyUsed: {
         type: proxyDefaults.type,
-        country: proxyDefaults.country ?? null,
+        country: proxyCountry ?? proxyDefaults.country ?? null,
         groups: proxyGroups,
       },
       cuEstimated,

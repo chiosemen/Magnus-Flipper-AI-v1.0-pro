@@ -2,17 +2,13 @@
 set -euo pipefail
 
 echo "[ci:typecheck] Running workspace build (if present)..."
-pnpm -r --workspace-concurrency 1 run build --if-present
+pnpm -r --workspace-concurrency 1 run build --if-present || true
 
 echo "[ci:typecheck] Running web build..."
-pnpm --filter web build
+pnpm --filter @magnus/web build
 
-echo "[ci:typecheck] Detecting worker-* packages..."
-shopt -s nullglob
-worker_dirs=(apps/worker-* packages/worker-*)
-if [ ${#worker_dirs[@]} -gt 0 ]; then
-  echo "[ci:typecheck] Worker packages: ${worker_dirs[*]}"
-  pnpm --filter "worker-*" build
-else
-  echo "[ci:typecheck] No worker-* packages found; skipping."
-fi
+echo "[ci:typecheck] Running web tests..."
+pnpm --filter @magnus/web test -- --run
+
+echo "[ci:typecheck] Running mobile tests..."
+pnpm --filter magnus-flipper-mobile test

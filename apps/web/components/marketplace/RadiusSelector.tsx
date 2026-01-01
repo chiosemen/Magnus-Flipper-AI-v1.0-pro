@@ -69,7 +69,7 @@ function MapPreview({ lat, lng, radiusKm }: MapPreviewProps) {
         />
         <circle cx="50%" cy="50%" r="5" fill="#00E5FF" />
       </svg>
-      <div className="absolute bottom-2 left-3 rounded-full bg-black/70 px-2 py-1 text-[11px] text-white/80">
+      <div className="absolute bottom-2 left-3 rounded-full bg-black/70 px-2 py-1 text-xs text-white/80">
         {lat.toFixed(4)}, {lng.toFixed(4)}
       </div>
     </div>
@@ -97,21 +97,23 @@ export function RadiusSelector({
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_180px]">
         <div>
           <label className="block text-sm font-medium text-white/70 mb-1">
-            Postal / ZIP
+            Postcode or ZIP
           </label>
           <input
             type="text"
             value={postalCode}
             onChange={(e) => onPostalChange(e.target.value)}
-            placeholder="e.g., SW1A 1AA"
+            placeholder="Enter postcode or ZIP"
             className="w-full rounded-lg bg-black/40 border border-white/10 px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:border-[#00E5FF]/60 disabled:opacity-60"
             disabled={disabled}
           />
           {geoLoading && (
-            <p className="mt-1 text-xs text-white/50">Resolving location…</p>
+            <p className="mt-1 text-xs text-white/50">Resolving location...</p>
           )}
           {geoError && (
-            <p className="mt-1 text-xs text-red-300">{geoError}</p>
+            <p className="mt-1 text-xs text-red-300">
+              We could not resolve that location. Try another entry.
+            </p>
           )}
         </div>
         <div className="flex flex-col justify-end gap-2">
@@ -126,14 +128,16 @@ export function RadiusSelector({
             </button>
           ) : null}
           <div className="text-xs text-white/50">
-            Radius {supportsRadius ? "enabled" : "limited"} for this market.
+            Location accuracy varies by market.
           </div>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-white/70 mb-1">
-          {supportsRadius ? `Radius: ${radiusMiles} miles` : "Radius: disabled"}
+          {supportsRadius
+            ? `Radius: ${radiusMiles} miles`
+            : "Radius: not available"}
         </label>
         <input
           type="range"
@@ -145,20 +149,22 @@ export function RadiusSelector({
           disabled={disabled || !supportsRadius}
         />
         <div className="mt-1 text-xs text-white/50">
-          {supportsRadius ? `${radiusKm.toFixed(1)} km` : "Radius not supported."}
+          {supportsRadius
+            ? `${radiusKm.toFixed(1)} km`
+            : "Radius not available for this market."}
         </div>
         {!supportsRadius && (
-          <div className="mt-1 text-[11px] text-white/50">
-            Some marketplaces ignore radius and use broader location matching.
+          <div className="mt-1 text-xs text-white/50">
+            Some selected markets do not support precise location filtering.
           </div>
-        </div>
+        )}
       </div>
 
       {lat !== null && lng !== null ? (
         <MapPreview lat={lat} lng={lng} radiusKm={radiusKm} />
       ) : (
         <div className="rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-white/60">
-          Enter a postal code to preview the map.
+          Add a postcode or ZIP to preview the map.
         </div>
       )}
     </div>

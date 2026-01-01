@@ -21,10 +21,10 @@ function formatNumber(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-function getApiBaseUrl() {
+async function getApiBaseUrl() {
   const envBase = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (envBase) return envBase;
-  const headerList = headers();
+  const headerList = await headers();
   const host = headerList.get('host');
   if (!host) return '';
   const proto = headerList.get('x-forwarded-proto') ?? 'https';
@@ -51,7 +51,7 @@ export default async function UsagePage() {
     );
   }
 
-  const baseUrl = getApiBaseUrl();
+  const baseUrl = await getApiBaseUrl();
   if (!baseUrl) {
     return (
       <main className="min-h-screen bg-[#0b0d12] text-white flex items-center justify-center p-8">
@@ -91,7 +91,7 @@ export default async function UsagePage() {
         <header className="space-y-2">
           <h1 className="text-2xl font-semibold">Usage</h1>
           <p className="text-sm text-white/60">
-            Costs are estimated CUs, not billing currency.
+            Usage is recorded in cost units (CU), not billing currency.
           </p>
           <div className="text-xs text-white/50">
             Tier: <span className="capitalize">{data.policy.tier}</span>

@@ -1,8 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireUserFromJWT } from '../lib/auth';
+import { resolveEntitlement } from '../lib/entitlementResolver';
 import { getServiceSupabaseClient } from '../lib/supabase';
 import { getTierPolicy } from '../lib/tierPolicy';
 import { MARKETPLACES } from '../lib/marketplaceRegistry';
+import { getMarketAgentEntitlement } from '../lib/entitlements';
+import { DEFAULT_LIMITS, checkUsageLimits } from '../lib/usageMetering';
 
 type MarketplaceUsage = {
   marketplace: string;
@@ -51,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: todayRows, error: todayError } = await supabase
       .from('cost_ledger')
-      .select('cu_estimated')
+      .select('cu_actual')
       .eq('user_id', user.userId)
       .gte('executed_at', dayStart);
 
@@ -62,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: monthRows, error: monthError } = await supabase
       .from('cost_ledger')
-      .select('marketplace, cu_estimated')
+      .select('marketplace, cu_actual')
       .eq('user_id', user.userId)
       .gte('executed_at', monthStart);
 
@@ -73,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: recentRows, error: recentError } = await supabase
       .from('cost_ledger')
-      .select('marketplace, cu_estimated, executed_at')
+      .select('marketplace, cu_actual, executed_at')
       .eq('user_id', user.userId)
       .order('executed_at', { ascending: false })
       .limit(20);
@@ -84,14 +87,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const todayCu = (todayRows ?? []).reduce(
-      (sum, row) => sum + safeNumber(row.cu_estimated),
+      (sum, row) => sum + safeNumber(row.cu_actual),
       0,
     );
 
     const marketplaceTotals = new Map<string, number>();
     let monthCu = 0;
     for (const row of monthRows ?? []) {
-      const cu = safeNumber(row.cu_estimated);
+      const cu = safeNumber(row.cu_actual);
       monthCu += cu;
       const key = row.marketplace ?? 'unknown';
       marketplaceTotals.set(key, (marketplaceTotals.get(key) ?? 0) + cu);
@@ -110,16 +113,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const recentRuns: RecentRun[] = (recentRows ?? []).map((row) => ({
       market: row.marketplace ?? 'unknown',
-      cu_estimated: safeNumber(row.cu_estimated),
+      cu_estimated: safeNumber(row.cu_actual),
       time: row.executed_at,
     }));
+
+    const entitlement = await resolveEntitlement({ userId: user.userId });
+    const policy = getTierPolicy(entitlement.tier);
+
+    const marketAgentEntitlement = await getMarketAgentEntitlement(user.userId);
+    const marketAgentUsage = await checkUsageLimits(user.userId, DEFAULT_LIMITS);
+    const usageSnapshot = marketAgentUsage.current;
+
+    const marketAgentLimits = {
+      runsPerDay: DEFAULT_LIMITS.runsPerDay,
+      minRefreshSeconds: 60,
+      maxItemsPerDay: DEFAULT_LIMITS.itemsPerDay,
+    };
 
     res.status(200).json({
       todayCu,
       monthCu,
       byMarketplace,
       recentRuns,
-      policy: getTierPolicy(user.tier),
+      policy,
+      features: {
+        marketAgent: {
+          enabled: marketAgentEntitlement.enabled,
+          status: marketAgentEntitlement.status,
+          graceUntil: marketAgentEntitlement.graceUntil
+            ? marketAgentEntitlement.graceUntil.toISOString()
+            : null,
+          seatsPurchased: 0,
+          seatsUsed: 0,
+        },
+      },
+      limits: {
+        marketAgent: marketAgentLimits,
+      },
+      usage: {
+        marketAgent: {
+          today: {
+            runs: usageSnapshot.runs,
+            deploys: 0,
+            refreshTicks: usageSnapshot.refreshTicks,
+            seedIngests: usageSnapshot.seedIngests,
+            itemsReturned: usageSnapshot.itemsReturned,
+            uniqueQueries: usageSnapshot.uniqueQueries,
+            billableRuns: usageSnapshot.billableRuns,
+          },
+        },
+      },
     });
   } catch (error: any) {
     res.status(500).json({ error: error?.message || 'Usage lookup failed' });
