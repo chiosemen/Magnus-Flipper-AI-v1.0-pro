@@ -2,6 +2,7 @@ packages:
   # Phase 2 — ONLY what we ship
   - "apps/api"
   - "apps/web"
+  - "apps/landing"
 
   # Shared UI / utils ONLY if imported
   - "packages/ui"
